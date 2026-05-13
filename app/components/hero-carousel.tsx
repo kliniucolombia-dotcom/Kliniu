@@ -2,29 +2,25 @@
 
 import { useEffect, useEffectEvent, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+
 const slides = [
   {
     id: 1,
-    eyebrow: "Banner 01",
-    title: "Encuentra el repuesto que necesitas sin saber su nombre",
-    description:
-      "Busca por placa, modelo o referencia y compara opciones confiables en segundos.",
+    title: "Todo lo que tu espacio\nnecesita,",
+    titleHighlight: "en un solo lugar",
     image: "/hero-banner-1.jpg",
   },
   {
     id: 2,
-    eyebrow: "Banner 02",
-    title: "Compra repuestos con apoyo experto y entrega segura",
-    description:
-      "Explora productos destacados y encuentra aliados cerca de ti para resolverlo rapido.",
+    title: "Higiene profesional\npara cada espacio,",
+    titleHighlight: "siempre disponible",
     image: "/hero-banner-2.jpg",
   },
   {
     id: 3,
-    eyebrow: "Banner 03",
-    title: "Descubre ofertas, categorias y soluciones para tu vehiculo",
-    description:
-      "Deja estos slides listos para reemplazar luego con tus banners finales.",
+    title: "Dispensadores diseñados\npara alto tráfico,",
+    titleHighlight: "hechos para durar",
     image: "/hero-banner-3.jpg",
   },
 ];
@@ -54,7 +50,6 @@ export default function HeroCarousel() {
     const intervalId = window.setInterval(() => {
       syncAdvanceSlide();
     }, AUTO_PLAY_MS);
-
     return () => window.clearInterval(intervalId);
   }, []);
 
@@ -67,7 +62,7 @@ export default function HeroCarousel() {
         {slides.map((slide) => (
           <article
             key={slide.id}
-            className="relative aspect-[16/10] w-full shrink-0 bg-[#05070a] sm:aspect-[16/9] md:aspect-[21/8] lg:aspect-[2560/720]"
+            className="relative aspect-[16/9] w-full shrink-0 bg-[#05070a] md:aspect-[21/8] lg:aspect-[2560/720]"
           >
             <div className="absolute inset-0">
               <Image
@@ -79,19 +74,35 @@ export default function HeroCarousel() {
                 className="object-cover object-center"
               />
             </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-black/86 via-black/42 to-black/8" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/38 to-transparent" />
 
-            <div className="relative mx-auto flex h-full max-w-[1440px] items-center px-6 py-12 sm:py-16 md:py-20">
-              <div className="max-w-2xl">
-                <p className="mb-4 text-sm font-semibold uppercase tracking-[0.35em] text-[#27B1B8]">
-                  {slide.eyebrow}
-                </p>
-                <h1 className="mb-5 text-4xl font-bold leading-tight md:text-6xl">
-                  {slide.title}
+            <div className="relative mx-auto flex h-full max-w-[1440px] items-center px-8 py-12 md:px-12">
+              <div className="max-w-xl">
+                <h1 className="mb-6 whitespace-pre-line text-4xl font-extrabold leading-tight tracking-tight md:text-5xl lg:text-6xl">
+                  {slide.title}{" "}
+                  <span className="text-[#27B1B8]">{slide.titleHighlight}</span>
                 </h1>
-                <p className="mb-8 max-w-xl text-base text-slate-100 md:text-lg">
-                  {slide.description}
-                </p>
+                <div className="flex flex-wrap gap-3">
+                  <Link
+                    href="/categorias"
+                    className="inline-flex items-center gap-2 rounded-full bg-[#0C535B] px-5 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                    </svg>
+                    Comprar Ahora
+                  </Link>
+                  <Link
+                    href="/contacto"
+                    className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/10 px-5 py-3 text-sm font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+                    </svg>
+                    Cotiza ahora
+                  </Link>
+                </div>
               </div>
             </div>
           </article>
@@ -102,31 +113,28 @@ export default function HeroCarousel() {
         type="button"
         aria-label="Banner anterior"
         onClick={goToPrev}
-        className="absolute left-4 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-black/25 text-2xl transition-colors duration-200 hover:border-[#27B1B8] hover:text-[#27B1B8]"
+        className="absolute left-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/20 text-xl transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"
       >
         ‹
       </button>
-
       <button
         type="button"
         aria-label="Banner siguiente"
         onClick={advanceSlide}
-        className="absolute right-4 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-black/25 text-2xl transition-colors duration-200 hover:border-[#27B1B8] hover:text-[#27B1B8]"
+        className="absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/20 text-xl transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"
       >
         ›
       </button>
 
-      <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-3">
+      <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-2">
         {slides.map((slide, index) => (
           <button
             key={slide.id}
             type="button"
             aria-label={`Ir al banner ${index + 1}`}
             onClick={() => goToSlide(index)}
-            className={`h-3 rounded-full transition-all duration-300 ${
-              currentSlide === index
-                ? "w-10 bg-[#27B1B8]"
-                : "w-3 bg-white/60 hover:bg-white"
+            className={`h-2 rounded-full transition-all duration-300 ${
+              currentSlide === index ? "w-8 bg-[#27B1B8]" : "w-2 bg-white/50 hover:bg-white"
             }`}
           />
         ))}
