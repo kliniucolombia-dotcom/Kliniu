@@ -1,0 +1,103 @@
+"use client";
+
+import { useRef, useState } from "react";
+import Image from "next/image";
+import { useCart } from "./cart-provider";
+import type { StoreProduct } from "@/lib/products";
+
+export default function ProductosCarousel({
+  products,
+}: {
+  products: StoreProduct[];
+}) {
+  const { addItem } = useCart();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [addedSlugs, setAddedSlugs] = useState<Set<string>>(new Set());
+
+  const scroll = (dir: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir === "right" ? 220 : -220, behavior: "smooth" });
+  };
+
+  const handleAdd = (p: StoreProduct) => {
+    addItem({ id: p.slug, nombre: p.nombre, precio: p.precio, imagen: p.imagen });
+    setAddedSlugs((prev) => new Set(prev).add(p.slug));
+    setTimeout(() => {
+      setAddedSlugs((prev) => {
+        const next = new Set(prev);
+        next.delete(p.slug);
+        return next;
+      });
+    }, 1400);
+  };
+
+  return (
+    <div className="relative min-w-0 flex-1">
+      <button
+        type="button"
+        aria-label="Anterior"
+        onClick={() => scroll("left")}
+        className="absolute -left-5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-xl shadow-md transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"
+      >
+        ‹
+      </button>
+
+      <div
+        ref={scrollRef}
+        className="scrollbar-hidden flex gap-4 overflow-x-auto pb-2 pl-1 pr-1"
+      >
+        {products.map((p) => {
+          const added = addedSlugs.has(p.slug);
+          return (
+            <div
+              key={p.slug}
+              className="w-[200px] min-w-[200px] shrink-0 overflow-hidden rounded-2xl border border-black/8 bg-white"
+            >
+              <div className="flex h-40 items-center justify-center bg-[#f8f8f7] p-4">
+                <Image
+                  src={p.imagen}
+                  alt={p.nombre}
+                  width={160}
+                  height={140}
+                  className="max-h-32 w-auto object-contain"
+                />
+              </div>
+              <div className="space-y-1.5 p-3">
+                {p.descripcion && (
+                  <p className="line-clamp-1 text-[11px] text-[#999]">
+                    {p.descripcion}
+                  </p>
+                )}
+                <p className="line-clamp-2 text-sm font-semibold leading-snug text-[#111]">
+                  {p.nombre}
+                </p>
+                <p className="text-base font-bold text-[#111]">{p.precio}</p>
+                <button
+                  type="button"
+                  onClick={() => handleAdd(p)}
+                  className={`w-full rounded-full py-2 text-xs font-bold transition-colors ${
+                    added
+                      ? "bg-[#0C535B] text-white"
+                      : "bg-[#27B1B8] text-white hover:bg-[#1E969B]"
+                  }`}
+                >
+                  {added ? "✓ Agregado" : "Agregar al carrito"}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <button
+        type="button"
+        aria-label="Siguiente"
+        onClick={() => scroll("right")}
+        className="absolute -right-5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-xl shadow-md transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"
+      >
+        ›
+      </button>
+    </div>
+  );
+}
