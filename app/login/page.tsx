@@ -250,7 +250,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-[calc(100vh-88px)] items-center justify-center bg-[#f5f5f5] px-6 py-16">
+    <main className="flex min-h-[calc(100vh-88px)] bg-white">
       {isEnteringAccount && (
         <AccountEntryLoading
           message="Entrando a tu cuenta"
@@ -345,98 +345,127 @@ export default function LoginPage() {
         </div>
       )}
 
-      <section className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg shadow-black/10">
-        <div className="mt-1">
-          <div
-            key={logoAnimationKey}
-            className={`flex justify-center ${logoAnimationKey > 0 ? "logo-error-bump" : ""}`}
-          >
-            <Image
-              src="/login-kliniu-logo.png"
-              alt="Logo de Kliniu"
-              width={168}
-              height={168}
-              priority
-              className="h-[168px] w-[168px] object-contain"
-            />
-          </div>
-          <h1 className="mt-2 text-center text-3xl font-bold text-[#0C535B]">
-            Iniciar sesión
+      {/* Split layout */}
+      <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 lg:w-1/2">
+        <div className="w-full max-w-md">
+          <h1 className="text-4xl font-extrabold tracking-tight text-[#111]">
+            Accede a tu <span className="text-[#27B1B8]">cuenta</span>
           </h1>
-          <p className="mt-3 text-center text-sm text-slate-600">
-            Ingresa con los mismos datos que usaste para crear tu cuenta.
-            Si tu cuenta tiene permisos de administración, entrarás al panel automáticamente.
+          <p className="mt-2 text-sm text-[#6e7379]">
+            Todo lo que necesitas para gestionar tu experiencia KLINIU.
+          </p>
+
+          {/* Tab toggle */}
+          <div className="mt-6 flex border-b border-black/10">
+            <span className="flex items-center gap-2 border-b-2 border-[#0C535B] pb-3 pr-6 text-sm font-bold text-[#0C535B]">
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              Iniciar sesión
+            </span>
+            <Link
+              href="/registro"
+              className="flex items-center gap-2 pb-3 pl-6 text-sm font-bold text-[#6e7379] transition-colors hover:text-[#27B1B8]"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <line x1="19" y1="8" x2="19" y2="14" />
+                <line x1="22" y1="11" x2="16" y2="11" />
+              </svg>
+              Crear cuenta
+            </Link>
+          </div>
+
+          <form noValidate onSubmit={handleSubmit} className="mt-6 space-y-5">
+            <div className={invalidFields.includes("email") ? "field-shake" : ""}>
+              <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-[#333]">
+                Correo electrónico
+              </label>
+              <div className="relative">
+                <input
+                  id="email"
+                  type="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  placeholder="Ingresa tu correo electrónico"
+                  className={`h-11 w-full rounded-xl border px-4 pr-10 text-sm outline-none transition focus:border-[#27B1B8] ${
+                    invalidFields.includes("email") ? "border-[#27B1B8] bg-[#EFFAFA]" : "border-black/10"
+                  }`}
+                />
+                <svg viewBox="0 0 24 24" className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#aaa]" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
+                </svg>
+              </div>
+            </div>
+
+            <div className={invalidFields.includes("password") ? "field-shake" : ""}>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label htmlFor="password" className="text-sm font-medium text-[#333]">
+                  Contraseña
+                </label>
+                <Link href="/registro" className="text-xs text-[#27B1B8] hover:underline">
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
+              <input
+                id="password"
+                type="password"
+                value={form.password}
+                onChange={handleChange}
+                placeholder="Ingresa tu contraseña"
+                className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition focus:border-[#27B1B8] ${
+                  invalidFields.includes("password") ? "border-[#27B1B8] bg-[#EFFAFA]" : "border-black/10"
+                }`}
+              />
+            </div>
+
+            {inlineError && (
+              <p className="rounded-xl border border-[#27B1B8]/20 bg-[#EAF8F6] px-4 py-3 text-sm font-medium text-[#0C535B]">
+                {inlineError}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="h-11 w-full rounded-full bg-[#0C535B] text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSubmitting ? "Ingresando..." : "Ingresar a mi cuenta"}
+            </button>
+          </form>
+
+          <p className="mt-5 text-center text-sm text-[#6e7379]">
+            ¿No tienes cuenta?{" "}
+            <Link href="/registro" className="font-bold text-[#27B1B8] hover:underline">
+              Crear una cuenta
+            </Link>
           </p>
         </div>
+      </div>
 
-        <form noValidate onSubmit={handleSubmit} className="mt-8 space-y-5">
-          <div className={invalidFields.includes("email") ? "field-shake" : ""}>
-            <label
-              htmlFor="email"
-              className="mb-2 block text-sm font-medium text-slate-700"
-            >
-              Correo electrónico
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="tu@correo.com"
-              className={`w-full rounded-xl border px-4 py-3 outline-none transition-colors duration-200 focus:border-[#27B1B8] ${
-                invalidFields.includes("email")
-                  ? "border-[#27B1B8] bg-[#EFFAFA]"
-                  : "border-slate-200"
-              }`}
+      {/* Right side — mascot image */}
+      <div className="hidden overflow-hidden lg:flex lg:w-1/2 lg:items-center lg:justify-center bg-[#faf5f0]">
+        <div className="relative h-full w-full">
+          <Image
+            src="/hero-banner-1.jpg"
+            alt="Kliniu"
+            fill
+            className="object-cover object-center"
+          />
+          <div className="absolute inset-0 flex items-end justify-center pb-16">
+            <Image
+              src="/kliniu-loader-logo.png"
+              alt="Kliniu mascota"
+              width={180}
+              height={180}
+              className="object-contain drop-shadow-xl"
             />
           </div>
-
-          <div className={invalidFields.includes("password") ? "field-shake" : ""}>
-            <label
-              htmlFor="password"
-              className="mb-2 block text-sm font-medium text-slate-700"
-            >
-              Contraseña
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={form.password}
-              onChange={handleChange}
-              placeholder="Ingresa tu contraseña"
-              className={`w-full rounded-xl border px-4 py-3 outline-none transition-colors duration-200 focus:border-[#27B1B8] ${
-                invalidFields.includes("password")
-                  ? "border-[#27B1B8] bg-[#EFFAFA]"
-                  : "border-slate-200"
-              }`}
-            />
-          </div>
-
-          {inlineError && (
-            <p className="rounded-xl border border-[#27B1B8]/20 bg-[#EAF8F6] px-4 py-3 text-sm font-medium text-[#0C535B]">
-              {inlineError}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full rounded-xl bg-[#27B1B8] px-4 py-3 font-semibold text-white transition-colors duration-200 hover:bg-[#1E969B] disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {isSubmitting ? "Ingresando..." : "Iniciar sesión"}
-          </button>
-        </form>
-
-        <p className="mt-6 text-sm text-slate-600">
-          ¿Aún no tienes una cuenta?{" "}
-          <Link
-            href="/registro"
-            className="font-semibold text-[#0C535B] transition-colors duration-200 hover:text-[#27B1B8]"
-          >
-            Regístrate
-          </Link>
-        </p>
-      </section>
+        </div>
+      </div>
     </main>
   );
 }

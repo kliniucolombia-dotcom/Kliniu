@@ -5,8 +5,17 @@ export type CategoriaMeta = {
   iconoImagen?: string;
   bannerImagen?: string;
   bannerCopy?: string;
+  heroTitulo1?: string;
+  heroTitulo2?: string;
   heroDestacado?: string;
+  textoDark?: boolean;
+  beneficiosInline?: boolean;
   beneficiosHero?: { icono: string; texto: string }[];
+  comoElegirFoca?: string;
+  comoElegirTitulo?: string;
+  comoElegirTituloCompleto?: string;
+  comoElegirSubtitulo?: string;
+  comoElegirDark?: boolean;
   comoElegir?: { icono: string; titulo: string; descripcion: string }[];
 };
 
@@ -15,9 +24,14 @@ export const categoriasData: readonly CategoriaMeta[] = [
     nombre: "Dispensadores para líquidos",
     color: "#27B1B8",
     icono: "◒",
-    bannerImagen: "/category-banner-luces.jpg",
+    bannerImagen: "/category-banner-liquidos.jpg",
     bannerCopy: "Soluciones de dispensación líquida para higiene eficiente en cualquier espacio.",
-    heroDestacado: "de líquidos",
+    heroTitulo1: "Dispensadores para",
+    heroTitulo2: "",
+    heroDestacado: "líquidos",
+    textoDark: true,
+    comoElegirFoca: "/foca-como-elegir-liquidos.png",
+    comoElegirTitulo: "dispensador de líquidos ideal",
     beneficiosHero: [
       { icono: "💧", texto: "Dosificación exacta" },
       { icono: "💰", texto: "Ahorro de insumos" },
@@ -35,9 +49,14 @@ export const categoriasData: readonly CategoriaMeta[] = [
     nombre: "Dispensadores de papel, toalla y servilletas",
     color: "#0C535B",
     icono: "◎",
-    bannerImagen: "/category-banner-motor.jpg",
+    bannerImagen: "/category-banner-papel.jpg",
     bannerCopy: "Sistemas de dispensación de papel diseñados para crear higiene, ahorro y eficiencia en cada uso.",
-    heroDestacado: "de papel",
+    heroTitulo1: "Dispensadores de",
+    heroTitulo2: "",
+    heroDestacado: "papel y toalla",
+    textoDark: true,
+    comoElegirFoca: "/foca-como-elegir-papel.png",
+    comoElegirTitulo: "papel y toalla ideal",
     beneficiosHero: [
       { icono: "💰", texto: "Ahorro en consumo" },
       { icono: "📦", texto: "Despacho controlado" },
@@ -55,13 +74,19 @@ export const categoriasData: readonly CategoriaMeta[] = [
     nombre: "KlinOx Acero Inoxidable",
     color: "#555",
     icono: "◍",
-    bannerImagen: "/category-banner-mecanizado.jpg",
-    bannerCopy: "Dispensadores premium en acero inoxidable diseñados para máxima durabilidad, higiene y elegancia.",
-    heroDestacado: "Acero Inoxidable",
+    bannerImagen: "/category-banner-klinox.jpg",
+    bannerCopy: "Dispensadores premium en acero inoxidable diseñados para máxima durabilidad.",
+    heroTitulo1: "Dispensadores en",
+    heroTitulo2: "",
+    heroDestacado: "acero inoxidable 304",
+    textoDark: true,
+    comoElegirFoca: "/foca-como-elegir-klinox.png",
+    comoElegirTitulo: "dispensador inoxidable ideal",
+    beneficiosInline: true,
     beneficiosHero: [
-      { icono: "✨", texto: "Acero inoxidable de alta calidad" },
-      { icono: "💧", texto: "Resistente a la corrosión y humedad" },
-      { icono: "🎨", texto: "Diseño elegante y moderno" },
+      { icono: "🏷️", texto: "Acero inoxidable de alta calidad" },
+      { icono: "🛡️", texto: "Resistente a la corrosión y humedad" },
+      { icono: "💎", texto: "Diseño elegante y moderno" },
       { icono: "🔧", texto: "Fácil instalación y mantenimiento" },
     ],
     comoElegir: [
@@ -75,9 +100,14 @@ export const categoriasData: readonly CategoriaMeta[] = [
     nombre: "Dispensador de crema dental",
     color: "#4caf9a",
     icono: "◇",
-    bannerImagen: "/category-banner-cauchos.jpg",
+    bannerImagen: "/category-banner-crema-dental.jpg",
     bannerCopy: "Sistemas de dispensación higiénica de crema dental para instituciones, colegios y empresas.",
-    heroDestacado: "de crema dental",
+    heroTitulo1: "Dispensador de",
+    heroTitulo2: "",
+    heroDestacado: "crema dental",
+    textoDark: true,
+    comoElegirFoca: "/foca-como-elegir-crema-dental.png",
+    comoElegirTitulo: "dispensador de crema dental ideal",
     beneficiosHero: [
       { icono: "🧴", texto: "Dosificación higiénica" },
       { icono: "💰", texto: "Ahorro y control" },
@@ -95,9 +125,16 @@ export const categoriasData: readonly CategoriaMeta[] = [
     nombre: "Hoteles y Restaurantes",
     color: "#8b6b4a",
     icono: "◓",
-    bannerImagen: "/category-banner-electrica.jpg",
-    bannerCopy: "Soluciones de higiene y dispensación diseñadas para elevar la experiencia de tus huéspedes y clientes.",
+    bannerImagen: "/category-banner-hoteles.jpg",
+    bannerCopy: "Sistemas de dispensación de papel diseñados para crear higiene, ahorro y eficiencia en cada uso.",
+    heroTitulo1: "Dispensadores para",
+    heroTitulo2: "Hoteles/",
     heroDestacado: "Restaurantes",
+    textoDark: true,
+    comoElegirFoca: "/foca-como-elegir-hoteles.png",
+    comoElegirDark: true,
+    comoElegirTituloCompleto: "¿Por qué elegir KLINIU para tu negocio?",
+    comoElegirSubtitulo: "Soluciones pensadas para mejorar la experiencia de tus clientes y la eficiencia de tu operación.",
     beneficiosHero: [
       { icono: "⭐", texto: "Experiencia superior" },
       { icono: "💰", texto: "Ahorro y eficiencia" },
@@ -105,10 +142,10 @@ export const categoriasData: readonly CategoriaMeta[] = [
       { icono: "✨", texto: "Diseños que elevan tu marca" },
     ],
     comoElegir: [
-      { icono: "👥", titulo: "Capacidad", descripcion: "Elige según el flujo de personas y la frecuencia de uso." },
-      { icono: "🧴", titulo: "Tipo de producto", descripcion: "Define si necesitas jabón, papel o una solución combinada." },
-      { icono: "🚦", titulo: "Nivel de uso", descripcion: "Alto tráfico requiere mayor capacidad y resistencia." },
-      { icono: "🔩", titulo: "Instalación", descripcion: "Considera el tipo de montaje y el espacio disponible." },
+      { icono: "💰", titulo: "Ahorro en consumo", descripcion: "Reduce el gasto en insumos con sistemas de dosificación controlada." },
+      { icono: "🛡️", titulo: "Higiene profesional", descripcion: "Garantiza estándares de higiene para tus clientes y colaboradores." },
+      { icono: "🔧", titulo: "Fácil mantenimiento", descripcion: "Diseñados para una recarga y limpieza rápida y sin complicaciones." },
+      { icono: "🤝", titulo: "Soporte especializado", descripcion: "Acompañamiento técnico y comercial en todo momento." },
     ],
   },
 ] as const;

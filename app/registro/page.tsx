@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { departamentosColombia, getCitiesForDepartment } from "@/lib/colombia-locations";
 
@@ -114,7 +115,7 @@ export default function RegistroPage() {
   };
 
   return (
-    <main className="flex min-h-[calc(100vh-88px)] items-center justify-center bg-[#f5f5f5] px-6 py-16">
+    <main className="flex min-h-[calc(100vh-88px)] bg-white">
       {toast && (
         <div className="fixed right-5 top-5 z-[80] w-[min(92vw,380px)]">
           <div
@@ -144,25 +145,37 @@ export default function RegistroPage() {
         </div>
       )}
 
-      <section className="w-full max-w-2xl rounded-[2rem] bg-white p-8 shadow-lg shadow-black/10 md:p-10">
-        <Link
-          href="/"
-          className="text-sm font-semibold uppercase tracking-wide text-[#0C535B] transition-colors duration-200 hover:text-[#27B1B8]"
-        >
-          Volver al inicio
-        </Link>
+      {/* Left side — form */}
+      <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 lg:w-1/2">
+        <section className="w-full max-w-md">
+        <h1 className="text-4xl font-extrabold tracking-tight text-[#111]">
+          Crear tu <span className="text-[#27B1B8]">cuenta</span>
+        </h1>
+        <p className="mt-2 text-sm text-[#6e7379]">
+          Crea tu cuenta y empieza a disfrutar una experiencia más ágil y organizada.
+        </p>
 
-        <div className="mt-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#27B1B8]">
-            Kliniu
-          </p>
-          <h1 className="mt-2 text-3xl font-bold text-[#0C535B] md:text-4xl">
+        {/* Tab toggle */}
+        <div className="mt-6 flex border-b border-black/10">
+          <Link
+            href="/login"
+            className="flex items-center gap-2 pb-3 pr-6 text-sm font-bold text-[#6e7379] transition-colors hover:text-[#27B1B8]"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            Iniciar sesión
+          </Link>
+          <span className="flex items-center gap-2 border-b-2 border-[#0C535B] pb-3 pl-6 text-sm font-bold text-[#0C535B]">
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <line x1="19" y1="8" x2="19" y2="14" />
+              <line x1="22" y1="11" x2="16" y2="11" />
+            </svg>
             Crear cuenta
-          </h1>
-          <p className="mt-3 max-w-xl text-sm leading-7 text-slate-600">
-            Regístrate para guardar pedidos, explorar categorías y comprar con
-            una experiencia más ágil.
-          </p>
+          </span>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 grid gap-5 md:grid-cols-2">
@@ -376,16 +389,35 @@ export default function RegistroPage() {
           </div>
         </form>
 
-        <p className="mt-6 text-sm text-slate-600">
-          ¿Ya tienes una cuenta?{" "}
-          <Link
-            href="/login"
-            className="font-semibold text-[#0C535B] transition-colors duration-200 hover:text-[#27B1B8]"
-          >
-            Inicia sesión
+        <p className="mt-5 text-center text-sm text-[#6e7379]">
+          ¿Ya tienes cuenta?{" "}
+          <Link href="/login" className="font-bold text-[#27B1B8] hover:underline">
+            Iniciar sesión
           </Link>
         </p>
-      </section>
+        </section>
+      </div>
+
+      {/* Right side — mascot image */}
+      <div className="hidden overflow-hidden lg:flex lg:w-1/2 lg:items-center lg:justify-center bg-[#faf5f0]">
+        <div className="relative h-full w-full">
+          <Image
+            src="/hero-banner-2.jpg"
+            alt="Kliniu"
+            fill
+            className="object-cover object-center"
+          />
+          <div className="absolute inset-0 flex items-end justify-center pb-16">
+            <Image
+              src="/kliniu-loader-logo.png"
+              alt="Kliniu mascota"
+              width={180}
+              height={180}
+              className="object-contain drop-shadow-xl"
+            />
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

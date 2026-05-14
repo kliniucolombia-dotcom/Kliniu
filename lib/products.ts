@@ -106,8 +106,15 @@ function getInventoryState(stock: number, minimumStock: number) {
   return "in-stock" as const;
 }
 
+const BROKEN_PLACEHOLDER_IMAGES = new Set([
+  "/motor-ventilador-axis-compact.png",
+  "/hero-kliniu.jpg",
+]);
+
 function normalizeProductImage(value: string | null | undefined) {
   const image = (value || "").trim();
+
+  if (BROKEN_PLACEHOLDER_IMAGES.has(image)) return "";
 
   if (
     image.startsWith("/") ||
@@ -226,7 +233,7 @@ function toStoreProduct(product: ProductRecord): StoreProduct {
     estadoInventario,
     puedeComprar: true,
     descuento: formatearDescuento(product.price, product.previousPrice),
-    imagen: product.image,
+    imagen: normalizeProductImage(product.image) || "/product-placeholder.png",
     imagenesExtra: normalizeGalleryImages(product.galleryImages || []),
     disponibilidad,
     descripcion:
@@ -301,7 +308,7 @@ function getFallbackProducts(): StoreProduct[] {
           `Aplicación comercial para ${producto.categoria.toLowerCase()}.`,
       },
     ),
-    destacado: producto.destacado ?? index < 4,
+    destacado: producto.destacado ?? index < 5,
   }));
 }
 
@@ -327,8 +334,9 @@ export async function getProducts() {
 export async function getFeaturedProducts() {
   const products = await getProducts();
   const destacados = products.filter((product) => product.destacado);
+  const fallbackProducts = products.filter((product) => !product.destacado);
 
-  return (destacados.length > 0 ? destacados : products).slice(0, 4);
+  return [...destacados, ...fallbackProducts].slice(0, 5);
 }
 
 export async function createProduct(input: ProductMutationInput) {
@@ -354,7 +362,7 @@ export async function createProduct(input: ProductMutationInput) {
   );
   const stock = Math.max(0, Math.round(input.stock));
   const stockMinimo = Math.max(0, Math.round(input.stockMinimo));
-  const imagen = normalizeProductImage(input.imagen) || "/hero-kliniu.jpg";
+  const imagen = normalizeProductImage(input.imagen) || "/product-placeholder.png";
   const imagenesExtra = normalizeGalleryImages(input.imagenesExtra || []);
   const baseSku = (input.sku?.trim() || createSkuFromName(nombre)).toUpperCase();
   let sku = baseSku;

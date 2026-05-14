@@ -3,98 +3,156 @@
 import Image from "next/image";
 import Link from "next/link";
 import { createPortal } from "react-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-type RouletteOffer = {
-  slug: string;
-  nombre: string;
-  marca: string;
-  descuento: string;
-  imagen: string;
-  precio: string;
-};
+function describeArc(
+  cx: number, cy: number, r: number,
+  startDeg: number, endDeg: number,
+): string {
+  const rad = (d: number) => ((d - 90) * Math.PI) / 180;
+  const sx = cx + r * Math.cos(rad(startDeg));
+  const sy = cy + r * Math.sin(rad(startDeg));
+  const ex = cx + r * Math.cos(rad(endDeg));
+  const ey = cy + r * Math.sin(rad(endDeg));
+  const large = endDeg - startDeg > 180 ? 1 : 0;
+  return `M${cx},${cy} L${sx},${sy} A${r},${r},0,${large},1,${ex},${ey}Z`;
+}
 
-type OfferRouletteProps = {
-  offers: RouletteOffer[];
-};
-
-const wheelColors = [
-  "#27B1B8",
-  "#F57C2D",
-  "#0C535B",
-  "#F7C948",
+const prizes = [
+  { label: "20%",    detail: "de descuento", color: "#073F43", text: "#ffffff", isBlank: false },
+  { label: "😔",     detail: "Sin premio",   color: "#d4d4d4", text: "#888888", isBlank: true  },
+  { label: "30%",    detail: "de descuento", color: "#1B9CA1", text: "#ffffff", isBlank: false },
+  { label: "😔",     detail: "Sin premio",   color: "#e8e8e8", text: "#999999", isBlank: true  },
+  { label: "25%",    detail: "de descuento", color: "#073F43", text: "#ffffff", isBlank: false },
+  { label: "😔",     detail: "Sin premio",   color: "#d4d4d4", text: "#888888", isBlank: true  },
+  { label: "Envío",  detail: "gratis",       color: "#BFEFF0", text: "#073F43", isBlank: false },
+  { label: "18%",    detail: "de descuento", color: "#1B9CA1", text: "#ffffff", isBlank: false },
+  { label: "😔",     detail: "Sin premio",   color: "#e8e8e8", text: "#999999", isBlank: true  },
+  { label: "15%",    detail: "de descuento", color: "#FFFFFF", text: "#073F43", isBlank: false },
 ];
 
-const SEGMENT_NAMES = ["Yuly", "Bran", "Nico", "Dani"];
-
-export default function OfferRoulette({ offers }: OfferRouletteProps) {
+export default function OfferRoulette() {
   const [mounted, setMounted] = useState(false);
-  const [narrow, setNarrow] = useState(false);
-
-  const rouletteOffers = useMemo(
-    () =>
-      offers.slice(0, 4).map((offer, index) => ({
-        ...offer,
-        segmentLabel: SEGMENT_NAMES[index],
-      })),
-    [offers],
-  );
-
-  const [isOpen, setIsOpen] = useState(rouletteOffers.length > 0);
+  const [isNarrow, setIsNarrow] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [isSpinning, setIsSpinning] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [rotation, setRotation] = useState(0);
+  const [attemptsLeft, setAttemptsLeft] = useState(3);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rafRef = useRef<number>(0);
+
+  const launchConfetti = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+
+    const colors = ["#27B1B8", "#0C535B", "#FFD000", "#FF6B00", "#ffffff", "#BFEFF0", "#073F43", "#FF9500"];
+    const count = 160;
+    const particles = Array.from({ length: count }, () => ({
+      x: canvas.width * (0.2 + Math.random() * 0.6),
+      y: canvas.height * 0.45,
+      vx: (Math.random() - 0.5) * 14,
+      vy: -(Math.random() * 18 + 6),
+      color: colors[Math.floor(Math.random() * colors.length)],
+      w: Math.random() * 10 + 5,
+      h: Math.random() * 5 + 3,
+      rot: Math.random() * 360,
+      rotV: (Math.random() - 0.5) * 8,
+      alpha: 1,
+    }));
+
+    let frame = 0;
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      frame++;
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.45;
+        p.rot += p.rotV;
+        p.alpha = Math.max(0, 1 - frame / 120);
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rot * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+      if (frame < 130) rafRef.current = requestAnimationFrame(animate);
+      else ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+    cancelAnimationFrame(rafRef.current);
+    animate();
+  }, []);
 
   useEffect(() => {
     setMounted(true);
-    const check = () => setNarrow(window.innerWidth < 760);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
+    const update = () => setIsNarrow(window.innerWidth < 820);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, []);
 
-  if (!mounted || !isOpen || rouletteOffers.length === 0) return null;
+  const segmentAngle = 360 / prizes.length;
 
-  const selectedOffer =
-    selectedIndex === null ? rouletteOffers[0] : rouletteOffers[selectedIndex];
-  const segmentAngle = 360 / rouletteOffers.length;
-  const wheelGradient = rouletteOffers
-    .map((_, i) => {
-      const start = i * segmentAngle;
-      const end = (i + 1) * segmentAngle;
-      return `${wheelColors[i % wheelColors.length]} ${start}deg ${end}deg`;
-    })
-    .join(", ");
+  if (!mounted || !isOpen) return null;
+
+  const wheelSize = isNarrow ? "min(72vw, 320px)" : 360;
+  const selectedPrize = selectedIndex === null ? null : prizes[selectedIndex];
+  const noMoreAttempts = attemptsLeft === 0 && !isSpinning;
 
   function spinWheel() {
-    if (isSpinning) return;
-    const nextIndex = Math.floor(Math.random() * rouletteOffers.length);
-    const targetAngle = 360 - (nextIndex * segmentAngle + segmentAngle / 2);
+    if (isSpinning || attemptsLeft === 0) return;
+
+    const nextIndex = Math.floor(Math.random() * prizes.length);
+    const targetAngle = (360 - nextIndex * segmentAngle) % 360;
     const currentAngle = rotation % 360;
-    const delta = ((targetAngle - currentAngle) + 360) % 360;
-    const nextRotation = rotation + 1440 + delta;
+    const delta = (targetAngle - currentAngle + 360) % 360;
+
     setSelectedIndex(null);
     setIsSpinning(true);
-    setRotation(nextRotation);
+    setRotation(rotation + 1800 + delta);
+
     window.setTimeout(() => {
+      const prize = prizes[nextIndex];
       setSelectedIndex(nextIndex);
       setIsSpinning(false);
-    }, 2300);
+      setAttemptsLeft((prev) => prev - 1);
+      if (!prize.isBlank) {
+        launchConfetti();
+        const isShipping = prize.detail === "gratis";
+        const labelClean = prize.label
+          .normalize("NFD").replace(/[̀-ͯ]/g, "")
+          .replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+        const code = isShipping ? "KLINIU-ENVIOGRATIS" : `KLINIU-${labelClean}OFF`;
+        localStorage.setItem("kliniu_prize", JSON.stringify({
+          label: prize.label,
+          detail: prize.detail,
+          code,
+          expiresAt: Date.now() + 12 * 60 * 60 * 1000,
+        }));
+      }
+    }, 2800);
   }
-
-  const wheelSize = narrow ? "240px" : "clamp(240px, 32vw, 320px)";
 
   return createPortal(
     <div
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 9000,
+        zIndex: 2147483647,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        overflowY: "auto",
         padding: "24px",
-        background: "rgba(2,8,23,0.72)",
+        background: "rgba(5,16,23,0.78)",
         backdropFilter: "blur(10px)",
       }}
     >
@@ -102,453 +160,259 @@ export default function OfferRoulette({ offers }: OfferRouletteProps) {
         style={{
           position: "relative",
           display: "grid",
-          gridTemplateColumns: narrow ? "1fr" : "minmax(0,1.05fr) minmax(320px,0.95fr)",
-          width: "min(940px, calc(100vw - 32px))",
-          maxHeight: "min(720px, calc(100vh - 32px))",
+          gridTemplateColumns: isNarrow ? "1fr" : "0.9fr 1.1fr",
+          gap: 20,
+          width: "min(920px, calc(100vw - 48px))",
+          maxHeight: "calc(100vh - 48px)",
           overflow: "hidden",
-          borderRadius: "28px",
+          borderRadius: 24,
           background: "#ffffff",
-          boxShadow: "0 28px 90px rgba(15,23,42,0.32)",
+          padding: isNarrow ? 20 : 28,
+          boxShadow: "0 30px 90px rgba(5,16,23,0.28)",
         }}
       >
-        {/* Close */}
+        {/* Canvas confeti */}
+        <canvas
+          ref={canvasRef}
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            pointerEvents: "none",
+            zIndex: 30,
+          }}
+        />
         <button
           type="button"
           onClick={() => setIsOpen(false)}
-          aria-label="Cerrar ruleta de ofertas"
-          style={{
-            position: "absolute",
-            right: 16,
-            top: 16,
-            zIndex: 20,
-            display: "flex",
-            height: 40,
-            width: 40,
-            alignItems: "center",
-            justifyContent: "center",
-            border: "1px solid rgba(15,23,42,0.12)",
-            borderRadius: "999px",
-            background: "rgba(255,255,255,0.94)",
-            color: "#4f545a",
-            fontSize: 22,
-            fontWeight: 700,
-            lineHeight: 1,
-            boxShadow: "0 8px 20px rgba(15,23,42,0.12)",
-            cursor: "pointer",
-          }}
+          aria-label="Cerrar ruleta"
+          className="absolute right-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white text-2xl font-bold leading-none text-[#4f545a] shadow-sm transition-colors hover:text-[#0C535B]"
         >
           ×
         </button>
 
-        {/* ── Stage (left) ── */}
-        <div
-          style={{
-            position: "relative",
-            display: "flex",
-            minHeight: narrow ? "auto" : 520,
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            overflow: "hidden",
-            padding: narrow ? "34px 18px 30px" : "38px 24px",
-            background: "#071f24",
-            color: "#ffffff",
-          }}
-        >
-          {/* bg glow */}
+        <div className="flex min-h-0 flex-col items-center justify-center md:order-2">
           <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background:
-                "radial-gradient(circle at 28% 18%, rgba(39,177,184,0.42), transparent 34%), radial-gradient(circle at 82% 82%, rgba(245,124,45,0.28), transparent 38%)",
-            }}
-          />
-
-          {/* Heading */}
-          <div style={{ position: "relative", marginBottom: 24, textAlign: "center" }}>
-            <p
-              style={{
-                margin: 0,
-                fontSize: 11,
-                fontWeight: 800,
-                letterSpacing: "0.28em",
-                textTransform: "uppercase",
-                color: "#88f4f8",
-              }}
-            >
-              Oferta sorpresa
-            </p>
-            <h2
-              style={{
-                margin: "12px 0 0",
-                fontSize: "clamp(38px, 5vw, 56px)",
-                fontWeight: 950,
-                letterSpacing: "-0.04em",
-                lineHeight: 0.92,
-              }}
-            >
-              Gira y gana
-            </h2>
-          </div>
-
-          {/* Wheel wrapper */}
-          <div
-            style={{
-              position: "relative",
-              height: wheelSize,
-              width: wheelSize,
-              flexShrink: 0,
-              padding: 12,
-              borderRadius: "999px",
-              boxShadow: "0 22px 45px rgba(0,0,0,0.24)",
-            }}
+            className="relative shrink-0"
+            style={{ width: wheelSize, height: wheelSize }}
           >
-            {/* Pointer */}
             <div
               style={{
                 position: "absolute",
                 left: "50%",
-                top: -7,
-                zIndex: 10,
-                height: 0,
-                width: 0,
-                transform: "translateX(-50%)",
-                borderLeft: "16px solid transparent",
-                borderRight: "16px solid transparent",
-                borderTop: "30px solid #ffffff",
-                filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.18))",
+                top: 4,
+                zIndex: 20,
+                width: 56,
+                height: 56,
+                transform: "translate(-50%, -8px)",
+                clipPath: "polygon(50% 100%, 0 0, 100% 0)",
+                border: "6px solid #ffffff",
+                borderRadius: 14,
+                background: "#1B9CA1",
+                boxShadow: "0 8px 18px rgba(5,16,23,0.22)",
               }}
             />
 
-            {/* Disc */}
-            <div
+            <svg
+              viewBox="0 0 360 360"
+              aria-hidden="true"
               style={{
-                position: "relative",
-                height: "100%",
+                position: "absolute",
+                inset: 0,
                 width: "100%",
-                border: "10px solid #ffffff",
-                borderRadius: "999px",
-                background: `conic-gradient(${wheelGradient})`,
+                height: "100%",
                 transform: `rotate(${rotation}deg)`,
-                transition: "transform 2300ms cubic-bezier(0.18,0.8,0.18,1)",
+                transition: "transform 2800ms cubic-bezier(0.16, 0.84, 0.22, 1)",
+                filter: "drop-shadow(0 18px 38px rgba(5,16,23,0.18))",
+                overflow: "visible",
               }}
             >
-              {rouletteOffers.map((offer, index) => (
-                <div
-                  key={offer.slug}
-                  style={{
-                    position: "absolute",
-                    left: "50%",
-                    top: "50%",
-                    transformOrigin: "left center",
-                    color: "#ffffff",
-                    fontSize: 13,
-                    fontWeight: 950,
-                    letterSpacing: "0.04em",
-                    textShadow: "0 1px 3px rgba(0,0,0,0.32)",
-                    textTransform: "uppercase",
-                    whiteSpace: "nowrap",
-                    transform: `rotate(${index * segmentAngle + segmentAngle / 2 - 90}deg) translateX(58px) rotate(90deg)`,
-                  }}
-                >
-                  {offer.segmentLabel}
-                </div>
+              {prizes.map((prize, i) => (
+                <path
+                  key={i}
+                  d={describeArc(180, 180, 180, i * segmentAngle - segmentAngle / 2, (i + 1) * segmentAngle - segmentAngle / 2)}
+                  fill={prize.color}
+                  stroke="white"
+                  strokeWidth="2.5"
+                />
               ))}
+              {prizes.map((prize, i) => {
+                const cA = i * segmentAngle;
+                const rT = 118;
+                const tx = 180 + rT * Math.sin((cA * Math.PI) / 180);
+                const ty = 180 - rT * Math.cos((cA * Math.PI) / 180);
+                return (
+                  <g key={`lbl-${i}`} transform={`translate(${tx},${ty}) rotate(${cA})`}>
+                    <text x="0" y="-6" textAnchor="middle" dominantBaseline="middle" fill={prize.text} fontSize="13" fontWeight="800" fontFamily="system-ui,sans-serif">
+                      {prize.label}
+                    </text>
+                    <text x="0" y="8" textAnchor="middle" dominantBaseline="middle" fill={prize.text} fontSize="7.5" fontFamily="system-ui,sans-serif">
+                      {prize.detail}
+                    </text>
+                  </g>
+                );
+              })}
+              <circle cx="180" cy="180" r="171" fill="none" stroke="rgba(255,255,255,0.96)" strokeWidth="4" />
+              <circle cx="180" cy="180" r="79" fill="white" />
+              <circle cx="180" cy="180" r="175" fill="none" stroke="#1B9CA1" strokeWidth="10" />
+            </svg>
 
-              {/* Center hub */}
-              <div
-                style={{
-                  position: "absolute",
-                  left: "50%",
-                  top: "50%",
-                  display: "flex",
-                  height: 80,
-                  width: 80,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transform: "translate(-50%, -50%)",
-                  border: "4px solid #ffffff",
-                  borderRadius: "999px",
-                  background: "#0c535b",
-                  color: "#ffffff",
-                  fontSize: 12,
-                  fontWeight: 950,
-                  textTransform: "uppercase",
-                  boxShadow: "0 12px 24px rgba(0,0,0,0.22)",
-                }}
-              >
-                Kliniu
-              </div>
+            <div
+              className="flex items-center justify-center overflow-hidden"
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "50%",
+                zIndex: 10,
+                width: "36%",
+                height: "36%",
+                transform: "translate(-50%, -50%)",
+                borderRadius: "999px",
+                background: "#ffffff",
+              }}
+            >
+              <Image
+                src="/foca-ok-kliniu-original.png"
+                alt="Foca Kliniu"
+                width={260}
+                height={230}
+                className="h-[115%] w-[115%] object-contain object-bottom"
+                priority
+              />
             </div>
           </div>
-
-          {/* Spin button */}
-          <button
-            type="button"
-            onClick={spinWheel}
-            disabled={isSpinning}
-            style={{
-              position: "relative",
-              display: "inline-flex",
-              minWidth: 176,
-              alignItems: "center",
-              justifyContent: "center",
-              marginTop: 28,
-              border: 0,
-              borderRadius: "999px",
-              background: "#f57c2d",
-              color: "#ffffff",
-              padding: "16px 30px",
-              fontSize: 13,
-              fontWeight: 950,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              boxShadow: "0 16px 32px rgba(245,124,45,0.35)",
-              cursor: isSpinning ? "wait" : "pointer",
-              opacity: isSpinning ? 0.72 : 1,
-            }}
-          >
-            {isSpinning ? "Girando..." : "Girar ruleta"}
-          </button>
         </div>
 
-        {/* ── Result (right) ── */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            padding: narrow ? "30px 22px" : "42px 36px",
-            overflowY: "auto",
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontSize: 11,
-              fontWeight: 800,
-              letterSpacing: "0.28em",
-              textTransform: "uppercase",
-              color: "#27b1b8",
-            }}
-          >
-            Premio de hoy
+        <div className="flex min-h-0 flex-col justify-center pr-0 md:order-1 md:pr-4">
+          <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#27B1B8]">
+            Oferta sorpresa
           </p>
-          <h3
-            style={{
-              margin: "12px 0 0",
-              color: "#2f3d49",
-              fontSize: "clamp(30px, 3vw, 44px)",
-              fontWeight: 950,
-              letterSpacing: "-0.04em",
-              lineHeight: 0.96,
-            }}
-          >
-            {selectedIndex === null
-              ? "Gira para descubrir tu oferta"
-              : `¡Le toca a ${selectedOffer.segmentLabel}!`}
-          </h3>
+          <h2 className="mt-3 text-4xl font-black leading-[0.95] tracking-tight text-[#073F43] md:text-[44px]">
+            Gira la ruleta
+            <span className="block text-[#27B1B8]">y gana</span>
+          </h2>
+          <p className="mt-4 max-w-sm text-sm leading-6 text-[#607175]">
+            Descubre tu beneficio de bienvenida para productos Kliniu.
+          </p>
 
-          {/* Result body */}
-          {selectedIndex === null ? (
-            /* ── Antes de girar ── */
-            <p style={{ margin: "20px 0 0", color: "#6e7379", fontSize: 14, lineHeight: 1.65 }}>
-              Presiona girar y descubre quién es el afortunado de hoy.
-            </p>
-          ) : selectedOffer.segmentLabel === "Yuly" ? (
-            /* ── Ganó Yuly → mensaje especial ── */
-            <>
-              <div
-                style={{
-                  marginTop: 28,
-                  borderRadius: 22,
-                  background: "linear-gradient(135deg, #fff0f6 0%, #ffe4f0 100%)",
-                  border: "1px solid rgba(233,85,124,0.18)",
-                  padding: "28px 24px",
-                  textAlign: "center",
-                }}
-              >
-                <div style={{ fontSize: 52, lineHeight: 1 }}>🤰👶🎉</div>
-                <p
-                  style={{
-                    margin: "16px 0 0",
-                    fontSize: 28,
-                    fontWeight: 950,
-                    letterSpacing: "-0.03em",
-                    lineHeight: 1.1,
-                    color: "#c0175f",
-                  }}
-                >
-                  ¡Felicidades,<br />Yuly!
-                </p>
-                <p
-                  style={{
-                    margin: "12px 0 0",
-                    fontSize: 18,
-                    fontWeight: 700,
-                    color: "#2f3d49",
-                    lineHeight: 1.4,
-                  }}
-                >
-                  ¡Está embarazada! 🌸
-                </p>
-                <p
-                  style={{
-                    margin: "8px 0 0",
-                    fontSize: 13,
-                    color: "#6e7379",
-                    lineHeight: 1.6,
-                  }}
-                >
-                  Que sea una etapa llena de salud,<br />amor y muchas bendiciones.
-                </p>
+          {/* Indicador de intentos */}
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-xs font-bold text-[#607175]">Intentos:</span>
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className={`h-3 w-3 rounded-full transition-all duration-300 ${
+                  i < attemptsLeft
+                    ? "bg-[#27B1B8] shadow-[0_0_6px_rgba(39,177,184,0.6)]"
+                    : "bg-black/10"
+                }`}
+              />
+            ))}
+            <span className="ml-1 text-xs text-[#607175]">
+              {attemptsLeft === 0 ? "Sin intentos" : `${attemptsLeft} restante${attemptsLeft !== 1 ? "s" : ""}`}
+            </span>
+          </div>
+
+          {/* Panel resultado */}
+          {selectedPrize && !selectedPrize.isBlank ? (
+            /* ── GANÓ ── */
+            <div className="mt-5 overflow-hidden rounded-2xl" style={{ background: "linear-gradient(135deg,#073F43,#0C535B)", boxShadow: "0 16px 40px rgba(7,63,67,0.45)" }}>
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+                <div className="flex items-center gap-1.5">
+                  <span className="animate-bounce text-base">🎉</span>
+                  <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.24em", color: "#27B1B8", textTransform: "uppercase" }}>¡Felicidades! Ganaste</span>
+                  <span className="animate-bounce text-base" style={{ animationDelay: "0.2s" }}>🎊</span>
+                </div>
+                <span style={{ fontSize: 10, fontWeight: 900, background: "rgba(39,177,184,0.25)", color: "#BFEFF0", borderRadius: 999, padding: "3px 10px" }}>✓ ACTIVO</span>
               </div>
-              <button
-                type="button"
-                onClick={spinWheel}
-                disabled={isSpinning}
-                style={{
-                  marginTop: 16,
-                  display: "inline-flex",
-                  width: "100%",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "999px",
-                  padding: "13px 18px",
-                  fontSize: 14,
-                  fontWeight: 800,
-                  border: "1px solid rgba(15,23,42,0.12)",
-                  background: "#ffffff",
-                  color: "#2f3d49",
-                  cursor: isSpinning ? "wait" : "pointer",
-                  opacity: isSpinning ? 0.72 : 1,
-                }}
-              >
-                Girar otra vez
-              </button>
-            </>
-          ) : (
-            /* ── Ganó otro (Bran / Nico / Dani) ── */
-            <>
-              <div
-                style={{
-                  marginTop: 28,
-                  border: "1px solid rgba(15,23,42,0.08)",
-                  borderRadius: 22,
-                  background: "#f7fbfb",
-                  padding: 16,
-                }}
-              >
-                <div style={{ display: "flex", gap: 16, flexDirection: narrow ? "column" : "row" }}>
-                  <div
-                    style={{
-                      position: "relative",
-                      height: 112,
-                      width: narrow ? "100%" : 112,
-                      flexShrink: 0,
-                      overflow: "hidden",
-                      borderRadius: 18,
-                      background: "#ffffff",
-                    }}
-                  >
-                    <Image
-                      src={selectedOffer.imagen}
-                      alt={selectedOffer.nombre}
-                      fill
-                      sizes="112px"
-                      className="object-contain p-3"
-                    />
+              {/* Premio */}
+              <div className="px-4 py-4">
+                {selectedPrize.detail === "gratis" ? (
+                  <div className="flex items-center gap-3">
+                    <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, flexShrink: 0 }}>🚚</div>
+                    <div>
+                      <p style={{ fontSize: 24, fontWeight: 900, color: "#fff", lineHeight: 1.1 }}>Envío gratis</p>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: "#BFEFF0", marginTop: 2 }}>en tu próxima compra</p>
+                    </div>
                   </div>
-                  <div style={{ minWidth: 0 }}>
-                    <p
-                      style={{
-                        margin: 0,
-                        fontSize: 11,
-                        fontWeight: 800,
-                        letterSpacing: "0.22em",
-                        textTransform: "uppercase",
-                        color: "#8b8d91",
-                      }}
-                    >
-                      {selectedOffer.marca}
-                    </p>
-                    <p
-                      style={{
-                        margin: "9px 0 0",
-                        color: "#2f3d49",
-                        fontSize: 18,
-                        fontWeight: 800,
-                        lineHeight: 1.18,
-                      }}
-                    >
-                      {selectedOffer.nombre}
-                    </p>
-                    <p
-                      style={{
-                        margin: "14px 0 0",
-                        color: "#27b1b8",
-                        fontSize: 26,
-                        fontWeight: 950,
-                      }}
-                    >
-                      {selectedOffer.precio}
-                    </p>
+                ) : (
+                  <div>
+                    <p style={{ fontSize: 52, fontWeight: 900, color: "#fff", lineHeight: 1, letterSpacing: "-1px" }}>{selectedPrize.label}</p>
+                    <p style={{ fontSize: 15, fontWeight: 700, color: "#BFEFF0", marginTop: 2 }}>{selectedPrize.detail}</p>
                   </div>
+                )}
+                {/* Urgencia */}
+                <div style={{ marginTop: 14, background: "rgba(255,209,0,0.12)", borderRadius: 12, padding: "8px 12px", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 14 }}>⏰</span>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.8)", margin: 0 }}>
+                    Válido por <span style={{ color: "#FFD000" }}>12 horas</span> · Regístrate para no perderlo
+                  </p>
                 </div>
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  gap: 12,
-                  marginTop: 16,
-                  flexDirection: narrow ? "column" : "row",
-                }}
-              >
-                <Link
-                  href={`/producto/${selectedOffer.slug}`}
-                  onClick={() => setIsOpen(false)}
-                  style={{
-                    display: "inline-flex",
-                    flex: 1,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: "999px",
-                    padding: "13px 18px",
-                    fontSize: 14,
-                    fontWeight: 800,
-                    textDecoration: "none",
-                    background: "#0c535b",
-                    color: "#ffffff",
-                  }}
-                >
-                  Ver oferta
-                </Link>
-                <button
-                  type="button"
-                  onClick={spinWheel}
-                  disabled={isSpinning}
-                  style={{
-                    display: "inline-flex",
-                    flex: 1,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: "999px",
-                    padding: "13px 18px",
-                    fontSize: 14,
-                    fontWeight: 800,
-                    border: "1px solid rgba(15,23,42,0.12)",
-                    background: "#ffffff",
-                    color: "#2f3d49",
-                    cursor: isSpinning ? "wait" : "pointer",
-                    opacity: isSpinning ? 0.72 : 1,
-                  }}
-                >
-                  Girar otra vez
-                </button>
+            </div>
+          ) : selectedPrize?.isBlank ? (
+            /* ── SIN PREMIO ── */
+            <div className="mt-5 rounded-2xl border border-black/8 bg-white p-5">
+              <div className="flex items-center gap-3">
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>😔</div>
+                <div>
+                  <p style={{ fontWeight: 800, fontSize: 15, color: "#222" }}>Esta vez no fue</p>
+                  <p style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
+                    {attemptsLeft > 0
+                      ? `Aún tienes ${attemptsLeft} intento${attemptsLeft !== 1 ? "s" : ""}. ¡Sigue intentándolo!`
+                      : "Se acabaron los intentos. ¡Suerte la próxima!"}
+                  </p>
+                </div>
               </div>
-            </>
+            </div>
+          ) : noMoreAttempts ? (
+            /* ── SIN INTENTOS ── */
+            <div className="mt-5 rounded-2xl border border-black/8 bg-white p-5">
+              <div className="flex items-center gap-3">
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>🎯</div>
+                <div>
+                  <p style={{ fontWeight: 800, fontSize: 15, color: "#222" }}>Se acabaron los intentos</p>
+                  <p style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Regístrate para participar la próxima vez.</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* ── ESTADO INICIAL ── */
+            <div className="mt-5 rounded-2xl p-4" style={{ background: "#EAF8F6", border: "1px solid rgba(39,177,184,0.2)" }}>
+              <div className="flex items-center gap-3">
+                <div style={{ width: 42, height: 42, borderRadius: 12, background: "#27B1B8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>🎁</div>
+                <p style={{ fontSize: 13, color: "#0C535B", fontWeight: 600, lineHeight: 1.5 }}>
+                  Presiona el botón y gira la ruleta.<br />
+                  <span style={{ fontWeight: 800 }}>Tienes 3 intentos</span> para ganar un descuento.
+                </p>
+              </div>
+            </div>
           )}
+
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={spinWheel}
+              disabled={isSpinning || attemptsLeft === 0 || (!selectedPrize?.isBlank && !!selectedPrize)}
+              className="inline-flex flex-1 items-center justify-center rounded-full bg-[#27B1B8] px-6 py-3 text-sm font-black text-white shadow-[0_14px_30px_rgba(39,177,184,0.28)] transition-colors hover:bg-[#1E969B] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {isSpinning ? "Girando..." : attemptsLeft === 0 ? "Sin intentos" : selectedPrize?.isBlank ? "Girar otra vez" : selectedPrize ? "¡Ya ganaste!" : "Girar ruleta"}
+            </button>
+            <Link
+              href="/registro"
+              onClick={() => setIsOpen(false)}
+              className="inline-flex flex-1 items-center justify-center rounded-full px-6 py-3 text-sm font-black transition-opacity hover:opacity-90"
+              style={
+                selectedPrize && !selectedPrize.isBlank
+                  ? { background: "linear-gradient(90deg, #FF6B00, #FFD000)", color: "#fff", boxShadow: "0 10px 28px rgba(255,107,0,0.35)" }
+                  : { border: "1px solid rgba(0,0,0,0.1)", background: "#fff", color: "#0C535B" }
+              }
+            >
+              {selectedPrize && !selectedPrize.isBlank ? "¡Reclamar premio!" : "Regístrate"}
+            </Link>
+          </div>
         </div>
       </section>
     </div>,

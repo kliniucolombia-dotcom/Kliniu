@@ -29,23 +29,21 @@ const colContacto = [
 
 export default function SiteFooter() {
   return (
-    <footer className="bg-[#081018] text-white">
-      <div className="mx-auto max-w-[1440px] px-6 py-14 lg:px-8">
-        <div className="grid gap-10 lg:grid-cols-[260px_1fr]">
+    <footer className="relative overflow-hidden" style={{ background: "#050C14", color: "#fff" }}>
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_46%_34%,rgba(39,177,184,0.34)_0%,rgba(12,83,91,0.24)_24%,rgba(5,12,20,0)_58%)]" />
+      <div className="relative z-10 mx-auto max-w-[1440px] px-6 py-14 lg:px-8">
+        <div style={{ display: "grid", gap: 40, gridTemplateColumns: "260px 1fr" }}>
           {/* Brand */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col">
             <Link href="/" className="inline-flex">
               <Image
                 src="/logo-white.png"
                 alt="Kliniu"
-                width={140}
-                height={48}
-                style={{ width: "140px", height: "auto" }}
+                width={180}
+                height={62}
+                style={{ width: "180px", height: "auto" }}
               />
             </Link>
-            <p className="text-xs font-medium tracking-wider text-white/45">
-              Dispensing and cleaning smart
-            </p>
           </div>
 
           {/* Columns */}

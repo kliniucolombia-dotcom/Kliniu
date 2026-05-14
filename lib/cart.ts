@@ -4,6 +4,7 @@ export type PersistedCartItem = {
   id: string;
   nombre: string;
   precio: string;
+  precioOriginal?: string;
   imagen: string;
   cantidad: number;
 };
@@ -22,6 +23,7 @@ export async function getCartItemsForUser(userId: string) {
     id: item.productId,
     nombre: item.name,
     precio: item.price,
+    precioOriginal: item.originalPrice ?? undefined,
     imagen: item.image,
     cantidad: item.quantity,
   }));
@@ -47,6 +49,7 @@ export async function addCartItemForUser(
     update: {
       name: item.nombre,
       price: item.precio,
+      originalPrice: item.precioOriginal ?? null,
       image: item.imagen,
       quantity: {
         increment: quantityToAdd,
@@ -57,6 +60,7 @@ export async function addCartItemForUser(
       productId: item.id,
       name: item.nombre,
       price: item.precio,
+      originalPrice: item.precioOriginal ?? null,
       image: item.imagen,
       quantity: quantityToAdd,
     },
@@ -161,6 +165,7 @@ export async function syncCartItemsForUser(
       update: {
         name: item.nombre,
         price: item.precio,
+        originalPrice: item.precioOriginal ?? null,
         image: item.imagen,
         quantity: {
           increment: item.cantidad,
@@ -171,6 +176,7 @@ export async function syncCartItemsForUser(
         productId: item.id,
         name: item.nombre,
         price: item.precio,
+        originalPrice: item.precioOriginal ?? null,
         image: item.imagen,
         quantity: item.cantidad,
       },

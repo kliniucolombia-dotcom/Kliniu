@@ -13,6 +13,7 @@ export type CartItem = {
   id: string;
   nombre: string;
   precio: string;
+  precioOriginal?: string;
   imagen: string;
   cantidad: number;
 };
@@ -36,9 +37,37 @@ function normalizeCartItems(items: CartItem[]) {
   }, []);
 }
 
+function mergeCartItem(
+  items: CartItem[],
+  item: Omit<CartItem, "cantidad"> & { cantidad?: number },
+  quantityToAdd: number,
+  normalizedId: string,
+) {
+  const existing = items.find((entry) => entry.id === normalizedId);
+
+  if (existing) {
+    return items.map((entry) =>
+      entry.id === normalizedId
+        ? {
+            ...entry,
+            precio: item.precio,
+            precioOriginal: item.precioOriginal,
+            cantidad: entry.cantidad + quantityToAdd,
+          }
+        : entry,
+    );
+  }
+
+  return [
+    ...items,
+    { ...item, id: normalizedId, cantidad: quantityToAdd },
+  ];
+}
+
 type CartContextValue = {
   items: CartItem[];
   totalItems: number;
+  totalProducts: number;
   addItem: (item: Omit<CartItem, "cantidad"> & { cantidad?: number }) => void;
   incrementItem: (id: string) => void;
   decrementItem: (id: string) => void;
@@ -73,12 +102,21 @@ export function CartProvider({
   initialItems,
   currentUserId,
 }: CartProviderProps) {
-  const [items, setItems] = useState<CartItem[]>(
-    currentUserId ? initialItems : readStoredCart(),
-  );
+  const [items, setItems] = useState<CartItem[]>(initialItems);
+  const [cartHydrated, setCartHydrated] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (currentUserId) {
+      setCartHydrated(true);
+      return;
+    }
+
+    setItems(readStoredCart());
+    setCartHydrated(true);
+  }, [currentUserId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !cartHydrated) return;
 
     if (!currentUserId) {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
@@ -86,7 +124,7 @@ export function CartProvider({
     }
 
     window.localStorage.removeItem(STORAGE_KEY);
-  }, [currentUserId, items]);
+  }, [cartHydrated, currentUserId, items]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !currentUserId) return;
@@ -124,9 +162,14 @@ export function CartProvider({
     () => ({
       items,
       totalItems: items.reduce((acc, item) => acc + item.cantidad, 0),
+      totalProducts: items.length,
       addItem: (item: Omit<CartItem, "cantidad"> & { cantidad?: number }) => {
         const normalizedId = normalizeCartId(item.id);
         const quantityToAdd = Math.max(1, Math.trunc(item.cantidad ?? 1));
+
+        setItems((current) =>
+          mergeCartItem(current, item, quantityToAdd, normalizedId),
+        );
 
         if (currentUserId) {
           void (async () => {
@@ -149,21 +192,6 @@ export function CartProvider({
           })();
           return;
         }
-
-        setItems((current) => {
-          const existing = current.find((entry) => entry.id === normalizedId);
-          if (existing) {
-            return current.map((entry) =>
-              entry.id === normalizedId
-                ? { ...entry, cantidad: entry.cantidad + quantityToAdd }
-                : entry,
-            );
-          }
-          return [
-            ...current,
-            { ...item, id: normalizedId, cantidad: quantityToAdd },
-          ];
-        });
       },
       incrementItem: (id: string) => {
         const normalizedId = normalizeCartId(id);

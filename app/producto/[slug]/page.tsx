@@ -1,165 +1,125 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import AddToCartButton from "../../components/add-to-cart-button";
+import { useCart } from "../../components/cart-provider";
 import { useProducts } from "../../components/products-provider";
+import SiteFooter from "../../components/site-footer";
+import QuoteModal from "../../components/quote-modal";
+import { getVolumePricing } from "@/lib/volume-discounts";
 import type { ProductoEspecificacion } from "../../data/catalog";
 
-function ProductImageGallery({
-  nombre,
-  images,
-}: {
-  nombre: string;
-  images: string[];
-}) {
-  const [activeImage, setActiveImage] = useState(images[0] || "");
-  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const activeImageIndex = Math.max(images.indexOf(activeImage), 0);
+const trustBadges = [
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+      </svg>
+    ),
+    label: "Envío",
+    sub: "a todo Colombia",
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    ),
+    label: "Garantía",
+    sub: "2 años",
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-5"/>
+      </svg>
+    ),
+    label: "Devoluciones",
+    sub: "Fáciles",
+  },
+];
 
-  const goToPreviousImage = () => {
-    const previousIndex =
-      activeImageIndex === 0 ? images.length - 1 : activeImageIndex - 1;
-    setActiveImage(images[previousIndex]);
-  };
+const trustBar = [
+  {
+    label: "+100 empresas confían de KLINIU",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+    ),
+  },
+  {
+    label: "Productos diseñados para durar",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+      </svg>
+    ),
+  },
+  {
+    label: "Higiene garantizada en cada uso",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    ),
+  },
+  {
+    label: "Soporte y asesoría especializada",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M3 18v-6a9 9 0 0118 0v6"/>
+        <path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z"/>
+      </svg>
+    ),
+  },
+];
 
-  const goToNextImage = () => {
-    const nextIndex =
-      activeImageIndex === images.length - 1 ? 0 : activeImageIndex + 1;
-    setActiveImage(images[nextIndex]);
-  };
+const colorOptions = [
+  { nombre: "Blanco", bg: "bg-white", border: "border-black/20" },
+  { nombre: "Negro", bg: "bg-[#222]", border: "border-black/10" },
+];
+
+function ImageGallery({ nombre, images }: { nombre: string; images: string[] }) {
+  const [active, setActive] = useState(0);
 
   return (
-    <div className="grid gap-4 md:grid-cols-[100px_minmax(0,1fr)]">
-      <div className="order-2 flex gap-3 md:order-1 md:flex-col">
-        {images.map((image, index) => (
+    <div className="flex gap-3">
+      {/* Thumbnail strip */}
+      <div className="flex flex-col gap-2">
+        {images.map((src, i) => (
           <button
-            key={`${image}-${index}`}
+            key={`thumb-${i}`}
             type="button"
-            onClick={() => setActiveImage(image)}
-            className={`overflow-hidden rounded-[1.1rem] border-2 bg-white p-2 shadow-sm transition-all duration-200 ${
-              activeImage === image
-                ? "border-[#2d7af0] shadow-[0_12px_24px_rgba(45,122,240,0.18)]"
-                : "border-black/8 hover:border-[#2d7af0]/35"
+            onClick={() => setActive(i)}
+            className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 bg-[#f8f8f7] p-1 transition-all ${
+              active === i ? "border-[#27B1B8]" : "border-black/8 hover:border-[#27B1B8]/40"
             }`}
           >
-            <Image
-              src={image}
-              alt={`${nombre} vista ${index + 1}`}
-              width={84}
-              height={84}
-              className="h-16 w-16 object-contain md:h-20 md:w-20"
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={src}
+              alt={`${nombre} ${i + 1}`}
+              className="h-full w-full object-contain"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
             />
           </button>
         ))}
       </div>
 
-      <div className="order-1 rounded-[1.6rem] bg-white md:order-2">
-        <div className="flex justify-end">
-          <span className="rounded-full bg-[#edf4ff] px-4 py-2 text-sm font-medium text-[#2d7af0]">
-            Envío disponible
-          </span>
-        </div>
-        <div className="flex items-center justify-center px-4 py-6 md:px-10 md:py-10">
-          <button
-            type="button"
-            onClick={() => setIsLightboxOpen(true)}
-            className="group relative w-full"
-          >
-            <Image
-              src={activeImage}
-              alt={nombre}
-              width={1200}
-              height={900}
-              className="h-auto max-h-[620px] w-full object-contain transition-transform duration-300 group-hover:scale-[1.01]"
-            />
-            <span className="absolute bottom-4 right-4 rounded-full bg-[#0C535B]/85 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-              Ampliar
-            </span>
-          </button>
-        </div>
+      {/* Main image */}
+      <div className="flex flex-1 items-center justify-center rounded-2xl border border-black/8 bg-[#f8f8f7] p-6">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={images[active] || "/product-placeholder.png"}
+          alt={nombre}
+          className="max-h-[380px] w-full object-contain"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
+        />
       </div>
-
-      {isLightboxOpen && (
-        <div className="fixed inset-0 z-[120] bg-[#0f1a24]/88 backdrop-blur-sm">
-          <button
-            type="button"
-            onClick={() => setIsLightboxOpen(false)}
-            className="absolute inset-0 h-full w-full cursor-default"
-            aria-label="Cerrar vista ampliada"
-          />
-
-          <div className="relative z-[121] flex h-full w-full items-center justify-center px-4 py-8 md:px-8">
-            <div className="grid max-h-full w-full max-w-6xl gap-4 md:grid-cols-[110px_minmax(0,1fr)]">
-              <div className="order-2 flex gap-3 overflow-x-auto md:order-1 md:flex-col md:overflow-visible">
-                {images.map((image, index) => (
-                  <button
-                    key={`lightbox-${image}-${index}`}
-                    type="button"
-                    onClick={() => setActiveImage(image)}
-                    className={`overflow-hidden rounded-[1.1rem] border-2 bg-white/95 p-2 shadow-sm transition-all duration-200 ${
-                      activeImage === image
-                        ? "border-[#2d7af0] shadow-[0_12px_24px_rgba(45,122,240,0.18)]"
-                        : "border-white/10 hover:border-[#2d7af0]/35"
-                    }`}
-                  >
-                    <Image
-                      src={image}
-                      alt={`${nombre} ampliada ${index + 1}`}
-                      width={84}
-                      height={84}
-                      className="h-16 w-16 object-contain md:h-20 md:w-20"
-                    />
-                  </button>
-                ))}
-              </div>
-
-              <div className="order-1 flex min-h-[60vh] items-center justify-center rounded-[2rem] border border-white/10 bg-white/6 p-6 md:order-2 md:p-10">
-                <button
-                  type="button"
-                  onClick={() => setIsLightboxOpen(false)}
-                  className="absolute right-6 top-6 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/14 bg-white/10 text-xl text-white transition-colors duration-200 hover:bg-white/18"
-                  aria-label="Cerrar lightbox"
-                >
-                  ×
-                </button>
-
-                {images.length > 1 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={goToPreviousImage}
-                      className="absolute left-4 top-1/2 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/14 bg-white/10 text-2xl text-white transition-colors duration-200 hover:bg-white/18 md:left-6"
-                      aria-label="Imagen anterior"
-                    >
-                      ‹
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={goToNextImage}
-                      className="absolute right-4 top-1/2 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/14 bg-white/10 text-2xl text-white transition-colors duration-200 hover:bg-white/18 md:right-6"
-                      aria-label="Imagen siguiente"
-                    >
-                      ›
-                    </button>
-                  </>
-                )}
-
-                <Image
-                  src={activeImage}
-                  alt={`${nombre} ampliada`}
-                  width={1600}
-                  height={1200}
-                  className="max-h-[78vh] w-full object-contain"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -167,319 +127,442 @@ function ProductImageGallery({
 export default function ProductoDetallePage() {
   const params = useParams<{ slug: string }>();
   const { products } = useProducts();
+  const { addItem } = useCart();
   const [cantidad, setCantidad] = useState(1);
-  const [fichaAbierta, setFichaAbierta] = useState(true);
+  const [colorActivo, setColorActivo] = useState(0);
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const [agregado, setAgregado] = useState(false);
+  const agregadoTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const slug = params.slug;
-  const producto = products.find((item) => item.slug === slug);
+  const producto = products.find((p) => p.slug === slug);
+
+  const handleAddToCart = () => {
+    if (!producto || producto.puedeComprar === false) return;
+    const pricing = getVolumePricing(producto.precio, cantidad);
+    addItem({
+      id: producto.slug,
+      nombre: producto.nombre,
+      precio: pricing.unitPriceLabel,
+      precioOriginal: pricing.hasDiscount ? producto.precio : undefined,
+      imagen: producto.imagen,
+      cantidad,
+    });
+    setAgregado(true);
+    if (agregadoTimeout.current) clearTimeout(agregadoTimeout.current);
+    agregadoTimeout.current = setTimeout(() => setAgregado(false), 1200);
+  };
+
   const galleryImages = useMemo(
-    () =>
-      producto
-        ? [producto.imagen, ...(producto.imagenesExtra || [])].filter(Boolean)
-        : [],
+    () => (producto ? [producto.imagen, ...(producto.imagenesExtra || [])].filter(Boolean) : []),
     [producto],
   );
 
-  const maxCantidad = Math.max(1, producto?.stock ?? 1);
-
   if (!producto) {
     return (
-      <main className="min-h-screen bg-[#f5f5f5] text-[#111]">
-        <section className="mx-auto max-w-[960px] px-6 py-20 text-center">
-          <div className="rounded-[2rem] border border-dashed border-black/12 bg-white p-12 shadow-[0_14px_28px_rgba(15,23,42,0.05)]">
-            <h1 className="text-4xl font-semibold tracking-[-0.04em] text-[#4f545a]">
-              Producto no encontrado
-            </h1>
-            <p className="mt-4 text-lg text-[#6e7379]">
-              Puede que este producto ya no exista o todavía no esté disponible.
-            </p>
-            <Link
-              href="/categorias"
-              className="mt-8 inline-flex rounded-full bg-[#27B1B8] px-6 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#1E969B]"
-            >
-              Volver al catálogo
-            </Link>
-          </div>
+      <main className="min-h-screen bg-white text-[#111]">
+        <section className="mx-auto max-w-[960px] px-6 py-24 text-center">
+          <h1 className="text-3xl font-bold text-[#111]">Producto no encontrado</h1>
+          <p className="mt-3 text-[#6e7379]">Este producto ya no existe o no está disponible.</p>
+          <Link
+            href="/categorias"
+            className="mt-8 inline-flex rounded-full bg-[#27B1B8] px-6 py-3 text-sm font-bold text-white hover:bg-[#1E969B]"
+          >
+            Ver catálogo
+          </Link>
         </section>
       </main>
     );
   }
 
-  const ajustarCantidad = (delta: number) => {
-    setCantidad((actual) => {
-      const siguiente = actual + delta;
-      if (siguiente < 1) return 1;
-      if (siguiente > maxCantidad) return maxCantidad;
-      return siguiente;
-    });
+  const ajustar = (delta: number) => {
+    setCantidad((n) => Math.min(Math.max(1, n + delta), producto.stock ?? 99));
   };
 
   const relacionados = products
-    .filter(
-      (item) =>
-        item.categoria === producto.categoria && item.slug !== producto.slug,
-    )
-    .slice(0, 3);
+    .filter((p) => p.categoria === producto.categoria && p.slug !== producto.slug)
+    .slice(0, 4);
+  const volumePricing = getVolumePricing(producto.precio, cantidad);
+
   const fichaTecnica: ProductoEspecificacion[] =
-    producto.especificacionesTecnicas && producto.especificacionesTecnicas.length > 0
+    producto.especificacionesTecnicas?.length
       ? producto.especificacionesTecnicas
       : [
-          {
-            etiqueta: "Observaciones",
-            valor:
-              "La imagen de este producto es de referencia visual y puede variar levemente frente a la versión final entregada.",
-          },
-          {
-            etiqueta: "Categoría",
-            valor: producto.categoria,
-          },
-          {
-            etiqueta: "Marca",
-            valor: producto.marca,
-          },
-          {
-            etiqueta: "Disponibilidad",
-            valor: producto.disponibilidad,
-          },
-          {
-            etiqueta: "Garantía",
-            valor: producto.garantia || "1 año de garantía del fabricante",
-          },
-          {
-            etiqueta: "Aplicación",
-            valor: producto.aplicacion || "Uso técnico, industrial y de reposición especializada",
-          },
+          { etiqueta: "Categoría", valor: producto.categoria },
+          { etiqueta: "Marca", valor: producto.marca },
+          { etiqueta: "Disponibilidad", valor: producto.disponibilidad },
+          { etiqueta: "Garantía", valor: producto.garantia || "1 año del fabricante" },
+          { etiqueta: "Aplicación", valor: producto.aplicacion || "Higiene profesional" },
         ];
-  const resumenGeneral =
-    producto.descripcion ||
-    `Producto de la línea ${producto.categoria} con disponibilidad ${producto.disponibilidad.toLowerCase()} y respaldo comercial de ${producto.marca}.`;
+
+  const categoriaSlug = producto.categoria
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 
   return (
-    <main className="min-h-screen bg-[#f5f5f5] text-[#111]">
-      <section className="mx-auto max-w-[1440px] px-6 py-12">
-        <div className="mb-8 flex flex-wrap items-center gap-3 text-sm text-[#6e7379]">
-          <Link
-            href={`/categorias?categoria=${encodeURIComponent(
-              producto.categoria
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "")
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, "-")
-                .replace(/(^-|-$)/g, ""),
-            )}`}
-            className="font-medium text-[#0C535B] transition-colors duration-200 hover:text-[#27B1B8]"
-          >
-            Volver a categoría
+    <main className="min-h-screen bg-white text-[#111]">
+      {/* Breadcrumb */}
+      <div className="mx-auto max-w-[1440px] px-6 py-4">
+        <nav className="flex items-center gap-2 text-sm text-[#6e7379]">
+          <Link href="/" className="hover:text-[#27B1B8]">Inicio</Link>
+          <span>›</span>
+          <Link href="/categorias" className="hover:text-[#27B1B8]">Categorías</Link>
+          <span>›</span>
+          <Link href={`/categorias?categoria=${categoriaSlug}`} className="hover:text-[#27B1B8]">
+            {producto.categoria}
           </Link>
-          <span>·</span>
-          <span>{producto.categoria}</span>
-          <span>·</span>
-          <span>{producto.marca}</span>
+          <span>›</span>
+          <span className="text-[#111]">{producto.nombre}</span>
+        </nav>
+      </div>
+
+      {/* ── Main product section ── */}
+      <section className="mx-auto max-w-[1440px] px-6 pb-12">
+        <div className="grid gap-10 lg:grid-cols-[1fr_480px] xl:grid-cols-[1fr_520px]">
+
+          {/* LEFT — image gallery */}
+          <ImageGallery nombre={producto.nombre} images={galleryImages} />
+
+          {/* RIGHT — product info */}
+          <div className="space-y-5">
+            {/* Badge */}
+            {producto.destacado && (
+              <span className="inline-block rounded-lg bg-[#073F43] px-3 py-1 text-xs font-bold text-white">
+                Más vendido
+              </span>
+            )}
+
+            {/* Name + SKU */}
+            <div>
+              <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-[#111] md:text-[26px]">
+                {producto.nombre}
+              </h1>
+              {producto.sku && (
+                <p className="mt-1.5 text-xs text-[#6e7379]">
+                  Código: <span className="font-medium text-[#444]">{producto.sku}</span>
+                </p>
+              )}
+            </div>
+
+            {/* Price */}
+            <div>
+              <p className="text-3xl font-extrabold text-[#111]">{producto.precio}</p>
+              {producto.precioAnterior && (
+                <p className="mt-1 text-sm text-[#aaa] line-through">{producto.precioAnterior}</p>
+              )}
+            </div>
+
+            {/* Color */}
+            <div>
+              <p className="mb-2 text-sm font-semibold text-[#333]">
+                Color: <span className="font-normal text-[#555]">{colorOptions[colorActivo].nombre}</span>
+              </p>
+              <div className="flex gap-2">
+                {colorOptions.map((c, i) => (
+                  <button
+                    key={c.nombre}
+                    type="button"
+                    onClick={() => setColorActivo(i)}
+                    aria-label={c.nombre}
+                    className={`h-7 w-7 rounded-full border-2 ${c.bg} ${c.border} shadow-sm transition-all ${
+                      colorActivo === i ? "ring-2 ring-[#27B1B8] ring-offset-2" : "hover:ring-1 hover:ring-[#27B1B8]/50 hover:ring-offset-1"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Quantity + CTA */}
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-[#333]">Cantidad</p>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center overflow-hidden rounded-xl border border-black/12">
+                  <button
+                    type="button"
+                    onClick={() => ajustar(-1)}
+                    className="px-4 py-2.5 text-lg font-medium text-[#333] hover:bg-[#f5f5f5]"
+                    aria-label="Disminuir"
+                  >
+                    −
+                  </button>
+                  <span className="min-w-[2.5rem] border-x border-black/10 px-3 py-2.5 text-center text-base font-semibold">
+                    {cantidad}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => ajustar(1)}
+                    className="px-4 py-2.5 text-lg font-medium text-[#333] hover:bg-[#f5f5f5]"
+                    aria-label="Aumentar"
+                  >
+                    +
+                  </button>
+                </div>
+                {volumePricing.hasDiscount && (
+                  <span className="rounded-full bg-[#EAF8F7] px-3 py-1.5 text-xs font-bold text-[#0C535B]">
+                    {volumePricing.tier.pct}% off por volumen
+                  </span>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  disabled={producto.puedeComprar === false}
+                  onClick={handleAddToCart}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition-colors"
+                  style={
+                    producto.puedeComprar === false
+                      ? { background: "#f2f2f1", color: "#6b7280", cursor: "not-allowed", border: "1px solid rgba(0,0,0,0.1)" }
+                      : agregado
+                      ? { background: "#0C535B", color: "#fff", border: "1px solid #0C535B" }
+                      : { background: "#EAF8F7", color: "#0C535B", border: "1px solid rgba(39,177,184,0.4)" }
+                  }
+                >
+                  {producto.puedeComprar === false ? (
+                    "Sin stock"
+                  ) : agregado ? (
+                    <>
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      Agregado
+                    </>
+                  ) : (
+                    <>
+                      Agregar al carrito
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuoteOpen(true)}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
+                  style={{ background: "#073F43" }}
+                >
+                  Cotiza ahora
+                </button>
+              </div>
+            </div>
+
+            {/* Trust badges — horizontal row */}
+            <div className="flex divide-x divide-black/8 overflow-hidden rounded-2xl border border-black/8 bg-[#f8fafa]">
+              {trustBadges.map((b) => (
+                <div key={b.label} className="flex flex-1 items-center gap-2.5 px-4 py-3">
+                  <span className="shrink-0 text-[#27B1B8]">{b.icon}</span>
+                  <div>
+                    <p className="text-[11px] font-bold leading-tight text-[#0C535B]">{b.label}</p>
+                    <p className="text-[10px] leading-tight text-[#6e7379]">{b.sub}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
+      </section>
 
-        <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr] xl:items-start">
-          <div className="rounded-[2rem] border border-black/8 bg-white p-4 shadow-[0_18px_40px_rgba(15,23,42,0.05)]">
-            <ProductImageGallery
-              key={producto.slug}
-              nombre={producto.nombre}
-              images={galleryImages}
-            />
-
-            <div
-              id="ficha-tecnica"
-              className="mt-6 overflow-hidden rounded-[1.6rem] border border-black/8"
-            >
-              <button
-                type="button"
-                onClick={() => setFichaAbierta((actual) => !actual)}
-                className="flex w-full items-center justify-between bg-[linear-gradient(180deg,#fbfbfa_0%,#f3f3f2_100%)] px-6 py-5 text-left transition-colors duration-200 hover:bg-[#f4f4f2]"
-                aria-expanded={fichaAbierta}
-              >
+      {/* ── Description / Specs — 2-column with divider ── */}
+      <section className="border-t border-black/8 bg-white">
+        <div className="mx-auto max-w-[1440px] px-6 py-10">
+          <div className="grid gap-0 md:grid-cols-2">
+            {/* Left column */}
+            <div className="space-y-6 border-b border-black/8 pb-8 pr-0 text-sm leading-7 md:border-b-0 md:border-r md:pb-0 md:pr-10">
+              <div>
+                <p className="mb-1 font-bold text-[#27B1B8]">Descripción</p>
+                <p className="text-[#333]">
+                  {producto.descripcion ||
+                    `${producto.nombre} es un producto de la línea ${producto.categoria} de Kliniu, diseñado para ofrecer higiene profesional en espacios de alto tráfico.`}
+                </p>
+              </div>
+              {fichaTecnica.find((r) => r.etiqueta === "Material") && (
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#27B1B8]">
-                    Información técnica
-                  </p>
-                  <h2 className="mt-2 text-[28px] font-semibold tracking-[-0.03em] text-[#33373d]">
-                    Ficha técnica
-                  </h2>
-                  <p className="mt-2 text-sm leading-6 text-[#6e7379]">
-                    Datos clave para validar compatibilidad, uso y respaldo del producto.
+                  <p className="mb-1 font-bold text-[#27B1B8]">Materiales</p>
+                  <p className="text-[#333]">
+                    Fabricado en {fichaTecnica.find((r) => r.etiqueta === "Material")?.valor}.
                   </p>
                 </div>
-                <span
-                  className={`inline-flex h-11 w-11 items-center justify-center rounded-full border border-black/8 bg-white text-xl text-[#4f545a] transition-transform duration-300 ${
-                    fichaAbierta ? "rotate-0" : "-rotate-180"
-                  }`}
-                >
-                  ⌃
-                </span>
-              </button>
-
-              {fichaAbierta && (
-                <div className="bg-white p-4 md:p-5">
-                  <div className="rounded-[1.4rem] border border-black/8 overflow-hidden">
-                    <div className="grid gap-px bg-black/6 md:grid-cols-[220px_minmax(0,1fr)]">
-                      {fichaTecnica.map((item) => (
-                        <div
-                          key={item.etiqueta}
-                          className="contents"
-                        >
-                          <div
-                            className="bg-[#f6f6f4] px-5 py-4 text-sm font-semibold uppercase tracking-[0.08em] text-[#5d6670]"
-                          >
-                            {item.etiqueta}
-                          </div>
-                          <div
-                            className="bg-white px-5 py-4 text-base font-medium leading-7 text-[#22262b]"
-                          >
-                            {item.valor}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+              )}
+              {fichaTecnica.find((r) => r.etiqueta === "Baterías") && (
+                <div>
+                  <p className="mb-1 font-bold text-[#27B1B8]">Baterías</p>
+                  <p className="text-[#333]">{fichaTecnica.find((r) => r.etiqueta === "Baterías")?.valor}</p>
+                </div>
+              )}
+              {fichaTecnica.find((r) => r.etiqueta === "Instalación") && (
+                <div>
+                  <p className="mb-1 font-bold text-[#27B1B8]">Instalación:</p>
+                  <p className="text-[#333]">{fichaTecnica.find((r) => r.etiqueta === "Instalación")?.valor}</p>
+                </div>
+              )}
+              {producto.aplicacion && (
+                <div>
+                  <p className="mb-1 font-bold text-[#27B1B8]">Aplicación</p>
+                  <p className="text-[#333]">{producto.aplicacion}</p>
                 </div>
               )}
             </div>
-          </div>
 
-          <div className="space-y-4 rounded-[2rem] border border-black/8 bg-white p-8 shadow-[0_18px_40px_rgba(15,23,42,0.05)]">
-            <div className="flex items-start justify-between gap-6">
-              <div>
-                <p className="text-sm font-medium text-[#2d7af0]">
-                  {producto.marca}
-                </p>
-                <h1 className="mt-2 text-4xl font-medium leading-tight tracking-[-0.04em] text-[#33373d] md:text-5xl">
-                  {producto.nombre}
-                </h1>
-                <p className="mt-3 text-sm text-[#6e7379]">
-                  Código {producto.sku || producto.slug.toUpperCase().replace(/-/g, "")}
-                </p>
-              </div>
-
-              <button className="text-sm font-medium text-[#2d7af0] transition-colors duration-200 hover:text-[#0C535B]">
-                Guardar
-              </button>
-            </div>
-
-            <div className="text-[#d8dbe0]">★★★★★</div>
-            <p className="text-sm text-[#6e7379]">0.0 (0)</p>
-
-            <div className="pt-2">
-              <p className="text-5xl font-semibold tracking-[-0.04em] text-[#33373d]">
-                {producto.precio}
-              </p>
-              <p className="mt-2 text-2xl text-[#a0a3a8] line-through">
-                {producto.precioAnterior}
-              </p>
-              <p className="mt-3 text-sm font-medium text-[#6e7379]">
-                Stock disponible: {producto.stock ?? 0}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3 pt-4">
-              <div className="flex items-center overflow-hidden rounded-xl border border-black/10">
-                <button
-                  type="button"
-                  onClick={() => ajustarCantidad(-1)}
-                  className="px-5 py-3 text-2xl text-[#4f545a] transition-colors duration-200 hover:bg-[#f5f5f5]"
-                  aria-label="Disminuir cantidad"
-                >
-                  −
-                </button>
-                <div className="border-x border-black/10 px-7 py-3 text-xl text-[#33373d]">
-                  {cantidad}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => ajustarCantidad(1)}
-                  className="px-5 py-3 text-2xl text-[#4f545a] transition-colors duration-200 hover:bg-[#f5f5f5]"
-                  aria-label="Aumentar cantidad"
-                >
-                  +
-                </button>
-              </div>
-
-              <AddToCartButton
-                id={producto.slug}
-                nombre={producto.nombre}
-                precio={producto.precio}
-                imagen={producto.imagen}
-                cantidad={cantidad}
-                disabled={!producto.puedeComprar}
-              />
-            </div>
-
-            <div className="rounded-[1.4rem] border border-black/6 bg-[linear-gradient(180deg,#f8f9fb_0%,#f2f4f7_100%)] p-6">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#27B1B8]">
-                Resumen rápido
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold text-[#33373d]">
-                Especificaciones generales
-              </h2>
-              <div className="mt-5 rounded-xl bg-white/78 px-5 py-5 shadow-[0_10px_22px_rgba(15,23,42,0.04)]">
-                <p className="text-[15px] leading-7 text-[#4f545a]">
-                  {resumenGeneral}
-                </p>
-              </div>
-              <a
-                href="#ficha-tecnica"
-                className="mt-5 inline-flex text-sm font-medium text-[#2d7af0] transition-colors duration-200 hover:text-[#0C535B]"
-              >
-                Ver más especificaciones
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-[1440px] px-6 py-16">
-        <div className="mb-8">
-          <p className="mb-2 text-xs font-medium uppercase tracking-[0.35em] text-[#8b8d91]">
-            Relacionados
-          </p>
-          <h2 className="text-3xl font-semibold uppercase tracking-[-0.04em] text-[#4f545a] md:text-5xl">
-            Más productos de esta categoría
-          </h2>
-        </div>
-
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {relacionados.map((item) => (
-            <article
-              key={item.slug}
-              className="overflow-hidden rounded-[1.75rem] border border-black/8 bg-white shadow-[0_16px_35px_rgba(15,23,42,0.05)]"
-            >
-              <Image
-                src={item.imagen}
-                alt={item.nombre}
-                width={900}
-                height={700}
-                className="h-52 w-full object-cover"
-              />
-              <div className="space-y-4 p-5">
+            {/* Right column */}
+            <div className="space-y-6 pt-8 text-sm leading-7 md:pl-10 md:pt-0">
+              {fichaTecnica.some((r) => ["Alto", "Ancho", "Profundidad", "Peso", "Capacidad"].includes(r.etiqueta)) && (
                 <div>
-                  <p className="mb-2 text-xs font-medium uppercase tracking-[0.24em] text-[#8b8d91]">
-                    {item.categoria} · {item.marca}
-                  </p>
-                  <h3 className="text-xl font-semibold leading-tight tracking-[-0.03em] text-[#1f2328]">
-                    {item.nombre}
-                  </h3>
+                  <p className="mb-1 font-bold text-[#27B1B8]">Medidas</p>
+                  <div className="text-[#333]">
+                    {fichaTecnica.filter((r) => ["Alto", "Ancho"].includes(r.etiqueta)).length >= 2 && (
+                      <p>
+                        Alto {fichaTecnica.find((r) => r.etiqueta === "Alto")?.valor} x ancho{" "}
+                        {fichaTecnica.find((r) => r.etiqueta === "Ancho")?.valor}
+                      </p>
+                    )}
+                    {fichaTecnica.find((r) => r.etiqueta === "Profundidad") && (
+                      <p>Profundidad: {fichaTecnica.find((r) => r.etiqueta === "Profundidad")?.valor}</p>
+                    )}
+                    {fichaTecnica.find((r) => r.etiqueta === "Peso") && (
+                      <p>Peso: {fichaTecnica.find((r) => r.etiqueta === "Peso")?.valor}</p>
+                    )}
+                    {fichaTecnica.find((r) => r.etiqueta === "Capacidad") && (
+                      <p>Capacidad: {fichaTecnica.find((r) => r.etiqueta === "Capacidad")?.valor}</p>
+                    )}
+                  </div>
                 </div>
-
-                <p className="text-2xl font-semibold text-[#27B1B8]">
-                  {item.precio}
-                </p>
-
-                <Link
-                  href={`/producto/${item.slug}`}
-                  className="inline-flex rounded-full bg-[#0C535B] px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#073D43]"
-                >
-                  Ver producto
-                </Link>
-              </div>
-            </article>
-          ))}
+              )}
+              {producto.compatibilidad && producto.compatibilidad.length > 0 && (
+                <div>
+                  <p className="mb-1 font-bold text-[#27B1B8]">Incluye</p>
+                  <ul className="space-y-0.5 text-[#333]">
+                    {producto.compatibilidad.map((c) => (
+                      <li key={c}>{c}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {fichaTecnica.find((r) => r.etiqueta === "Fuente de poder") && (
+                <div>
+                  <p className="mb-1 font-bold text-[#27B1B8]">Fuente de poder:</p>
+                  <p className="text-[#333]">{fichaTecnica.find((r) => r.etiqueta === "Fuente de poder")?.valor}</p>
+                </div>
+              )}
+              {fichaTecnica
+                .filter((r) => !["Alto", "Ancho", "Profundidad", "Peso", "Capacidad", "Material", "Baterías", "Instalación", "Fuente de poder", "Categoría", "Marca", "Disponibilidad", "Garantía", "Aplicación"].includes(r.etiqueta))
+                .map((r) => (
+                  <div key={r.etiqueta}>
+                    <p className="mb-1 font-bold text-[#27B1B8]">{r.etiqueta}</p>
+                    <p className="text-[#333]">{r.valor}</p>
+                  </div>
+                ))}
+            </div>
+          </div>
         </div>
       </section>
+
+      {/* ── Trust bar ── */}
+      <section className="border-y border-black/8 bg-[#f8fafa]">
+        <div className="mx-auto max-w-[1440px] px-6 py-5">
+          <div className="flex divide-x divide-black/8">
+            {trustBar.map((t) => (
+              <div key={t.label} className="flex flex-1 items-center gap-3 px-4 first:pl-0 last:pr-0">
+                <span className="shrink-0 text-[#27B1B8]">{t.icon}</span>
+                <span className="text-xs font-semibold leading-snug text-[#0C535B]">{t.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Related products ── */}
+      {relacionados.length > 0 && (
+        <section className="mx-auto max-w-[1440px] px-6 py-14">
+          <h2 className="mb-6 text-2xl font-extrabold tracking-tight text-[#111]">
+            Productos relacionados
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {relacionados.map((p) => (
+              <Link
+                key={p.slug}
+                href={`/producto/${p.slug}`}
+                className="group overflow-hidden rounded-2xl border border-black/8 bg-white transition-shadow hover:shadow-md"
+              >
+                <div className="flex h-44 items-center justify-center bg-[#f8f8f7] p-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={p.imagen}
+                    alt={p.nombre}
+                    className="max-h-36 w-auto object-contain"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
+                  />
+                </div>
+                <div className="p-4">
+                  <p className="text-sm font-semibold leading-snug text-[#111] group-hover:text-[#27B1B8]">
+                    {p.nombre}
+                  </p>
+                  <p className="mt-1.5 font-bold text-[#27B1B8]">{p.precio}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── ¿Necesitas ayuda? ── */}
+      <section className="px-6 pb-24 pt-16">
+        <div className="mx-auto max-w-[1440px]">
+          <div
+            className="relative flex items-center rounded-2xl border border-black/8 bg-[#f8f8f7] pr-6 md:pr-8"
+            style={{ minHeight: 96 }}
+          >
+            <div className="absolute left-2 top-1/2 h-[272px] w-[238px] -translate-y-1/2">
+              <Image src="/foca-celular-ayuda.png" alt="Foca Kliniu" fill className="object-contain object-bottom" />
+            </div>
+            <div className="w-[248px] shrink-0" />
+
+            <div className="min-w-0 flex-1 py-5 pl-5">
+              <p className="font-bold text-[#0C535B]">¿Necesitas ayuda para elegir?</p>
+              <p className="mt-0.5 text-sm text-[#6e7379]">
+                Nuestro equipo de expertos está listo para asesorarte sin compromiso
+              </p>
+            </div>
+
+            {(() => {
+              const WaIcon = () => (
+                <svg viewBox="0 0 24 24" className="h-8 w-8 shrink-0 text-[#27B1B8]" fill="currentColor">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" />
+                </svg>
+              );
+              return (
+                <div className="hidden items-center gap-5 lg:flex">
+                  {["Asesoría gratuita sin compromiso.", "Respuesta rápida por WhatsApp", "Cotizaciones personalizadas"].map((txt) => (
+                    <div key={txt} className="flex items-center gap-2 text-xs text-[#555]">
+                      <WaIcon />
+                      <span className="max-w-[90px] leading-tight">{txt}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            <a
+              href="https://wa.me/573125860921"
+              target="_blank"
+              rel="noreferrer"
+              className="ml-6 shrink-0 rounded-full bg-[#073F43] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+            >
+              Hablar con un asesor 💬
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <QuoteModal
+        open={quoteOpen}
+        onClose={() => setQuoteOpen(false)}
+        productoId={producto.slug}
+        productoNombre={producto.nombre}
+        productoPrecio={producto.precio}
+        productoImagen={producto.imagen}
+        addItem={addItem}
+      />
+      <SiteFooter />
     </main>
   );
 }

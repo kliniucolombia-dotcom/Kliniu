@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Image from "next/image";
 import { useCart } from "./cart-provider";
 import type { StoreProduct } from "@/lib/products";
 
@@ -45,38 +44,36 @@ export default function ProductosCarousel({
 
       <div
         ref={scrollRef}
-        className="scrollbar-hidden flex gap-4 overflow-x-auto pb-2 pl-1 pr-1"
+        className="scrollbar-hidden flex gap-4 overflow-x-auto pb-2 pl-1 pr-1 2xl:gap-5"
       >
         {products.map((p) => {
           const added = addedSlugs.has(p.slug);
           return (
             <div
               key={p.slug}
-              className="w-[200px] min-w-[200px] shrink-0 overflow-hidden rounded-2xl border border-black/8 bg-white"
+              className="flex h-[314px] w-[200px] min-w-[200px] shrink-0 flex-col overflow-hidden rounded-2xl border border-black/8 bg-white 2xl:w-[190px] 2xl:min-w-[190px]"
             >
               <div className="flex h-40 items-center justify-center bg-[#f8f8f7] p-4">
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={p.imagen}
                   alt={p.nombre}
-                  width={160}
-                  height={140}
                   className="max-h-32 w-auto object-contain"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
                 />
               </div>
-              <div className="space-y-1.5 p-3">
-                {p.descripcion && (
-                  <p className="line-clamp-1 text-[11px] text-[#999]">
-                    {p.descripcion}
-                  </p>
-                )}
-                <p className="line-clamp-2 text-sm font-semibold leading-snug text-[#111]">
+              <div className="flex flex-1 flex-col p-3">
+                <p className="h-4 line-clamp-1 text-[11px] text-[#999]">
+                  {p.descripcion}
+                </p>
+                <p className="mt-1.5 min-h-[38px] line-clamp-2 text-sm font-semibold leading-snug text-[#111]">
                   {p.nombre}
                 </p>
-                <p className="text-base font-bold text-[#111]">{p.precio}</p>
+                <p className="mt-1.5 text-base font-bold" style={{ color: "#0C535B" }}>{p.precio}</p>
                 <button
                   type="button"
                   onClick={() => handleAdd(p)}
-                  className={`w-full rounded-full py-2 text-xs font-bold transition-colors ${
+                  className={`mt-auto w-full rounded-full py-2 text-xs font-bold transition-colors ${
                     added
                       ? "bg-[#0C535B] text-white"
                       : "bg-[#27B1B8] text-white hover:bg-[#1E969B]"

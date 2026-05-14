@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Figtree } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "./components/cart-provider";
 import { ProductsProvider } from "./components/products-provider";
@@ -8,6 +9,11 @@ import { getProducts } from "@/lib/products";
 import { getSessionFromCookies } from "@/lib/auth";
 import { getUserById } from "@/lib/users";
 import { getCartItemsForUser } from "@/lib/cart";
+
+const figtree = Figtree({
+  subsets: ["latin"],
+  variable: "--font-figtree",
+});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -30,7 +36,11 @@ export default async function RootLayout({
     .join("|")}`;
 
   return (
-    <html lang="es" className="h-full antialiased" data-scroll-behavior="smooth">
+    <html
+      lang="es"
+      className={`${figtree.variable} h-full antialiased`}
+      data-scroll-behavior="smooth"
+    >
       <body className="min-h-full flex flex-col">
         <ProductsProvider initialProducts={initialProducts}>
           <CartProvider

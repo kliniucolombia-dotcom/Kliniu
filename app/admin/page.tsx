@@ -9,7 +9,7 @@ import {
   type FormEvent,
 } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useProducts } from "../components/products-provider";
 import { categorias, type Categoria, type ProductoCatalogo } from "../data/catalog";
 import type { ProductoEspecificacion } from "../data/catalog";
@@ -592,6 +592,7 @@ function splitCommaSeparatedValues(value: string) {
 
 export default function AdminPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     adminProducts,
     createProduct,
@@ -794,12 +795,18 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (activeTab === "edit" && editingSlug && editFormRef.current) {
-      editFormRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+      editFormRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [activeTab, editingSlug]);
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "create") openCreateView();
+    else if (tab === "edit") openEditView();
+    else if (tab === "inventory") openInventoryView();
+    else if (tab === "orders") openOrdersView();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!isCheckingSession && !isAuthenticated) {
@@ -890,7 +897,7 @@ export default function AdminPage() {
 
     let imageUrl =
       adminProducts.find((product) => product.slug === editingSlug)?.imagen ||
-      "/hero-kliniu.jpg";
+      "/product-placeholder.png";
 
     try {
       if (selectedImage) {
@@ -1295,140 +1302,80 @@ export default function AdminPage() {
 
       <section className="py-16">
         <div className="space-y-8">
-          <div className="admin-fade-up mx-auto max-w-[1440px] px-6">
-            <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(560px,1.1fr)]">
-              <div className="order-2 lg:order-1">
-                <div className="max-w-[640px]">
-                  <p className="text-xs font-semibold uppercase tracking-[0.34em] text-[#8b8d91]">
+          {/* Hero solo cuando no hay módulo activo */}
+          <div className="admin-fade-up" style={{ display: activeTab ? "none" : "block" }}>
+            {/* Hero full-width */}
+            <div className="relative overflow-hidden" style={{ height: "100vh" }}>
+              {/* Fondo imagen completa */}
+              <Image
+                src="/fondo-admin.jpg"
+                alt="Fondo administración"
+                fill
+                priority
+                sizes="100vw"
+                className="object-cover object-center"
+              />
+              {/* Gradiente inferior para legibilidad */}
+              {/* sin overlay — fondo original */}
+
+              {/* Contenido arriba: texto izquierda, botones derecha */}
+              <div className="absolute top-0 left-0 right-0 flex items-start justify-between gap-8 px-16 pt-14">
+                {/* Izquierda: logo + texto */}
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.34em] text-[#0C535B]/70">
                     Flujo de administración
                   </p>
-                  <h2 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[#1f2328]">
+                  <h2 className="mt-1 text-3xl font-semibold tracking-[-0.05em] text-[#0a1628]">
                     Elige el módulo que necesitas
                   </h2>
-                  <p className="mt-2 max-w-[38rem] text-sm leading-7 text-[#6e7379]">
-                    {productCountLabel}. Dejamos una navegación más directa para crear, editar,
-                    inventario y pedidos sin tanto ruido visual.
+                  <p className="mt-1 text-sm text-[#4a5568]">
+                    {productCountLabel}. Navegación directa para crear, editar, inventario y pedidos.
                   </p>
                 </div>
 
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={openCreateView}
-                    className={`inline-flex min-h-12 items-center gap-3 rounded-full border px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                      activeTab === "create"
-                        ? "border-[#0C535B] bg-[#0C535B] text-white"
-                        : "border-black/8 bg-white text-[#0C535B] hover:border-[#0C535B]/18 hover:bg-[#f8f8f7]"
-                    }`}
-                  >
-                    <span
-                      className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm ${
-                        activeTab === "create" ? "bg-white/14 text-white" : "bg-[#0C535B] text-white"
-                      }`}
-                    >
-                      +
-                    </span>
-                    Crear producto
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={openEditView}
-                    className={`inline-flex min-h-12 items-center gap-3 rounded-full border px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                      activeTab === "edit"
-                        ? "border-[#0C535B] bg-[#0C535B] text-white"
-                        : "border-black/8 bg-white text-[#0C535B] hover:border-[#0C535B]/18 hover:bg-[#f8f8f7]"
-                    }`}
-                  >
-                    <span
-                      className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${
-                        activeTab === "edit" ? "bg-white/14 text-white" : "bg-[#27B1B8] text-white"
-                      }`}
-                    >
-                      <svg
-                        aria-hidden="true"
-                        viewBox="0 0 24 24"
-                        className="h-3.5 w-3.5"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M12 20h9" />
-                        <path d="m16.5 3.5 4 4L7 21l-4 1 1-4Z" />
-                      </svg>
-                    </span>
-                    Editar productos
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={openInventoryView}
-                    className={`inline-flex min-h-12 items-center gap-3 rounded-full border px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                      activeTab === "inventory"
-                        ? "border-[#0C535B] bg-[#0C535B] text-white"
-                        : "border-black/8 bg-white text-[#0C535B] hover:border-[#0C535B]/18 hover:bg-[#f8f8f7]"
-                    }`}
-                  >
-                    <span
-                      className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm ${
-                        activeTab === "inventory" ? "bg-white/14 text-white" : "bg-[#1f8b45] text-white"
-                      }`}
-                    >
-                      ≡
-                    </span>
-                    Inventario
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={openOrdersView}
-                    className={`inline-flex min-h-12 items-center gap-3 rounded-full border px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                      activeTab === "orders"
-                        ? "border-[#0C535B] bg-[#0C535B] text-white"
-                        : "border-black/8 bg-white text-[#0C535B] hover:border-[#0C535B]/18 hover:bg-[#f8f8f7]"
-                    }`}
-                  >
-                    <span
-                      className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm ${
-                        activeTab === "orders" ? "bg-white/14 text-white" : "bg-[#6366f1] text-white"
-                      }`}
-                    >
-                      ↗
-                    </span>
-                    Pedidos y envíos
-                  </button>
-
-                  {activeTab && (
+                {/* Derecha: botones */}
+                <div className="flex flex-col items-end gap-3">
+                <div className="flex flex-wrap justify-end gap-3">
+                  {[
+                    { action: openCreateView, label: "Crear producto", icon: <span className="text-sm">+</span>, color: "#0C535B" },
+                    { action: openEditView, label: "Editar productos", icon: <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="m16.5 3.5 4 4L7 21l-4 1 1-4Z"/></svg>, color: "#27B1B8" },
+                    { action: openInventoryView, label: "Inventario", icon: <span className="text-sm">≡</span>, color: "#1f8b45" },
+                    { action: openOrdersView, label: "Pedidos y envíos", icon: <span className="text-sm">↗</span>, color: "#6366f1" },
+                  ].map(({ action, label, icon, color }) => (
                     <button
+                      key={label}
                       type="button"
-                      onClick={handleResetForm}
-                      className="inline-flex min-h-12 items-center rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-[#5d6167] transition-colors duration-200 hover:border-[#0C535B]/18 hover:bg-[#0C535B] hover:text-white"
+                      onClick={action}
+                      className="inline-flex min-h-12 items-center gap-3 rounded-full border border-black/15 bg-white/80 px-4 py-2.5 text-sm font-semibold text-[#0C535B] transition-all duration-200 hover:bg-white"
                     >
-                      Vista limpia
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full text-white" style={{ background: color }}>
+                        {icon}
+                      </span>
+                      {label}
                     </button>
-                  )}
+                  ))}
                 </div>
-              </div>
-
-              <div className="order-1 lg:order-2">
-                <div className="flex min-h-[360px] items-center justify-center lg:min-h-[460px]">
-                  <Image
-                    src="/admin-banner.jpg"
-                    alt="Banner del administrador de productos"
-                    width={1600}
-                    height={900}
-                    priority
-                    sizes="(min-width: 1024px) 52vw, 100vw"
-                    className="h-auto w-full max-w-[820px] object-contain"
-                  />
                 </div>
               </div>
             </div>
           </div>
 
           <div className="mx-auto max-w-[1440px] px-6">
+
+          {activeTab && (
+            <div className="mb-6">
+              <button
+                type="button"
+                onClick={handleResetForm}
+                className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-[#0C535B] shadow-sm transition-colors hover:bg-[#f0fafa]"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>
+                </svg>
+                Volver al inicio
+              </button>
+            </div>
+          )}
 
           {activeTab === "create" && (
             <form

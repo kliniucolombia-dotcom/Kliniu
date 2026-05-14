@@ -124,12 +124,12 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
 
       {/* Image */}
       <div className="flex h-44 items-center justify-center bg-white px-6 py-4">
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={producto.imagen}
           alt={producto.nombre}
-          width={160}
-          height={140}
           className="max-h-36 w-auto max-w-full object-contain"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
         />
       </div>
 
@@ -317,8 +317,10 @@ export default function CategoriasPage() {
   };
 
   // Hero title
-  const tituloLinea1 = catMeta.nombre.split(" ").slice(0, 2).join(" ");
-  const tituloLinea2 = catMeta.heroDestacado ?? catMeta.nombre.split(" ").slice(2).join(" ");
+  const tituloLinea1 = catMeta.heroTitulo1 ?? catMeta.nombre.split(" ").slice(0, 2).join(" ");
+  const tituloLinea2 = catMeta.heroTitulo2 ?? "";
+  const tituloDestacado = catMeta.heroDestacado ?? catMeta.nombre.split(" ").slice(2).join(" ");
+  const dark = catMeta.textoDark ?? false;
 
   // Heading for product grid
   const headingCategoria: Record<string, string> = {
@@ -337,7 +339,7 @@ export default function CategoriasPage() {
   return (
     <main className="min-h-screen bg-white text-[#111]">
       {/* ── Hero banner ── */}
-      <section className="relative overflow-hidden bg-[#0a0f14]">
+      <section className={`relative overflow-hidden ${dark ? "bg-white" : "bg-[#0a0f14]"}`}>
         {catMeta.bannerImagen && (
           <Image
             src={catMeta.bannerImagen}
@@ -345,25 +347,34 @@ export default function CategoriasPage() {
             fill
             priority
             sizes="100vw"
-            className="object-cover object-center opacity-30"
+            className={`object-cover object-center ${dark ? "opacity-100" : "opacity-60"}`}
           />
         )}
-        <div className="relative mx-auto max-w-[1440px] px-8 py-14 md:py-20">
-          <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white md:text-5xl">
+        <div className="relative mx-auto max-w-[1440px] px-8 py-12 md:py-16">
+          <h1 className={`text-4xl font-extrabold leading-tight tracking-tight md:text-5xl ${dark ? "text-[#0a0f14]" : "text-white"}`}>
             {tituloLinea1}
             <br />
-            <span className="text-[#27B1B8]">{tituloLinea2}</span>
+            {tituloLinea2}<span className="text-[#27B1B8]">{tituloDestacado}</span>
           </h1>
-          <p className="mt-3 max-w-md text-sm leading-6 text-white/70">
+          <p className={`mt-3 max-w-md text-sm leading-6 ${dark ? "text-[#3a4a4b]" : "text-white/70"}`}>
             {catMeta.bannerCopy}
           </p>
           {catMeta.beneficiosHero && (
-            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/10 pt-5">
+            <div className={`mt-5 flex flex-wrap items-center gap-x-0 gap-y-2 ${dark ? "pt-0" : "border-t border-white/10 pt-4"}`}>
               {catMeta.beneficiosHero.map((b, i) => (
-                <div key={b.texto} className="flex items-center gap-3 text-xs text-white/80">
-                  {i > 0 && <span className="hidden h-4 border-l border-white/20 sm:block" />}
-                  <span className="text-sm">{b.icono}</span>
-                  <span>{b.texto}</span>
+                <div key={b.texto} className={`flex items-center text-xs ${dark ? "text-[#3a4a4b]" : "text-white/80"}`}>
+                  {i > 0 && <span className={`mx-4 hidden h-8 border-l sm:block ${dark ? "border-black/15" : "border-white/20"}`} />}
+                  {catMeta.beneficiosInline ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{b.icono}</span>
+                      <span className="max-w-[100px] leading-tight">{b.texto}</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-1 text-center">
+                      <span className="text-base">{b.icono}</span>
+                      <span className="max-w-[80px] leading-tight">{b.texto}</span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -444,80 +455,184 @@ export default function CategoriasPage() {
 
       {/* ── Cómo elegir ── */}
       {catMeta.comoElegir && catMeta.comoElegir.length > 0 && (
-        <section className="bg-[#f8f8f7] px-6 py-12">
-          <div className="mx-auto max-w-[1440px]">
-            <div className="grid gap-4 md:grid-cols-[240px_1fr]">
-              <div className="flex flex-col justify-between rounded-2xl bg-white p-6 shadow-sm">
-                <div>
-                  <p className="font-bold leading-snug text-[#111]">
-                    ¿Cómo elegir el{" "}
-                    {catMeta.heroDestacado?.toLowerCase() ?? "producto"} ideal?
-                  </p>
-                  <p className="mt-1.5 text-sm text-[#6e7379]">
-                    Ten en cuenta estos factores para elegir el ideal
-                  </p>
+        catMeta.comoElegirDark ? (
+          /* Dark variant — Hoteles y Restaurantes */
+          <section className="bg-[#f8f8f7] px-6 py-12">
+            <div className="mx-auto max-w-[1440px]">
+              <div
+                className="relative overflow-visible rounded-2xl"
+                style={{ background: "linear-gradient(to right, #051e22, #0C535B, #0f6e78)" }}
+              >
+                {/* Foca — absolute, overflows upward slightly into section padding */}
+                <div className="absolute bottom-0 left-0 h-[200px] w-[190px]">
+                  <Image
+                    src={catMeta.comoElegirFoca ?? "/foca-ok-kliniu-original.png"}
+                    alt="Foca Kliniu"
+                    fill
+                    className="object-contain object-bottom"
+                  />
                 </div>
-                <Image
-                  src="/kliniu-loader-logo.png"
-                  alt="Kliniu"
-                  width={72}
-                  height={72}
-                  className="mt-6 self-end object-contain"
-                />
-              </div>
 
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {catMeta.comoElegir.map((factor, i) => (
-                  <div key={factor.titulo} className="rounded-2xl bg-white p-5 shadow-sm">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#e8f5f5] text-[#27B1B8] font-bold text-sm">
-                      {i + 1}
-                    </div>
-                    <p className="mt-3 font-semibold text-[#111]">{factor.titulo}</p>
-                    <p className="mt-1 text-sm leading-5 text-[#6e7379]">{factor.descripcion}</p>
+                {/* Single flat row */}
+                <div className="flex items-stretch min-w-0">
+                  {/* Spacer for foca */}
+                  <div className="w-[190px] shrink-0" />
+
+                  {/* Title + subtitle */}
+                  <div className="flex w-[250px] shrink-0 flex-col justify-center border-r border-white/10 px-6 py-7">
+                    <h2 className="text-[18px] font-black leading-snug text-white">
+                      {(() => {
+                        const title = catMeta.comoElegirTituloCompleto ?? "¿Cómo elegir el producto ideal?";
+                        const parts = title.split("KLINIU");
+                        return parts.length === 2 ? (
+                          <>{parts[0]}<span className="text-[#27B1B8]">KLINIU</span>{parts[1]}</>
+                        ) : title;
+                      })()}
+                    </h2>
+                    {catMeta.comoElegirSubtitulo && (
+                      <p className="mt-2 text-[11px] leading-4 text-white/65">
+                        {catMeta.comoElegirSubtitulo}
+                      </p>
+                    )}
                   </div>
-                ))}
+
+                  {/* 4 benefit items in a row */}
+                  {catMeta.comoElegir.map((factor, i) => (
+                    <div
+                      key={factor.titulo}
+                      className={`flex flex-1 items-start gap-3 px-5 py-6 ${i > 0 ? "border-l border-white/10" : ""}`}
+                    >
+                      <svg viewBox="0 0 24 24" className="mt-0.5 h-6 w-6 shrink-0 text-[#27B1B8]" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                      </svg>
+                      <div>
+                        <p className="text-sm font-bold text-white">{factor.titulo}</p>
+                        <p className="mt-0.5 text-[11px] leading-4 text-white/60">{factor.descripcion}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : (
+          /* Light variant — all other categories */
+          <section className="bg-[#f8f8f7] px-6 py-12">
+            <div className="mx-auto max-w-[1440px]">
+              <div className="overflow-hidden rounded-2xl" style={{ background: "#EAF8F7" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "260px 1fr" }}>
+
+                  {/* Left: título + foca */}
+                  <div className="flex flex-col justify-between overflow-hidden p-6 pb-0">
+                    <div>
+                      <p className="font-bold leading-snug text-[#0C535B]">
+                        ¿Cómo elegir el{" "}
+                        {catMeta.comoElegirTitulo ?? `${catMeta.heroDestacado?.toLowerCase() ?? "producto"} ideal`}?
+                      </p>
+                      <p className="mt-1.5 text-sm text-[#607175]">
+                        Ten en cuenta estos factores para elegir el ideal
+                      </p>
+                    </div>
+                    {catMeta.comoElegirFoca ? (
+                      <Image
+                        src={catMeta.comoElegirFoca}
+                        alt="Foca Kliniu"
+                        width={200}
+                        height={200}
+                        className="mt-4 w-52 self-center object-contain"
+                      />
+                    ) : (
+                      <Image
+                        src="/foca-ok-kliniu-original.png"
+                        alt="Foca Kliniu"
+                        width={120}
+                        height={120}
+                        className="mt-6 w-28 self-center object-contain"
+                      />
+                    )}
+                  </div>
+
+                  {/* Right: criterios */}
+                  <div className="p-6" style={{ background: "rgba(255,255,255,0.7)" }}>
+                    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                      {catMeta.comoElegir.map((factor) => (
+                        <div key={factor.titulo}>
+                          <svg viewBox="0 0 24 24" className="h-7 w-7 text-[#27B1B8]" fill="none" stroke="currentColor" strokeWidth="1.5">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                          </svg>
+                          <p className="mt-2 font-semibold text-[#073F43]">{factor.titulo}</p>
+                          <p className="mt-1 text-sm leading-5 text-[#607175]">{factor.descripcion}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </section>
+        )
       )}
 
       {/* ── ¿Necesitas ayuda? ── */}
-      <section className="px-6 py-12">
+      <section className="px-6" style={{ paddingTop: 160, paddingBottom: 80 }}>
         <div className="mx-auto max-w-[1440px]">
-          <div className="flex flex-col items-center gap-6 rounded-2xl border border-black/8 bg-[#f8f8f7] p-8 md:flex-row">
-            <Image
-              src="/kliniu-loader-logo.png"
-              alt="Kliniu"
-              width={80}
-              height={80}
-              className="shrink-0 object-contain"
-            />
-            <div className="flex-1 text-center md:text-left">
-              <p className="text-lg font-bold text-[#0C535B]">¿Necesitas ayuda para elegir?</p>
-              <p className="mt-1 text-sm text-[#6e7379]">
+          <div className="relative flex items-center gap-0 rounded-2xl border border-black/8 pr-6 md:pr-8" style={{ minHeight: 96, background: "#f8f8f7" }}>
+            {/* Foca con celular — absolute para no inflar el alto */}
+            <div className="absolute" style={{ left: 8, top: "50%", transform: "translateY(-50%)", height: 272, width: 238 }}>
+              <Image
+                src="/foca-celular-ayuda.png"
+                alt="Foca Kliniu"
+                fill
+                className="object-contain object-bottom"
+              />
+            </div>
+            {/* Espaciador horizontal para la foca */}
+            <div className="shrink-0" style={{ width: 248 }} />
+
+            {/* Texto */}
+            <div className="min-w-0 flex-1 py-5 pl-5">
+              <p className="font-bold text-[#0C535B]">¿Necesitas ayuda para elegir?</p>
+              <p className="mt-0.5 text-sm text-[#6e7379]">
                 Nuestro equipo de expertos está listo para asesorarte sin compromiso
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-6 text-sm text-[#555]">
-              <span className="flex items-center gap-1.5">
-                <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#27B1B8]" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/></svg>
-                Asesoría gratuita sin compromiso.
-              </span>
-              <span className="flex items-center gap-1.5">
-                <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#27B1B8]" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/></svg>
-                Respuesta rápida por WhatsApp
-              </span>
-              <span className="flex items-center gap-1.5">
-                <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#27B1B8]" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/></svg>
-                Cotizaciones personalizadas
-              </span>
-            </div>
+
+            {/* Beneficios */}
+            {(() => {
+              const WaIcon = () => (
+                <svg viewBox="0 0 24 24" className="h-8 w-8 shrink-0 text-[#27B1B8]" fill="currentColor">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884" />
+                </svg>
+              );
+              return (
+                <div className="hidden items-center gap-5 lg:flex">
+                  {[
+                    "Asesoría gratuita sin compromiso.",
+                    "Respuesta rápida por WhatsApp",
+                    "Cotizaciones personalizadas",
+                  ].map((txt) => (
+                    <div key={txt} className="flex items-center gap-2 text-xs text-[#555]">
+                      <WaIcon />
+                      <span className="max-w-[90px] leading-tight">{txt}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* CTA */}
             <a
               href="https://wa.me/573125860921"
               target="_blank"
               rel="noreferrer"
-              className="shrink-0 rounded-full bg-[#0C535B] px-6 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
+              className="ml-6 shrink-0 rounded-full bg-[#073F43] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
             >
               Hablar con un asesor 💬
             </a>

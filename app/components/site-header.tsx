@@ -20,7 +20,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const { totalItems } = useCart();
+  const { totalProducts } = useCart();
 
   const irACategoria = (categoria?: string) => {
     setMenuAbierto(false);
@@ -68,7 +68,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-black/8 bg-white shadow-[0_4px_20px_rgba(15,23,42,0.06)]">
+    <header ref={menuRef} className="relative sticky top-0 z-50 border-b border-black/8 bg-white shadow-[0_4px_20px_rgba(15,23,42,0.06)]">
       <div className="mx-auto max-w-[1440px] px-5 py-3">
         <div className="flex items-center gap-6">
           {/* Logo */}
@@ -86,7 +86,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
           {/* Nav */}
           <nav className="hidden items-center gap-1 lg:flex">
             {/* Productos dropdown */}
-            <div className="relative" ref={menuRef}>
+            <div className="relative">
               <button
                 type="button"
                 onClick={() => setMenuAbierto((prev) => !prev)}
@@ -101,34 +101,6 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
                   <path d="M6 8L1 3h10z" />
                 </svg>
               </button>
-
-              {menuAbierto && (
-                <div className="absolute left-0 top-full z-50 mt-2 w-72 overflow-hidden rounded-2xl border border-black/8 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.12)]">
-                  <div className="p-2">
-                    {categoriasData.map((cat) => (
-                      <button
-                        key={cat.nombre}
-                        type="button"
-                        onClick={() => irACategoria(cat.nombre)}
-                        className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm text-[#0C535B]/85 transition-colors hover:bg-[#f3f9f9] hover:text-[#0C535B]"
-                      >
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#e8f5f5] text-base">
-                          {cat.icono}
-                        </span>
-                        <span className="font-medium">{cat.nombre}</span>
-                      </button>
-                    ))}
-                    <div className="mx-2 my-1 border-t border-black/6" />
-                    <button
-                      type="button"
-                      onClick={() => irACategoria()}
-                      className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-semibold text-[#27B1B8] transition-colors hover:bg-[#f3f9f9]"
-                    >
-                      Ver todos los productos →
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
 
             <Link
@@ -211,9 +183,9 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
                 <line x1="3" y1="6" x2="21" y2="6" />
                 <path d="M16 10a4 4 0 0 1-8 0" />
               </svg>
-              {totalItems > 0 && (
+              {totalProducts > 0 && (
                 <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#27B1B8] px-1 text-[9px] font-bold text-white">
-                  {totalItems}
+                  {totalProducts}
                 </span>
               )}
               <span className="text-[10px] font-semibold">Carrito</span>
@@ -221,6 +193,73 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
           </div>
         </div>
       </div>
+
+      {/* ── Mega-menú productos ── */}
+      {menuAbierto && (
+        <div className="absolute left-0 right-0 top-full z-50 border-t border-black/8 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.13)]">
+          <div className="mx-auto max-w-[1440px] px-5 py-5">
+            <div className="flex gap-3">
+              {categoriasData.map((cat) => {
+                const line1 = cat.heroTitulo1 ?? cat.nombre.split(" ").slice(0, 2).join(" ");
+                const line2 = cat.heroTitulo2 ?? "";
+                const dest = cat.heroDestacado ?? cat.nombre.split(" ").slice(2).join(" ");
+                return (
+                  <button
+                    key={cat.nombre}
+                    type="button"
+                    onClick={() => irACategoria(cat.nombre)}
+                    className="group flex flex-1 flex-col overflow-hidden rounded-2xl border border-black/8 bg-white text-left transition-all hover:border-[#27B1B8]/40 hover:shadow-md"
+                  >
+                    <div className="relative h-32 w-full overflow-hidden bg-[#f0f8f8]">
+                      {cat.bannerImagen && (
+                        <Image
+                          src={cat.bannerImagen}
+                          alt={cat.nombre}
+                          fill
+                          sizes="200px"
+                          className="object-cover object-right transition-transform duration-300 group-hover:scale-105"
+                        />
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <p className="text-[11px] font-bold leading-snug text-[#073F43]">
+                        {line1}
+                        <br />
+                        <span className="text-[#073F43]">{line2}</span>
+                        <span className="text-[#27B1B8]">{dest}</span>
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+
+              {/* CTA card */}
+              <div className="flex w-40 shrink-0 flex-col items-center justify-center rounded-2xl bg-[#e8f5f5] p-4 text-center">
+                <Image
+                  src="/foca-ok-kliniu-original.png"
+                  alt="Foca Kliniu"
+                  width={64}
+                  height={64}
+                  className="object-contain"
+                />
+                <p className="mt-2 text-xs font-bold leading-tight text-[#073F43]">
+                  ¿No sabes cuál necesitas?
+                </p>
+                <p className="mt-1 text-[10px] leading-tight text-[#607175]">
+                  Te ayudamos a elegir la mejor solución para tu espacio.
+                </p>
+                <Link
+                  href="/contacto"
+                  onClick={() => setMenuAbierto(false)}
+                  className="mt-3 rounded-full bg-[#073F43] px-3 py-1.5 text-[10px] font-bold text-white transition-colors hover:bg-[#0C535B]"
+                >
+                  Te asesoramos ☎
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

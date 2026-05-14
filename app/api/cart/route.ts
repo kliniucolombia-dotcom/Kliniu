@@ -37,6 +37,7 @@ export async function POST(request: Request) {
       id: string;
       nombre: string;
       precio: string;
+      precioOriginal?: string;
       imagen: string;
       cantidad?: number;
     };

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import HeroCarousel from "./components/hero-carousel";
+import OfferRoulette from "./components/offer-roulette";
 import ProductosCarousel from "./components/productos-carousel";
 import SiteFooter from "./components/site-footer";
 import { getFeaturedProducts } from "@/lib/products";
@@ -9,7 +10,7 @@ const combos = [
   {
     id: "kit-alto-trafico",
     nombre: "Kit alto tráfico",
-    imagen: "/motor-ventilador-axis-compact.png",
+    imagen: "/combo-productos-kliniu.png",
     destacado: true,
     items: ["Dispensador de toalla", "Dispensador de jabón", "Servilletas"],
     precio: "$149.900",
@@ -18,7 +19,7 @@ const combos = [
   {
     id: "kit-banos-publicos",
     nombre: "Kit baños públicos",
-    imagen: "/motor-ventilador-axis-compact.png",
+    imagen: "/combo-productos-kliniu.png",
     destacado: false,
     items: ["Dispensador papel", "Dispensador jabón", "Dispensador alcohol"],
     precio: "$189.900",
@@ -27,10 +28,19 @@ const combos = [
   {
     id: "kit-hotel-premium",
     nombre: "Kit hotel premium",
-    imagen: "/motor-ventilador-axis-compact.png",
+    imagen: "/combo-productos-kliniu.png",
     destacado: false,
     items: ["Dispensador triple", "Toallero inox", "Soporte pared"],
     precio: "$249.900",
+    href: "/categorias",
+  },
+  {
+    id: "kit-oficinas",
+    nombre: "Kit oficinas",
+    imagen: "/combo-productos-kliniu.png",
+    destacado: false,
+    items: ["Dispensador de jabón", "Toallas de mano", "Papel institucional"],
+    precio: "$169.900",
     href: "/categorias",
   },
 ];
@@ -71,6 +81,7 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-white text-[#111]">
+      <OfferRoulette />
       <HeroCarousel />
 
       {/* ── Productos destacados ── */}
@@ -108,14 +119,12 @@ export default async function Home() {
           </div>
 
           {/* Video cards carousel */}
-          <div className="relative">
-            <div className="scrollbar-hidden flex gap-4 overflow-x-auto pb-2">
-              {videos.map((v, i) => (
+          <div className="relative mx-auto max-w-[940px]">
+            <div className="scrollbar-hidden flex justify-center gap-4 overflow-x-auto px-2 pb-2">
+              {videos.map((v) => (
                 <div
                   key={v.id}
-                  className={`flex shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-black/8 bg-white transition-shadow hover:shadow-md ${
-                    i === 2 ? "h-52 w-48" : "h-44 w-40"
-                  }`}
+                  className="flex h-44 w-40 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-black/8 bg-white transition-shadow hover:shadow-md"
                 >
                   <div className="flex flex-col items-center gap-3 p-4 text-center">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#27B1B8] text-[#27B1B8]">
@@ -133,14 +142,14 @@ export default async function Home() {
             <button
               type="button"
               aria-label="Anterior"
-              className="absolute -left-4 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white shadow-sm transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"
+              className="absolute -left-5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white shadow-sm transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"
             >
               ‹
             </button>
             <button
               type="button"
               aria-label="Siguiente"
-              className="absolute -right-4 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white shadow-sm transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"
+              className="absolute -right-5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white shadow-sm transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"
             >
               ›
             </button>
@@ -176,13 +185,12 @@ export default async function Home() {
                       Más vendido
                     </span>
                   )}
-                  <div className="flex h-36 items-center justify-center bg-[#f8f8f7] p-4">
-                    <Image
+                  <div className="flex h-36 items-center justify-center bg-[#f8f8f7] p-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
                       src={combo.imagen}
                       alt={combo.nombre}
-                      width={120}
-                      height={100}
-                      className="max-h-28 w-auto object-contain"
+                      className="h-full w-full object-contain"
                     />
                   </div>
                   <div className="space-y-2 p-4">
@@ -209,28 +217,28 @@ export default async function Home() {
               ))}
 
               {/* CTA card */}
-              <div className="flex w-[200px] min-w-[200px] shrink-0 flex-col justify-between rounded-2xl bg-[#e8f5f5] p-5">
-                <div>
-                  <p className="font-bold leading-snug text-[#0C535B]">Arma tu combo</p>
-                  <p className="mt-2 text-xs leading-5 text-[#3a7a80]">
+              <div className="relative flex w-[200px] min-w-[200px] shrink-0 flex-col overflow-hidden rounded-2xl bg-[#b9e5dc] px-5 pb-4 pt-5 text-[#0C535B]">
+                <div className="relative z-10">
+                  <p className="text-sm font-extrabold leading-tight">Arma tu combo</p>
+                  <p className="mt-2 max-w-[9rem] text-[10px] font-semibold leading-4 text-[#0C535B]/85">
                     Te ayudamos a armar la solución perfecta para tus espacios.
                   </p>
                 </div>
-                <div className="mt-4 flex flex-col items-start gap-3">
+                <div className="relative z-0 mt-1 flex h-36 items-end justify-center">
                   <Image
-                    src="/logo.png"
-                    alt="Kliniu"
-                    width={60}
-                    height={20}
-                    className="opacity-60"
+                    src="/foca-arma-tu-combo.png"
+                    alt="Foca Kliniu con productos para armar combo"
+                    width={260}
+                    height={174}
+                    className="h-auto w-[220px] max-w-none object-contain"
                   />
-                  <Link
-                    href="/contacto"
-                    className="rounded-full bg-[#0C535B] px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90"
-                  >
-                    Cotizar ahora
-                  </Link>
                 </div>
+                <Link
+                  href="/contacto"
+                  className="relative z-10 mt-auto inline-flex w-max rounded-full bg-[#0C535B] px-5 py-2 text-[11px] font-bold text-white transition-opacity hover:opacity-90"
+                >
+                  Cotizar ahora
+                </Link>
               </div>
             </div>
           </div>
@@ -238,32 +246,34 @@ export default async function Home() {
       </section>
 
       {/* ── Features strip ── */}
-      <section className="bg-[#0C535B] py-10">
+      <section className="bg-[#0C535B] py-6">
         <div className="mx-auto max-w-[1440px] px-6">
-          <div className="flex flex-wrap items-center justify-between gap-6">
-            {features.map((f) => (
-              <div
-                key={f.titulo}
-                className="flex items-center gap-3 text-white"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
+          <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+            <div style={{ flex: 1, display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "20px 20px" }}>
+              {features.map((f) => (
+                <div
+                  key={f.titulo}
+                  className="flex min-w-0 flex-col items-center gap-2 text-center text-white"
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10">
+                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="whitespace-pre-line text-xs font-bold leading-tight">{f.titulo}</p>
+                    <p className="mt-0.5 whitespace-pre-line text-[10px] leading-4 text-white/65">{f.desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="whitespace-pre-line text-sm font-bold leading-tight">{f.titulo}</p>
-                  <p className="mt-0.5 whitespace-pre-line text-[11px] leading-4 text-white/65">{f.desc}</p>
-                </div>
-              </div>
-            ))}
-            <div className="hidden shrink-0 lg:block">
+              ))}
+            </div>
+            <div className="hidden h-28 w-28 shrink-0 md:block">
               <Image
-                src="/kliniu-loader-logo.png"
-                alt="Kliniu"
-                width={72}
-                height={72}
-                className="object-contain opacity-90"
+                src="/foca-ok-kliniu-original.png"
+                alt="Foca Kliniu"
+                width={200}
+                height={180}
+                className="h-full w-full object-contain"
               />
             </div>
           </div>
@@ -274,8 +284,8 @@ export default async function Home() {
       <section className="bg-white px-6 py-16">
         <div className="mx-auto grid max-w-[1440px] gap-5 md:grid-cols-2">
           {/* Asesoría */}
-          <div className="flex overflow-hidden rounded-2xl border border-black/8">
-            <div className="flex flex-1 flex-col justify-center p-8">
+          <div className="flex overflow-hidden rounded-2xl border border-black/8" style={{ background: "#EAF8F7" }}>
+            <div className="flex flex-1 flex-col justify-center p-8 md:max-w-[48%]">
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#27B1B8]">
                 Asesoría personalizada
               </p>
@@ -300,20 +310,20 @@ export default async function Home() {
                 </svg>
               </a>
             </div>
-            <div className="relative hidden w-48 shrink-0 md:block">
+            <div className="relative hidden min-h-[210px] flex-1 md:block">
               <Image
-                src="/hero-banner-2.jpg"
+                src="/banner-asesoria-kliniu.png"
                 alt="Asesor Kliniu"
                 fill
-                sizes="192px"
+                sizes="(min-width: 768px) 420px, 0px"
                 className="object-cover object-center"
               />
             </div>
           </div>
 
           {/* Reposición */}
-          <div className="flex overflow-hidden rounded-2xl border border-black/8 bg-[#f8f8f7]">
-            <div className="flex flex-1 flex-col justify-center p-8">
+          <div className="flex overflow-hidden rounded-2xl border border-black/8" style={{ background: "#EAF8F7" }}>
+            <div className="flex flex-1 flex-col justify-center p-8 md:max-w-[48%]">
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#27B1B8]">
                 Reposición fácil y rápida
               </p>
@@ -332,13 +342,13 @@ export default async function Home() {
                 Ver insumos y repuestos →
               </Link>
             </div>
-            <div className="relative hidden w-48 shrink-0 md:block">
+            <div className="relative hidden min-h-[210px] flex-1 md:block">
               <Image
-                src="/hero-banner-3.jpg"
+                src="/banner-insumos-kliniu.png"
                 alt="Insumos Kliniu"
                 fill
-                sizes="192px"
-                className="object-cover object-center"
+                sizes="(min-width: 768px) 420px, 0px"
+                className="object-contain object-center p-4"
               />
             </div>
           </div>
