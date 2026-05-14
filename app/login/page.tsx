@@ -446,24 +446,17 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right side — mascot image */}
-      <div className="hidden overflow-hidden lg:flex lg:w-1/2 lg:items-center lg:justify-center bg-[#faf5f0]">
+      {/* Right side — account banner */}
+      <div className="hidden overflow-hidden bg-[#faf5f0] lg:flex lg:w-1/2 lg:items-center lg:justify-center">
         <div className="relative h-full w-full">
           <Image
-            src="/hero-banner-1.jpg"
-            alt="Kliniu"
+            src="/account-access-banner.png"
+            alt="Foca Kliniu dando la bienvenida a tu cuenta"
             fill
+            priority
+            sizes="50vw"
             className="object-cover object-center"
           />
-          <div className="absolute inset-0 flex items-end justify-center pb-16">
-            <Image
-              src="/kliniu-loader-logo.png"
-              alt="Kliniu mascota"
-              width={180}
-              height={180}
-              className="object-contain drop-shadow-xl"
-            />
-          </div>
         </div>
       </div>
     </main>
