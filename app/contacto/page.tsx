@@ -1,234 +1,241 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
+import SiteFooter from "../components/site-footer";
 import ContactForm from "./contact-form";
 
 export const metadata: Metadata = {
   title: "Contacto | Kliniu",
-  description: "Canales de contacto, ubicacion y formulario de atencion de Kliniu.",
+  description: "Canales de contacto y presencia internacional de Kliniu.",
 };
 
-const contactCards = [
+const contactBar = [
   {
-    title: "Numero de contacto",
-    value: "3105 161 778",
-    href: "tel:+573105161778",
-    icon: "/contacto/numero.png",
+    label: "Llámanos",
+    value: "+57 311 531 2623",
+    href: "tel:+573115312623",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.5a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .84h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />
+      </svg>
+    ),
   },
   {
-    title: "Ubicacion",
-    value: "Cra. 29 #10-25, Bogota-Colombia",
-    href: "https://www.google.com/maps/search/?api=1&query=Cra.+29+%2310-25+Bogota+Colombia",
-    icon: "/contacto/ubicacion.png",
+    label: "Escríbenos",
+    value: "ventas@kliniu.com",
+    href: "mailto:ventas@kliniu.com",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+        <polyline points="22,6 12,13 2,6" />
+      </svg>
+    ),
   },
   {
-    title: "Correo electronico",
-    value: "commercial@kliniu.com.co",
-    href: "mailto:commercial@kliniu.com.co",
-    icon: "/contacto/correo.png",
+    label: "WhatsApp",
+    value: "+57 311 531 2623",
+    href: "https://wa.me/573115312623",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.5a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .84h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Dirección",
+    value: "Av 28 No. 34-43 Bogotá D.C, Col.",
+    href: "https://www.google.com/maps/search/?api=1&query=Av+28+No+34-43+Bogota+Colombia",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+        <circle cx="12" cy="10" r="3" />
+      </svg>
+    ),
   },
 ];
 
-const socialLinks = [
+const paises = [
   {
-    name: "TikTok",
-    href: "https://www.tiktok.com/@grupogeu",
-    icon: "/contacto/tiktok.png",
+    bandera: "/flag-colombia.png",
+    nombre: "Colombia",
+    direccion: "Av 28 No. 34-43\nBogotá, Col.",
+    telefono: "+57 (311) 2088806",
+    wa: "https://wa.me/573112088806",
   },
   {
-    name: "Facebook",
-    href: "https://www.facebook.com/KliniuColombia?locale=es_LA",
-    icon: "/contacto/facebook.png",
+    bandera: "/flag-republica-dominicana.png",
+    nombre: "República\nDominicana",
+    direccion: "Santo Domingo\nRep. Dominicana",
+    telefono: "+1 (809) 850 7005",
+    wa: "https://wa.me/18098507005",
   },
   {
-    name: "Instagram",
-    href: "https://www.instagram.com/kliniu_colombia/",
-    icon: "/contacto/instagram.png",
+    bandera: "/flag-ecuador.png",
+    nombre: "Ecuador",
+    direccion: "Calle B # 535-205\nVilla Del sur de Quito",
+    telefono: "+593 992 573302",
+    wa: "https://wa.me/593992573302",
   },
   {
-    name: "LinkedIn",
-    href: "https://www.linkedin.com/company/kliniu-colombia/?viewAsMember=true",
-    icon: "/contacto/linkedin.png",
-  },
-];
-
-const values = [
-  {
-    title: "Confiable",
-    description:
-      "Ofrecemos soluciones y repuestos de calidad para un sector donde la seguridad y el rendimiento son clave.",
-    icon: "/contacto/confiable.png",
+    bandera: "/flag-usa.png",
+    nombre: "U.S.A",
+    direccion: "Miami\nFlorida",
+    telefono: "+1 786 501 5081",
+    wa: "https://wa.me/17865015081",
   },
   {
-    title: "Especializada",
-    description:
-      "Nuestro enfoque en transporte masivo nos permite brindar asesoria tecnica y experiencia aplicada al mercado.",
-    icon: "/contacto/especializada.png",
+    bandera: "/flag-canada.png",
+    nombre: "Canada",
+    direccion: "London,\nOntario.",
+    telefono: "+1 647 548 8481",
+    wa: "https://wa.me/16475488481",
   },
   {
-    title: "Innovadora",
-    description:
-      "Impulsamos una presencia digital activa para acercar la marca a nuevos entornos y oportunidades.",
-    icon: "/contacto/innovadora.png",
+    bandera: "/flag-nicaragua.png",
+    nombre: "Nicaragua",
+    direccion: "Calle principal de Altamira\nfrente a Ceca contiguo\na farmacia Praga",
+    telefono: "+505 82508359",
+    wa: "https://wa.me/50582508359",
   },
   {
-    title: "Comprometida",
-    description:
-      "Trabajamos con responsabilidad, cercania y respaldo para aportar valor al sistema de transporte publico.",
-    icon: "/contacto/comprometida.png",
+    bandera: "/flag-honduras.png",
+    nombre: "Honduras",
+    direccion: "Colonia Miramontes 3ra\ncalle casa 2165\nTegucigalpa, Honduras",
+    telefono: "+504 31852275",
+    wa: "https://wa.me/50431852275",
+  },
+  {
+    bandera: "/flag-guatemala.png",
+    nombre: "Guatemala",
+    direccion: "Dirección: calle 3-41\nA sector B5 Zona 8\nde Mixco",
+    telefono: "+502 3032 2650",
+    wa: "https://wa.me/50230322650",
   },
 ];
 
 export default function ContactoPage() {
   return (
-    <main className="min-h-screen bg-[#f7f7f6] text-[#0C535B]">
-      <section className="relative overflow-hidden border-b border-black/6 bg-white">
-        <div className="absolute inset-0">
+    <main className="min-h-screen overflow-x-hidden bg-white text-[#111]">
+      {/* Hero */}
+      <section className="bg-white px-0 py-0">
+        <div className="relative min-h-[250px] overflow-hidden bg-[#f4e6d6] md:min-h-[300px]">
           <Image
-            src="/contacto/banner-contacto.jpg"
-            alt="Robot de contacto de Kliniu"
+            src="/banner-contacto-kliniu.jpg"
+            alt="Atención Kliniu"
             fill
             priority
             sizes="100vw"
-            className="object-cover object-[78%_center] md:object-right"
+            className="object-cover object-center"
           />
-        </div>
-
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.98)_0%,rgba(255,255,255,0.96)_42%,rgba(255,255,255,0.72)_60%,rgba(255,255,255,0.08)_78%,rgba(255,255,255,0)_100%)]" />
-
-        <div className="relative mx-auto flex min-h-[660px] max-w-[1400px] items-center px-5 py-16 sm:px-6 lg:px-8">
-          <div className="max-w-[760px]">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#27B1B8]">
-              Contacto Kliniu
-            </p>
-            <h1 className="mt-5 text-4xl font-semibold tracking-[-0.05em] text-[#27B1B8] sm:text-5xl lg:text-6xl">
-              Contactanos
+          <div className="absolute inset-0 bg-gradient-to-r from-[#f1dfcc]/95 via-[#f1dfcc]/45 to-transparent md:from-[#f1dfcc]/80 md:via-transparent" />
+          <div className="relative z-10 mx-auto flex min-h-[250px] max-w-[1440px] items-center px-8 py-10 sm:px-12 md:min-h-[300px] lg:px-20 xl:px-24">
+            <div className="max-w-[460px]">
+              <h1 className="text-[28px] font-black leading-[0.98] tracking-tight text-[#0C535B] md:text-[38px]">
+                Estamos cerca de ti,
+                <br />
+                <span className="text-[#111]">en cada lugar</span>
             </h1>
-            <p className="mt-4 max-w-[36rem] text-base leading-7 text-[#51606c] sm:text-lg">
-              Canales directos para resolver cotizaciones, disponibilidad y atencion comercial especializada para transporte masivo.
-            </p>
+              <p className="mt-4 max-w-[385px] text-[14px] font-semibold leading-[1.08] text-black md:text-[15px]">
+                En Kliniu pensamos en tu comodidad por eso hemos implementado un canal de whatsapp
+                para atender tus necesidades enfocado a realizar las cotizaciones de una manera más
+                ágil y asertiva.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-            <div className="mt-10 overflow-hidden rounded-[18px] border border-black/8 bg-white/94 shadow-[0_18px_40px_rgba(15,23,42,0.09)]">
-              <div className="grid sm:grid-cols-3">
-                {contactCards.map((item, index) => (
-                  <Link
-                    key={item.title}
-                    href={item.href}
-                    target={item.href.startsWith("http") ? "_blank" : undefined}
-                    rel={item.href.startsWith("http") ? "noreferrer" : undefined}
-                    className={`relative flex min-h-[102px] flex-col items-center justify-center px-5 py-4 text-center transition-colors duration-200 hover:bg-[#EFFAFA] sm:min-h-[110px] ${
-                      index < contactCards.length - 1
-                        ? "sm:after:absolute sm:after:right-0 sm:after:top-1/2 sm:after:h-[54px] sm:after:w-px sm:after:-translate-y-1/2 sm:after:bg-[#27B1B8]"
-                        : ""
-                    }`}
-                  >
-                    <Image
-                      src={item.icon}
-                      alt=""
-                      width={34}
-                      height={34}
-                      className="h-[34px] w-[34px] object-contain"
-                    />
-                    <div className="mt-2.5">
-                      <p className="text-[11px] font-semibold leading-4 text-[#27B1B8] sm:text-[12px]">
-                        {item.title}
-                      </p>
-                      <p className="mt-1.5 text-[13px] font-medium leading-5 text-[#304556] sm:text-[15px]">
-                        {item.value}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+      {/* Contact bar */}
+      <section className="border-y border-black/8 bg-white">
+        <div className="mx-auto max-w-[1440px] px-6">
+          <div className="grid grid-cols-2 divide-x divide-black/8 md:grid-cols-4">
+            {contactBar.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                target={item.href.startsWith("http") ? "_blank" : undefined}
+                rel={item.href.startsWith("http") ? "noreferrer" : undefined}
+                className="flex flex-col items-center gap-2 px-4 py-5 text-center transition-colors hover:bg-[#f0f8f8]"
+              >
+                <span className="text-[#27B1B8]">{item.icon}</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6e7379]">
+                  {item.label}
+                </span>
+                <span className="text-sm font-bold text-[#0C535B]">{item.value}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Países donde operamos */}
+      <section className="bg-white py-14">
+        <div className="mx-auto max-w-[1440px] px-6">
+          <div className="grid gap-10 lg:grid-cols-[300px_1fr]">
+            {/* Left */}
+            <div className="relative min-h-[430px] overflow-hidden">
+              <h2 className="text-3xl font-black leading-[0.95] tracking-tight text-[#0C535B]">
+                Países donde{" "}
+                <span className="text-[#27B1B8]">operamos</span>
+              </h2>
+              <p className="mt-5 max-w-[270px] text-[15px] font-semibold leading-[1.12] text-black">
+                Contamos con presencia y aliados estratégicos en distintos países de América para
+                brindarte soluciones de higiene de alto desempeño.
+              </p>
+              <Image
+                src="/foca-senalando-paises.png"
+                alt="Foca Kliniu señalando"
+                width={300}
+                height={275}
+                className="absolute bottom-0 left-0 w-[255px] object-contain"
+              />
             </div>
 
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              {socialLinks.map((social) => (
-                <Link
-                  key={social.name}
-                  href={social.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={social.name}
-                  className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-[0_12px_28px_rgba(15,23,42,0.08)] transition-transform duration-200 hover:-translate-y-0.5"
+            {/* Grid de países */}
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {paises.map((p) => (
+                <div
+                  key={p.nombre}
+                  className="flex min-h-[185px] flex-col rounded border border-black/10 bg-white px-5 py-5 shadow-sm transition-shadow hover:shadow-md"
                 >
                   <Image
-                    src={social.icon}
-                    alt={social.name}
-                    width={34}
-                    height={34}
-                    className="h-[34px] w-[34px] object-contain"
+                    src={p.bandera}
+                    alt={`Bandera ${p.nombre.replace(/\n/g, " ")}`}
+                    width={46}
+                    height={46}
+                    className="h-[46px] w-[46px] rounded-full object-cover"
                   />
-                </Link>
+                  <p className="mt-4 whitespace-pre-line text-[15px] font-black leading-[1.02] text-black">
+                    {p.nombre}
+                  </p>
+                  <p className="mt-4 whitespace-pre-line text-[10px] font-bold leading-[1.15] text-black">
+                    {p.direccion}
+                  </p>
+                  <p className="mt-1 text-[10px] font-bold text-black">{p.telefono}</p>
+                  <a
+                    href={p.wa}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-auto inline-flex items-center gap-1.5 pt-4 text-[11px] font-black text-[#0C535B] hover:underline"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+                      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.073.528 4.024 1.455 5.726L.057 24l6.434-1.383C8.055 23.507 9.987 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.883 0-3.655-.506-5.183-1.393l-.372-.22-3.819.822.839-3.701-.243-.381A9.937 9.937 0 012 12c0-5.514 4.486-10 10-10s10 4.486 10 10-4.486 10-10 10z" />
+                    </svg>
+                    WhatsApp
+                  </a>
+                </div>
               ))}
             </div>
           </div>
         </div>
       </section>
 
-      <section className="border-t-[5px] border-[#27B1B8] bg-[#f7f7f6]">
-        <div className="mx-auto grid max-w-[1400px] gap-10 px-5 py-14 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:px-8">
-          <div className="overflow-hidden rounded-lg border border-black/8 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.06)]">
-            <div className="border-b border-black/6 px-6 py-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#27B1B8]">
-                Ubicacion
-              </p>
-              <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#0C535B]">
-                Ven a visitarnos
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-[#61707b]">
-                Estamos en Bogota para atender requerimientos comerciales y soporte tecnico para flotas y talleres.
-              </p>
-            </div>
+      {/* Formulario */}
+      <div className="border-t border-black/8 bg-white">
+        <ContactForm />
+      </div>
 
-            <div className="aspect-[1.02/1] min-h-[340px]">
-              <iframe
-                title="Mapa Kliniu"
-                src="https://www.google.com/maps?q=Cra.%2029%20%2310-25%2C%20Bogota%2C%20Colombia&z=16&output=embed"
-                className="h-full w-full border-0"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-            </div>
-          </div>
-
-          <ContactForm />
-        </div>
-      </section>
-
-      <section className="bg-white">
-        <div className="mx-auto max-w-[1400px] px-5 py-16 sm:px-6 lg:px-8">
-          <div className="mb-10 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#27B1B8]">
-              Nuestra esencia
-            </p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[#0C535B] sm:text-4xl">
-              Lo que sostiene cada relacion con nuestros clientes
-            </h2>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-            {values.map((item) => (
-              <article
-                key={item.title}
-                className="flex flex-col items-center rounded-lg border border-black/8 bg-[#fbfbfa] px-6 py-8 text-center shadow-[0_18px_38px_rgba(15,23,42,0.05)]"
-              >
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-[0_10px_20px_rgba(15,23,42,0.06)]">
-                  <Image
-                    src={item.icon}
-                    alt=""
-                    width={46}
-                    height={46}
-                    className="h-[46px] w-[46px] object-contain"
-                  />
-                </div>
-                <h3 className="mt-5 text-xl font-semibold text-[#0C535B]">{item.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-[#657480]">{item.description}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
+      <SiteFooter />
     </main>
   );
 }

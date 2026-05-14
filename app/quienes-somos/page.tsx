@@ -1,171 +1,247 @@
+import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
+import SiteFooter from "../components/site-footer";
 
-const beneficios = [
+export const metadata: Metadata = {
+  title: "Quiénes somos | Kliniu",
+  description:
+    "Somos Kliniu, una compañía colombiana dedicada a desarrollar y comercializar dispensadores e insumos de higiene.",
+};
+
+const valores = [
   {
-    titulo: "Catálogo amplio",
-    descripcion: "Miles de referencias disponibles para tus vehículos",
-    icono: "/icon-catalogo.png",
+    titulo: "Cumplimiento",
+    descripcion:
+      "Desde el propio con nuestro equipo e trabajo reflejado a todos nuestros clientes.",
   },
   {
-    titulo: "Entrega rápida",
-    descripcion: "Recibe tus repuestos en el menor tiempo posible",
-    icono: "/icon-entrega.png",
+    titulo: "Calidad humana",
+    descripcion:
+      "Creemos firmemente en que las buenas personas aportan buenas ideas y ambiente laboral que permite consentir la elaboración de cada producto.",
   },
   {
-    titulo: "Compra segura",
-    descripcion: "Protegemos tu información en cada transacción",
-    icono: "/icon-segura.png",
+    titulo: "Innovación",
+    descripcion:
+      "Creamos soluciones nuevas cada mes para mantener la higiene de la manera más segura e inteligente.",
+  },
+  {
+    titulo: "Responsabilidad",
+    descripcion:
+      "Trabajamos con responsabilidad, cercanía y respaldo para aportar valor a cada espacio.",
+  },
+  {
+    titulo: "Confianza",
+    descripcion:
+      "Construimos relaciones duraderas basadas en la transparencia y el respeto.",
+  },
+  {
+    titulo: "Sostenibilidad",
+    descripcion:
+      "Diseñamos productos pensando en el menor impacto ambiental posible.",
+  },
+  {
+    titulo: "Excelencia",
+    descripcion:
+      "Nos esforzamos por superar las expectativas en cada producto y servicio que ofrecemos.",
   },
 ];
 
 export default function QuienesSomosPage() {
   return (
-    <main className="min-h-screen bg-white text-[#1c2c3a]">
-      
-      {/* 1. BANNER PRINCIPAL */}
-      <section className="relative w-full min-h-[550px] md:min-h-[700px] flex items-center bg-[#f2f2f2] overflow-hidden">
-        
-        {/* Capa de Imagen (Robot) */}
-        <div 
-          className="absolute inset-0 z-0"
-          style={{
-            backgroundImage: `url('/robot-kliniu.jpg')`,
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "right center",
-            backgroundSize: "contain", 
-          }}
-        />
-
-        {/* Capa de Degradado */}
-        <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#f2f2f2] via-[#f2f2f2]/90 to-transparent md:via-[#f2f2f2]/30" />
-
-        <div className="relative z-20 mx-auto max-w-[1280px] w-full px-6 md:px-10">
-          <div className="max-w-[700px]">
-            <p className="text-[14px] font-bold uppercase tracking-[0.25em] text-[#27B1B8]">
-              ¿QUIÉNES SOMOS?
-            </p>
-
-            <h1 className="mt-6 text-[45px] font-black leading-[1.05] tracking-[-0.03em] text-[#0C535B] md:text-[65px] lg:text-[75px]">
-              Impulsamos <br />
-              <span className="text-[#27B1B8]">el movimiento</span> <br />
-              de miles de vehículos
+    <main className="min-h-screen overflow-x-hidden bg-white text-[#111]">
+      {/* Hero */}
+      <section className="mx-auto max-w-[1440px] px-6 py-16">
+        <div className="grid items-center gap-12 lg:grid-cols-2">
+          <div>
+            <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-[#111] md:text-5xl">
+              Acerca de{" "}
+              <span className="text-[#27B1B8]">nosotros</span>
             </h1>
-
-            <p className="mt-8 max-w-[500px] text-[18px] leading-relaxed text-[#4c6275] md:text-[21px]">
-              En <span className="font-bold text-[#0C535B]">Kliniu</span> conectamos calidad, tecnología y confianza para que encuentres el repuesto exacto en toda Colombia.
+            <div className="mt-3 h-1 w-12 rounded-full bg-[#27B1B8]" />
+            <p className="mt-6 text-base leading-8 text-[#555]">
+              Somos Kliniu, una compañía colombiana dedicada a desarrollar y comercializar ideas de
+              dispensadores y limpieza. Desarrollamos nuestras ideas haciéndolas realidad a través
+              de un proceso de creatividad e industrial en donde hacemos los moldes de inyección de
+              plástico para posteriormente su inyección y concepción de los diferentes dispensadores
+              que ofrecemos, con el firme propósito de crear mes a mes nuevas soluciones que le
+              permitan a nuestros clientes mantener la higiene y desinfección de la manera más
+              segura e inteligente.
             </p>
-
-            <div className="mt-10">
-              <Link 
-                href="/catalogo" 
-                className="inline-block bg-[#0C535B] text-white px-8 py-4 rounded-full font-bold hover:bg-[#27B1B8] transition-all shadow-lg hover:-translate-y-1"
-              >
-                Explorar Catálogo
-              </Link>
-            </div>
+          </div>
+          <div className="flex items-center justify-center overflow-hidden rounded-2xl bg-[#f8f8f7]">
+            <Image
+              src="/hero-banner-1.jpg"
+              alt="Dispensador Kliniu"
+              width={600}
+              height={420}
+              className="h-72 w-full object-cover lg:h-96"
+            />
           </div>
         </div>
       </section>
 
-      {/* 2. SECCIÓN DE CONTENIDO */}
-      <section className="mx-auto max-w-[1280px] px-6 py-24 md:px-10">
-        
-        {/* BENEFICIOS */}
-        <div className="grid gap-8 md:grid-cols-3">
-          {beneficios.map((item) => (
-            <article
-              key={item.titulo}
-              className="group flex flex-col items-center rounded-[40px] border border-[#f0f0f0] bg-white p-10 text-center shadow-[0_15px_45px_rgba(0,0,0,0.05)] transition-all hover:border-[#27B1B8]/30 hover:shadow-[0_25px_60px_rgba(0,0,0,0.1)]"
+      {/* Misión / Visión */}
+      <section className="mx-auto w-full max-w-[1440px] px-6 pb-20">
+        <div className="grid max-w-[820px] gap-5 md:grid-cols-2">
+          {/* Misión */}
+          <div className="relative pb-6">
+            <div
+              className="relative min-h-[225px] overflow-visible rounded-lg px-14 py-8 text-white"
+              style={{
+                background: "linear-gradient(150deg, #145F64 0%, #003E42 100%)",
+                minHeight: 225,
+              }}
             >
-              <div className="mb-8 flex h-[110px] w-[110px] items-center justify-center rounded-full bg-[#f6f6f6] shadow-inner group-hover:scale-110 transition-transform">
-                <div className="flex h-[85px] w-[85px] items-center justify-center rounded-full bg-white shadow-md border border-[#f0f0f0]">
-                  <Image
-                    src={item.icono}
-                    alt={item.titulo}
-                    width={40}
-                    height={40}
-                    style={{ width: "40px", height: "auto" }} // CORRECCIÓN AQUÍ
-                    className="object-contain"
-                  />
+              <div className="ml-6 flex items-start gap-4">
+                <div className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full border border-white">
+                  <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 17l4-8 4 4 3-6 4 10" /><path d="M3 21h18" />
+                  </svg>
+                </div>
+                <div className="pt-1">
+                  <h2 className="text-[20px] font-black uppercase leading-none tracking-tight">MISIÓN</h2>
+                  <p
+                    className="mt-2 text-[12px] font-semibold leading-[1.08] text-white"
+                    style={{ maxWidth: 205 }}
+                  >
+                    Nuestra misión es fabricar ideas en productos que ayuden a la limpieza y
+                    desinfección.
+                  </p>
+                  <div className="mt-2 h-0.5 w-9 bg-white" />
                 </div>
               </div>
-              <h2 className="text-[24px] font-black tracking-tight text-[#0C535B]">{item.titulo}</h2>
-              <div className="my-5 h-[4px] w-14 rounded-full bg-[#27B1B8]" />
-              <p className="max-w-[220px] text-[16px] leading-relaxed text-[#5c7285]">{item.descripcion}</p>
-            </article>
-          ))}
-        </div>
-
-        {/* MISIÓN Y VISIÓN */}
-        <div className="mt-28 flex flex-col gap-6">
-          
-          {/* MISIÓN */}
-          <div className="grid gap-8 rounded-lg border border-black/8 bg-white px-8 py-8 shadow-[0_18px_42px_rgba(15,23,42,0.06)] transition-all duration-300 hover:shadow-[0_24px_50px_rgba(15,23,42,0.09)] md:grid-cols-[120px_minmax(0,1fr)] md:px-10 md:py-10">
-            <div className="flex h-[104px] w-[104px] items-center justify-center rounded-lg bg-[#EAF8F6] shadow-[inset_0_0_0_1px_rgba(237,132,53,0.08)]">
-              <Image 
-                src="/icon-mision.png" 
-                alt="Misión" 
-                width={52} 
-                height={52} 
-                style={{ width: "52px", height: "auto" }}
+              <Image
+                src="/foca-vision-cutout.png"
+                alt=""
+                width={320}
+                height={205}
+                className="absolute object-contain"
+                style={{
+                  bottom: -38,
+                  left: "58%",
+                  width: 300,
+                  transform: "translateX(-50%)",
+                }}
               />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#27B1B8]">
-                Nuestra esencia
-              </p>
-              <h3 className="mt-3 text-[2rem] font-semibold tracking-[-0.05em] text-[#0C535B] md:text-[2.5rem]">
-                Nuestra Misión
-              </h3>
-              <div className="mt-4 max-w-[56rem] space-y-3 text-[1.05rem] leading-8 text-[#526474]">
-                <p>
-                  Ser la empresa lider en el suministro de partes y repuestos de alta calidad para el sector carrocero y automotriz, ofreciendo un servicio excepcional y precios competitivos.
-                </p>
-                <p>
-                  Brindar soluciones integrales a las necesidades de nuestros clientes, contribuyendo al exito de sus negocios.
-                </p>
-                <p>
-                  Fomentar una cultura de excelencia en todos los aspectos de nuestra empresa, basada en la responsabilidad, el trabajo en equipo y la innovacion.
-                </p>
-              </div>
             </div>
           </div>
-          
-          {/* VISIÓN */}
-          <div className="grid gap-8 rounded-lg border border-black/8 bg-white px-8 py-8 shadow-[0_18px_42px_rgba(15,23,42,0.06)] transition-all duration-300 hover:shadow-[0_24px_50px_rgba(15,23,42,0.09)] md:grid-cols-[120px_minmax(0,1fr)] md:px-10 md:py-10">
-            <div className="flex h-[104px] w-[104px] items-center justify-center rounded-lg bg-[#EAF8F6] shadow-[inset_0_0_0_1px_rgba(237,132,53,0.08)]">
-              <Image 
-                src="/icon-vision.png" 
-                alt="Visión" 
-                width={52} 
-                height={52} 
-                style={{ width: "52px", height: "auto" }}
-              />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#27B1B8]">
-                Hacia donde vamos
-              </p>
-              <h3 className="mt-3 text-[2rem] font-semibold tracking-[-0.05em] text-[#0C535B] md:text-[2.5rem]">
-                Nuestra Visión
-              </h3>
-              <div className="mt-4 max-w-[56rem] space-y-3 text-[1.05rem] leading-8 text-[#526474]">
-                <p>
-                  Ser reconocidos como la empresa mas confiable y respetada del sector carrocero y automotriz, tanto por nuestros clientes como por nuestros proveedores.
-                </p>
-                <p>
-                  Expandir nuestra presencia a nivel nacional e internacional, consolidando nuestra posicion como lideres en el mercado.
-                </p>
-                <p>
-                  Convertirnos en un referente en materia de calidad, innovacion y atencion al cliente.
-                </p>
+
+          {/* Visión */}
+          <div className="relative pb-6">
+            <div
+              className="relative min-h-[225px] overflow-visible rounded-lg px-14 py-8 text-white"
+              style={{
+                background: "linear-gradient(150deg, #45B9AD 0%, #7ABCB9 100%)",
+                minHeight: 225,
+              }}
+            >
+              <div className="ml-6 flex items-start gap-4">
+                <div className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full border border-white">
+                  <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3" /><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" />
+                  </svg>
+                </div>
+                <div className="pt-1">
+                  <h2 className="text-[20px] font-black uppercase leading-none tracking-tight">VISIÓN</h2>
+                  <p
+                    className="mt-2 text-[12px] font-semibold leading-[1.08] text-white"
+                    style={{ maxWidth: 230 }}
+                  >
+                    Nuestra visión es ser líderes en el 2.023 en la fabricación y comercialización
+                    en Colombia, Centro América y El Caribe de dispensadores e insumos de aseo
+                    personal.
+                  </p>
+                  <div className="mt-2 h-0.5 w-9 bg-white" />
+                </div>
               </div>
+              <Image
+                src="/foca-mision-cutout.png"
+                alt=""
+                width={330}
+                height={245}
+                className="absolute object-contain"
+                style={{
+                  bottom: -54,
+                  right: 24,
+                  width: 320,
+                }}
+              />
             </div>
           </div>
         </div>
-
       </section>
+
+      {/* Valores corporativos */}
+      <section className="bg-[#f8f8f7] py-16">
+        <div className="mx-auto max-w-[1440px] px-6">
+          <h2 className="mb-10 text-center text-3xl font-extrabold tracking-tight text-[#111]">
+            Valores corporativos
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+            {valores.map((v) => (
+              <div
+                key={v.titulo}
+                className="rounded-2xl border border-black/8 bg-white p-5 text-center shadow-sm"
+              >
+                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#e8f5f5]">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 text-[#27B1B8]" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <p className="text-sm font-extrabold text-[#0C535B]">{v.titulo}</p>
+                <p className="mt-1.5 text-xs leading-5 text-[#6e7379]">{v.descripcion}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Calidad banner */}
+      <section className="bg-[#0C535B] py-12">
+        <div className="mx-auto max-w-[1440px] px-6">
+          <div className="flex flex-col items-center gap-8 lg:flex-row lg:justify-between">
+            <div className="max-w-sm text-white">
+              <p className="text-sm font-bold uppercase tracking-wider opacity-70">Certificaciones</p>
+              <h3 className="mt-2 text-3xl font-extrabold">Calidad</h3>
+              <p className="mt-3 text-sm leading-6 opacity-80">
+                Trabajamos bajo los más altos estándares de calidad para garantizar soluciones
+                confiables, seguras y duraderas.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-6">
+              {[
+                { label: "ISO 9001", color: "bg-white" },
+                { label: "ISO 14001", color: "bg-white" },
+                { label: "FDA", color: "bg-white" },
+                { label: "Cámara de Comercio\nde Bogotá", color: "bg-white" },
+                { label: "Corferias", color: "bg-white" },
+              ].map((cert) => (
+                <div
+                  key={cert.label}
+                  className="flex h-16 min-w-[80px] items-center justify-center rounded-xl bg-white px-4 shadow-sm"
+                >
+                  <span className="whitespace-pre-line text-center text-xs font-bold text-[#0C535B]">
+                    {cert.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden lg:block">
+              <Image
+                src="/kliniu-loader-logo.png"
+                alt="Kliniu"
+                width={100}
+                height={100}
+                className="object-contain opacity-60"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <SiteFooter />
     </main>
   );
 }
