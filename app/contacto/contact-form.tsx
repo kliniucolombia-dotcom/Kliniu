@@ -88,9 +88,9 @@ export default function ContactForm() {
     setForm((c) => ({ ...c, [field]: e.target.value }));
 
   return (
-    <section className="bg-white py-12">
-      <div className="mx-auto max-w-[1440px] px-6">
-        <div className="mx-auto grid max-w-[1180px] gap-8 rounded-lg bg-[#eaf2f2] px-8 py-6 md:grid-cols-[230px_minmax(360px,520px)_250px] md:items-center md:gap-8 xl:px-12">
+    <section className="overflow-hidden bg-white py-12">
+      <div className="mx-auto w-full max-w-[1440px] overflow-hidden px-6">
+        <div className="mx-auto grid w-full max-w-[1180px] gap-8 rounded-lg bg-[#eaf2f2] px-8 py-6 md:grid-cols-[220px_minmax(0,520px)_240px] md:items-center md:justify-center md:gap-7 xl:px-12">
           {/* Intro */}
           <div className="relative min-h-[235px]">
             <h2 className="max-w-[220px] text-[24px] font-black leading-[0.95] tracking-tight text-[#073F43]">
@@ -109,7 +109,7 @@ export default function ContactForm() {
           </div>
 
           {/* Form */}
-          <div className="rounded-md bg-white px-5 py-5 shadow-sm">
+          <div className="min-w-0 rounded-md bg-white px-5 py-5 shadow-sm">
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
@@ -182,7 +182,7 @@ export default function ContactForm() {
           </div>
 
           {/* Help options */}
-          <div>
+          <div className="min-w-0">
             <h3 className="text-[14px] font-black text-black">¿En que podemos ayudarte?</h3>
             <div className="mt-5 space-y-4">
               {helpOptions.map((opt) => (
