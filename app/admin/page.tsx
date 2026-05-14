@@ -630,6 +630,7 @@ export default function AdminPage() {
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [adminName, setAdminName] = useState("");
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [inventoryAdjustments, setInventoryAdjustments] = useState<Record<string, string>>({});
   const [inventoryMovements, setInventoryMovements] = useState<InventoryMovementSummary[]>([]);
   const [isLoadingInventory, setIsLoadingInventory] = useState(false);
@@ -813,6 +814,18 @@ export default function AdminPage() {
       router.replace("/login?next=/admin");
     }
   }, [isAuthenticated, isCheckingSession, router]);
+
+  const handleAdminLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      setIsAuthenticated(false);
+      setAdminName("");
+      router.replace("/login?next=/admin");
+      router.refresh();
+    }
+  };
 
   const handleChange = (
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
@@ -1335,26 +1348,46 @@ export default function AdminPage() {
 
                 {/* Derecha: botones */}
                 <div className="flex flex-col items-end gap-3">
-                <div className="flex flex-wrap justify-end gap-3">
-                  {[
-                    { action: openCreateView, label: "Crear producto", icon: <span className="text-sm">+</span>, color: "#0C535B" },
-                    { action: openEditView, label: "Editar productos", icon: <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="m16.5 3.5 4 4L7 21l-4 1 1-4Z"/></svg>, color: "#27B1B8" },
-                    { action: openInventoryView, label: "Inventario", icon: <span className="text-sm">≡</span>, color: "#1f8b45" },
-                    { action: openOrdersView, label: "Pedidos y envíos", icon: <span className="text-sm">↗</span>, color: "#6366f1" },
-                  ].map(({ action, label, icon, color }) => (
+                  <div className="flex flex-wrap justify-end gap-3">
+                    {[
+                      { action: openCreateView, label: "Crear producto", icon: <span className="text-sm">+</span>, color: "#0C535B" },
+                      { action: openEditView, label: "Editar productos", icon: <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="m16.5 3.5 4 4L7 21l-4 1 1-4Z"/></svg>, color: "#27B1B8" },
+                      { action: openInventoryView, label: "Inventario", icon: <span className="text-sm">≡</span>, color: "#1f8b45" },
+                      { action: openOrdersView, label: "Pedidos y envíos", icon: <span className="text-sm">↗</span>, color: "#6366f1" },
+                    ].map(({ action, label, icon, color }) => (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={action}
+                        className="inline-flex min-h-12 items-center gap-3 rounded-full border border-black/15 bg-white/80 px-4 py-2.5 text-sm font-semibold text-[#0C535B] transition-all duration-200 hover:bg-white"
+                      >
+                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full text-white" style={{ background: color }}>
+                          {icon}
+                        </span>
+                        {label}
+                      </button>
+                    ))}
                     <button
-                      key={label}
                       type="button"
-                      onClick={action}
-                      className="inline-flex min-h-12 items-center gap-3 rounded-full border border-black/15 bg-white/80 px-4 py-2.5 text-sm font-semibold text-[#0C535B] transition-all duration-200 hover:bg-white"
+                      onClick={handleAdminLogout}
+                      disabled={isLoggingOut}
+                      className="inline-flex min-h-12 items-center gap-3 rounded-full border border-red-500/20 bg-white/85 px-4 py-2.5 text-sm font-semibold text-[#8f1f1f] transition-all duration-200 hover:bg-white disabled:cursor-wait disabled:opacity-60"
                     >
-                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full text-white" style={{ background: color }}>
-                        {icon}
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#b42318] text-white">
+                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                          <path d="M16 17l5-5-5-5" />
+                          <path d="M21 12H9" />
+                        </svg>
                       </span>
-                      {label}
+                      {isLoggingOut ? "Cerrando..." : "Cerrar sesión"}
                     </button>
-                  ))}
-                </div>
+                  </div>
+                  {adminName && (
+                    <p className="pr-2 text-xs font-semibold text-[#0C535B]/70">
+                      Sesión activa: {adminName}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
