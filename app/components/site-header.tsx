@@ -10,7 +10,7 @@ import { categoriasData, slugCategoria } from "../data/catalog";
 type SiteHeaderProps = {
   currentUser: {
     fullName: string;
-    role: "CUSTOMER" | "ADMIN";
+    role: "CUSTOMER" | "ADMIN" | "SELLER";
   } | null;
 };
 

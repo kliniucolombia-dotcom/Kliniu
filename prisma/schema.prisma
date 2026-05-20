@@ -10,6 +10,7 @@ datasource db {
 enum UserRole {
   CUSTOMER
   ADMIN
+  SELLER
 }
 
 enum OrderStatus {
@@ -77,6 +78,8 @@ model Product {
   featured           Boolean             @default(false)
   active             Boolean             @default(true)
   inventoryMovements InventoryMovement[]
+  priceHistory       PriceHistory[]
+  campaigns          Campaign[]
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
 }
@@ -95,10 +98,17 @@ model User {
   role              UserRole      @default(CUSTOMER)
   points            Int           @default(0)
   level             CustomerLevel @default(AQUA)
+  // Puntos K fields
+  kTier             String        @default("NONE")
+  monthlyPeriod     String        @default("")
+  bonusBalance      Int           @default(0)
+  bonusExpiry       DateTime?
   cartItems         CartItem[]
   orders            Order[]
   pointTransactions PointTransaction[]
   rewardRedemptions RewardRedemption[]
+  priceChanges      PriceHistory[]     @relation("PriceChangedBy")
+  campaigns         Campaign[]         @relation("CampaignSeller")
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 }
@@ -205,4 +215,37 @@ model RewardRedemption {
   points    Int
   status    String   @default("PENDING")
   createdAt DateTime @default(now())
+}
+
+// ─── Panel Comercial ───
+
+model PriceHistory {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  oldPrice   Int
+  newPrice   Int
+  changedBy  String
+  user       User     @relation("PriceChangedBy", fields: [changedBy], references: [id])
+  note       String?
+  createdAt  DateTime @default(now())
+}
+
+model Campaign {
+  id          String    @id @default(cuid())
+  name        String
+  sellerId    String
+  seller      User      @relation("CampaignSeller", fields: [sellerId], references: [id])
+  productId   String?
+  product     Product?  @relation(fields: [productId], references: [id])
+  investment  Float     @default(0)
+  sales       Float     @default(0)
+  targetMultiple Float  @default(10)
+  status      String    @default("ACTIVE")
+  platform    String    @default("Meta Ads")
+  startDate   DateTime  @default(now())
+  endDate     DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

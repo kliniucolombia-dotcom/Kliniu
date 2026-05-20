@@ -1,0 +1,47 @@
+import { getSessionFromCookies } from "@/lib/auth";
+import { getCampaignsForPanel } from "@/lib/panel";
+import { prisma } from "@/lib/prisma";
+
+export async function GET() {
+  const session = await getSessionFromCookies();
+  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
+    return Response.json({ error: "No autorizado" }, { status: 401 });
+  }
+  const sellerId = session.role === "SELLER" ? session.userId : undefined;
+  const campaigns = await getCampaignsForPanel(sellerId);
+  return Response.json(campaigns);
+}
+
+export async function POST(request: Request) {
+  const session = await getSessionFromCookies();
+  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
+    return Response.json({ error: "No autorizado" }, { status: 401 });
+  }
+  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
+
+  const body = await request.json() as {
+    name: string; sellerId: string; productId?: string;
+    investment: number; sales: number; targetMultiple: number;
+    platform: string; notes?: string; status: string;
+  };
+
+  if (!body.name) return Response.json({ error: "Nombre requerido" }, { status: 400 });
+
+  const sellerId = session.role === "SELLER" ? session.userId : (body.sellerId || session.userId);
+
+  const campaign = await prisma.campaign.create({
+    data: {
+      name: body.name,
+      sellerId,
+      productId: body.productId || null,
+      investment: body.investment ?? 0,
+      sales: body.sales ?? 0,
+      targetMultiple: body.targetMultiple ?? 10,
+      platform: body.platform ?? "Meta Ads",
+      notes: body.notes ?? null,
+      status: body.status ?? "ACTIVE",
+    },
+  });
+
+  return Response.json(campaign);
+}
