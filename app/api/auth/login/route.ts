@@ -64,6 +64,10 @@ export async function POST(request: Request) {
         ? "La base de datos no está configurada todavía."
         : "No fue posible iniciar sesión.";
 
-    return Response.json({ error: message }, { status: 500 });
+    const debug = process.env.NODE_ENV !== "production" || process.env.DEBUG_AUTH === "1"
+      ? (error instanceof Error ? error.message : String(error))
+      : undefined;
+
+    return Response.json({ error: message, debug }, { status: 500 });
   }
 }
