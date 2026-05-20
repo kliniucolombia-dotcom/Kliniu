@@ -107,8 +107,10 @@ model User {
   orders            Order[]
   pointTransactions PointTransaction[]
   rewardRedemptions RewardRedemption[]
+  whatsappPhone     String?
   priceChanges      PriceHistory[]     @relation("PriceChangedBy")
   campaigns         Campaign[]         @relation("CampaignSeller")
+  assignedOrders    Order[]            @relation("AssignedOrders")
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 }
@@ -150,11 +152,13 @@ model Order {
   adminNotes    String?
   shippedAt     DateTime?
   deliveredAt   DateTime?
-  subtotal      Int
-  totalItems    Int
-  items         OrderItem[]
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  subtotal         Int
+  totalItems       Int
+  assignedSellerId String?
+  assignedSeller   User?      @relation("AssignedOrders", fields: [assignedSellerId], references: [id])
+  items            OrderItem[]
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 }
 
 model OrderItem {

@@ -93,6 +93,16 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
       }
     }
 
+    // Round-robin: assign to the seller with fewest orders
+    const sellers = await tx.user.findMany({
+      where: { role: "SELLER" },
+      select: { id: true, _count: { select: { assignedOrders: true } } },
+      orderBy: { fullName: "asc" },
+    });
+    const assignedSellerId = sellers.length > 0
+      ? sellers.sort((a, b) => a._count.assignedOrders - b._count.assignedOrders)[0].id
+      : null;
+
     const createdOrder = await tx.order.create({
       data: {
         userId,
@@ -107,6 +117,7 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
         notes,
         subtotal,
         totalItems,
+        assignedSellerId,
         items: {
           create: cartItems.map((item) => {
             const unitPrice = parsePriceValue(item.price);
