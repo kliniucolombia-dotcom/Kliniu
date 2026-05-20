@@ -1379,6 +1379,17 @@ export default function AdminPage() {
                         {label}
                       </button>
                     ))}
+                    <a
+                      href="/panel"
+                      className="inline-flex min-h-12 items-center gap-3 rounded-full border border-black/15 bg-white/80 px-4 py-2.5 text-sm font-semibold text-[#0C535B] transition-all duration-200 hover:bg-white"
+                    >
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full text-white" style={{ background: "#27B1B8" }}>
+                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+                        </svg>
+                      </span>
+                      Panel Comercial
+                    </a>
                     <button
                       type="button"
                       onClick={handleAdminLogout}

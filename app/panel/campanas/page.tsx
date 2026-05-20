@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { calcROAS, getCampaignStatus, STATUS_META, calcCompliance } from "@/lib/panel";
+import { calcROAS, getCampaignStatus, STATUS_META, calcCompliance } from "@/lib/panel-utils";
 
 type Campaign = {
   id: string; name: string; platform: string; investment: number; sales: number;
