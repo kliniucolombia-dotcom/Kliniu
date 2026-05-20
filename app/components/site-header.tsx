@@ -222,7 +222,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
         <div className="absolute left-0 right-0 top-full z-50 border-t border-black/8 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.13)]">
           <div className="mx-auto max-w-[1510px] px-5 py-5">
             <div className="scrollbar-hidden flex items-start gap-5 overflow-x-auto">
-              {categoriasData.filter((cat) => cat.nombre !== "Outlet").map((cat) => {
+              {categoriasData.filter((cat) => cat.nombre !== "Outlet" && cat.nombre !== "Insumos/Repuesto").map((cat) => {
                 return (
                   <button
                     key={cat.nombre}

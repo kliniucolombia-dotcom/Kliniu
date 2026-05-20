@@ -204,7 +204,7 @@ function LandingCategorias({ onSelect }: { onSelect: (cat: string) => void }) {
       <section className="px-6 py-12">
         <div className="mx-auto max-w-[1440px]">
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-            {categoriasData.filter((cat) => cat.nombre !== "Outlet").map((cat) => (
+            {categoriasData.filter((cat) => cat.nombre !== "Outlet" && cat.nombre !== "Insumos/Repuesto").map((cat) => (
               <button
                 key={cat.nombre}
                 type="button"
