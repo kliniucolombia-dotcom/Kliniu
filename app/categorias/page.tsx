@@ -100,6 +100,7 @@ function DropdownFiltro({
 function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
   const { addItem } = useCart();
   const [agregado, setAgregado] = useState(false);
+  const [hoveredColor, setHoveredColor] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); }, []);
@@ -112,8 +113,11 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
     timeoutRef.current = setTimeout(() => setAgregado(false), 1400);
   };
 
-  // Parse tipo badge from descripcion (e.g. "Interdobladas · 600 toallas · Alto tráfico")
   const tipoBadge = producto.descripcion?.split("·")[0]?.trim();
+  const variaciones = producto.variacionesColor ?? [];
+  const imagenActual = hoveredColor
+    ? (variaciones.find((v) => v.color === hoveredColor)?.image ?? producto.imagen)
+    : producto.imagen;
 
   return (
     <article className="group relative overflow-hidden rounded-2xl border border-black/8 bg-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.10)]">
@@ -128,9 +132,9 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
       <div className="flex h-44 items-center justify-center bg-white px-6 py-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={producto.imagen}
+          src={imagenActual}
           alt={producto.nombre}
-          className="max-h-36 w-auto max-w-full object-contain"
+          className="max-h-36 w-auto max-w-full object-contain transition-opacity duration-150"
           onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
         />
       </div>
@@ -141,19 +145,36 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
           {producto.nombre}
         </h3>
 
-        {/* Type badge + uso */}
+        {/* Type badge */}
         {tipoBadge && (
           <span className="inline-block rounded-md bg-[#e8f5f5] px-2 py-0.5 text-[11px] font-semibold text-[#0C535B]">
             {tipoBadge}
           </span>
         )}
-        <p className="text-xs text-[#888]">Uso: Alto tráfico</p>
 
         {/* Color swatches */}
-        <div className="flex items-center gap-1.5 pt-0.5">
-          <span className="h-4 w-4 rounded-full border border-black/20 bg-[#222]" />
-          <span className="h-4 w-4 rounded-full border border-black/20 bg-white" />
-        </div>
+        {variaciones.length > 0 ? (
+          <div className="flex items-center gap-1.5 pt-0.5">
+            {variaciones.map((v) => (
+              <button
+                key={v.color}
+                type="button"
+                title={v.label}
+                onMouseEnter={() => setHoveredColor(v.color)}
+                onMouseLeave={() => setHoveredColor(null)}
+                className={`h-4 w-4 rounded-full border transition-transform duration-150 hover:scale-125 ${
+                  hoveredColor === v.color ? "border-[#27B1B8] scale-125" : "border-black/20"
+                }`}
+                style={{ background: v.color }}
+              />
+            ))}
+            {hoveredColor && (
+              <span className="ml-1 text-[10px] font-medium text-[#64748B]">
+                {variaciones.find((v) => v.color === hoveredColor)?.label}
+              </span>
+            )}
+          </div>
+        ) : null}
 
         <p className="pt-0.5 text-lg font-bold text-[#111]">{producto.precio}</p>
 

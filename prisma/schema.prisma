@@ -75,6 +75,7 @@ model Product {
   compatibility      String[]            @default([])
   warranty           String?
   technicalSpecs     Json?
+  colorVariants      Json?               @default("[]")
   featured           Boolean             @default(false)
   active             Boolean             @default(true)
   inventoryMovements InventoryMovement[]

@@ -39,9 +39,12 @@ export async function getDashboardStats() {
   const now = new Date();
   const startOfDay   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const dayOfWeek    = now.getDay() === 0 ? 6 : now.getDay() - 1; // Monday = 0
+  const startOfWeek  = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
 
-  const [todayOrders, monthOrders, campaigns, products, newCustomers] = await Promise.all([
+  const [todayOrders, weekOrders, monthOrders, campaigns, products, newCustomers] = await Promise.all([
     prisma.order.findMany({ where: { createdAt: { gte: startOfDay }, status: { not: "CANCELLED" } }, select: { subtotal: true } }),
+    prisma.order.findMany({ where: { createdAt: { gte: startOfWeek }, status: { not: "CANCELLED" } }, select: { subtotal: true } }),
     prisma.order.findMany({ where: { createdAt: { gte: startOfMonth }, status: { not: "CANCELLED" } }, select: { subtotal: true, userId: true } }),
     prisma.campaign.findMany({ include: { seller: { select: { id: true, fullName: true } }, product: { select: { name: true, image: true } } } }),
     prisma.product.count({ where: { active: true } }),
@@ -49,6 +52,7 @@ export async function getDashboardStats() {
   ]);
 
   const todayTotal  = todayOrders.reduce((s, o) => s + o.subtotal, 0);
+  const weekTotal   = weekOrders.reduce((s, o) => s + o.subtotal, 0);
   const monthTotal  = monthOrders.reduce((s, o) => s + o.subtotal, 0);
   const totalInvestment = campaigns.reduce((s, c) => s + c.investment, 0);
   const totalSales      = campaigns.reduce((s, c) => s + c.sales, 0);
@@ -85,6 +89,8 @@ export async function getDashboardStats() {
 
   return {
     todayTotal,
+    weekTotal,
+    weekOrderCount: weekOrders.length,
     monthTotal,
     totalInvestment,
     totalSales,
@@ -99,6 +105,51 @@ export async function getDashboardStats() {
     avgTicket,
     monthOrderCount: monthOrders.length,
   };
+}
+
+export async function getSellerStats() {
+  if (!prisma) return [];
+
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const dayOfWeek    = now.getDay() === 0 ? 6 : now.getDay() - 1;
+  const startOfWeek  = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+
+  const sellers = await prisma.user.findMany({
+    where: { role: "SELLER" },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      whatsappPhone: true,
+      assignedOrders: {
+        where: { status: { not: "CANCELLED" } },
+        select: { subtotal: true, createdAt: true, shippingStatus: true },
+      },
+    },
+    orderBy: { fullName: "asc" },
+  });
+
+  return sellers.map((s) => {
+    const allOrders   = s.assignedOrders;
+    const weekOrders  = allOrders.filter((o) => new Date(o.createdAt) >= startOfWeek);
+    const monthOrders = allOrders.filter((o) => new Date(o.createdAt) >= startOfMonth);
+
+    return {
+      id:          s.id,
+      name:        s.fullName,
+      email:       s.email,
+      phone:       s.whatsappPhone,
+      totalOrders: allOrders.length,
+      weekOrders:  weekOrders.length,
+      weekTotal:   weekOrders.reduce((sum, o) => sum + o.subtotal, 0),
+      monthOrders: monthOrders.length,
+      monthTotal:  monthOrders.reduce((sum, o) => sum + o.subtotal, 0),
+      pending:     allOrders.filter((o) => o.shippingStatus === "PENDING").length,
+      shipped:     allOrders.filter((o) => o.shippingStatus === "SHIPPED").length,
+      delivered:   allOrders.filter((o) => o.shippingStatus === "DELIVERED").length,
+    };
+  });
 }
 
 export async function getProductsForPanel(sellerId?: string) {

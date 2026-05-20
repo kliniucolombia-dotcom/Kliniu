@@ -10,6 +10,7 @@ import {
   type Disponibilidad,
   type ProductoEspecificacion,
   type ProductoCatalogo,
+  type VariacionColor,
 } from "@/app/data/catalog";
 import { prisma } from "@/lib/prisma";
 
@@ -34,6 +35,7 @@ type ProductRecord = {
   compatibility?: string[] | null;
   warranty?: string | null;
   technicalSpecs?: unknown;
+  colorVariants?: unknown;
   featured: boolean;
 };
 
@@ -73,6 +75,7 @@ export type ProductMutationInput = {
   compatibilidad?: string[];
   garantia?: string;
   especificacionesTecnicas?: ProductoEspecificacion[];
+  variacionesColor?: VariacionColor[];
 };
 
 function createSkuFromName(name: string) {
@@ -257,6 +260,7 @@ function toStoreProduct(product: ProductRecord): StoreProduct {
         product.application?.trim() ||
         `Aplicación recomendada para la línea ${categoria}.`,
     }),
+    variacionesColor: Array.isArray(product.colorVariants) ? (product.colorVariants as VariacionColor[]) : [],
     destacado: product.featured,
   };
 }
@@ -406,6 +410,7 @@ export async function createProduct(input: ProductMutationInput) {
       },
       warranty: input.garantia?.trim() || "1 año de garantía del fabricante",
       technicalSpecs: normalizeTechnicalSpecs(input.especificacionesTecnicas),
+      colorVariants: input.variacionesColor ?? [],
       featured: false,
       active: true,
       inventoryMovements: {
@@ -522,6 +527,7 @@ export async function updateProduct(slug: string, input: ProductMutationInput) {
       },
       warranty: input.garantia?.trim() || "1 año de garantía del fabricante",
       technicalSpecs: normalizeTechnicalSpecs(input.especificacionesTecnicas),
+      colorVariants: input.variacionesColor ?? [],
       inventoryMovements:
         stockDelta !== 0
           ? {

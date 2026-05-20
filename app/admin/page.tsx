@@ -12,7 +12,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useProducts } from "../components/products-provider";
 import { categorias, type Categoria, type ProductoCatalogo } from "../data/catalog";
-import type { ProductoEspecificacion } from "../data/catalog";
+import type { ProductoEspecificacion, VariacionColor } from "../data/catalog";
 import type { InventoryMovementSummary } from "@/lib/products";
 import type { ShippingStatus } from "@/lib/orders";
 
@@ -486,6 +486,185 @@ function ProductImageSelector({
   );
 }
 
+function ColorVariantImageUpload({
+  value,
+  onChange,
+  galleryImages,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+  galleryImages: string[];
+}) {
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = async (file: File) => {
+    setUploading(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("productName", "color-variant");
+    const res = await fetch("/api/uploads", { method: "POST", body: fd });
+    const payload = await res.json() as { publicUrl?: string; error?: string };
+    if (payload.publicUrl) onChange(payload.publicUrl);
+    setUploading(false);
+  };
+
+  const allImages = galleryImages.filter(Boolean);
+
+  return (
+    <div className="space-y-2">
+      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Imagen del color</span>
+
+      {/* Preview + upload button */}
+      <div className="flex items-center gap-3">
+        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-black/10 bg-[#f5f5f5]">
+          {value ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={value} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-[#c0c5cc]">
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+            </div>
+          )}
+        </div>
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-xs font-semibold text-[#0C535B] transition-colors hover:bg-[#0C535B] hover:text-white disabled:opacity-60"
+          >
+            {uploading ? (
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            ) : (
+              <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+            )}
+            {uploading ? "Subiendo..." : "Cargar imagen"}
+          </button>
+          <p className="text-[10px] text-[#9a9da2]">JPG, PNG, WebP · máx. 3 MB</p>
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }}
+        />
+      </div>
+
+      {/* Gallery quick-pick if available */}
+      {allImages.length > 0 && (
+        <div>
+          <p className="mb-1.5 text-[10px] text-[#9a9da2]">O elige de las imágenes del producto:</p>
+          <div className="flex flex-wrap gap-2">
+            {allImages.map((img) => (
+              <button
+                key={img}
+                type="button"
+                onClick={() => onChange(img)}
+                className={`h-12 w-12 overflow-hidden rounded-xl border-2 transition-all ${value === img ? "border-[#27B1B8]" : "border-black/10 hover:border-[#27B1B8]/50"}`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={img} alt="" className="h-full w-full object-cover" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ColorVariantsEditor({
+  variants,
+  onChange,
+  galleryImages,
+}: {
+  variants: VariacionColor[];
+  onChange: (v: VariacionColor[]) => void;
+  galleryImages: string[];
+}) {
+  const addVariant = () => onChange([...variants, { color: "#ffffff", label: "", image: galleryImages[0] ?? "" }]);
+  const removeVariant = (i: number) => onChange(variants.filter((_, idx) => idx !== i));
+  const updateVariant = (i: number, field: keyof VariacionColor, value: string) =>
+    onChange(variants.map((v, idx) => (idx === i ? { ...v, [field]: value } : v)));
+
+  return (
+    <div className="md:col-span-2 rounded-[1.5rem] border border-black/8 bg-[#fafaf9] p-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-[#4f545a]">Variaciones de color</p>
+          <p className="mt-2 text-xs leading-6 text-[#6e7379]">
+            Define los colores disponibles del producto. Al pasar el cursor en la tarjeta se mostrará la imagen del color.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={addVariant}
+          className="inline-flex rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-[#0C535B] transition-colors duration-200 hover:bg-[#0C535B] hover:text-white"
+        >
+          Agregar color
+        </button>
+      </div>
+
+      <div className="mt-5 space-y-3">
+        {variants.length === 0 && (
+          <div className="rounded-[1.2rem] border border-dashed border-black/12 bg-white px-4 py-5 text-sm text-[#6e7379]">
+            Sin variaciones de color. Agrega los colores disponibles del producto.
+          </div>
+        )}
+        {variants.map((v, i) => (
+          <div key={i} className="grid gap-3 rounded-[1.2rem] border border-black/8 bg-white p-4 md:grid-cols-[56px_1fr_minmax(0,2fr)_auto]">
+            {/* Color picker */}
+            <div className="flex flex-col items-center gap-2">
+              <label className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Color</label>
+              <div className="relative">
+                <input
+                  type="color"
+                  value={v.color}
+                  onChange={(e) => updateVariant(i, "color", e.target.value)}
+                  className="h-10 w-10 cursor-pointer rounded-full border border-black/10 p-0.5"
+                />
+              </div>
+            </div>
+            {/* Label */}
+            <label className="space-y-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Nombre</span>
+              <input
+                value={v.label}
+                onChange={(e) => updateVariant(i, "label", e.target.value)}
+                placeholder="Ej. Blanco, Negro..."
+                className="w-full rounded-xl border border-black/10 bg-[#fafaf9] px-3 py-2.5 text-sm text-[#1f2328] outline-none focus:border-[#27B1B8]"
+              />
+            </label>
+            {/* Image upload */}
+            <ColorVariantImageUpload
+              value={v.image}
+              onChange={(url) => updateVariant(i, "image", url)}
+              galleryImages={galleryImages}
+            />
+            {/* Remove */}
+            <div className="flex items-end">
+              <button
+                type="button"
+                onClick={() => removeVariant(i)}
+                className="inline-flex rounded-full border border-black/10 px-4 py-2.5 text-sm font-semibold text-[#0C535B] transition-colors hover:bg-[#0C535B] hover:text-white"
+              >
+                Quitar
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function TechnicalSpecsEditor({
   items,
   onChange,
@@ -617,6 +796,7 @@ export default function AdminPage() {
   const [technicalSpecs, setTechnicalSpecs] = useState<TechnicalSpecFormItem[]>([
     createTechnicalSpecItem({ etiqueta: "Observaciones" }),
   ]);
+  const [colorVariants, setColorVariants] = useState<VariacionColor[]>([]);
   const [selectedExtraImages, setSelectedExtraImages] = useState<Array<File | null>>(
     () => Array.from({ length: EXTRA_IMAGE_SLOTS }, () => null),
   );
@@ -971,6 +1151,7 @@ export default function AdminPage() {
         compatibilidad: splitCommaSeparatedValues(form.compatibilidad),
         garantia: form.garantia,
         especificacionesTecnicas: normalizeTechnicalSpecFormItems(technicalSpecs),
+        variacionesColor: colorVariants,
       };
       const result = editingSlug
         ? await updateProduct(editingSlug, payload)
@@ -990,6 +1171,7 @@ export default function AdminPage() {
       setForm(initialState);
       setSelectedImage(null);
       setTechnicalSpecs([createTechnicalSpecItem({ etiqueta: "Observaciones" })]);
+      setColorVariants([]);
       setSelectedExtraImages(Array.from({ length: EXTRA_IMAGE_SLOTS }, () => null));
       setPrimaryImageIndex(0);
       setFileInputKey((current) => current + 1);
@@ -1047,6 +1229,7 @@ export default function AdminPage() {
           )
         : [createTechnicalSpecItem({ etiqueta: "Observaciones" })],
     );
+    setColorVariants(product.variacionesColor ?? []);
     setEditingSlug(product.slug);
     setActiveTab("edit");
     setSelectedImage(null);
@@ -1060,6 +1243,7 @@ export default function AdminPage() {
     setForm(initialState);
     setSelectedImage(null);
     setTechnicalSpecs([createTechnicalSpecItem({ etiqueta: "Observaciones" })]);
+    setColorVariants([]);
     setSelectedExtraImages(Array.from({ length: EXTRA_IMAGE_SLOTS }, () => null));
     setPrimaryImageIndex(0);
     setEditingSlug(null);
@@ -1666,6 +1850,12 @@ export default function AdminPage() {
                   description="Puedes escoger cuál de las imágenes será la principal del producto."
                 />
 
+                <ColorVariantsEditor
+                  variants={colorVariants}
+                  onChange={setColorVariants}
+                  galleryImages={[previewImageUrl, ...previewExtraImageUrls].filter((u): u is string => Boolean(u))}
+                />
+
                 <TechnicalSpecsEditor
                   items={technicalSpecs}
                   onChange={setTechnicalSpecs}
@@ -2136,6 +2326,16 @@ export default function AdminPage() {
                       primaryImageIndex={primaryImageIndex}
                       onSelect={setPrimaryImageIndex}
                       description="La imagen marcada como principal será la que verá primero el cliente."
+                    />
+
+                    <ColorVariantsEditor
+                      variants={colorVariants}
+                      onChange={setColorVariants}
+                      galleryImages={
+                        editingProduct
+                          ? [editingProduct.imagen, ...(editingProduct.imagenesExtra ?? [])].filter(Boolean)
+                          : []
+                      }
                     />
 
                     <TechnicalSpecsEditor

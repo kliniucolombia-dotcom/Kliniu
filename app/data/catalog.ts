@@ -216,6 +216,12 @@ export type ProductoEspecificacion = {
   valor: string;
 };
 
+export type VariacionColor = {
+  color: string;
+  label: string;
+  image: string;
+};
+
 export type ProductoCatalogo = {
   slug: string;
   sku?: string;
@@ -240,6 +246,7 @@ export type ProductoCatalogo = {
   compatibilidad?: string[];
   garantia?: string;
   especificacionesTecnicas?: ProductoEspecificacion[];
+  variacionesColor?: VariacionColor[];
   destacado?: boolean;
 };
 

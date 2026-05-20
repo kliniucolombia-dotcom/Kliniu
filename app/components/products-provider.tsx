@@ -10,6 +10,7 @@ import {
   type Categoria,
   type Disponibilidad,
   type ProductoEspecificacion,
+  type VariacionColor,
 } from "../data/catalog";
 import type { StoreProduct } from "@/lib/products";
 
@@ -32,6 +33,7 @@ export type AdminProductInput = {
   compatibilidad?: string[];
   garantia?: string;
   especificacionesTecnicas?: ProductoEspecificacion[];
+  variacionesColor?: VariacionColor[];
 };
 
 type ProductsContextValue = {
