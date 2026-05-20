@@ -132,7 +132,7 @@ export default function LoginPage() {
 
   const completeLogin = async (payload: {
     message?: string;
-    user?: { id: string; role: "CUSTOMER" | "ADMIN" };
+    user?: { id: string; role: "CUSTOMER" | "ADMIN" | "SELLER" };
   }) => {
     setIsEnteringAccount(true);
     setForm(initialState);
@@ -150,9 +150,11 @@ export default function LoginPage() {
     const nextPath =
       payload.user?.role === "ADMIN"
         ? "/admin"
-        : requestedPath === "/admin"
-          ? "/mi-cuenta"
-          : requestedPath || "/mi-cuenta";
+        : payload.user?.role === "SELLER"
+          ? "/panel"
+          : requestedPath === "/admin"
+            ? "/mi-cuenta"
+            : requestedPath || "/mi-cuenta";
 
     window.setTimeout(async () => {
       if (userId) {
@@ -186,7 +188,7 @@ export default function LoginPage() {
     const payload = (await response.json()) as {
       error?: string;
       message?: string;
-      user?: { id: string; role: "CUSTOMER" | "ADMIN" };
+      user?: { id: string; role: "CUSTOMER" | "ADMIN" | "SELLER" };
       requiresAdminPin?: boolean;
     };
 
@@ -233,7 +235,7 @@ export default function LoginPage() {
     const payload = (await response.json()) as {
       error?: string;
       message?: string;
-      user?: { id: string; role: "CUSTOMER" | "ADMIN" };
+      user?: { id: string; role: "CUSTOMER" | "ADMIN" | "SELLER" };
     };
 
     setIsSubmitting(false);
