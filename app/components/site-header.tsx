@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "./cart-provider";
 import { categoriasData, slugCategoria } from "../data/catalog";
+import WhatsAppAsesor from "./whatsapp-asesor";
 
 type SiteHeaderProps = {
   currentUser: {
@@ -263,13 +264,9 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
                 <p className="mt-2 max-w-[174px] text-[12px] font-medium leading-[1.35] text-[#3d8b93]">
                   Te ayudamos a elegir la mejor solución para tu espacio.
                 </p>
-                <Link
-                  href="/contacto"
-                  onClick={() => setMenuAbierto(false)}
-                  className="mt-4 inline-flex min-h-9 items-center justify-center rounded-full bg-[#075762] px-6 text-[12px] font-extrabold text-white shadow-[0_10px_20px_rgba(7,87,98,0.12)] transition-colors hover:bg-[#0C535B]"
-                >
+                <WhatsAppAsesor className="mt-4 inline-flex min-h-9 items-center justify-center rounded-full bg-[#075762] px-6 text-[12px] font-extrabold text-white shadow-[0_10px_20px_rgba(7,87,98,0.12)] transition-colors hover:bg-[#0C535B]">
                   Te asesoramos ☎
-                </Link>
+                </WhatsAppAsesor>
               </div>
             </div>
           </div>

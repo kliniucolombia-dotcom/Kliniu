@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import WhatsAppAsesor from "../../components/whatsapp-asesor";
 import { useParams } from "next/navigation";
 import { useCart } from "../../components/cart-provider";
 import { useProducts } from "../../components/products-provider";
@@ -549,14 +550,9 @@ export default function ProductoDetallePage() {
               );
             })()}
 
-            <a
-              href="https://wa.me/573125860921"
-              target="_blank"
-              rel="noreferrer"
-              className="ml-6 shrink-0 rounded-full bg-[#073F43] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
-            >
+            <WhatsAppAsesor className="ml-6 shrink-0 rounded-full bg-[#073F43] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90">
               Hablar con un asesor 💬
-            </a>
+            </WhatsAppAsesor>
           </div>
         </div>
       </section>
