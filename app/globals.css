@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@source ".";
+@source "../components";
 
 html {
   overflow-x: hidden;

@@ -110,6 +110,16 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
               Insumos/Repuestos
             </Link>
             <Link
+              href="/outlet"
+              className={`rounded-lg px-3 py-2 text-sm font-black transition-colors ${
+                pathname === "/outlet"
+                  ? "text-[#27B1B8] underline decoration-[#27B1B8] decoration-2 underline-offset-4"
+                  : "text-[#27B1B8] hover:text-[#0C535B]"
+              }`}
+            >
+              Outlet
+            </Link>
+            <Link
               href="/quienes-somos"
               className="rounded-lg px-3 py-2 text-sm font-semibold text-[#0C535B] transition-colors hover:text-[#27B1B8]"
             >
@@ -120,6 +130,19 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
               className="rounded-lg px-3 py-2 text-sm font-semibold text-[#0C535B] transition-colors hover:text-[#27B1B8]"
             >
               Contacto
+            </Link>
+            <Link
+              href="/puntos"
+              className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-black transition-all ${
+                pathname === "/puntos"
+                  ? "bg-[#FF6B00] text-white shadow-[0_4px_14px_rgba(255,107,0,0.4)]"
+                  : "bg-[#FF6B00] text-white shadow-[0_2px_8px_rgba(255,107,0,0.3)] hover:shadow-[0_4px_14px_rgba(255,107,0,0.45)] hover:opacity-90"
+              }`}
+            >
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+              Puntos
             </Link>
           </nav>
 
@@ -197,61 +220,53 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
       {/* ── Mega-menú productos ── */}
       {menuAbierto && (
         <div className="absolute left-0 right-0 top-full z-50 border-t border-black/8 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.13)]">
-          <div className="mx-auto max-w-[1440px] px-5 py-5">
-            <div className="flex gap-3">
-              {categoriasData.map((cat) => {
-                const line1 = cat.heroTitulo1 ?? cat.nombre.split(" ").slice(0, 2).join(" ");
-                const line2 = cat.heroTitulo2 ?? "";
-                const dest = cat.heroDestacado ?? cat.nombre.split(" ").slice(2).join(" ");
+          <div className="mx-auto max-w-[1510px] px-5 py-5">
+            <div className="scrollbar-hidden flex items-start gap-5 overflow-x-auto">
+              {categoriasData.filter((cat) => cat.nombre !== "Outlet").map((cat) => {
                 return (
                   <button
                     key={cat.nombre}
                     type="button"
                     onClick={() => irACategoria(cat.nombre)}
-                    className="group flex flex-1 flex-col overflow-hidden rounded-2xl border border-black/8 bg-white text-left transition-all hover:border-[#27B1B8]/40 hover:shadow-md"
+                    className="group flex h-[249px] w-[224px] shrink-0 flex-col items-center justify-between rounded-[14px] border border-[#e2e8e8] bg-white px-6 pb-7 pt-7 text-center transition-all duration-300 hover:-translate-y-1 hover:border-[#9bdddf] hover:shadow-[0_18px_36px_rgba(10,92,99,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8ed9dd]"
                   >
-                    <div className="relative h-32 w-full overflow-hidden bg-[#f0f8f8]">
+                    <div className="relative flex h-[142px] w-full items-center justify-center">
                       {cat.bannerImagen && (
                         <Image
                           src={cat.bannerImagen}
                           alt={cat.nombre}
-                          fill
-                          sizes="200px"
-                          className="object-cover object-right transition-transform duration-300 group-hover:scale-105"
+                          width={150}
+                          height={140}
+                          className="h-[118px] w-auto max-w-[132px] object-contain transition-transform duration-300 group-hover:scale-[1.04]"
                         />
                       )}
                     </div>
-                    <div className="p-3">
-                      <p className="text-[11px] font-bold leading-snug text-[#073F43]">
-                        {line1}
-                        <br />
-                        <span className="text-[#073F43]">{line2}</span>
-                        <span className="text-[#27B1B8]">{dest}</span>
-                      </p>
-                    </div>
+                    <p className="max-w-[180px] text-[15px] font-bold leading-[1.25] text-[#064f59]">
+                      {cat.nombre}
+                    </p>
                   </button>
                 );
               })}
 
               {/* CTA card */}
-              <div className="flex w-40 shrink-0 flex-col items-center justify-center rounded-2xl bg-[#e8f5f5] p-4 text-center">
+              <div className="flex h-[249px] w-[224px] shrink-0 flex-col items-center justify-center rounded-[14px] border border-[#9bdddf] bg-[#e9f7f8] px-7 py-7 text-center">
                 <Image
                   src="/foca-ok-kliniu-original.png"
                   alt="Foca Kliniu"
-                  width={64}
-                  height={64}
-                  className="object-contain"
+                  width={82}
+                  height={78}
+                  className="mb-4 h-[72px] w-[76px] object-contain"
                 />
-                <p className="mt-2 text-xs font-bold leading-tight text-[#073F43]">
+                <p className="max-w-[178px] text-[16px] font-extrabold leading-[1.25] text-[#064f59]">
                   ¿No sabes cuál necesitas?
                 </p>
-                <p className="mt-1 text-[10px] leading-tight text-[#607175]">
+                <p className="mt-2 max-w-[174px] text-[12px] font-medium leading-[1.35] text-[#3d8b93]">
                   Te ayudamos a elegir la mejor solución para tu espacio.
                 </p>
                 <Link
                   href="/contacto"
                   onClick={() => setMenuAbierto(false)}
-                  className="mt-3 rounded-full bg-[#073F43] px-3 py-1.5 text-[10px] font-bold text-white transition-colors hover:bg-[#0C535B]"
+                  className="mt-4 inline-flex min-h-9 items-center justify-center rounded-full bg-[#075762] px-6 text-[12px] font-extrabold text-white shadow-[0_10px_20px_rgba(7,87,98,0.12)] transition-colors hover:bg-[#0C535B]"
                 >
                   Te asesoramos ☎
                 </Link>

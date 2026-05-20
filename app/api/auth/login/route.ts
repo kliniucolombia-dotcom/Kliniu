@@ -55,12 +55,14 @@ export async function POST(request: Request) {
       message: "Inicio de sesión correcto.",
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "INVALID_CREDENTIALS") {
+      return Response.json({ error: "Correo o contraseña incorrectos." }, { status: 401 });
+    }
+
     const message =
-      error instanceof Error && error.message === "INVALID_CREDENTIALS"
-        ? "Correo o contraseña incorrectos."
-        : error instanceof Error && error.message === "DATABASE_NOT_CONFIGURED"
-          ? "La base de datos no está configurada todavía."
-          : "No fue posible iniciar sesión.";
+      error instanceof Error && error.message === "DATABASE_NOT_CONFIGURED"
+        ? "La base de datos no está configurada todavía."
+        : "No fue posible iniciar sesión.";
 
     return Response.json({ error: message }, { status: 500 });
   }

@@ -44,6 +44,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return Response.json(
+        { error: "Ingresa un correo electrónico válido." },
+        { status: 400 },
+      );
+    }
+
     const user = await registerUser({
       fullName,
       company: body.company,
@@ -64,12 +71,14 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (error) {
+    if (error instanceof Error && error.message === "EMAIL_ALREADY_EXISTS") {
+      return Response.json({ error: "Ya existe una cuenta registrada con ese correo." }, { status: 409 });
+    }
+
     const message =
-      error instanceof Error && error.message === "EMAIL_ALREADY_EXISTS"
-        ? "Ya existe una cuenta registrada con ese correo."
-        : error instanceof Error && error.message === "DATABASE_NOT_CONFIGURED"
-          ? "La base de datos no está configurada todavía."
-          : "No fue posible crear la cuenta.";
+      error instanceof Error && error.message === "DATABASE_NOT_CONFIGURED"
+        ? "La base de datos no está configurada todavía."
+        : "No fue posible crear la cuenta.";
 
     return Response.json({ error: message }, { status: 500 });
   }

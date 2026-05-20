@@ -38,6 +38,21 @@ enum InventoryMovementType {
   ORDER_DEDUCTION
 }
 
+enum CustomerLevel {
+  AQUA
+  CORAL
+  OCEAN
+  DIAMOND_SEAL
+}
+
+enum PointTransactionType {
+  EARNED
+  REDEEMED
+  EXPIRED
+  ADJUSTED
+  BONUS
+}
+
 model Product {
   id                 String              @id @default(cuid())
   slug               String              @unique
@@ -77,11 +92,15 @@ model User {
   addressLine1 String?
   addressLine2 String?
   passwordHash String
-  role         UserRole @default(CUSTOMER)
-  cartItems    CartItem[]
-  orders       Order[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  role              UserRole      @default(CUSTOMER)
+  points            Int           @default(0)
+  level             CustomerLevel @default(AQUA)
+  cartItems         CartItem[]
+  orders            Order[]
+  pointTransactions PointTransaction[]
+  rewardRedemptions RewardRedemption[]
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 }
 
 model CartItem {
@@ -150,4 +169,40 @@ model InventoryMovement {
   stockAfter Int
   note       String?
   createdAt  DateTime              @default(now())
+}
+
+model PointTransaction {
+  id          String               @id @default(cuid())
+  userId      String
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        PointTransactionType
+  points      Int
+  balance     Int
+  description String
+  orderId     String?
+  createdAt   DateTime             @default(now())
+}
+
+model Reward {
+  id          String             @id @default(cuid())
+  name        String
+  description String
+  pointsCost  Int
+  image       String?
+  active      Boolean            @default(true)
+  stock       Int?
+  redemptions RewardRedemption[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model RewardRedemption {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rewardId  String
+  reward    Reward   @relation(fields: [rewardId], references: [id])
+  points    Int
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
 }

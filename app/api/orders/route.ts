@@ -1,6 +1,7 @@
 import { getSessionFromCookies } from "@/lib/auth";
 import { requireAdminUser } from "@/lib/admin";
 import { createOrderFromCart, getAllOrders } from "@/lib/orders";
+import { earnPointsForOrder } from "@/lib/points";
 
 export async function GET() {
   try {
@@ -58,6 +59,9 @@ export async function POST(request: Request) {
       addressLine2: body.addressLine2,
       notes: body.notes,
     });
+
+    // Acumular puntos: 1 punto por cada $1.000 COP del subtotal
+    await earnPointsForOrder(session.userId, order.subtotal, order.id).catch(() => {});
 
     return Response.json({
       order: {

@@ -85,12 +85,26 @@ type CartProviderProps = {
   currentUserId: string | null;
 };
 
+function isValidCartItem(item: unknown): item is CartItem {
+  if (!item || typeof item !== "object") return false;
+  const i = item as Record<string, unknown>;
+  return (
+    typeof i.id === "string" && i.id.length > 0 &&
+    typeof i.nombre === "string" &&
+    typeof i.precio === "string" &&
+    typeof i.imagen === "string" &&
+    typeof i.cantidad === "number" && i.cantidad > 0
+  );
+}
+
 function readStoredCart() {
   if (typeof window === "undefined") return [];
   const stored = window.localStorage.getItem(STORAGE_KEY);
   if (!stored) return [];
   try {
-    return normalizeCartItems(JSON.parse(stored));
+    const parsed: unknown = JSON.parse(stored);
+    if (!Array.isArray(parsed)) throw new Error("invalid");
+    return normalizeCartItems(parsed.filter(isValidCartItem));
   } catch {
     window.localStorage.removeItem(STORAGE_KEY);
     return [];

@@ -1,9 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
+import ComboCarousel from "./components/combo-carousel";
 import HeroCarousel from "./components/hero-carousel";
 import OfferRoulette from "./components/offer-roulette";
 import ProductosCarousel from "./components/productos-carousel";
 import SiteFooter from "./components/site-footer";
+import VideoModal from "./components/video-modal";
 import { getFeaturedProducts } from "@/lib/products";
 
 const combos = [
@@ -34,46 +36,44 @@ const combos = [
     precio: "$249.900",
     href: "/categorias",
   },
-  {
-    id: "kit-oficinas",
-    nombre: "Kit oficinas",
-    imagen: "/combo-productos-kliniu.png",
-    destacado: false,
-    items: ["Dispensador de jabón", "Toallas de mano", "Papel institucional"],
-    precio: "$169.900",
-    href: "/categorias",
-  },
 ];
 
 const features = [
   {
     titulo: "Diseñados para\nalto tráfico",
     desc: "Resistentes, eficientes\ny de larga duración.",
+    icon: "/icono-alto-trafico.png",
   },
   {
     titulo: "Higiene que\ngenera confianza",
     desc: "Mejores experiencias\npara tus usuarios.",
+    icon: "/icono-higiene.png",
   },
   {
     titulo: "Compatibilidad\ntotal",
     desc: "Insumos y repuestos\ngarantizados.",
+    icon: "/icono-compatibilidad.png",
   },
   {
     titulo: "Ahorro\ny eficiencia",
     desc: "Sistemas que optimizan\nconsumo y mantenimiento",
+    icon: "/icono-ahorro.png",
   },
   {
     titulo: "Garantía\nKLINIU",
     desc: "Calidad respaldada\npor más de 40 años",
+    icon: "/icono-garantia.png",
   },
 ];
 
+const REEL_DEFAULT = "https://www.instagram.com/reel/DTQToikk3vI/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==";
+
 const videos = [
-  { id: 1, titulo: "Dispensador automático" },
-  { id: 2, titulo: "Kit alto tráfico" },
-  { id: 3, titulo: "KlinOx Inoxidable" },
-  { id: 4, titulo: "Soluciones hotel" },
-  { id: 5, titulo: "Instalación rápida" },
+  { id: 1, titulo: "Dispensador automático", href: REEL_DEFAULT, thumb: "/foca-video-1.png" },
+  { id: 2, titulo: "Kit alto tráfico", href: REEL_DEFAULT, thumb: "/foca-video-2.png" },
+  { id: 3, titulo: "KlinOx Inoxidable", href: REEL_DEFAULT, thumb: "/foca-video-3.png" },
+  { id: 4, titulo: "Soluciones hotel", href: REEL_DEFAULT, thumb: "/foca-video-4.png" },
+  { id: 5, titulo: "Instalación rápida", href: REEL_DEFAULT, thumb: "/foca-video-5.png" },
 ];
 
 export default async function Home() {
@@ -120,39 +120,7 @@ export default async function Home() {
 
           {/* Video cards carousel */}
           <div className="relative mx-auto max-w-[940px]">
-            <div className="scrollbar-hidden flex justify-center gap-4 overflow-x-auto px-2 pb-2">
-              {videos.map((v) => (
-                <div
-                  key={v.id}
-                  className="flex h-44 w-40 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-black/8 bg-white transition-shadow hover:shadow-md"
-                >
-                  <div className="flex flex-col items-center gap-3 p-4 text-center">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#27B1B8] text-[#27B1B8]">
-                      <svg viewBox="0 0 24 24" className="h-5 w-5 translate-x-0.5" fill="currentColor">
-                        <polygon points="5 3 19 12 5 21 5 3" />
-                      </svg>
-                    </div>
-                    <p className="text-xs font-medium text-[#0C535B]">{v.titulo}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Nav arrows */}
-            <button
-              type="button"
-              aria-label="Anterior"
-              className="absolute -left-5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white shadow-sm transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"
-            >
-              ‹
-            </button>
-            <button
-              type="button"
-              aria-label="Siguiente"
-              className="absolute -right-5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white shadow-sm transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"
-            >
-              ›
-            </button>
+            <VideoModal videos={videos} />
           </div>
         </div>
       </section>
@@ -174,79 +142,13 @@ export default async function Home() {
               </p>
             </div>
 
-            <div className="scrollbar-hidden flex min-w-0 flex-1 gap-4 overflow-x-auto pb-2">
-              {combos.map((combo) => (
-                <div
-                  key={combo.id}
-                  className="relative w-[210px] min-w-[210px] shrink-0 overflow-hidden rounded-2xl border border-black/8 bg-white"
-                >
-                  {combo.destacado && (
-                    <span className="absolute left-3 top-3 z-10 rounded-lg bg-[#f5a623] px-2.5 py-1 text-[10px] font-bold text-white">
-                      Más vendido
-                    </span>
-                  )}
-                  <div className="flex h-36 items-center justify-center bg-[#f8f8f7] p-3">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={combo.imagen}
-                      alt={combo.nombre}
-                      className="h-full w-full object-contain"
-                    />
-                  </div>
-                  <div className="space-y-2 p-4">
-                    <p className="font-semibold text-[#111]">{combo.nombre}</p>
-                    <ul className="space-y-1">
-                      {combo.items.map((item) => (
-                        <li key={item} className="flex items-start gap-1.5 text-xs text-[#555]">
-                          <span className="mt-px text-[#27B1B8]">•</span>
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="flex items-center justify-between pt-1">
-                      <p className="font-bold text-[#111]">{combo.precio}</p>
-                      <Link
-                        href={combo.href}
-                        className="rounded-full border border-[#27B1B8] px-3 py-1 text-xs font-bold text-[#27B1B8] transition-colors hover:bg-[#27B1B8] hover:text-white"
-                      >
-                        Ver combo
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* CTA card */}
-              <div className="relative flex w-[200px] min-w-[200px] shrink-0 flex-col overflow-hidden rounded-2xl bg-[#b9e5dc] px-5 pb-4 pt-5 text-[#0C535B]">
-                <div className="relative z-10">
-                  <p className="text-sm font-extrabold leading-tight">Arma tu combo</p>
-                  <p className="mt-2 max-w-[9rem] text-[10px] font-semibold leading-4 text-[#0C535B]/85">
-                    Te ayudamos a armar la solución perfecta para tus espacios.
-                  </p>
-                </div>
-                <div className="relative z-0 mt-1 flex h-36 items-end justify-center">
-                  <Image
-                    src="/foca-arma-tu-combo.png"
-                    alt="Foca Kliniu con productos para armar combo"
-                    width={260}
-                    height={174}
-                    className="h-auto w-[220px] max-w-none object-contain"
-                  />
-                </div>
-                <Link
-                  href="/contacto"
-                  className="relative z-10 mt-auto inline-flex w-max rounded-full bg-[#0C535B] px-5 py-2 text-[11px] font-bold text-white transition-opacity hover:opacity-90"
-                >
-                  Cotizar ahora
-                </Link>
-              </div>
-            </div>
+            <ComboCarousel combos={combos} />
           </div>
         </div>
       </section>
 
       {/* ── Features strip ── */}
-      <section className="bg-[#0C535B] py-6">
+      <section className="relative overflow-visible bg-[#0C535B] py-6">
         <div className="mx-auto max-w-[1440px] px-6">
           <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
             <div style={{ flex: 1, display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "20px 20px" }}>
@@ -255,11 +157,7 @@ export default async function Home() {
                   key={f.titulo}
                   className="flex min-w-0 flex-col items-center gap-2 text-center text-white"
                 >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10">
-                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
+                  <img src={f.icon} alt={f.titulo} className="h-10 w-10 object-contain brightness-0 invert" />
                   <div className="min-w-0">
                     <p className="whitespace-pre-line text-xs font-bold leading-tight">{f.titulo}</p>
                     <p className="mt-0.5 whitespace-pre-line text-[10px] leading-4 text-white/65">{f.desc}</p>
@@ -267,13 +165,13 @@ export default async function Home() {
                 </div>
               ))}
             </div>
-            <div className="hidden h-28 w-28 shrink-0 md:block">
+            <div className="hidden w-56 shrink-0 md:block" style={{ marginTop: "-60px", marginBottom: "-60px" }}>
               <Image
                 src="/foca-ok-kliniu-original.png"
                 alt="Foca Kliniu"
-                width={200}
-                height={180}
-                className="h-full w-full object-contain"
+                width={224}
+                height={280}
+                className="h-auto w-full object-contain"
               />
             </div>
           </div>
@@ -337,18 +235,18 @@ export default async function Home() {
               </p>
               <Link
                 href="/categorias"
-                className="mt-5 inline-flex w-fit items-center gap-2 rounded-full bg-[#27B1B8] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#1E969B]"
+                className="mt-5 inline-flex w-fit items-center gap-2 rounded-full bg-[#0C535B] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
               >
                 Ver insumos y repuestos →
               </Link>
             </div>
             <div className="relative hidden min-h-[210px] flex-1 md:block">
               <Image
-                src="/banner-insumos-kliniu.png"
+                src="/bodegon-insumos.png"
                 alt="Insumos Kliniu"
                 fill
                 sizes="(min-width: 768px) 420px, 0px"
-                className="object-contain object-center p-4"
+                className="object-contain object-center p-2"
               />
             </div>
           </div>

@@ -167,14 +167,15 @@ export default function ContactoPage() {
         </div>
       </section>
 
-      {/* Países donde operamos */}
+      {/* Paises donde operamos */}
       <section className="bg-white py-14">
         <div className="mx-auto max-w-[1440px] px-6">
           <div className="grid gap-10 lg:grid-cols-[300px_1fr]">
             {/* Left */}
-            <div className="relative min-h-[430px] overflow-hidden">
+            <div className="flex min-h-[430px] flex-col">
               <h2 className="text-3xl font-black leading-[0.95] tracking-tight text-[#0C535B]">
-                Países donde{" "}
+                Países donde
+                <br />
                 <span className="text-[#27B1B8]">operamos</span>
               </h2>
               <p className="mt-5 max-w-[270px] text-[15px] font-semibold leading-[1.12] text-black">
@@ -186,7 +187,7 @@ export default function ContactoPage() {
                 alt="Foca Kliniu señalando"
                 width={300}
                 height={275}
-                className="absolute bottom-0 left-0 w-[255px] object-contain"
+                className="mt-auto w-[255px] object-contain"
               />
             </div>
 

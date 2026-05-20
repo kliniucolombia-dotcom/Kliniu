@@ -17,13 +17,14 @@ const colPoliticas = [
 ];
 
 const colContacto = [
-  { label: "+57 312 5860921", href: "tel:+573125860921" },
-  { label: "+57 322 6556454", href: "tel:+573226556454" },
-  { label: "+57 320 8905307", href: "tel:+573208905307" },
-  { label: "ventas@kliniu.com", href: "mailto:ventas@kliniu.com" },
+  { label: "+57 312 5860921", href: "tel:+573125860921", icon: "/icono-telefono.png" },
+  { label: "+57 322 6556454", href: "tel:+573226556454", icon: "/icono-telefono.png" },
+  { label: "+57 320 8905307", href: "tel:+573208905307", icon: "/icono-telefono.png" },
+  { label: "ventas@kliniu.com", href: "mailto:ventas@kliniu.com", icon: "/icono-correo.png" },
   {
     label: "Av 28 No. 34-43 Barrio la Soledad\nBogotá, Colombia.",
     href: "https://www.google.com/maps/search/?api=1&query=Av+28+No.+34-43+Bogota+Colombia",
+    icon: "/icono-ubicacion.png",
   },
 ];
 
@@ -89,8 +90,15 @@ export default function SiteFooter() {
                       href={item.href}
                       target={item.href.startsWith("http") ? "_blank" : undefined}
                       rel={item.href.startsWith("http") ? "noreferrer" : undefined}
-                      className="whitespace-pre-line text-sm text-white/55 transition-colors hover:text-white"
+                      className="flex items-start gap-2 whitespace-pre-line text-sm text-white/55 transition-colors hover:text-white"
                     >
+                      <Image
+                        src={item.icon}
+                        alt=""
+                        width={16}
+                        height={16}
+                        className="mt-0.5 shrink-0 brightness-0 invert opacity-55"
+                      />
                       {item.label}
                     </a>
                   </li>

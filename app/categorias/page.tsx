@@ -1,9 +1,10 @@
 "use client";
 
 import {
+  type Dispatch,
+  type SetStateAction,
   startTransition,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -203,21 +204,21 @@ function LandingCategorias({ onSelect }: { onSelect: (cat: string) => void }) {
       <section className="px-6 py-12">
         <div className="mx-auto max-w-[1440px]">
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-            {categoriasData.map((cat) => (
+            {categoriasData.filter((cat) => cat.nombre !== "Outlet").map((cat) => (
               <button
                 key={cat.nombre}
                 type="button"
                 onClick={() => onSelect(cat.nombre)}
                 className="group flex flex-col items-center gap-4 overflow-hidden rounded-2xl border border-black/8 bg-white p-6 text-center transition-all hover:-translate-y-0.5 hover:border-[#27B1B8]/40 hover:shadow-md"
               >
-                <div className="relative h-32 w-full overflow-hidden rounded-xl bg-[#f8f8f7]">
-                  {cat.bannerImagen && (
+                <div className="flex h-36 w-full items-center justify-center overflow-hidden rounded-xl bg-white px-4 py-3">
+                  {cat.iconoImagen && (
                     <Image
-                      src={cat.bannerImagen}
+                      src={cat.iconoImagen}
                       alt={cat.nombre}
-                      fill
-                      sizes="220px"
-                      className="object-cover object-center transition-transform duration-300 group-hover:scale-105"
+                      width={190}
+                      height={120}
+                      className="max-h-[112px] w-auto max-w-full object-contain transition-transform duration-300 group-hover:scale-[1.02]"
                     />
                   )}
                 </div>
@@ -273,34 +274,254 @@ const filtrosDisponibles = {
   Color: ["Blanco", "Negro", "Plateado"],
 } as const;
 
+type FiltrosState = Record<string, string[]>;
+
+function InsumosRepuestosPage({
+  productosPagina,
+  totalPaginas,
+  pagina,
+  setPagina,
+  filtros,
+  setFiltros,
+  hayFiltros,
+}: {
+  productosPagina: ProductoCatalogo[];
+  totalPaginas: number;
+  pagina: number;
+  setPagina: (pagina: number) => void;
+  filtros: FiltrosState;
+  setFiltros: Dispatch<SetStateAction<FiltrosState>>;
+  hayFiltros: boolean;
+}) {
+  return (
+    <main className="min-h-screen bg-white text-[#073F43]">
+      <section className="bg-white">
+        <div className="relative aspect-[2400/500] overflow-hidden bg-[#ead0bd]">
+          <Image
+            src="/insumos/banner-insumos-repuestos.jpg"
+            alt="Insumos y repuestos Kliniu"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-center"
+          />
+          <div className="absolute inset-0 flex items-center">
+            <div className="mx-auto flex h-full w-full max-w-[1440px] items-center px-6 sm:px-10 lg:px-14">
+            <div className="flex w-[48%] flex-col justify-center">
+            <h1 className="text-[clamp(1.8rem,3.5vw,4.2rem)] font-black leading-[0.98] tracking-tight text-[#073F43]">
+              Insumos
+              <br />
+              <span className="text-[#16A6AE]">y repuestos</span>
+            </h1>
+            <p className="mt-4 max-w-[320px] text-[11px] font-semibold leading-5 text-[#073F43] sm:text-sm">
+              Todo lo que tu espacio necesita para operar de forma eficaz y continua.
+            </p>
+            <div className="mt-6 hidden w-fit items-center gap-0 rounded-sm bg-white/92 px-3 py-2 shadow-[0_8px_18px_rgba(7,63,67,0.08)] md:flex">
+              {[
+                { label: "Calidad Kliniu", icon: "/icono-calidad.png" },
+                { label: "Compatibilidad garantizada", icon: "/icono-compatibilidad.png" },
+                { label: "Entrega rápida", icon: "/icono-envio-rapido.png" },
+              ].map((beneficio, index) => (
+                <div key={beneficio.label} className="flex items-center gap-2 px-3 text-[10px] font-bold leading-tight text-[#073F43]">
+                  {index > 0 && <span className="-ml-3 mr-1 h-7 border-l border-[#073F43]/15" />}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={beneficio.icon} alt="" className="h-5 w-5 shrink-0" />
+                  <span className="max-w-[86px]">{beneficio.label}</span>
+                </div>
+              ))}
+            </div>
+            </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-[1440px] px-4 pb-12 pt-10 sm:px-6">
+        <h2 className="mb-6 text-xl font-black text-[#16A6AE]">
+          Encuentra tus insumos y repuestos ideales.
+        </h2>
+
+        <div className="mb-7 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-md border border-[#073F43] px-3 py-1.5 text-xs font-black text-[#073F43]">
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="4" y1="6" x2="20" y2="6" />
+              <line x1="8" y1="12" x2="16" y2="12" />
+              <line x1="11" y1="18" x2="13" y2="18" />
+            </svg>
+            Filtro
+          </span>
+          <button
+            type="button"
+            onClick={() => setFiltros({})}
+            disabled={!hayFiltros}
+            className="rounded-md px-2 py-1.5 text-xs font-bold text-[#073F43] transition-opacity disabled:cursor-default disabled:opacity-70"
+          >
+            Borrar Filtros
+          </button>
+          <div className="ml-auto flex flex-wrap gap-2">
+            {Object.entries(filtrosDisponibles).map(([label, opciones]) => (
+              <DropdownFiltro
+                key={label}
+                label={label}
+                opciones={opciones}
+                activos={filtros[label] ?? []}
+                onChange={(vals) => setFiltros((prev) => ({ ...prev, [label]: vals }))}
+              />
+            ))}
+          </div>
+        </div>
+
+        {productosPagina.length > 0 ? (
+          <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {productosPagina.map((producto) => (
+              <TarjetaProducto key={producto.slug} producto={producto} />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-black/12 bg-[#f8f8f7] p-12 text-center text-[#6e7379]">
+            No encontramos productos con esos filtros.
+          </div>
+        )}
+
+        {totalPaginas > 1 && (
+          <div className="mt-10 flex justify-end gap-1.5">
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => {
+                  setPagina(p);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className={`flex h-7 min-w-7 items-center justify-center rounded-md border px-2 text-xs font-black transition-colors ${
+                  pagina === p
+                    ? "border-[#073F43] bg-[#073F43] text-white"
+                    : "border-[#073F43] bg-white text-[#073F43] hover:bg-[#EAF8F7]"
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="mx-auto max-w-[1440px] px-4 pb-10 sm:px-6">
+        <div className="relative aspect-[1611/336] overflow-hidden rounded-2xl bg-[#ead0bd] shadow-[0_8px_24px_rgba(7,63,67,0.10)]">
+          <Image
+            src="/insumos/banner-reposicion.png"
+            alt="Reposición fácil Kliniu"
+            fill
+            sizes="100vw"
+            className="object-cover object-center"
+          />
+          <div className="absolute inset-y-0 left-0 flex w-[48%] flex-col justify-center px-7 sm:px-10 lg:px-14">
+            <p className="text-[clamp(1.05rem,2.1vw,2rem)] font-black leading-none text-[#073F43]">
+              Reposición fácil,
+              <br />
+              <span className="text-[#16A6AE]">operación continua</span>
+            </p>
+            <p className="mt-3 max-w-[300px] text-[11px] font-semibold leading-4 text-[#073F43] sm:text-sm">
+              Mantén tus espacios siempre abastecidos con todo lo que necesitas.
+            </p>
+            <ul className="mt-3 hidden space-y-1.5 text-xs font-bold text-[#073F43] md:block">
+              {[
+                "Compatible con todos nuestros dispensadores",
+                "Insumos de alto rendimiento y calidad",
+                "Pedidos ágiles y entregas confiables",
+              ].map((item) => (
+                <li key={item} className="flex items-center gap-2">
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#16A6AE] text-[9px] text-white">✓</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="px-6" style={{ paddingTop: 160, paddingBottom: 80 }}>
+        <div className="mx-auto max-w-[1440px]">
+          <div className="relative flex items-center gap-0 rounded-2xl border border-black/8 pr-6 md:pr-8" style={{ minHeight: 96, background: "#f8f8f7" }}>
+            <div className="absolute" style={{ left: 8, top: "50%", transform: "translateY(-50%)", height: 272, width: 238 }}>
+              <Image
+                src="/foca-celular-ayuda.png"
+                alt="Foca Kliniu"
+                fill
+                className="object-contain object-bottom"
+              />
+            </div>
+            <div className="shrink-0" style={{ width: 248 }} />
+            <div className="min-w-0 flex-1 py-5 pl-5">
+              <p className="font-bold text-[#0C535B]">¿Necesitas ayuda para elegir?</p>
+              <p className="mt-0.5 text-sm text-[#6e7379]">
+                Nuestro equipo de expertos está listo para asesorarte sin compromiso
+              </p>
+            </div>
+            {(() => {
+              const WaIcon = () => (
+                <svg viewBox="0 0 24 24" className="h-8 w-8 shrink-0 text-[#27B1B8]" fill="currentColor">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884" />
+                </svg>
+              );
+              return (
+                <div className="hidden items-center gap-5 lg:flex">
+                  {[
+                    "Asesoría gratuita sin compromiso.",
+                    "Respuesta rápida por WhatsApp",
+                    "Cotizaciones personalizadas",
+                  ].map((txt) => (
+                    <div key={txt} className="flex items-center gap-2 text-xs text-[#555]">
+                      <WaIcon />
+                      <span className="max-w-[90px] leading-tight">{txt}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+            <a
+              href="https://wa.me/573125860921"
+              target="_blank"
+              rel="noreferrer"
+              className="ml-6 shrink-0 rounded-full bg-[#073F43] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+            >
+              Hablar con un asesor 💬
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <SiteFooter />
+    </main>
+  );
+}
+
 export default function CategoriasPage() {
   const { products } = useProducts();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  const tipoActivo = searchParams.get("tipo");
   const categoriaActiva = categoriaDesdeSlug(searchParams.get("categoria"));
   const catMeta = categoriaMeta(categoriaActiva ?? categorias[0]);
   const queryActiva = searchParams.get("q")?.trim().toLowerCase() ?? "";
 
-  const [filtros, setFiltros] = useState<Record<string, string[]>>({});
-  const [pagina, setPagina] = useState(1);
+  const [filtros, setFiltros] = useState<FiltrosState>({});
+  const pageKey = `${tipoActivo ?? ""}|${categoriaActiva ?? ""}|${queryActiva}`;
+  const [paginaState, setPaginaState] = useState({ key: pageKey, value: 1 });
+  const pagina = paginaState.key === pageKey ? paginaState.value : 1;
+  const setPagina = (value: number) => setPaginaState({ key: pageKey, value });
 
-  useEffect(() => { setPagina(1); }, [categoriaActiva, queryActiva]);
-
-  const productosFiltrados = useMemo(
-    () =>
-      products.filter((p) => {
-        const coincideCategoria = !categoriaActiva || p.categoria === categoriaActiva;
-        const coincideBusqueda =
-          !queryActiva ||
-          p.nombre.toLowerCase().includes(queryActiva) ||
-          p.marca.toLowerCase().includes(queryActiva) ||
-          (p.descripcion ?? "").toLowerCase().includes(queryActiva);
-        return coincideCategoria && coincideBusqueda;
-      }),
-    [products, categoriaActiva, queryActiva],
-  );
+  const productosFiltrados = products.filter((p) => {
+    const coincideCategoria = !categoriaActiva || p.categoria === categoriaActiva;
+    const coincideBusqueda =
+      !queryActiva ||
+      p.nombre.toLowerCase().includes(queryActiva) ||
+      p.marca.toLowerCase().includes(queryActiva) ||
+      (p.descripcion ?? "").toLowerCase().includes(queryActiva);
+    return coincideCategoria && coincideBusqueda;
+  });
 
   const totalPaginas = Math.max(1, Math.ceil(productosFiltrados.length / ITEMS_PER_PAGE));
   const productosPagina = productosFiltrados.slice(
@@ -313,6 +534,7 @@ export default function CategoriasPage() {
   const irACategoria = (categoria: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("categoria", slugCategoria(categoria));
+    params.delete("tipo");
     startTransition(() => router.replace(`${pathname}?${params.toString()}`));
   };
 
@@ -331,6 +553,20 @@ export default function CategoriasPage() {
     "Hoteles y Restaurantes": "Encuentra tu dispensador de acero inoxidable ideal",
   };
 
+  if (tipoActivo === "insumos") {
+    return (
+      <InsumosRepuestosPage
+        productosPagina={productosPagina}
+        totalPaginas={totalPaginas}
+        pagina={pagina}
+        setPagina={setPagina}
+        filtros={filtros}
+        setFiltros={setFiltros}
+        hayFiltros={hayFiltros}
+      />
+    );
+  }
+
   // Show landing if no category selected
   if (!categoriaActiva && !queryActiva) {
     return <LandingCategorias onSelect={irACategoria} />;
@@ -340,9 +576,9 @@ export default function CategoriasPage() {
     <main className="min-h-screen bg-white text-[#111]">
       {/* ── Hero banner ── */}
       <section className={`relative overflow-hidden ${dark ? "bg-white" : "bg-[#0a0f14]"}`}>
-        {catMeta.bannerImagen && (
+        {(catMeta.heroBannerImagen ?? catMeta.bannerImagen) && (
           <Image
-            src={catMeta.bannerImagen}
+            src={(catMeta.heroBannerImagen ?? catMeta.bannerImagen)!}
             alt={catMeta.nombre}
             fill
             priority

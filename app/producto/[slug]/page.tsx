@@ -8,7 +8,7 @@ import { useCart } from "../../components/cart-provider";
 import { useProducts } from "../../components/products-provider";
 import SiteFooter from "../../components/site-footer";
 import QuoteModal from "../../components/quote-modal";
-import { getVolumePricing } from "@/lib/volume-discounts";
+import { getVolumePricing, parsePriceValue } from "@/lib/volume-discounts";
 import type { ProductoEspecificacion } from "../../data/catalog";
 
 const trustBadges = [
@@ -95,7 +95,7 @@ function ImageGallery({ nombre, images }: { nombre: string; images: string[] }) 
             key={`thumb-${i}`}
             type="button"
             onClick={() => setActive(i)}
-            className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 bg-[#f8f8f7] p-1 transition-all ${
+            className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 bg-white p-1 transition-all ${
               active === i ? "border-[#27B1B8]" : "border-black/8 hover:border-[#27B1B8]/40"
             }`}
           >
@@ -111,7 +111,7 @@ function ImageGallery({ nombre, images }: { nombre: string; images: string[] }) 
       </div>
 
       {/* Main image */}
-      <div className="flex flex-1 items-center justify-center rounded-2xl border border-black/8 bg-[#f8f8f7] p-6">
+      <div className="flex flex-1 items-center justify-center rounded-2xl border border-black/8 bg-white p-6">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={images[active] || "/product-placeholder.png"}
@@ -253,6 +253,14 @@ export default function ProductoDetallePage() {
               {producto.precioAnterior && (
                 <p className="mt-1 text-sm text-[#aaa] line-through">{producto.precioAnterior}</p>
               )}
+              {(() => {
+                const pts = Math.floor(parsePriceValue(producto.precio) / 1000);
+                return pts > 0 ? (
+                  <Link href="/puntos" className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#FFF3E0] px-3 py-1 text-xs font-bold text-[#FF6B00] hover:bg-[#FFE8C8]">
+                    ✨ Gana <span className="underline underline-offset-2">{pts.toLocaleString("es-CO")} puntos</span> con esta compra
+                  </Link>
+                ) : null;
+              })()}
             </div>
 
             {/* Color */}
@@ -483,7 +491,7 @@ export default function ProductoDetallePage() {
                 href={`/producto/${p.slug}`}
                 className="group overflow-hidden rounded-2xl border border-black/8 bg-white transition-shadow hover:shadow-md"
               >
-                <div className="flex h-44 items-center justify-center bg-[#f8f8f7] p-4">
+                <div className="flex h-44 items-center justify-center bg-white p-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={p.imagen}
@@ -508,7 +516,7 @@ export default function ProductoDetallePage() {
       <section className="px-6 pb-24 pt-16">
         <div className="mx-auto max-w-[1440px]">
           <div
-            className="relative flex items-center rounded-2xl border border-black/8 bg-[#f8f8f7] pr-6 md:pr-8"
+            className="relative flex items-center rounded-2xl border border-black/8 bg-white pr-6 md:pr-8"
             style={{ minHeight: 96 }}
           >
             <div className="absolute left-2 top-1/2 h-[272px] w-[238px] -translate-y-1/2">

@@ -1172,6 +1172,17 @@ export default function AdminPage() {
     setActiveTab("create");
   };
 
+  const openCreateOutletView = () => {
+    setForm({ ...initialState, categoria: "Outlet" as Categoria });
+    setSelectedImage(null);
+    setSelectedExtraImages(Array.from({ length: EXTRA_IMAGE_SLOTS }, () => null));
+    setPrimaryImageIndex(0);
+    setEditingSlug(null);
+    setRequestError("");
+    setFileInputKey((current) => current + 1);
+    setActiveTab("create");
+  };
+
   const openEditView = () => {
     setSelectedImage(null);
     setRequestError("");
@@ -1351,6 +1362,7 @@ export default function AdminPage() {
                   <div className="flex flex-wrap justify-end gap-3">
                     {[
                       { action: openCreateView, label: "Crear producto", icon: <span className="text-sm">+</span>, color: "#0C535B" },
+                      { action: openCreateOutletView, label: "Crear Outlet", icon: <span className="text-sm font-black">%</span>, color: "#FF6B00" },
                       { action: openEditView, label: "Editar productos", icon: <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="m16.5 3.5 4 4L7 21l-4 1 1-4Z"/></svg>, color: "#27B1B8" },
                       { action: openInventoryView, label: "Inventario", icon: <span className="text-sm">≡</span>, color: "#1f8b45" },
                       { action: openOrdersView, label: "Pedidos y envíos", icon: <span className="text-sm">↗</span>, color: "#6366f1" },

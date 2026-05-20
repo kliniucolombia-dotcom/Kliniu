@@ -14,7 +14,10 @@ function hasExpectedDelegates(client: PrismaClient | null) {
     "cartItem" in client &&
     "order" in client &&
     "orderItem" in client &&
-    "inventoryMovement" in client
+    "inventoryMovement" in client &&
+    "pointTransaction" in client &&
+    "reward" in client &&
+    "rewardRedemption" in client
   );
 }
 
