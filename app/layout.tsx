@@ -3,8 +3,7 @@ import { Figtree } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "./components/cart-provider";
 import { ProductsProvider } from "./components/products-provider";
-import SiteHeader from "./components/site-header";
-import SupportChat from "./components/support-chat";
+import ConditionalShell from "./components/conditional-shell";
 import { getProducts } from "@/lib/products";
 import { getSessionFromCookies } from "@/lib/auth";
 import { getUserById } from "@/lib/users";
@@ -48,15 +47,15 @@ export default async function RootLayout({
             initialItems={initialCartItems}
             currentUserId={currentUser?.id ?? null}
           >
-            <SiteHeader
+            <ConditionalShell
               currentUser={
                 currentUser
                   ? { fullName: currentUser.fullName, role: currentUser.role }
                   : null
               }
-            />
-            {children}
-            <SupportChat />
+            >
+              {children}
+            </ConditionalShell>
           </CartProvider>
         </ProductsProvider>
       </body>

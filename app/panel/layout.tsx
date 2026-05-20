@@ -67,31 +67,37 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        {/* User + collapse */}
-        <div className="border-t border-[#E2E8F0] p-3">
+        {/* User + logout + collapse */}
+        <div className="border-t border-[#E2E8F0] p-3 space-y-2">
           {!collapsed && user && (
-            <div className="mb-2 rounded-xl bg-[#F8FAFC] p-2.5">
+            <div className="rounded-xl bg-[#F8FAFC] p-2.5">
               <p className="truncate text-xs font-bold text-[#1A1A1A]">{user.fullName ?? "—"}</p>
               <p className="truncate text-[10px] text-[#94A3B8]">{user.role ?? ""}</p>
             </div>
           )}
-          <div className="flex gap-1">
-            <button
-              onClick={() => setCollapsed((c) => !c)}
-              className={`flex h-8 items-center justify-center rounded-lg border border-[#E2E8F0] text-sm text-[#94A3B8] hover:border-[#27B1B8] hover:text-[#27B1B8] transition-colors ${collapsed ? "w-full" : "w-8"}`}
-              title={collapsed ? "Expandir" : "Colapsar"}
-            >
-              {collapsed ? "→" : "←"}
-            </button>
-            {!collapsed && (
-              <button
-                onClick={logout}
-                className="flex-1 rounded-lg border border-[#E2E8F0] px-2 py-1.5 text-xs font-semibold text-[#94A3B8] hover:border-red-300 hover:text-red-500 transition-colors"
-              >
-                Salir
-              </button>
-            )}
-          </div>
+
+          {/* Logout */}
+          <button
+            onClick={logout}
+            title="Cerrar sesión"
+            className={`flex w-full items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs font-semibold text-red-500 transition-colors hover:bg-red-100 hover:border-red-300 ${collapsed ? "justify-center" : ""}`}
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            {!collapsed && <span>Cerrar sesión</span>}
+          </button>
+
+          {/* Collapse toggle */}
+          <button
+            onClick={() => setCollapsed((c) => !c)}
+            className="flex w-full h-7 items-center justify-center rounded-lg border border-[#E2E8F0] text-xs text-[#94A3B8] hover:border-[#27B1B8] hover:text-[#27B1B8] transition-colors"
+            title={collapsed ? "Expandir menú" : "Colapsar menú"}
+          >
+            {collapsed ? "→" : "←"}
+          </button>
         </div>
       </aside>
 
