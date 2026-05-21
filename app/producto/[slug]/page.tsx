@@ -264,7 +264,7 @@ export default function ProductoDetallePage() {
 
             {/* Price */}
             <div>
-              <p className="text-3xl font-extrabold text-[#111]">{producto.precio}</p>
+              <p className="text-3xl font-extrabold text-[#1A56DB]">{producto.precio}</p>
               {producto.precioAnterior && (
                 <p className="mt-1 text-sm text-[#aaa] line-through">{producto.precioAnterior}</p>
               )}
