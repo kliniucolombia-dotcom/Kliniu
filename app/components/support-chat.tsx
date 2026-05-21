@@ -25,12 +25,6 @@ type ChatMessage = {
   products?: ChatProductCard[];
 };
 
-const quickPrompts = [
-  "Tengo un hotel o restaurante",
-  "Tengo una oficina o empresa",
-  "Necesito dispensadores de jabón",
-  "¿Qué productos manejan?",
-];
 
 const initialMessage: ChatMessage = {
   id: "welcome",
@@ -300,20 +294,6 @@ export default function SupportChat() {
               <div ref={messagesEndRef} />
             </div>
 
-            {messages.length === 1 && (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {quickPrompts.map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    onClick={() => void sendMessage(prompt)}
-                    className="rounded-full border border-black/10 bg-white px-3 py-2 text-xs font-semibold text-[#0C535B] transition-colors duration-200 hover:border-[#27B1B8] hover:text-[#27B1B8]"
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-            )}
 
             {requestError && (
               <p className="mt-4 rounded-2xl border border-[#27B1B8]/18 bg-[#EAF8F6] px-4 py-3 text-sm text-[#0C535B]">
