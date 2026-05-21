@@ -140,7 +140,7 @@ export default function ProductoDetallePage() {
     if (next >= 4) {
       setShowComboTip(true);
       if (comboTipTimeout.current) clearTimeout(comboTipTimeout.current);
-      comboTipTimeout.current = setTimeout(() => setShowComboTip(false), 4000);
+      comboTipTimeout.current = setTimeout(() => setShowComboTip(false), 8000);
     } else {
       setShowComboTip(false);
     }
@@ -241,14 +241,14 @@ export default function ProductoDetallePage() {
     <main className="min-h-screen bg-white text-[#111]">
 
       {/* Toast flotante combo */}
-      <div className={`fixed bottom-6 left-1/2 z-[200] -translate-x-1/2 transition-all duration-300 ${showComboTip ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0 pointer-events-none"}`}>
-        <div className="flex items-center gap-3 rounded-2xl bg-[#1a1a1a] px-5 py-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.28)]">
-          <span className="text-xl">🔥</span>
-          <div>
-            <p className="text-sm font-bold text-white">¡Te sale más barato en combo!</p>
-            <p className="text-xs text-white/70">Selecciona <strong className="text-[#F07826]">× 4 und</strong> o más y ahorra hasta un 10%.</p>
+      <div className={`fixed bottom-8 left-1/2 z-[200] w-[min(92vw,480px)] -translate-x-1/2 transition-all duration-400 ${showComboTip ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0 pointer-events-none"}`}>
+        <div className="flex items-center gap-4 rounded-3xl bg-[#1a1a1a] px-7 py-5 shadow-[0_16px_48px_rgba(0,0,0,0.38)]">
+          <span className="text-4xl">🔥</span>
+          <div className="flex-1">
+            <p className="text-base font-black text-white">¡Te sale más barato en combo!</p>
+            <p className="mt-0.5 text-sm text-white/70">Selecciona <strong className="text-[#F07826]">× 4 und</strong> o más y ahorra hasta un <strong className="text-[#F07826]">10%</strong> en tu compra.</p>
           </div>
-          <button type="button" onClick={() => setShowComboTip(false)} className="ml-2 text-white/40 hover:text-white">✕</button>
+          <button type="button" onClick={() => setShowComboTip(false)} className="text-white/40 hover:text-white text-lg">✕</button>
         </div>
       </div>
 
