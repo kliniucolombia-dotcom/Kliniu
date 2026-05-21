@@ -1,8 +1,10 @@
 export const VOLUME_DISCOUNT_TIERS = [
   { min: 1000, pct: 15 },
-  { min: 100, pct: 8 },
-  { min: 50, pct: 6 },
-  { min: 12, pct: 5 },
+  { min: 100, pct: 12 },
+  { min: 48, pct: 10 },
+  { min: 12, pct: 8 },
+  { min: 6, pct: 5 },
+  { min: 4, pct: 3 },
   { min: 1, pct: 0 },
 ];
 
