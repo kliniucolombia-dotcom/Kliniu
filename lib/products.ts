@@ -326,7 +326,7 @@ export async function getProducts() {
       where: {
         active: true,
       },
-      orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
+      orderBy: [{ featured: "desc" }, { name: "asc" }],
     });
 
     return products.map(toStoreProduct);

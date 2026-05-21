@@ -275,7 +275,7 @@ export default function ProductoDetallePage() {
           <ImageGallery key={colorActivo} nombre={producto.nombre} images={galleryImages} />
 
           {/* RIGHT — product info */}
-          <div className="space-y-5">
+          <div className="space-y-4 lg:sticky lg:top-[72px] lg:self-start">
             {/* Badge */}
             {producto.destacado && (
               <span className="inline-block rounded-lg bg-[#073F43] px-3 py-1 text-xs font-bold text-white">

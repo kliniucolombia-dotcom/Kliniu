@@ -646,7 +646,7 @@ export default function CategoriasPage() {
             className={`object-cover object-center ${dark ? "opacity-100" : "opacity-60"}`}
           />
         )}
-        <div className="relative mx-auto max-w-[1440px] px-8 py-12 md:py-16">
+        <div className="relative mx-auto max-w-[1440px] px-8 py-8 md:py-10">
           <h1 className={`text-4xl font-extrabold leading-tight tracking-tight md:text-5xl ${dark ? "text-[#0a0f14]" : "text-white"}`}>
             {tituloLinea1}
             <br />
