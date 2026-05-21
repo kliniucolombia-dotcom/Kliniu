@@ -389,7 +389,7 @@ export default function ProductoDetallePage() {
             <div className="grid gap-0 border-t border-black/8 pt-5 md:grid-cols-2">
               <div className="space-y-4 border-b border-black/8 pb-6 pr-0 text-sm leading-7 md:border-b-0 md:border-r md:pb-0 md:pr-8">
                 <div>
-                  <p className="mb-1 font-bold text-[#27B1B8]">Descripción</p>
+                  <p className="mb-1 font-bold text-[#F07826]">Descripción</p>
                   <p className="text-[#333]">
                     {producto.descripcion ||
                       `${producto.nombre} es un producto de la línea ${producto.categoria} de Kliniu, diseñado para ofrecer higiene profesional en espacios de alto tráfico.`}
@@ -397,25 +397,25 @@ export default function ProductoDetallePage() {
                 </div>
                 {fichaTecnica.find((r) => r.etiqueta === "Material") && (
                   <div>
-                    <p className="mb-1 font-bold text-[#27B1B8]">Materiales</p>
+                    <p className="mb-1 font-bold text-[#F07826]">Materiales</p>
                     <p className="text-[#333]">Fabricado en {fichaTecnica.find((r) => r.etiqueta === "Material")?.valor}.</p>
                   </div>
                 )}
                 {fichaTecnica.find((r) => r.etiqueta === "Baterías") && (
                   <div>
-                    <p className="mb-1 font-bold text-[#27B1B8]">Baterías</p>
+                    <p className="mb-1 font-bold text-[#F07826]">Baterías</p>
                     <p className="text-[#333]">{fichaTecnica.find((r) => r.etiqueta === "Baterías")?.valor}</p>
                   </div>
                 )}
                 {fichaTecnica.find((r) => r.etiqueta === "Instalación") && (
                   <div>
-                    <p className="mb-1 font-bold text-[#27B1B8]">Instalación</p>
+                    <p className="mb-1 font-bold text-[#F07826]">Instalación</p>
                     <p className="text-[#333]">{fichaTecnica.find((r) => r.etiqueta === "Instalación")?.valor}</p>
                   </div>
                 )}
                 {producto.aplicacion && (
                   <div>
-                    <p className="mb-1 font-bold text-[#27B1B8]">Aplicación</p>
+                    <p className="mb-1 font-bold text-[#F07826]">Aplicación</p>
                     <p className="text-[#333]">{producto.aplicacion}</p>
                   </div>
                 )}
@@ -423,7 +423,7 @@ export default function ProductoDetallePage() {
               <div className="space-y-4 pt-6 text-sm leading-7 md:pl-8 md:pt-0">
                 {fichaTecnica.some((r) => ["Alto", "Ancho", "Profundidad", "Peso", "Capacidad"].includes(r.etiqueta)) && (
                   <div>
-                    <p className="mb-1 font-bold text-[#27B1B8]">Medidas</p>
+                    <p className="mb-1 font-bold text-[#F07826]">Medidas</p>
                     <div className="text-[#333]">
                       {fichaTecnica.filter((r) => ["Alto", "Ancho"].includes(r.etiqueta)).length >= 2 && (
                         <p>Alto {fichaTecnica.find((r) => r.etiqueta === "Alto")?.valor} x ancho {fichaTecnica.find((r) => r.etiqueta === "Ancho")?.valor}</p>
@@ -442,7 +442,7 @@ export default function ProductoDetallePage() {
                 )}
                 {producto.compatibilidad && producto.compatibilidad.length > 0 && (
                   <div>
-                    <p className="mb-1 font-bold text-[#27B1B8]">Incluye</p>
+                    <p className="mb-1 font-bold text-[#F07826]">Incluye</p>
                     <ul className="space-y-0.5 text-[#333]">
                       {producto.compatibilidad.map((c) => (
                         <li key={c}>{c}</li>
@@ -452,7 +452,7 @@ export default function ProductoDetallePage() {
                 )}
                 {fichaTecnica.find((r) => r.etiqueta === "Fuente de poder") && (
                   <div>
-                    <p className="mb-1 font-bold text-[#27B1B8]">Fuente de poder</p>
+                    <p className="mb-1 font-bold text-[#F07826]">Fuente de poder</p>
                     <p className="text-[#333]">{fichaTecnica.find((r) => r.etiqueta === "Fuente de poder")?.valor}</p>
                   </div>
                 )}
@@ -460,7 +460,7 @@ export default function ProductoDetallePage() {
                   .filter((r) => !["Alto", "Ancho", "Profundidad", "Peso", "Capacidad", "Material", "Baterías", "Instalación", "Fuente de poder", "Categoría", "Marca", "Disponibilidad", "Garantía", "Aplicación"].includes(r.etiqueta))
                   .map((r) => (
                     <div key={r.etiqueta}>
-                      <p className="mb-1 font-bold text-[#27B1B8]">{r.etiqueta}</p>
+                      <p className="mb-1 font-bold text-[#F07826]">{r.etiqueta}</p>
                       <p className="text-[#333]">{r.valor}</p>
                     </div>
                   ))}
