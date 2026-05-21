@@ -353,8 +353,6 @@ export default function ProductoDetallePage() {
                 <div className="flex items-center gap-2 rounded-xl bg-[#FFF3E8] px-3 py-2">
                   <span className="text-sm font-bold text-[#F07826]">{volumePricing.tier.pct}% OFF</span>
                   <span className="text-xs text-[#6e7379]">·</span>
-                  <span className="text-xs text-[#444]">{volumePricing.unitPriceLabel} c/u</span>
-                  <span className="text-xs text-[#6e7379]">·</span>
                   <span className="text-xs font-semibold text-[#111]">Total {volumePricing.totalLabel}</span>
                 </div>
               )}
