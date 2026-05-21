@@ -126,10 +126,25 @@ export default function ProductoDetallePage() {
   const { products } = useProducts();
   const { addItem } = useCart();
   const [cantidad, setCantidad] = useState(1);
+  const [esUnidad, setEsUnidad] = useState(true);
+  const [showComboTip, setShowComboTip] = useState(false);
   const [colorActivo, setColorActivo] = useState(0);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [agregado, setAgregado] = useState(false);
   const agregadoTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const comboTipTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const ajustarUnidad = (delta: number) => {
+    const next = Math.max(1, cantidad + delta);
+    setCantidad(next);
+    if (next >= 4) {
+      setShowComboTip(true);
+      if (comboTipTimeout.current) clearTimeout(comboTipTimeout.current);
+      comboTipTimeout.current = setTimeout(() => setShowComboTip(false), 4000);
+    } else {
+      setShowComboTip(false);
+    }
+  };
 
   const slug = params.slug;
   const producto = products.find((p) => p.slug === slug);
@@ -318,20 +333,32 @@ export default function ProductoDetallePage() {
 
               {/* Pack selector */}
               <div className="flex flex-wrap gap-2">
+                {/* Unidad */}
+                <button
+                  type="button"
+                  onClick={() => { setEsUnidad(true); setCantidad(1); setShowComboTip(false); }}
+                  className={`relative rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-150 ${
+                    esUnidad
+                      ? "border-[#F07826] bg-[#F07826] text-white shadow-sm"
+                      : "border-black/12 bg-white text-[#444] hover:border-[#F07826]/60 hover:text-[#F07826]"
+                  }`}
+                >
+                  Unidad
+                </button>
+
+                {/* Packs fijos */}
                 {[
-                  { label: "Unidad", qty: 1 },
                   { label: "× 4 und", qty: 4 },
                   { label: "× 6 und", qty: 6 },
                   { label: "× 12 und", qty: 12 },
                   { label: "× 48 und", qty: 48 },
                 ].map((pack) => {
-                  const p = getVolumePricing(producto.precio, pack.qty);
-                  const isActive = cantidad === pack.qty;
+                  const isActive = !esUnidad && cantidad === pack.qty;
                   return (
                     <button
                       key={pack.qty}
                       type="button"
-                      onClick={() => setCantidad(pack.qty)}
+                      onClick={() => { setEsUnidad(false); setCantidad(pack.qty); setShowComboTip(false); }}
                       className={`relative rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-150 ${
                         isActive
                           ? "border-[#F07826] bg-[#F07826] text-white shadow-sm"
@@ -343,6 +370,29 @@ export default function ProductoDetallePage() {
                   );
                 })}
               </div>
+
+              {/* Contador +/- solo en modo Unidad */}
+              {esUnidad && (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center overflow-hidden rounded-xl border border-black/12">
+                    <button type="button" onClick={() => ajustarUnidad(-1)} className="px-4 py-2 text-lg font-medium text-[#333] hover:bg-[#f5f5f5]">−</button>
+                    <span className="min-w-[2.5rem] border-x border-black/10 px-3 py-2 text-center text-base font-semibold">{cantidad}</span>
+                    <button type="button" onClick={() => ajustarUnidad(1)} className="px-4 py-2 text-lg font-medium text-[#333] hover:bg-[#f5f5f5]">+</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Popup combo tip */}
+              {showComboTip && (
+                <div className="flex items-start gap-2 rounded-xl border border-[#F07826]/30 bg-[#FFF3E8] px-3 py-2.5">
+                  <span className="mt-0.5 text-base">🔥</span>
+                  <div>
+                    <p className="text-xs font-bold text-[#F07826]">¡Te sale más barato en combo!</p>
+                    <p className="text-xs text-[#6e7379]">Selecciona <strong>× 4 und</strong> o más y ahorra hasta un 10% en tu compra.</p>
+                  </div>
+                  <button type="button" onClick={() => setShowComboTip(false)} className="ml-auto text-[#aaa] hover:text-[#666]">✕</button>
+                </div>
+              )}
 
               {/* Resumen de precio */}
               {volumePricing.hasDiscount && (
