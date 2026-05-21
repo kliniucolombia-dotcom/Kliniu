@@ -147,9 +147,9 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
 
         {/* Type badge */}
         {tipoBadge && (
-          <span className="inline-block rounded-md bg-[#e8f5f5] px-2 py-0.5 text-[11px] font-semibold text-[#0C535B]">
+          <p className="text-[11px] leading-snug text-[#6e7379]">
             {tipoBadge}
-          </span>
+          </p>
         )}
 
         {/* Color swatches */}
