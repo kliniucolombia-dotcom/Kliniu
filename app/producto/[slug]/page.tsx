@@ -314,10 +314,10 @@ export default function ProductoDetallePage() {
               <div className="flex flex-wrap gap-2">
                 {[
                   { label: "Unidad", qty: 1 },
-                  { label: "Set × 4", qty: 4 },
-                  { label: "Set × 6", qty: 6 },
-                  { label: "Set × 12", qty: 12 },
-                  { label: "Set × 48", qty: 48 },
+                  { label: "× 4 und", qty: 4 },
+                  { label: "× 6 und", qty: 6 },
+                  { label: "× 12 und", qty: 12 },
+                  { label: "× 48 und", qty: 48 },
                 ].map((pack) => {
                   const p = getVolumePricing(producto.precio, pack.qty);
                   const isActive = cantidad === pack.qty;
@@ -326,15 +326,15 @@ export default function ProductoDetallePage() {
                       key={pack.qty}
                       type="button"
                       onClick={() => setCantidad(pack.qty)}
-                      className={`relative flex flex-col items-center rounded-full border px-4 py-2 text-xs font-semibold transition-all ${
+                      className={`relative rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-150 ${
                         isActive
-                          ? "border-[#F07826] bg-[#F07826] text-white shadow-md"
-                          : "border-black/15 bg-white text-[#333] hover:border-[#F07826] hover:text-[#F07826]"
+                          ? "border-[#F07826] bg-[#F07826] text-white shadow-sm"
+                          : "border-black/12 bg-white text-[#444] hover:border-[#F07826]/60 hover:text-[#F07826]"
                       }`}
                     >
-                      <span>{pack.label}</span>
+                      {pack.label}
                       {p.hasDiscount && (
-                        <span className={`text-[10px] font-bold ${isActive ? "text-white/90" : "text-[#F07826]"}`}>
+                        <span className={`absolute -right-1.5 -top-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-black leading-none ${isActive ? "bg-white text-[#F07826]" : "bg-[#F07826] text-white"}`}>
                           -{p.tier.pct}%
                         </span>
                       )}
@@ -343,15 +343,15 @@ export default function ProductoDetallePage() {
                 })}
               </div>
 
-              {/* Precio con descuento */}
+              {/* Resumen de precio */}
               {volumePricing.hasDiscount && (
-                <p className="text-sm text-[#0C535B]">
-                  <span className="font-bold">{volumePricing.unitPriceLabel}</span> c/u · Total: <span className="font-bold">{volumePricing.totalLabel}</span>
-                  <span className="ml-2 rounded-full bg-[#FFF3E8] px-2 py-0.5 text-xs font-bold text-[#F07826]">{volumePricing.tier.pct}% OFF</span>
-                </p>
-              )}
-              {!volumePricing.hasDiscount && cantidad > 1 && (
-                <p className="text-sm text-[#6e7379]">Total: <span className="font-bold text-[#111]">{volumePricing.totalLabel}</span></p>
+                <div className="flex items-center gap-2 rounded-xl bg-[#FFF3E8] px-3 py-2">
+                  <span className="text-sm font-bold text-[#F07826]">{volumePricing.tier.pct}% OFF</span>
+                  <span className="text-xs text-[#6e7379]">·</span>
+                  <span className="text-xs text-[#444]">{volumePricing.unitPriceLabel} c/u</span>
+                  <span className="text-xs text-[#6e7379]">·</span>
+                  <span className="text-xs font-semibold text-[#111]">Total {volumePricing.totalLabel}</span>
+                </div>
               )}
 
               <div className="flex gap-3">
