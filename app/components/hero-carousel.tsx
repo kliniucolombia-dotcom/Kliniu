@@ -106,23 +106,20 @@ export default function HeroCarousel() {
                     <span className="mt-1 block max-w-[150px] text-[11px] font-semibold leading-tight text-white">Compra productos individuales con envío a todo colombia</span>
                   </span>
                 </Link>
-                <Link
-                  href="/contacto"
-                  className="inline-flex flex-1 items-center gap-4 bg-white px-6 py-5 text-left text-[#075f68] transition-colors hover:bg-[#f4fbfb] md:px-8"
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent("kliniu:open-advisor"))}
+                  className="inline-flex flex-1 cursor-pointer items-center gap-4 bg-white px-6 py-5 text-left text-[#075f68] transition-colors hover:bg-[#f4fbfb] md:px-8"
                   style={{ minHeight: "122px" }}
                 >
                   <svg viewBox="0 0 24 24" className="h-10 w-10 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M4 18h16" />
-                    <path d="M7 18V9h6v9" />
-                    <path d="M13 18V6h5v12" />
-                    <path d="M7 9h6l-3-4Z" />
-                    <path d="M18 6l2 3h-2" />
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                   </svg>
                   <span>
                     <span className="block text-[17px] font-extrabold leading-tight">Cotiza ahora</span>
-                    <span className="mt-1 block max-w-[150px] text-[11px] font-semibold leading-tight text-[#075f68]">Cotiza en volumen y obtén los mejores productos.</span>
+                    <span className="mt-1 block max-w-[150px] text-[11px] font-semibold leading-tight text-[#075f68]">Habla con nuestro asesor y encuentra el producto ideal.</span>
                   </span>
-                </Link>
+                </button>
               </div>
             </div>
           </article>

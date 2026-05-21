@@ -11,6 +11,14 @@ export type ChatSuggestion = {
   href: string;
 };
 
+export type ChatProductCard = {
+  slug: string;
+  nombre: string;
+  precio: string;
+  imagen: string;
+  href: string;
+};
+
 export type CatalogSnapshot = {
   matchedProducts: StoreProduct[];
   matchedCategories: Categoria[];
@@ -118,6 +126,16 @@ function buildProductSuggestions(products: StoreProduct[]): ChatSuggestion[] {
   }));
 }
 
+function buildProductCards(products: StoreProduct[]): ChatProductCard[] {
+  return products.slice(0, 3).map((product) => ({
+    slug: product.slug,
+    nombre: product.nombre,
+    precio: product.precio,
+    imagen: product.imagen,
+    href: `/producto/${product.slug}`,
+  }));
+}
+
 function buildCategorySuggestions(categoriesToSuggest: Categoria[]): ChatSuggestion[] {
   return categoriesToSuggest.slice(0, 3).map((category) => ({
     label: category,
@@ -131,13 +149,67 @@ export function buildLocalAssistantReply(
 ): {
   message: string;
   suggestions: ChatSuggestion[];
+  products?: ChatProductCard[];
 } {
   const normalized = normalizeText(query);
 
   if (!normalized) {
     return {
       message:
-        "Te ayudo a encontrar repuestos, categorías y disponibilidad. Puedes escribir algo como “busco una farola”, “necesito motores” o “cómo funciona el envío”.",
+        "¡Hola! Soy KLINIU AI 👋 Tu asesor comercial. ¿Para qué tipo de espacio estás buscando soluciones de higiene? (hotel, oficina, clínica, hogar...)",
+      suggestions: buildCategorySuggestions(snapshot.allCategories),
+    };
+  }
+
+  // Saludo sin pregunta específica
+  if (
+    (normalized === "hola" ||
+      normalized === "buenas" ||
+      normalized === "buenos dias" ||
+      normalized === "buenas tardes" ||
+      normalized === "buenas noches") &&
+    !normalized.includes("product") &&
+    !normalized.includes("vend") &&
+    !normalized.includes("catalo")
+  ) {
+    return {
+      message:
+        "¡Hola! Soy KLINIU AI 👋 Me especializo en dispensadores institucionales y soluciones de higiene para empresas, hoteles, clínicas y hogares en Colombia. ¿Para qué tipo de espacio estás buscando?",
+      suggestions: buildCategorySuggestions(snapshot.allCategories),
+    };
+  }
+
+  // Pregunta genérica sobre qué venden / catálogo
+  if (
+    normalized.includes("que vend") ||
+    normalized.includes("que tienen") ||
+    normalized.includes("que product") ||
+    normalized.includes("que catalo") ||
+    normalized.includes("que ofrecen") ||
+    normalized.includes("que manejan") ||
+    normalized.includes("que comercializ") ||
+    (normalized.includes("product") &&
+      (normalized.includes("tienen") ||
+        normalized.includes("venden") ||
+        normalized.includes("manejan")))
+  ) {
+    const cats = snapshot.allCategories.join(", ");
+    return {
+      message: `¡Claro! 🔥 En Kliniu manejamos: ${cats}. Nos enfocamos en soluciones para empresas, hoteles, restaurantes, clínicas y hogares. ¿Para qué tipo de espacio lo necesitas? Así te recomiendo lo ideal.`,
+      suggestions: buildCategorySuggestions(snapshot.allCategories),
+    };
+  }
+
+  // Preguntas de precio sin contexto
+  if (
+    normalized.includes("precio") ||
+    normalized.includes("cuanto cuesta") ||
+    normalized.includes("cuanto vale") ||
+    normalized.includes("cotiza")
+  ) {
+    return {
+      message:
+        "¡Con gusto! 👌 Para cotizarte correctamente, ¿cuántas unidades necesitas y para qué tipo de espacio sería? (hotel, oficina, clínica, hogar...)",
       suggestions: buildCategorySuggestions(snapshot.allCategories),
     };
   }
@@ -145,11 +217,12 @@ export function buildLocalAssistantReply(
   if (
     normalized.includes("envio") ||
     normalized.includes("domicilio") ||
-    normalized.includes("transportadora")
+    normalized.includes("transportadora") ||
+    normalized.includes("despacho")
   ) {
     return {
       message:
-        "En Kliniu puedes ver el estado del despacho desde tu cuenta. Cuando el pedido avance, verás etapas como pedido confirmado, en preparación, enviado y recibido. Si quieres, también puedo ayudarte a encontrar primero el repuesto correcto.",
+        "Los envíos los rastreás desde tu cuenta paso a paso 👌 ¿Necesitas ayuda para encontrar algún producto primero?",
       suggestions: [
         { label: "Ver categorías", href: "/categorias" },
         { label: "Mi cuenta", href: "/mi-cuenta" },
@@ -164,7 +237,7 @@ export function buildLocalAssistantReply(
   ) {
     return {
       message:
-        "La tienda ya tiene flujo de checkout y un pago demo activo para mostrar la experiencia. Cuando conectes la pasarela real, el pedido podrá pasar de pago pendiente a pago confirmado automáticamente.",
+        "El pago se hace directo desde el carrito, es rápido y seguro 👌 ¿Te ayudo a encontrar el producto que buscas?",
       suggestions: [{ label: "Ir al carrito", href: "/carrito" }],
     };
   }
@@ -176,34 +249,41 @@ export function buildLocalAssistantReply(
   ) {
     return {
       message:
-        "Para revisar un pedido real, lo ideal es entrar a tu cuenta. Allí puedes ver el seguimiento, la transportadora, la guía y el avance del despacho.",
+        "Para ver tu pedido entra a tu cuenta — ahí está la guía, transportadora y estado del despacho en tiempo real 👌",
       suggestions: [{ label: "Mi cuenta", href: "/mi-cuenta" }],
     };
   }
 
-  if (snapshot.matchedProducts.length > 0) {
-    const lines = snapshot.matchedProducts
-      .slice(0, 3)
-      .map((product) => {
-        return `• ${product.nombre} (${product.categoria}) por ${formatearMoneda(product.precioValor)}. Disponibilidad: ${product.disponibilidad}.`;
-      })
-      .join("\n");
-
+  if (
+    normalized.includes("mayorista") ||
+    normalized.includes("distribuidor") ||
+    normalized.includes("por mayor") ||
+    normalized.includes("volumen")
+  ) {
     return {
-      message: `Encontré estas opciones que te pueden servir:\n${lines}\n\nSi quieres, abre una de ellas y te ayudo a comparar cuál se parece más a lo que necesitas.`,
+      message:
+        "Perfecto 👌 Manejamos atención especial para distribuidores y compras empresariales. ¿Qué líneas de productos te interesan comercializar? Te conecto con el equipo comercial.",
+      suggestions: buildCategorySuggestions(snapshot.allCategories),
+    };
+  }
+
+  if (snapshot.matchedProducts.length > 0) {
+    return {
+      message: `Mira, tengo justo lo que buscas 🔥 ¿Para qué tipo de espacio es? Así te recomiendo la combinación ideal.`,
       suggestions: buildProductSuggestions(snapshot.matchedProducts),
+      products: buildProductCards(snapshot.matchedProducts),
     };
   }
 
   if (snapshot.matchedCategories.length > 0) {
     return {
-      message: `No vi un producto exacto todavía, pero sí una línea relacionada con tu búsqueda: ${snapshot.matchedCategories.join(", ")}. Te la puedo abrir para que filtres más rápido.`,
+      message: `Para eso tenemos la línea de ${snapshot.matchedCategories.join(", ")} ✨ ¿La abrimos para ver las opciones disponibles?`,
       suggestions: buildCategorySuggestions(snapshot.matchedCategories),
     };
   }
 
   return {
-    message: `Todavía no encontré una coincidencia clara en el catálogo. Puedes probar con el nombre del repuesto, la categoría o una descripción más concreta. Las líneas principales de Kliniu son: ${snapshot.allCategories.join(", ")}.`,
+    message: `Hmm, no encontré una coincidencia exacta. Lo que más manejamos en Kliniu es: ${snapshot.allCategories.join(", ")}. ¿Alguna de esas líneas te interesa? 👌`,
     suggestions: buildCategorySuggestions(snapshot.allCategories),
   };
 }

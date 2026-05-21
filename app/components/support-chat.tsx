@@ -9,25 +9,34 @@ type ChatSuggestion = {
   href: string;
 };
 
+type ChatProductCard = {
+  slug: string;
+  nombre: string;
+  precio: string;
+  imagen: string;
+  href: string;
+};
+
 type ChatMessage = {
   id: string;
   role: "assistant" | "user";
   content: string;
   suggestions?: ChatSuggestion[];
+  products?: ChatProductCard[];
 };
 
 const quickPrompts = [
-  "Busco una farola",
-  "Necesito motores y ventiladores",
-  "¿Cómo funciona el envío?",
-  "¿Qué categorías manejan?",
+  "Tengo un hotel o restaurante",
+  "Tengo una oficina o empresa",
+  "Necesito dispensadores de jabón",
+  "¿Qué productos manejan?",
 ];
 
 const initialMessage: ChatMessage = {
   id: "welcome",
   role: "assistant",
   content:
-    "Hola, soy el asistente de Kliniu. Puedo ayudarte a encontrar repuestos, categorías, disponibilidad y orientarte sobre envíos o pagos.",
+    "¡Hola! Soy tu asesor personal de Kliniu 👋\n\nCuéntame un poco sobre tu espacio: ¿qué tipo de lugar es? (hotel, restaurante, oficina, clínica…) y cuántas personas lo usan al día.\n\nCon eso te recomiendo exactamente qué dispensadores y productos necesitas.",
 };
 
 export default function SupportChat() {
@@ -87,6 +96,7 @@ export default function SupportChat() {
         message?: string;
         mode?: "openai" | "local";
         suggestions?: ChatSuggestion[];
+        products?: ChatProductCard[];
       };
 
       if (!response.ok || !payload.message) {
@@ -103,6 +113,7 @@ export default function SupportChat() {
           role: "assistant",
           content: assistantReply,
           suggestions: payload.suggestions,
+          products: payload.products,
         },
       ]);
     } catch {
@@ -116,6 +127,18 @@ export default function SupportChat() {
     event.preventDefault();
     await sendMessage(input);
   };
+
+  useEffect(() => {
+    const handleOpenAdvisor = () => {
+      setMessages([initialMessage]);
+      setInput("");
+      setRequestError("");
+      setIsOpen(true);
+    };
+
+    window.addEventListener("kliniu:open-advisor", handleOpenAdvisor);
+    return () => window.removeEventListener("kliniu:open-advisor", handleOpenAdvisor);
+  }, []);
 
   useEffect(() => {
     const handleVisualSearchToggle = (event: Event) => {
@@ -216,7 +239,35 @@ export default function SupportChat() {
                           Kliniu
                         </p>
                         <p className="whitespace-pre-line">{message.content}</p>
-                        {message.suggestions && message.suggestions.length > 0 && (
+                        {message.products && message.products.length > 0 && (
+                          <div className="mt-3 flex flex-col gap-2">
+                            {message.products.map((product) => (
+                              <Link
+                                key={`${message.id}-${product.slug}`}
+                                href={product.href}
+                                className="flex items-center gap-3 rounded-xl border border-black/8 bg-[#f6f8fb] p-2 transition-colors duration-200 hover:border-[#27B1B8]/40 hover:bg-[#EAF8F6]"
+                              >
+                                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-white">
+                                  <Image
+                                    src={product.imagen}
+                                    alt={product.nombre}
+                                    fill
+                                    sizes="56px"
+                                    className="object-contain p-1"
+                                  />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-xs font-semibold text-[#0C535B]">{product.nombre}</p>
+                                  <p className="mt-0.5 text-xs font-bold text-[#27B1B8]">{product.precio}</p>
+                                </div>
+                                <svg className="h-4 w-4 shrink-0 text-[#27B1B8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                                  <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                        {message.suggestions && message.suggestions.length > 0 && !message.products && (
                           <div className="mt-3 flex flex-wrap gap-2">
                             {message.suggestions.map((suggestion) => (
                               <Link
@@ -275,7 +326,7 @@ export default function SupportChat() {
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 rows={2}
-                placeholder="Escribe aquí tu duda sobre repuestos..."
+                placeholder="Cuéntame sobre tu espacio o necesidad..."
                 className="min-h-[54px] flex-1 resize-none rounded-[1.2rem] border border-black/10 bg-white px-4 py-3 text-sm text-[#1f2328] outline-none transition-colors duration-200 focus:border-[#27B1B8]"
               />
               <button

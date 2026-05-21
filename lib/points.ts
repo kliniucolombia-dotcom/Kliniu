@@ -149,9 +149,9 @@ export const TIERS_K = [
     min: 2_000_000,
     max: 3_999_999,
     bonusPercent: 2,
-    color: "#B8822A",
-    colorBg: "#FDF6ED",
-    colorBorder: "#E8C080",
+    color: "#8A8A9A",
+    colorBg: "#F2F2F5",
+    colorBorder: "#C0C0CC",
     icon: "🥈",
   },
   {

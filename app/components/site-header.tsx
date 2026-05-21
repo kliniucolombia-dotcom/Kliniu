@@ -17,6 +17,7 @@ type SiteHeaderProps = {
 
 export default function SiteHeader({ currentUser }: SiteHeaderProps) {
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -87,10 +88,18 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
           {/* Nav */}
           <nav className="hidden items-center gap-1 lg:flex">
             {/* Productos dropdown */}
-            <div className="relative">
+            <div
+              className="relative"
+              onMouseEnter={() => {
+                if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+                setMenuAbierto(true);
+              }}
+              onMouseLeave={() => {
+                hoverTimeout.current = setTimeout(() => setMenuAbierto(false), 120);
+              }}
+            >
               <button
                 type="button"
-                onClick={() => setMenuAbierto((prev) => !prev)}
                 className={`flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
                   pathname === "/categorias"
                     ? "text-[#0C535B] underline decoration-[#27B1B8] decoration-2 underline-offset-4"
@@ -98,7 +107,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
                 }`}
               >
                 Productos
-                <svg viewBox="0 0 12 12" className="h-3 w-3 opacity-50" fill="currentColor">
+                <svg viewBox="0 0 12 12" className={`h-3 w-3 opacity-50 transition-transform ${menuAbierto ? "rotate-180" : ""}`} fill="currentColor">
                   <path d="M6 8L1 3h10z" />
                 </svg>
               </button>
@@ -220,7 +229,15 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
 
       {/* ── Mega-menú productos ── */}
       {menuAbierto && (
-        <div className="absolute left-0 right-0 top-full z-50 border-t border-black/8 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.13)]">
+        <div
+          className="absolute left-0 right-0 top-full z-50 border-t border-black/8 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.13)]"
+          onMouseEnter={() => {
+            if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+          }}
+          onMouseLeave={() => {
+            hoverTimeout.current = setTimeout(() => setMenuAbierto(false), 120);
+          }}
+        >
           <div className="mx-auto max-w-[1510px] px-5 py-5">
             <div className="scrollbar-hidden flex items-start gap-5 overflow-x-auto">
               {categoriasData.filter((cat) => cat.nombre !== "Outlet" && cat.nombre !== "Insumos/Repuesto").map((cat) => {

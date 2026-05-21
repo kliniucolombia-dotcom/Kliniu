@@ -24,7 +24,7 @@ const trustItems = [
 
 export default function CarritoPage() {
   const [cotizarOpen, setCotizarOpen] = useState(false);
-  const { items, incrementItem, decrementItem, removeItem, clearCart } = useCart();
+  const { items, incrementItem, decrementItem, removeItem, clearCart, addItem } = useCart();
   const { products } = useProducts();
 
   const subtotal = items.reduce(
@@ -319,12 +319,13 @@ export default function CarritoPage() {
                 <div className="p-3">
                   <p className="text-xs font-semibold leading-snug text-[#111] line-clamp-2">{p.nombre}</p>
                   <p className="mt-1 font-bold text-[#27B1B8]">{p.precio}</p>
-                  <Link
-                    href={`/producto/${p.slug}`}
+                  <button
+                    type="button"
+                    onClick={() => addItem({ id: p.slug, nombre: p.nombre, precio: p.precio, imagen: p.imagen, cantidad: 1 })}
                     className="mt-2 flex w-full items-center justify-center gap-1 rounded-full bg-[#27B1B8] px-3 py-2 text-[11px] font-bold text-white hover:bg-[#1E969B] transition-colors"
                   >
                     Agregar al carrito
-                  </Link>
+                  </button>
                 </div>
               </div>
             ))}
