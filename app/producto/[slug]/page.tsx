@@ -239,6 +239,19 @@ export default function ProductoDetallePage() {
 
   return (
     <main className="min-h-screen bg-white text-[#111]">
+
+      {/* Toast flotante combo */}
+      <div className={`fixed bottom-6 left-1/2 z-[200] -translate-x-1/2 transition-all duration-300 ${showComboTip ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0 pointer-events-none"}`}>
+        <div className="flex items-center gap-3 rounded-2xl bg-[#1a1a1a] px-5 py-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.28)]">
+          <span className="text-xl">🔥</span>
+          <div>
+            <p className="text-sm font-bold text-white">¡Te sale más barato en combo!</p>
+            <p className="text-xs text-white/70">Selecciona <strong className="text-[#F07826]">× 4 und</strong> o más y ahorra hasta un 10%.</p>
+          </div>
+          <button type="button" onClick={() => setShowComboTip(false)} className="ml-2 text-white/40 hover:text-white">✕</button>
+        </div>
+      </div>
+
       {/* Breadcrumb */}
       <div className="mx-auto max-w-[1440px] px-6 py-4">
         <nav className="flex items-center gap-2 text-sm text-[#6e7379]">
@@ -382,17 +395,6 @@ export default function ProductoDetallePage() {
                 </div>
               )}
 
-              {/* Popup combo tip */}
-              {showComboTip && (
-                <div className="flex items-start gap-2 rounded-xl border border-[#F07826]/30 bg-[#FFF3E8] px-3 py-2.5">
-                  <span className="mt-0.5 text-base">🔥</span>
-                  <div>
-                    <p className="text-xs font-bold text-[#F07826]">¡Te sale más barato en combo!</p>
-                    <p className="text-xs text-[#6e7379]">Selecciona <strong>× 4 und</strong> o más y ahorra hasta un 10% en tu compra.</p>
-                  </div>
-                  <button type="button" onClick={() => setShowComboTip(false)} className="ml-auto text-[#aaa] hover:text-[#666]">✕</button>
-                </div>
-              )}
 
               {/* Resumen de precio */}
               {volumePricing.hasDiscount && (
