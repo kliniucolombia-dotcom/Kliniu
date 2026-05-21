@@ -120,7 +120,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
     : producto.imagen;
 
   return (
-    <article className="group relative overflow-hidden rounded-2xl border border-black/8 bg-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.10)]">
+    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-black/8 bg-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.10)]">
       {/* Badge */}
       {producto.destacado && (
         <span className="absolute left-3 top-3 z-10 rounded-lg bg-[#f5a623] px-2.5 py-1 text-[10px] font-bold text-white">
@@ -140,21 +140,19 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
       </div>
 
       {/* Info */}
-      <div className="space-y-1.5 border-t border-black/5 p-4">
-        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-[#111]">
+      <div className="flex flex-1 flex-col border-t border-black/5 p-4">
+        <h3 className="line-clamp-2 min-h-[40px] text-sm font-semibold leading-snug text-[#111]">
           {producto.nombre}
         </h3>
 
-        {/* Type badge */}
-        {tipoBadge && (
-          <p className="text-[11px] leading-snug text-[#6e7379]">
-            {tipoBadge}
-          </p>
-        )}
+        {/* Description */}
+        <p className="mt-1 line-clamp-3 min-h-[48px] text-[11px] leading-snug text-[#6e7379]">
+          {tipoBadge ?? ""}
+        </p>
 
         {/* Color swatches */}
         {variaciones.length > 0 ? (
-          <div className="flex items-center gap-1.5 pt-0.5">
+          <div className="flex min-h-[20px] items-center gap-1.5">
             {variaciones.map((v) => (
               <button
                 key={v.color}
@@ -174,11 +172,11 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
               </span>
             )}
           </div>
-        ) : null}
+        ) : <div className="min-h-[20px]" />}
 
-        <p className="pt-0.5 text-lg font-bold text-[#111]">{producto.precio}</p>
+        <p className="mt-auto pt-2 text-lg font-bold text-[#111]">{producto.precio}</p>
 
-        <div className="flex gap-2 pt-1">
+        <div className="flex gap-2 pt-2">
           <Link
             href={`/producto/${producto.slug}`}
             className="flex-1 rounded-full border border-[#27B1B8] px-3 py-2 text-center text-xs font-semibold text-[#27B1B8] transition-colors hover:bg-[#27B1B8] hover:text-white"
