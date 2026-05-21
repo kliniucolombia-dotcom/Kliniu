@@ -189,7 +189,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
             disabled={producto.puedeComprar === false}
             aria-label={`Agregar ${producto.nombre} al carrito`}
             className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
-              agregado ? "bg-[#0C535B] text-white" : "bg-[#27B1B8] text-white hover:bg-[#1E969B]"
+              agregado ? "bg-[#d4621a] text-white" : "bg-[#F07826] text-white hover:bg-[#d4621a]"
             }`}
           >
             {agregado ? (
