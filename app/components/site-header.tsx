@@ -89,7 +89,11 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
   };
 
   return (
-    <header ref={menuRef} className={`fixed top-0 left-0 right-0 z-50 border-b border-black/8 bg-white shadow-[0_4px_20px_rgba(15,23,42,0.06)] transition-transform duration-300 ease-in-out ${hidden ? "-translate-y-full" : "translate-y-0"}`}>
+    <header
+      ref={menuRef}
+      className="fixed top-0 left-0 right-0 z-50 border-b border-black/8 bg-white shadow-[0_4px_20px_rgba(15,23,42,0.06)]"
+      style={{ transform: hidden ? "translateY(-100%)" : "translateY(0)", transition: "transform 300ms ease-in-out" }}
+    >
       <div className="mx-auto max-w-[1440px] px-5 py-3">
         <div className="flex items-center gap-6">
           {/* Logo */}
