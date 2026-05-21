@@ -271,6 +271,7 @@ export default function ProductoDetallePage() {
             <div>
               <p className="text-3xl font-extrabold text-[#27B1B8]">
                 {volumePricing.hasDiscount ? volumePricing.unitPriceLabel : producto.precio}
+                {volumePricing.hasDiscount && <span className="ml-1 text-base font-semibold text-[#27B1B8]/70">c/u</span>}
               </p>
               {volumePricing.hasDiscount && (
                 <p className="mt-0.5 text-sm text-[#aaa] line-through">{producto.precio}</p>
