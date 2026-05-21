@@ -17,31 +17,12 @@ type SiteHeaderProps = {
 
 export default function SiteHeader({ currentUser }: SiteHeaderProps) {
   const [menuAbierto, setMenuAbierto] = useState(false);
-  const [visible, setVisible] = useState(true);
-  const lastScrollY = useRef(0);
   const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const menuRef = useRef<HTMLDivElement | null>(null);
   const { totalProducts } = useCart();
-
-  useEffect(() => {
-    const onScroll = () => {
-      const current = window.scrollY;
-      if (current < 60) {
-        setVisible(true);
-      } else if (current > lastScrollY.current + 4) {
-        setVisible(false);
-        setMenuAbierto(false);
-      } else if (current < lastScrollY.current - 4) {
-        setVisible(true);
-      }
-      lastScrollY.current = current;
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   const irACategoria = (categoria?: string) => {
     setMenuAbierto(false);
@@ -89,7 +70,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
   };
 
   return (
-    <header ref={menuRef} className={`sticky top-0 z-50 border-b border-black/8 bg-white shadow-[0_4px_20px_rgba(15,23,42,0.06)] transition-transform duration-300 ease-in-out ${visible ? "translate-y-0" : "-translate-y-full"}`}>
+    <header ref={menuRef} className="fixed top-0 left-0 right-0 z-50 border-b border-black/8 bg-white shadow-[0_4px_20px_rgba(15,23,42,0.06)]">
       <div className="mx-auto max-w-[1440px] px-5 py-3">
         <div className="flex items-center gap-6">
           {/* Logo */}
