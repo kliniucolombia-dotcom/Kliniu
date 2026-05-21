@@ -25,6 +25,34 @@ export type CatalogSnapshot = {
   allCategories: Categoria[];
 };
 
+// Levenshtein distance para detectar typos
+function levenshtein(a: string, b: string): number {
+  const m = a.length, n = b.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, (_, i) =>
+    Array.from({ length: n + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+  );
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+  return dp[m][n];
+}
+
+// Umbral: 1 error para palabras cortas, 2 para largas
+function fuzzyMatch(token: string, keyword: string): boolean {
+  if (token === keyword) return true;
+  if (Math.abs(token.length - keyword.length) > 2) return false;
+  const maxDist = token.length <= 5 ? 1 : 2;
+  return levenshtein(token, keyword) <= maxDist;
+}
+
+// Palabras clave del dominio Kliniu para fuzzy matching
+const DOMAIN_KEYWORDS = [
+  "dispensador","dispensadora","dispensadores","higiene","jabon","papel","toalla",
+  "servilleta","dental","cepillo","repuesto","insumo","acero","inoxidable",
+  "automatico","sensor","liquid","rollo","institucional","comercial","hotel",
+  "restaurante","oficina","clinica","bano","lavamanos","repisa","klinox",
+];
+
 const STOP_WORDS = new Set([
   "y","o","de","la","el","los","las","un","una","unos","unas","en","que","es","se",
   "con","por","para","del","al","lo","me","te","mi","tu","su","nos","les","si",
@@ -55,35 +83,40 @@ function tokenize(value: string) {
 function scoreProduct(product: StoreProduct, queryTokens: string[]) {
   if (queryTokens.length === 0) return 0;
 
+  const nombre = normalizeText(product.nombre);
+  const categoria = normalizeText(product.categoria);
+  const marca = normalizeText(product.marca);
   const haystack = normalizeText(
-    [
-      product.nombre,
-      product.marca,
-      product.categoria,
-      product.descripcion || "",
-      product.sku || "",
-      product.disponibilidad,
-    ].join(" "),
+    [product.nombre, product.marca, product.categoria, product.descripcion || "", product.sku || "", product.disponibilidad].join(" "),
   );
+  const nombreTokens = nombre.split(/\s+/);
+  const haystackTokens = haystack.split(/\s+/);
 
   return queryTokens.reduce((score, token) => {
-    if (normalizeText(product.nombre).includes(token)) return score + 7;
-    if (normalizeText(product.categoria).includes(token)) return score + 5;
-    if (normalizeText(product.marca).includes(token)) return score + 4;
+    // Exact matches
+    if (nombre.includes(token)) return score + 7;
+    if (categoria.includes(token)) return score + 5;
+    if (marca.includes(token)) return score + 4;
     if (haystack.includes(token)) return score + 2;
+    // Fuzzy matches (typos)
+    if (nombreTokens.some((w) => fuzzyMatch(token, w))) return score + 5;
+    if (haystackTokens.some((w) => fuzzyMatch(token, w))) return score + 1;
     return score;
   }, 0);
 }
 
 function getMatchedCategories(query: string) {
   const normalized = normalizeText(query);
+  const queryTokens = tokenize(query);
 
   return categorias.filter((category) => {
     const categoryValue = normalizeText(category);
+    const catWords = categoryValue.split(/\s+/).filter((w) => w.length > 3);
     return (
       normalized.includes(categoryValue) ||
       normalized.includes(slugCategoria(category)) ||
-      categoryValue.split(" ").some((word) => normalized.includes(word))
+      catWords.some((word) => normalized.includes(word)) ||
+      queryTokens.some((token) => catWords.some((word) => fuzzyMatch(token, word)))
     );
   });
 }
@@ -174,9 +207,13 @@ export function buildLocalAssistantReply(
     };
   }
 
-  // Producto fuera del catálogo
-  if (FUERA_CATALOGO.some((word) => normalized.includes(word))) {
-    const item = FUERA_CATALOGO.find((word) => normalized.includes(word))!;
+  // Producto fuera del catálogo (con fuzzy matching para typos)
+  const queryTokens2 = tokenize(normalized);
+  const fueraItem = FUERA_CATALOGO.find((word) =>
+    normalized.includes(word) || queryTokens2.some((t) => fuzzyMatch(t, word))
+  );
+  if (fueraItem) {
+    const item = fueraItem;
     return {
       message: `Eso no lo manejamos 😅 En Kliniu nos especializamos en dispensadores y productos de higiene institucional, no en ${item}s. ¿Tienes un espacio como oficina, hotel o clínica donde necesites dispensadores? Con gusto te asesoro 👌`,
       suggestions: buildCategorySuggestions(snapshot.allCategories),
