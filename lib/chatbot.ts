@@ -25,6 +25,19 @@ export type CatalogSnapshot = {
   allCategories: Categoria[];
 };
 
+const STOP_WORDS = new Set([
+  "y","o","de","la","el","los","las","un","una","unos","unas","en","que","es","se",
+  "con","por","para","del","al","lo","me","te","mi","tu","su","nos","les","si",
+  "no","mas","pero","como","hay","ya","muy","bien","quiero","busco","tengo","necesito",
+  "quisiera","podrian","pueden","puedo","tienen","tiene","quiero","dame","dame","ver",
+]);
+
+const FUERA_CATALOGO = [
+  "cama","colchon","colchones","mueble","muebles","silla","sofa","mesa","escritorio",
+  "computador","celular","telefono","televisor","nevera","lavadora","carro","coche",
+  "ropa","zapato","comida","medicamento","droga","planta","mascota","juguete","libro",
+];
+
 function normalizeText(value: string) {
   return value
     .normalize("NFD")
@@ -36,7 +49,7 @@ function normalizeText(value: string) {
 function tokenize(value: string) {
   return normalizeText(value)
     .split(/[^a-z0-9]+/)
-    .filter(Boolean);
+    .filter((t) => t.length > 2 && !STOP_WORDS.has(t));
 }
 
 function scoreProduct(product: StoreProduct, queryTokens: string[]) {
@@ -157,6 +170,15 @@ export function buildLocalAssistantReply(
     return {
       message:
         "¡Hola! Soy KLINIU AI 👋 Tu asesor comercial. ¿Para qué tipo de espacio estás buscando soluciones de higiene? (hotel, oficina, clínica, hogar...)",
+      suggestions: buildCategorySuggestions(snapshot.allCategories),
+    };
+  }
+
+  // Producto fuera del catálogo
+  if (FUERA_CATALOGO.some((word) => normalized.includes(word))) {
+    const item = FUERA_CATALOGO.find((word) => normalized.includes(word))!;
+    return {
+      message: `Eso no lo manejamos 😅 En Kliniu nos especializamos en dispensadores y productos de higiene institucional, no en ${item}s. ¿Tienes un espacio como oficina, hotel o clínica donde necesites dispensadores? Con gusto te asesoro 👌`,
       suggestions: buildCategorySuggestions(snapshot.allCategories),
     };
   }
