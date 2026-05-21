@@ -12,7 +12,7 @@ type Campaign = {
 
 const fmtUSD = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
-const TH = ({ children }: { children: React.ReactNode }) => (
+const TH = ({ children }: { children?: React.ReactNode }) => (
   <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">
     {children}
   </th>
