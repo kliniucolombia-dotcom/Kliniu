@@ -326,17 +326,47 @@ export function buildLocalAssistantReply(
     };
   }
 
-  if (snapshot.matchedProducts.length > 0) {
+  // Detectar contexto del cliente
+  const ESPACIOS = ["hotel","restaurante","oficina","clinica","hospital","colegio","hogar","casa","empresa","gym","gimnasio","salon","bodega","fabrica"];
+  const MATERIALES = ["acero","inoxidable","plastico","cromado","abs"];
+  const tieneEspacio = ESPACIOS.some((e) => normalized.includes(e));
+  const tieneMaterial = MATERIALES.some((m) => normalized.includes(m));
+
+  if (snapshot.matchedProducts.length > 0 || snapshot.matchedCategories.length > 0) {
+    // Sin espacio → preguntar espacio primero
+    if (!tieneEspacio) {
+      return {
+        message: `Perfecto, tenemos opciones para eso 👌 Para recomendarte lo ideal, ¿para qué tipo de espacio lo necesitas?\n\n🏨 Hotel · 🍽️ Restaurante · 🏢 Oficina · 🏥 Clínica · 🏠 Hogar · 🏭 Empresa`,
+        suggestions: buildCategorySuggestions(snapshot.allCategories),
+      };
+    }
+
+    // Tiene espacio pero no material → mostrar 1 producto estrella + preguntar material
+    if (!tieneMaterial && snapshot.matchedProducts.length > 0) {
+      const top = snapshot.matchedProducts[0];
+      return {
+        message: `Para ${normalized.match(new RegExp(ESPACIOS.join("|")))?.[0] ?? "ese espacio"} te recomiendo este 👇\n\n¿Prefieres en acero inoxidable (más duradero) o plástico ABS (más económico)?`,
+        suggestions: [
+          { label: "Ver todos", href: "/categorias" },
+          { label: top.nombre, href: `/producto/${top.slug}` },
+        ],
+        products: buildProductCards([top]),
+      };
+    }
+
+    // Tiene espacio + material (o suficiente contexto) → mostrar producto + sugerir combo
+    const topProduct = snapshot.matchedProducts[0];
+    const hasCombo = snapshot.matchedProducts.length > 1;
     return {
-      message: `Mira, tengo justo lo que buscas 🔥 ¿Para qué tipo de espacio es? Así te recomiendo la combinación ideal.`,
+      message: `Aquí tienes la mejor opción para ese espacio 👇${hasCombo ? `\n\n💡 Si llevas varios, te sale un **${Math.min(snapshot.matchedProducts.length * 2 + 1, 10)}% más económico** en combo. ¿Te armo una cotización?` : ""}`,
       suggestions: buildProductSuggestions(snapshot.matchedProducts),
-      products: buildProductCards(snapshot.matchedProducts),
+      products: buildProductCards([topProduct]),
     };
   }
 
   if (snapshot.matchedCategories.length > 0) {
     return {
-      message: `Para eso tenemos la línea de ${snapshot.matchedCategories.join(", ")} ✨ ¿La abrimos para ver las opciones disponibles?`,
+      message: `Tenemos justo esa línea: **${snapshot.matchedCategories.join(", ")}** ✨\n\n¿Para qué tipo de espacio lo necesitas? Así te recomiendo el modelo correcto.`,
       suggestions: buildCategorySuggestions(snapshot.matchedCategories),
     };
   }
