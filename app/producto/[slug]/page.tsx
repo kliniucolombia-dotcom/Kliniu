@@ -79,10 +79,6 @@ const trustBar = [
   },
 ];
 
-const colorOptions = [
-  { nombre: "Blanco", bg: "bg-white", border: "border-black/20" },
-  { nombre: "Negro", bg: "bg-[#222]", border: "border-black/10" },
-];
 
 function ImageGallery({ nombre, images }: { nombre: string; images: string[] }) {
   const [active, setActive] = useState(0);
@@ -112,12 +108,12 @@ function ImageGallery({ nombre, images }: { nombre: string; images: string[] }) 
       </div>
 
       {/* Main image */}
-      <div className="flex flex-1 items-center justify-center rounded-2xl border border-black/8 bg-white p-6">
+      <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-black/8 bg-white p-6">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={images[active] || "/product-placeholder.png"}
           alt={nombre}
-          className="max-h-[380px] w-full object-contain"
+          className="h-full w-full object-contain"
           onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
         />
       </div>
@@ -154,10 +150,28 @@ export default function ProductoDetallePage() {
     agregadoTimeout.current = setTimeout(() => setAgregado(false), 1200);
   };
 
-  const galleryImages = useMemo(
-    () => (producto ? [producto.imagen, ...(producto.imagenesExtra || [])].filter(Boolean) : []),
-    [producto],
-  );
+  const variacionesColor = producto?.variacionesColor ?? [];
+
+  // Prepend the base product image as "Blanco" when there are other color variants
+  const allVariants = useMemo(() => {
+    if (!producto || variacionesColor.length === 0) return [];
+    return [
+      { color: "#ffffff", label: "Blanco", image: producto.imagen },
+      ...variacionesColor,
+    ];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [producto]);
+
+  const galleryImages = useMemo(() => {
+    if (!producto) return [];
+    if (allVariants.length > 0) {
+      const selected = allVariants[colorActivo]?.image ?? producto.imagen;
+      const others = allVariants.filter((_, i) => i !== colorActivo).map((v) => v.image);
+      return [selected, ...others, ...(producto.imagenesExtra || [])].filter(Boolean);
+    }
+    return [producto.imagen, ...(producto.imagenesExtra || [])].filter(Boolean);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [producto, colorActivo, allVariants]);
 
   if (!producto) {
     return (
@@ -225,7 +239,7 @@ export default function ProductoDetallePage() {
         <div className="grid gap-10 lg:grid-cols-[1fr_480px] xl:grid-cols-[1fr_520px]">
 
           {/* LEFT — image gallery */}
-          <ImageGallery nombre={producto.nombre} images={galleryImages} />
+          <ImageGallery key={colorActivo} nombre={producto.nombre} images={galleryImages} />
 
           {/* RIGHT — product info */}
           <div className="space-y-5">
@@ -254,35 +268,38 @@ export default function ProductoDetallePage() {
               {producto.precioAnterior && (
                 <p className="mt-1 text-sm text-[#aaa] line-through">{producto.precioAnterior}</p>
               )}
-              {(() => {
-                const pts = Math.floor(parsePriceValue(producto.precio) / 1000);
-                return pts > 0 ? (
-                  <Link href="/puntos" className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#FFF3E0] px-3 py-1 text-xs font-bold text-[#FF6B00] hover:bg-[#FFE8C8]">
-                    ✨ Gana <span className="underline underline-offset-2">{pts.toLocaleString("es-CO")} puntos</span> con esta compra
-                  </Link>
-                ) : null;
-              })()}
             </div>
 
             {/* Color */}
-            <div>
-              <p className="mb-2 text-sm font-semibold text-[#333]">
-                Color: <span className="font-normal text-[#555]">{colorOptions[colorActivo].nombre}</span>
-              </p>
-              <div className="flex gap-2">
-                {colorOptions.map((c, i) => (
-                  <button
-                    key={c.nombre}
-                    type="button"
-                    onClick={() => setColorActivo(i)}
-                    aria-label={c.nombre}
-                    className={`h-7 w-7 rounded-full border-2 ${c.bg} ${c.border} shadow-sm transition-all ${
-                      colorActivo === i ? "ring-2 ring-[#27B1B8] ring-offset-2" : "hover:ring-1 hover:ring-[#27B1B8]/50 hover:ring-offset-1"
-                    }`}
-                  />
-                ))}
+            {allVariants.length > 0 && (
+              <div>
+                <p className="mb-2 text-sm font-semibold text-[#333]">
+                  Colores disponibles: <span className="font-normal text-[#555]">{allVariants[colorActivo]?.label}</span>
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {allVariants.map((v, i) => (
+                    <button
+                      key={v.color}
+                      type="button"
+                      onClick={() => setColorActivo(i)}
+                      aria-label={v.label}
+                      title={v.label}
+                      className={`h-7 w-7 rounded-full border-2 shadow-sm transition-all ${
+                        colorActivo === i
+                          ? "ring-2 ring-[#27B1B8] ring-offset-2"
+                          : "hover:ring-1 hover:ring-[#27B1B8]/50 hover:ring-offset-1"
+                      }`}
+                      style={{
+                        background: v.color,
+                        borderColor: v.color === "#ffffff" || v.color === "#fff" || v.color.toLowerCase() === "white"
+                          ? "rgba(0,0,0,0.15)"
+                          : "rgba(0,0,0,0.08)",
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Quantity + CTA */}
             <div className="space-y-3">
@@ -367,99 +384,87 @@ export default function ProductoDetallePage() {
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* ── Description / Specs — 2-column with divider ── */}
-      <section className="border-t border-black/8 bg-white">
-        <div className="mx-auto max-w-[1440px] px-6 py-10">
-          <div className="grid gap-0 md:grid-cols-2">
-            {/* Left column */}
-            <div className="space-y-6 border-b border-black/8 pb-8 pr-0 text-sm leading-7 md:border-b-0 md:border-r md:pb-0 md:pr-10">
-              <div>
-                <p className="mb-1 font-bold text-[#27B1B8]">Descripción</p>
-                <p className="text-[#333]">
-                  {producto.descripcion ||
-                    `${producto.nombre} es un producto de la línea ${producto.categoria} de Kliniu, diseñado para ofrecer higiene profesional en espacios de alto tráfico.`}
-                </p>
-              </div>
-              {fichaTecnica.find((r) => r.etiqueta === "Material") && (
+            {/* Description / Specs */}
+            <div className="grid gap-0 border-t border-black/8 pt-5 md:grid-cols-2">
+              <div className="space-y-4 border-b border-black/8 pb-6 pr-0 text-sm leading-7 md:border-b-0 md:border-r md:pb-0 md:pr-8">
                 <div>
-                  <p className="mb-1 font-bold text-[#27B1B8]">Materiales</p>
+                  <p className="mb-1 font-bold text-[#27B1B8]">Descripción</p>
                   <p className="text-[#333]">
-                    Fabricado en {fichaTecnica.find((r) => r.etiqueta === "Material")?.valor}.
+                    {producto.descripcion ||
+                      `${producto.nombre} es un producto de la línea ${producto.categoria} de Kliniu, diseñado para ofrecer higiene profesional en espacios de alto tráfico.`}
                   </p>
                 </div>
-              )}
-              {fichaTecnica.find((r) => r.etiqueta === "Baterías") && (
-                <div>
-                  <p className="mb-1 font-bold text-[#27B1B8]">Baterías</p>
-                  <p className="text-[#333]">{fichaTecnica.find((r) => r.etiqueta === "Baterías")?.valor}</p>
-                </div>
-              )}
-              {fichaTecnica.find((r) => r.etiqueta === "Instalación") && (
-                <div>
-                  <p className="mb-1 font-bold text-[#27B1B8]">Instalación:</p>
-                  <p className="text-[#333]">{fichaTecnica.find((r) => r.etiqueta === "Instalación")?.valor}</p>
-                </div>
-              )}
-              {producto.aplicacion && (
-                <div>
-                  <p className="mb-1 font-bold text-[#27B1B8]">Aplicación</p>
-                  <p className="text-[#333]">{producto.aplicacion}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Right column */}
-            <div className="space-y-6 pt-8 text-sm leading-7 md:pl-10 md:pt-0">
-              {fichaTecnica.some((r) => ["Alto", "Ancho", "Profundidad", "Peso", "Capacidad"].includes(r.etiqueta)) && (
-                <div>
-                  <p className="mb-1 font-bold text-[#27B1B8]">Medidas</p>
-                  <div className="text-[#333]">
-                    {fichaTecnica.filter((r) => ["Alto", "Ancho"].includes(r.etiqueta)).length >= 2 && (
-                      <p>
-                        Alto {fichaTecnica.find((r) => r.etiqueta === "Alto")?.valor} x ancho{" "}
-                        {fichaTecnica.find((r) => r.etiqueta === "Ancho")?.valor}
-                      </p>
-                    )}
-                    {fichaTecnica.find((r) => r.etiqueta === "Profundidad") && (
-                      <p>Profundidad: {fichaTecnica.find((r) => r.etiqueta === "Profundidad")?.valor}</p>
-                    )}
-                    {fichaTecnica.find((r) => r.etiqueta === "Peso") && (
-                      <p>Peso: {fichaTecnica.find((r) => r.etiqueta === "Peso")?.valor}</p>
-                    )}
-                    {fichaTecnica.find((r) => r.etiqueta === "Capacidad") && (
-                      <p>Capacidad: {fichaTecnica.find((r) => r.etiqueta === "Capacidad")?.valor}</p>
-                    )}
+                {fichaTecnica.find((r) => r.etiqueta === "Material") && (
+                  <div>
+                    <p className="mb-1 font-bold text-[#27B1B8]">Materiales</p>
+                    <p className="text-[#333]">Fabricado en {fichaTecnica.find((r) => r.etiqueta === "Material")?.valor}.</p>
                   </div>
-                </div>
-              )}
-              {producto.compatibilidad && producto.compatibilidad.length > 0 && (
-                <div>
-                  <p className="mb-1 font-bold text-[#27B1B8]">Incluye</p>
-                  <ul className="space-y-0.5 text-[#333]">
-                    {producto.compatibilidad.map((c) => (
-                      <li key={c}>{c}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {fichaTecnica.find((r) => r.etiqueta === "Fuente de poder") && (
-                <div>
-                  <p className="mb-1 font-bold text-[#27B1B8]">Fuente de poder:</p>
-                  <p className="text-[#333]">{fichaTecnica.find((r) => r.etiqueta === "Fuente de poder")?.valor}</p>
-                </div>
-              )}
-              {fichaTecnica
-                .filter((r) => !["Alto", "Ancho", "Profundidad", "Peso", "Capacidad", "Material", "Baterías", "Instalación", "Fuente de poder", "Categoría", "Marca", "Disponibilidad", "Garantía", "Aplicación"].includes(r.etiqueta))
-                .map((r) => (
-                  <div key={r.etiqueta}>
-                    <p className="mb-1 font-bold text-[#27B1B8]">{r.etiqueta}</p>
-                    <p className="text-[#333]">{r.valor}</p>
+                )}
+                {fichaTecnica.find((r) => r.etiqueta === "Baterías") && (
+                  <div>
+                    <p className="mb-1 font-bold text-[#27B1B8]">Baterías</p>
+                    <p className="text-[#333]">{fichaTecnica.find((r) => r.etiqueta === "Baterías")?.valor}</p>
                   </div>
-                ))}
+                )}
+                {fichaTecnica.find((r) => r.etiqueta === "Instalación") && (
+                  <div>
+                    <p className="mb-1 font-bold text-[#27B1B8]">Instalación</p>
+                    <p className="text-[#333]">{fichaTecnica.find((r) => r.etiqueta === "Instalación")?.valor}</p>
+                  </div>
+                )}
+                {producto.aplicacion && (
+                  <div>
+                    <p className="mb-1 font-bold text-[#27B1B8]">Aplicación</p>
+                    <p className="text-[#333]">{producto.aplicacion}</p>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-4 pt-6 text-sm leading-7 md:pl-8 md:pt-0">
+                {fichaTecnica.some((r) => ["Alto", "Ancho", "Profundidad", "Peso", "Capacidad"].includes(r.etiqueta)) && (
+                  <div>
+                    <p className="mb-1 font-bold text-[#27B1B8]">Medidas</p>
+                    <div className="text-[#333]">
+                      {fichaTecnica.filter((r) => ["Alto", "Ancho"].includes(r.etiqueta)).length >= 2 && (
+                        <p>Alto {fichaTecnica.find((r) => r.etiqueta === "Alto")?.valor} x ancho {fichaTecnica.find((r) => r.etiqueta === "Ancho")?.valor}</p>
+                      )}
+                      {fichaTecnica.find((r) => r.etiqueta === "Profundidad") && (
+                        <p>Profundidad: {fichaTecnica.find((r) => r.etiqueta === "Profundidad")?.valor}</p>
+                      )}
+                      {fichaTecnica.find((r) => r.etiqueta === "Peso") && (
+                        <p>Peso: {fichaTecnica.find((r) => r.etiqueta === "Peso")?.valor}</p>
+                      )}
+                      {fichaTecnica.find((r) => r.etiqueta === "Capacidad") && (
+                        <p>Capacidad: {fichaTecnica.find((r) => r.etiqueta === "Capacidad")?.valor}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {producto.compatibilidad && producto.compatibilidad.length > 0 && (
+                  <div>
+                    <p className="mb-1 font-bold text-[#27B1B8]">Incluye</p>
+                    <ul className="space-y-0.5 text-[#333]">
+                      {producto.compatibilidad.map((c) => (
+                        <li key={c}>{c}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {fichaTecnica.find((r) => r.etiqueta === "Fuente de poder") && (
+                  <div>
+                    <p className="mb-1 font-bold text-[#27B1B8]">Fuente de poder</p>
+                    <p className="text-[#333]">{fichaTecnica.find((r) => r.etiqueta === "Fuente de poder")?.valor}</p>
+                  </div>
+                )}
+                {fichaTecnica
+                  .filter((r) => !["Alto", "Ancho", "Profundidad", "Peso", "Capacidad", "Material", "Baterías", "Instalación", "Fuente de poder", "Categoría", "Marca", "Disponibilidad", "Garantía", "Aplicación"].includes(r.etiqueta))
+                  .map((r) => (
+                    <div key={r.etiqueta}>
+                      <p className="mb-1 font-bold text-[#27B1B8]">{r.etiqueta}</p>
+                      <p className="text-[#333]">{r.valor}</p>
+                    </div>
+                  ))}
+              </div>
             </div>
           </div>
         </div>

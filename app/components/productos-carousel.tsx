@@ -53,7 +53,7 @@ export default function ProductosCarousel({
               key={p.slug}
               className="flex h-[314px] w-[200px] min-w-[200px] shrink-0 flex-col overflow-hidden rounded-2xl border border-black/8 bg-white 2xl:w-[190px] 2xl:min-w-[190px]"
             >
-              <div className="flex h-40 items-center justify-center bg-[#f8f8f7] p-4">
+              <div className="flex h-40 items-center justify-center bg-white p-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={p.imagen}
