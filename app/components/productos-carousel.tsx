@@ -76,8 +76,8 @@ export default function ProductosCarousel({
                   onClick={() => handleAdd(p)}
                   className={`mt-auto w-full rounded-full py-2 text-xs font-bold transition-colors ${
                     added
-                      ? "bg-[#0C535B] text-white"
-                      : "bg-[#27B1B8] text-white hover:bg-[#1E969B]"
+                      ? "bg-[#d4621a] text-white"
+                      : "bg-[#F07826] text-white hover:bg-[#d4621a]"
                   }`}
                 >
                   {added ? "✓ Agregado" : "Agregar al carrito"}
