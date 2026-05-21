@@ -343,8 +343,8 @@ export default function ProductoDetallePage() {
                     producto.puedeComprar === false
                       ? { background: "#f2f2f1", color: "#6b7280", cursor: "not-allowed", border: "1px solid rgba(0,0,0,0.1)" }
                       : agregado
-                      ? { background: "#0C535B", color: "#fff", border: "1px solid #0C535B" }
-                      : { background: "#EAF8F7", color: "#0C535B", border: "1px solid rgba(39,177,184,0.4)" }
+                      ? { background: "#d4621a", color: "#fff", border: "1px solid #d4621a" }
+                      : { background: "#F07826", color: "#fff", border: "1px solid #F07826" }
                   }
                 >
                   {producto.puedeComprar === false ? (
@@ -365,7 +365,7 @@ export default function ProductoDetallePage() {
                   type="button"
                   onClick={() => setQuoteOpen(true)}
                   className="flex flex-1 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
-                  style={{ background: "#073F43" }}
+                  style={{ background: "#1a1a2e" }}
                 >
                   Cotiza ahora
                 </button>
