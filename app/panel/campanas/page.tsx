@@ -1,15 +1,22 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { calcROAS, getCampaignStatus, STATUS_META, calcCompliance } from "@/lib/panel-utils";
+import { calcROAS, getCampaignStatus, STATUS_META } from "@/lib/panel-utils";
 
 type Campaign = {
   id: string; name: string; platform: string; investment: number; sales: number;
-  targetMultiple: number; status: string; startDate: string; endDate?: string; notes?: string;
+  leads: number; targetMultiple: number; status: string; startDate: string;
+  endDate?: string; notes?: string;
   seller: { id: string; fullName: string; email: string };
   product?: { id: string; name: string; image: string };
 };
 
 const fmtUSD = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+
+const TH = ({ children }: { children: React.ReactNode }) => (
+  <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">
+    {children}
+  </th>
+);
 
 export default function CampanasPanel() {
   const [campaigns, setCampaigns]   = useState<Campaign[]>([]);
@@ -22,7 +29,7 @@ export default function CampanasPanel() {
   const [alert, setAlert]           = useState<{ type: "ok" | "err"; msg: string } | null>(null);
 
   const [form, setForm] = useState({
-    name: "", sellerId: "", productId: "", investment: "", sales: "",
+    name: "", sellerId: "", productId: "", investment: "", sales: "", leads: "",
     targetMultiple: "10", platform: "Meta Ads", notes: "", status: "ACTIVE",
   });
 
@@ -43,21 +50,21 @@ export default function CampanasPanel() {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name: "", sellerId: sellers[0]?.id ?? "", productId: "", investment: "", sales: "", targetMultiple: "10", platform: "Meta Ads", notes: "", status: "ACTIVE" });
+    setForm({ name: "", sellerId: sellers[0]?.id ?? "", productId: "", investment: "", sales: "", leads: "", targetMultiple: "10", platform: "Meta Ads", notes: "", status: "ACTIVE" });
     setAlert(null);
     setShowForm(true);
   };
 
   const openEdit = (c: Campaign) => {
     setEditing(c);
-    setForm({ name: c.name, sellerId: c.seller.id, productId: c.product?.id ?? "", investment: String(c.investment), sales: String(c.sales), targetMultiple: String(c.targetMultiple), platform: c.platform, notes: c.notes ?? "", status: c.status });
+    setForm({ name: c.name, sellerId: c.seller.id, productId: c.product?.id ?? "", investment: String(c.investment), sales: String(c.sales), leads: String(c.leads ?? 0), targetMultiple: String(c.targetMultiple), platform: c.platform, notes: c.notes ?? "", status: c.status });
     setAlert(null);
     setShowForm(true);
   };
 
   const save = async () => {
     setSaving(true);
-    const body = { ...form, investment: parseFloat(form.investment) || 0, sales: parseFloat(form.sales) || 0, targetMultiple: parseFloat(form.targetMultiple) || 10 };
+    const body = { ...form, investment: parseFloat(form.investment) || 0, sales: parseFloat(form.sales) || 0, leads: parseInt(form.leads) || 0, targetMultiple: parseFloat(form.targetMultiple) || 10 };
     const url = editing ? `/api/panel/campaigns/${editing.id}` : "/api/panel/campaigns";
     const method = editing ? "PATCH" : "POST";
     const r = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -93,63 +100,54 @@ export default function CampanasPanel() {
           <button onClick={openNew} className="rounded-xl bg-[#27B1B8] px-4 py-2 text-xs font-bold text-white">Crear primera campaña</button>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {campaigns.map((c) => {
-            const roas       = calcROAS(c.sales, c.investment);
-            const status     = getCampaignStatus(roas);
-            const compliance = calcCompliance(c.sales, c.investment, c.targetMultiple);
-            const meta       = STATUS_META[status];
-            const target     = c.investment * c.targetMultiple;
-            return (
-              <div key={c.id} className="rounded-2xl border border-[#E2E8F0] bg-white p-5 hover:border-[#27B1B8]/40 transition-colors">
-                <div className="mb-3 flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="truncate font-bold text-[#1A1A1A]">{c.name}</p>
-                    <p className="text-xs text-[#94A3B8]">{c.seller.fullName} · {c.platform}</p>
-                  </div>
-                  <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: meta.bg, color: meta.color }}>
-                    {meta.label}
-                  </span>
-                </div>
-
-                {c.product && (
-                  <p className="mb-3 text-xs text-[#64748B]">📦 {c.product.name}</p>
-                )}
-
-                <div className="mb-3 grid grid-cols-2 gap-2 text-center">
-                  <div className="rounded-xl bg-[#F8FAFC] p-2.5">
-                    <p className="text-[10px] text-[#94A3B8]">Inversión</p>
-                    <p className="font-black text-[#1A1A1A]">{fmtUSD(c.investment)}</p>
-                  </div>
-                  <div className="rounded-xl bg-[#F8FAFC] p-2.5">
-                    <p className="text-[10px] text-[#94A3B8]">Ventas</p>
-                    <p className="font-black text-[#16A34A]">{fmtUSD(c.sales)}</p>
-                  </div>
-                </div>
-
-                <div className="mb-2 flex items-center justify-between text-xs">
-                  <span className="text-[#94A3B8]">ROAS</span>
-                  <span className="font-black" style={{ color: meta.color }}>×{roas.toFixed(1)}</span>
-                </div>
-                <div className="mb-2 flex items-center justify-between text-xs">
-                  <span className="text-[#94A3B8]">Meta ({fmtUSD(target)})</span>
-                  <span className="font-bold text-[#1A1A1A]">{compliance}%</span>
-                </div>
-
-                {/* Barra cumplimiento */}
-                <div className="mb-3 h-2 overflow-hidden rounded-full bg-[#F1F5F9]">
-                  <div
-                    className="h-full rounded-full transition-all"
-                    style={{ width: `${Math.min(compliance, 100)}%`, background: meta.color }}
-                  />
-                </div>
-
-                <button onClick={() => openEdit(c)} className="w-full rounded-xl border border-[#E2E8F0] py-1.5 text-xs font-semibold text-[#64748B] hover:border-[#27B1B8] hover:text-[#27B1B8] transition-colors">
-                  Editar
-                </button>
-              </div>
-            );
-          })}
+        <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white">
+          <table className="w-full">
+            <thead className="border-b border-[#E2E8F0] bg-[#F8FAFC]">
+              <tr>
+                <TH>Campaña</TH>
+                <TH>Invertido</TH>
+                <TH>Vendido</TH>
+                <TH>ROAS</TH>
+                <TH>Leads</TH>
+                <TH>CPL</TH>
+                <TH>Estado</TH>
+                <TH></TH>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#F1F5F9]">
+              {campaigns.map((c) => {
+                const roas   = calcROAS(c.sales, c.investment);
+                const status = getCampaignStatus(roas);
+                const meta   = STATUS_META[status];
+                const cpl    = c.leads > 0 ? Math.round(c.investment / c.leads) : null;
+                return (
+                  <tr key={c.id} className="hover:bg-[#F8FAFC] transition-colors">
+                    <td className="px-4 py-4">
+                      <p className="font-bold text-[#1A1A1A]">{c.name}</p>
+                      <p className="text-xs text-[#94A3B8]">{c.seller.fullName} · {c.platform}</p>
+                    </td>
+                    <td className="px-4 py-4 text-sm font-semibold text-[#1A1A1A]">{fmtUSD(c.investment)}</td>
+                    <td className="px-4 py-4 text-sm font-semibold text-[#1A1A1A]">{fmtUSD(c.sales)}</td>
+                    <td className="px-4 py-4">
+                      <span className="text-sm font-black" style={{ color: meta.color }}>{roas.toFixed(2)}x</span>
+                    </td>
+                    <td className="px-4 py-4 text-sm text-[#1A1A1A]">{c.leads ?? 0}</td>
+                    <td className="px-4 py-4 text-sm text-[#1A1A1A]">{cpl !== null ? fmtUSD(cpl) : "—"}</td>
+                    <td className="px-4 py-4">
+                      <span className="rounded-full px-3 py-1 text-xs font-bold" style={{ background: meta.bg, color: meta.color }}>
+                        {meta.label}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <button onClick={() => openEdit(c)} className="rounded-lg border border-[#E2E8F0] px-3 py-1.5 text-xs font-semibold text-[#64748B] hover:border-[#27B1B8] hover:text-[#27B1B8] transition-colors">
+                        Editar
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -186,12 +184,17 @@ export default function CampanasPanel() {
 
               <div>
                 <label className="mb-1 block text-xs font-bold text-[#64748B]">Inversión (USD)</label>
-                <input type="number" value={form.investment} onChange={(e) => setForm({ ...form, investment: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" placeholder="0.00" />
+                <input type="number" value={form.investment} onChange={(e) => setForm({ ...form, investment: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" placeholder="0" />
               </div>
 
               <div>
                 <label className="mb-1 block text-xs font-bold text-[#64748B]">Ventas generadas (USD)</label>
-                <input type="number" value={form.sales} onChange={(e) => setForm({ ...form, sales: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" placeholder="0.00" />
+                <input type="number" value={form.sales} onChange={(e) => setForm({ ...form, sales: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" placeholder="0" />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-bold text-[#64748B]">Leads</label>
+                <input type="number" value={form.leads} onChange={(e) => setForm({ ...form, leads: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" placeholder="0" />
               </div>
 
               <div>
@@ -213,9 +216,14 @@ export default function CampanasPanel() {
                     const r = calcROAS(parseFloat(form.sales), parseFloat(form.investment));
                     const s = getCampaignStatus(r);
                     const m = STATUS_META[s];
+                    const leadsN = parseInt(form.leads) || 0;
+                    const cplN = leadsN > 0 ? Math.round(parseFloat(form.investment) / leadsN) : null;
                     return (
                       <div className="flex items-center justify-between">
-                        <p className="text-xs font-bold text-[#0C6060]">ROAS calculado</p>
+                        <div>
+                          <p className="text-xs font-bold text-[#0C6060]">ROAS calculado</p>
+                          {cplN !== null && <p className="text-xs text-[#64748B]">CPL: {fmtUSD(cplN)}</p>}
+                        </div>
                         <div className="flex items-center gap-2">
                           <span className="text-xl font-black" style={{ color: m.color }}>×{r.toFixed(1)}</span>
                           <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: m.bg, color: m.color }}>{m.label}</span>

@@ -36,6 +36,7 @@ export async function POST(request: Request) {
       productId: body.productId || null,
       investment: body.investment ?? 0,
       sales: body.sales ?? 0,
+      leads: (body as { leads?: number }).leads ?? 0,
       targetMultiple: body.targetMultiple ?? 10,
       platform: body.platform ?? "Meta Ads",
       notes: body.notes ?? null,

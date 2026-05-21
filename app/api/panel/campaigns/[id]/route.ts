@@ -23,6 +23,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       name: body.name ?? existing.name,
       investment: body.investment ?? existing.investment,
       sales: body.sales ?? existing.sales,
+      leads: body.leads ?? existing.leads,
       targetMultiple: body.targetMultiple ?? existing.targetMultiple,
       platform: body.platform ?? existing.platform,
       notes: body.notes ?? existing.notes,

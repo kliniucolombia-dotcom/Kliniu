@@ -245,6 +245,7 @@ model Campaign {
   product     Product?  @relation(fields: [productId], references: [id])
   investment  Float     @default(0)
   sales       Float     @default(0)
+  leads       Int       @default(0)
   targetMultiple Float  @default(10)
   status      String    @default("ACTIVE")
   platform    String    @default("Meta Ads")
