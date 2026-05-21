@@ -338,11 +338,6 @@ export default function ProductoDetallePage() {
                       }`}
                     >
                       {pack.label}
-                      {p.hasDiscount && (
-                        <span className={`absolute -right-1.5 -top-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-black leading-none ${isActive ? "bg-white text-[#F07826]" : "bg-[#F07826] text-white"}`}>
-                          -{p.tier.pct}%
-                        </span>
-                      )}
                     </button>
                   );
                 })}
