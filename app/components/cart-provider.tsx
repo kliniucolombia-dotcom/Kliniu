@@ -16,6 +16,7 @@ export type CartItem = {
   precioOriginal?: string;
   imagen: string;
   cantidad: number;
+  colorLabel?: string;
 };
 
 function normalizeCartId(id: string) {

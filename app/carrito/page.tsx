@@ -120,8 +120,10 @@ export default function CarritoPage() {
                         </div>
                         <div className="min-w-0">
                           <p className="font-semibold leading-snug text-[#111]">{item.nombre}</p>
-                          <p className="mt-0.5 text-xs text-[#6e7379]">Color: Blanco</p>
-                          <p className="text-xs text-[#6e7379]">Código: {item.id.toUpperCase()}</p>
+                          {item.colorLabel && (
+                            <p className="mt-0.5 text-xs text-[#6e7379]">Color: {item.colorLabel}</p>
+                          )}
+                          <p className="text-xs text-[#6e7379]">Código: {item.id.split("--")[0].toUpperCase()}</p>
                           <div className="mt-1 flex items-center gap-2">
                             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-[#27B1B8]" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M5 12h14M12 5l7 7-7 7" />

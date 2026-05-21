@@ -137,13 +137,18 @@ export default function ProductoDetallePage() {
   const handleAddToCart = () => {
     if (!producto || producto.puedeComprar === false) return;
     const pricing = getVolumePricing(producto.precio, cantidad);
+    const varianteActiva = allVariants[colorActivo];
+    const imagenSeleccionada = varianteActiva?.image ?? producto.imagen;
+    const colorLabel = allVariants.length > 0 ? varianteActiva?.label : undefined;
+    const itemId = colorLabel ? `${producto.slug}--${varianteActiva?.color}` : producto.slug;
     addItem({
-      id: producto.slug,
+      id: itemId,
       nombre: producto.nombre,
       precio: pricing.unitPriceLabel,
       precioOriginal: pricing.hasDiscount ? producto.precio : undefined,
-      imagen: producto.imagen,
+      imagen: imagenSeleccionada,
       cantidad,
+      colorLabel,
     });
     setAgregado(true);
     if (agregadoTimeout.current) clearTimeout(agregadoTimeout.current);
