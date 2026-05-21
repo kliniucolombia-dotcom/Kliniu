@@ -269,8 +269,13 @@ export default function ProductoDetallePage() {
 
             {/* Price */}
             <div>
-              <p className="text-3xl font-extrabold text-[#27B1B8]">{producto.precio}</p>
-              {producto.precioAnterior && (
+              <p className="text-3xl font-extrabold text-[#27B1B8]">
+                {volumePricing.hasDiscount ? volumePricing.unitPriceLabel : producto.precio}
+              </p>
+              {volumePricing.hasDiscount && (
+                <p className="mt-0.5 text-sm text-[#aaa] line-through">{producto.precio}</p>
+              )}
+              {!volumePricing.hasDiscount && producto.precioAnterior && (
                 <p className="mt-1 text-sm text-[#aaa] line-through">{producto.precioAnterior}</p>
               )}
             </div>
