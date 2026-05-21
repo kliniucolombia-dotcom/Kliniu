@@ -309,34 +309,50 @@ export default function ProductoDetallePage() {
             {/* Quantity + CTA */}
             <div className="space-y-3">
               <p className="text-sm font-semibold text-[#333]">Cantidad</p>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center overflow-hidden rounded-xl border border-black/12">
-                  <button
-                    type="button"
-                    onClick={() => ajustar(-1)}
-                    className="px-4 py-2.5 text-lg font-medium text-[#333] hover:bg-[#f5f5f5]"
-                    aria-label="Disminuir"
-                  >
-                    −
-                  </button>
-                  <span className="min-w-[2.5rem] border-x border-black/10 px-3 py-2.5 text-center text-base font-semibold">
-                    {cantidad}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => ajustar(1)}
-                    className="px-4 py-2.5 text-lg font-medium text-[#333] hover:bg-[#f5f5f5]"
-                    aria-label="Aumentar"
-                  >
-                    +
-                  </button>
-                </div>
-                {volumePricing.hasDiscount && (
-                  <span className="rounded-full bg-[#EAF8F7] px-3 py-1.5 text-xs font-bold text-[#0C535B]">
-                    {volumePricing.tier.pct}% off por volumen
-                  </span>
-                )}
+
+              {/* Pack selector */}
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { label: "Unidad", qty: 1 },
+                  { label: "Set × 4", qty: 4 },
+                  { label: "Set × 6", qty: 6 },
+                  { label: "Set × 12", qty: 12 },
+                  { label: "Set × 48", qty: 48 },
+                ].map((pack) => {
+                  const p = getVolumePricing(producto.precio, pack.qty);
+                  const isActive = cantidad === pack.qty;
+                  return (
+                    <button
+                      key={pack.qty}
+                      type="button"
+                      onClick={() => setCantidad(pack.qty)}
+                      className={`relative flex flex-col items-center rounded-full border px-4 py-2 text-xs font-semibold transition-all ${
+                        isActive
+                          ? "border-[#F07826] bg-[#F07826] text-white shadow-md"
+                          : "border-black/15 bg-white text-[#333] hover:border-[#F07826] hover:text-[#F07826]"
+                      }`}
+                    >
+                      <span>{pack.label}</span>
+                      {p.hasDiscount && (
+                        <span className={`text-[10px] font-bold ${isActive ? "text-white/90" : "text-[#F07826]"}`}>
+                          -{p.tier.pct}%
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
+
+              {/* Precio con descuento */}
+              {volumePricing.hasDiscount && (
+                <p className="text-sm text-[#0C535B]">
+                  <span className="font-bold">{volumePricing.unitPriceLabel}</span> c/u · Total: <span className="font-bold">{volumePricing.totalLabel}</span>
+                  <span className="ml-2 rounded-full bg-[#FFF3E8] px-2 py-0.5 text-xs font-bold text-[#F07826]">{volumePricing.tier.pct}% OFF</span>
+                </p>
+              )}
+              {!volumePricing.hasDiscount && cantidad > 1 && (
+                <p className="text-sm text-[#6e7379]">Total: <span className="font-bold text-[#111]">{volumePricing.totalLabel}</span></p>
+              )}
 
               <div className="flex gap-3">
                 <button
