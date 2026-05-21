@@ -283,13 +283,54 @@ function LandingCategorias({ onSelect }: { onSelect: (cat: string) => void }) {
   );
 }
 
-/* ─────────────────────── Page ─────────────────────── */
-const filtrosDisponibles = {
-  "Automático / Manual": ["Automático", "Manual"],
-  Capacidad: ["500 ml", "800 ml", "1000 ml", "1200 ml", "600 toallas", "400 hojas"],
-  Material: ["Plástico ABS", "Acero inoxidable", "Policarbonato"],
-  Color: ["Blanco", "Negro", "Plateado"],
-} as const;
+/* ─────────────────────── helpers filtro ─────────────────────── */
+function getSpec(p: ProductoCatalogo, etiqueta: string) {
+  return p.especificacionesTecnicas?.find((e) => e.etiqueta === etiqueta)?.valor ?? "";
+}
+
+function getAutoManual(p: ProductoCatalogo): string | null {
+  const desc = (p.descripcion ?? "").toLowerCase();
+  const spec = getSpec(p, "Tipo").toLowerCase();
+  const text = desc + " " + spec;
+  if (text.includes("automático") || text.includes("automatico")) return "Automático";
+  if (text.includes("manual")) return "Manual";
+  return null;
+}
+
+function getColores(p: ProductoCatalogo): string[] {
+  const variantes = (p.variacionesColor ?? []).map((v) => v.label);
+  return variantes.length > 0 ? ["Blanco", ...variantes] : ["Blanco"];
+}
+
+function derivarOpcionesFiltros(productos: ProductoCatalogo[]) {
+  const am = [...new Set(productos.map(getAutoManual).filter(Boolean) as string[])].sort();
+  const cap = [...new Set(productos.map((p) => getSpec(p, "Capacidad")).filter(Boolean))].sort();
+  const mat = [...new Set(productos.map((p) => getSpec(p, "Material")).filter(Boolean))].sort();
+  const col = [...new Set(productos.flatMap(getColores).filter(Boolean))].sort();
+  return { "Automático / Manual": am, Capacidad: cap, Material: mat, Color: col };
+}
+
+function aplicarFiltros(productos: ProductoCatalogo[], filtros: FiltrosState) {
+  return productos.filter((p) => {
+    if (filtros["Automático / Manual"]?.length > 0) {
+      const val = getAutoManual(p);
+      if (!val || !filtros["Automático / Manual"].includes(val)) return false;
+    }
+    if (filtros["Capacidad"]?.length > 0) {
+      const cap = getSpec(p, "Capacidad");
+      if (!filtros["Capacidad"].includes(cap)) return false;
+    }
+    if (filtros["Material"]?.length > 0) {
+      const mat = getSpec(p, "Material");
+      if (!filtros["Material"].includes(mat)) return false;
+    }
+    if (filtros["Color"]?.length > 0) {
+      const colores = getColores(p);
+      if (!filtros["Color"].some((c) => colores.includes(c))) return false;
+    }
+    return true;
+  });
+}
 
 type FiltrosState = Record<string, string[]>;
 
@@ -301,6 +342,7 @@ function InsumosRepuestosPage({
   filtros,
   setFiltros,
   hayFiltros,
+  opcionesFiltros,
 }: {
   productosPagina: ProductoCatalogo[];
   totalPaginas: number;
@@ -309,6 +351,7 @@ function InsumosRepuestosPage({
   filtros: FiltrosState;
   setFiltros: Dispatch<SetStateAction<FiltrosState>>;
   hayFiltros: boolean;
+  opcionesFiltros: Record<string, string[]>;
 }) {
   return (
     <main className="min-h-screen bg-white text-[#073F43]">
@@ -376,7 +419,7 @@ function InsumosRepuestosPage({
             Borrar Filtros
           </button>
           <div className="ml-auto flex flex-wrap gap-2">
-            {Object.entries(filtrosDisponibles).map(([label, opciones]) => (
+            {Object.entries(opcionesFiltros).filter(([, opts]) => opts.length > 0).map(([label, opciones]) => (
               <DropdownFiltro
                 key={label}
                 label={label}
@@ -525,8 +568,11 @@ export default function CategoriasPage() {
   const pagina = paginaState.key === pageKey ? paginaState.value : 1;
   const setPagina = (value: number) => setPaginaState({ key: pageKey, value });
 
-  const productosFiltrados = products.filter((p) => {
-    const coincideCategoria = !categoriaActiva || p.categoria === categoriaActiva;
+  const productosPorCategoria = products.filter((p) => {
+    const esInsumos = tipoActivo === "insumos";
+    const coincideCategoria = esInsumos
+      ? p.categoria === "Insumos/Repuesto"
+      : !categoriaActiva || p.categoria === categoriaActiva;
     const coincideBusqueda =
       !queryActiva ||
       p.nombre.toLowerCase().includes(queryActiva) ||
@@ -534,6 +580,9 @@ export default function CategoriasPage() {
       (p.descripcion ?? "").toLowerCase().includes(queryActiva);
     return coincideCategoria && coincideBusqueda;
   });
+
+  const opcionesFiltros = derivarOpcionesFiltros(productosPorCategoria);
+  const productosFiltrados = aplicarFiltros(productosPorCategoria, filtros);
 
   const totalPaginas = Math.max(1, Math.ceil(productosFiltrados.length / ITEMS_PER_PAGE));
   const productosPagina = productosFiltrados.slice(
@@ -575,6 +624,7 @@ export default function CategoriasPage() {
         filtros={filtros}
         setFiltros={setFiltros}
         hayFiltros={hayFiltros}
+        opcionesFiltros={opcionesFiltros}
       />
     );
   }
@@ -655,7 +705,7 @@ export default function CategoriasPage() {
             </button>
           )}
           <div className="ml-auto flex flex-wrap gap-2">
-            {Object.entries(filtrosDisponibles).map(([label, opciones]) => (
+            {Object.entries(opcionesFiltros).filter(([, opts]) => opts.length > 0).map(([label, opciones]) => (
               <DropdownFiltro
                 key={label}
                 label={label}
