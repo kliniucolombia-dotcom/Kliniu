@@ -168,8 +168,8 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
               href="/puntos"
               className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-black transition-all ${
                 pathname === "/puntos"
-                  ? "bg-[#FF6B00] text-white shadow-[0_4px_14px_rgba(255,107,0,0.4)]"
-                  : "bg-[#FF6B00] text-white shadow-[0_2px_8px_rgba(255,107,0,0.3)] hover:shadow-[0_4px_14px_rgba(255,107,0,0.45)] hover:opacity-90"
+                  ? "bg-[#7c3aed] text-white shadow-[0_4px_14px_rgba(124,58,237,0.4)]"
+                  : "bg-[#7c3aed] text-white shadow-[0_2px_8px_rgba(124,58,237,0.3)] hover:shadow-[0_4px_14px_rgba(124,58,237,0.45)] hover:opacity-90"
               }`}
             >
               <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
