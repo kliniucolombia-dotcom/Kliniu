@@ -64,8 +64,43 @@ const initialState: FormState = {
   garantia: "1 año de garantía del fabricante",
 };
 
-const MAX_FILE_SIZE_BYTES = 3 * 1024 * 1024;
+const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024; // 15 MB hard limit — se comprime antes de subir
 const RECOMMENDED_FILE_SIZE_KB = 500;
+
+// Redimensiona y convierte a WebP en el navegador antes de subir
+function compressImage(file: File, maxSizePx = 1200, quality = 0.82): Promise<File> {
+  return new Promise((resolve, reject) => {
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      reject(new Error("La imagen supera el límite de 15 MB."));
+      return;
+    }
+    const img = new window.Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const ratio = Math.min(1, maxSizePx / Math.max(img.width, img.height));
+      const w = Math.round(img.width * ratio);
+      const h = Math.round(img.height * ratio);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { resolve(file); return; }
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) { resolve(file); return; }
+          const name = file.name.replace(/\.[^.]+$/, "") + ".webp";
+          resolve(new File([blob], name, { type: "image/webp" }));
+        },
+        "image/webp",
+        quality,
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
 const EXTRA_IMAGE_SLOTS = 3;
 const shippingStatuses: ShippingStatus[] = [
   "PENDING",
@@ -546,7 +581,7 @@ function ColorVariantImageUpload({
             )}
             {uploading ? "Subiendo..." : "Cargar imagen"}
           </button>
-          <p className="text-[10px] text-[#9a9da2]">JPG, PNG, WebP · máx. 3 MB</p>
+          <p className="text-[10px] text-[#9a9da2]">JPG, PNG, WebP · se comprime automáticamente · máx. 15 MB</p>
         </div>
         <input
           ref={inputRef}
@@ -1015,26 +1050,33 @@ export default function AdminPage() {
     setForm((current) => ({ ...current, [name]: value }));
   };
 
-  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
+    if (!file) return;
 
-    if (file && file.size > MAX_FILE_SIZE_BYTES) {
-      setRequestError("La imagen supera el límite de 3 MB. Intenta con una versión más liviana.");
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setRequestError("La imagen supera el límite de 15 MB.");
       setSelectedImage(null);
       setFileInputKey((current) => current + 1);
       return;
     }
 
     setRequestError("");
-    setSelectedImage(file);
+    try {
+      const compressed = await compressImage(file);
+      setSelectedImage(compressed);
+    } catch {
+      setSelectedImage(file);
+    }
   };
 
   const handleExtraImageChange =
-    (index: number) => (event: ChangeEvent<HTMLInputElement>) => {
+    (index: number) => async (event: ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0] ?? null;
+      if (!file) return;
 
-      if (file && file.size > MAX_FILE_SIZE_BYTES) {
-        setRequestError("Una de las imágenes extra supera el límite de 3 MB. Intenta con una versión más liviana.");
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        setRequestError("Una de las imágenes extra supera el límite de 15 MB.");
         setSelectedExtraImages((current) =>
           current.map((item, itemIndex) => (itemIndex === index ? null : item)),
         );
@@ -1043,9 +1085,16 @@ export default function AdminPage() {
       }
 
       setRequestError("");
-      setSelectedExtraImages((current) =>
-        current.map((item, itemIndex) => (itemIndex === index ? file : item)),
-      );
+      try {
+        const compressed = await compressImage(file);
+        setSelectedExtraImages((current) =>
+          current.map((item, itemIndex) => (itemIndex === index ? compressed : item)),
+        );
+      } catch {
+        setSelectedExtraImages((current) =>
+          current.map((item, itemIndex) => (itemIndex === index ? file : item)),
+        );
+      }
     };
 
   const uploadProductImage = async (file: File, productName: string) => {
@@ -1777,7 +1826,7 @@ export default function AdminPage() {
                     Sube la foto directamente aquí. Formatos permitidos: JPG, PNG o WEBP.
                   </p>
                   <p className="text-xs leading-6 text-[#6e7379]">
-                    Recomendado: hasta {RECOMMENDED_FILE_SIZE_KB} KB por imagen. Límite máximo: 3 MB.
+                    Las imágenes se comprimen automáticamente a WebP 1200×1200 antes de subir. Límite máximo: 15 MB.
                   </p>
                   {selectedImage && (
                     <p className="text-xs leading-6 text-[#0C535B]">

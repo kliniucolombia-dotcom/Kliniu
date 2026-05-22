@@ -63,21 +63,39 @@ export async function POST(request: Request) {
     const userMessages = messages.filter((m) => m.role === "user");
     const prevUserMessage = userMessages[userMessages.length - 2];
 
-    // Detectar aclaraciones del tipo "pero de jabón", "solo de toalla", "de papel" — refina búsqueda anterior
-    const CLARIFICATION_STARTERS = ["pero","solo","solamente","especificamente","de","uno de","quiero de","es de","sea de"];
-    const latestLower = latestUserMessage.content.toLowerCase().trim();
-    const isClarification = Boolean(prevUserMessage) && latestTokens.length <= 5 &&
+    // Si prevUserMessage es solo un material/espacio (ej. "acero inoxidable"), ir un nivel más atrás
+    // para recuperar el contexto de producto original (ej. "dispensador de jabón")
+    const MATERIAL_WORDS = new Set(["acero","inoxidable","plastico","abs","klinox","hogar","hotel","oficina","restaurante","clinica","empresa"]);
+    const prevTokens = prevUserMessage?.content.toLowerCase().trim()
+      .normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .split(/\s+/).filter(Boolean) ?? [];
+    const prevIsPurelyContext = prevTokens.length <= 3 && prevTokens.every((t) => MATERIAL_WORDS.has(t));
+    const productContextMessage = prevIsPurelyContext
+      ? (userMessages[userMessages.length - 3] ?? prevUserMessage)
+      : prevUserMessage;
+
+    // Detectar aclaraciones del tipo "pero de jabón", "solo de toalla", "de papel", "déjame los de plástico"
+    const CLARIFICATION_STARTERS = [
+      "pero","solo","solamente","especificamente",
+      "de","uno de","quiero de","es de","sea de",
+      "dejame","muestrame","dame","quiero","ponme",
+      "prefiero","mejor","y los","los de","y de",
+      "ahora","entonces","en ese caso",
+    ];
+    const latestLower = latestUserMessage.content.toLowerCase().trim()
+      .normalize("NFD").replace(/[̀-ͯ]/g, "");
+    const isClarification = Boolean(prevUserMessage) && latestTokens.length <= 6 &&
       CLARIFICATION_STARTERS.some((s) => latestLower.startsWith(s));
 
     let snapshot;
     if (isPurelySpace && prevUserMessage) {
-      snapshot = await getCatalogSnapshot(prevUserMessage.content, latestUserMessage.content);
+      snapshot = await getCatalogSnapshot(productContextMessage.content, latestUserMessage.content);
       if (snapshot.matchedProducts.length === 0 && snapshot.matchedCategories.length === 0) {
-        snapshot = await getCatalogSnapshot(`${prevUserMessage.content} ${latestUserMessage.content}`);
+        snapshot = await getCatalogSnapshot(`${productContextMessage.content} ${latestUserMessage.content}`);
       }
     } else if (isClarification && prevUserMessage) {
-      // Combinar aclaración con contexto previo para no perder el producto anterior
-      snapshot = await getCatalogSnapshot(`${prevUserMessage.content} ${latestUserMessage.content}`);
+      // Combinar aclaración con contexto de producto original (saltando mensajes de material/espacio)
+      snapshot = await getCatalogSnapshot(`${productContextMessage.content} ${latestUserMessage.content}`);
       if (snapshot.matchedProducts.length === 0 && snapshot.matchedCategories.length === 0) {
         snapshot = await getCatalogSnapshot(latestUserMessage.content);
       }

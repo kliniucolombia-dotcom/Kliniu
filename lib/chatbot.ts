@@ -85,10 +85,24 @@ const SYNONYMS: Record<string, string[]> = {
   "dispensadores": ["dispensador"],
   "inox":          ["inoxidable", "acero", "klinox"],
   "acero":         ["inoxidable", "klinox"],
+  "metal":         ["acero", "inoxidable", "klinox"],
+  "metalico":      ["acero", "inoxidable", "klinox"],
+  "metalicos":     ["acero", "inoxidable", "klinox"],
+  "metalica":      ["acero", "inoxidable", "klinox"],
+  "metalicas":     ["acero", "inoxidable", "klinox"],
   "dental":        ["crema dental", "cepillo"],
   "repuesto":      ["insumo", "repuesto"],
+  "repuestos":     ["insumo", "repuesto"],
   "recarga":       ["insumo", "repuesto"],
   "recargas":      ["insumo", "repuesto"],
+  "insumos":       ["insumo"],
+  "servilletas":   ["servilleta", "napklin"],
+  "toallas":       ["toalla"],
+  "jabones":       ["jabon"],
+  "cepillos":      ["cepillo", "dental"],
+  "secadores":     ["secador"],
+  "espumas":       ["espuma"],
+  "liquidos":      ["liquido", "jabon"],
   "liquido":       ["liquidos", "jabon"],
   "espuma":        ["espuma", "foam"],
   "shampoo":       ["doble", "antigoteo", "liquido"],
@@ -232,6 +246,9 @@ export async function getCatalogSnapshot(query: string, spaceContext?: string): 
   const esCalidad = KEYWORDS_CALIDAD.some((k) => contextFull.includes(k));
   const esAltoFlujo = KEYWORDS_ALTO_FLUJO.some((k) => contextFull.includes(k));
   const esDoble = KEYWORDS_DOBLE.some((k) => contextFull.includes(k));
+  // No aplicar boost acero si la consulta también pide plástico (señales contradictorias)
+  const esAceroContext = (contextFull.includes("acero") || contextFull.includes("inoxidable") || contextFull.includes("klinox") || contextFull.includes("metalico") || contextFull.includes("metal"))
+    && !(contextFull.includes("plastico") || contextFull.includes("abs"));
 
   const scored = products
     .map((product) => {
@@ -243,6 +260,8 @@ export async function getCatalogSnapshot(query: string, spaceContext?: string): 
       if (esDoble && SLUGS_DOBLE.includes(product.slug)) score += 50;
       // Boost para KlinOx cuando preguntan por durabilidad/calidad/lo mejor o alto flujo
       if ((esCalidad || esAltoFlujo) && normalizeText(product.categoria).includes("klinox")) score += 30;
+      // Boost para KlinOx cuando el contexto indica acero/inoxidable explícitamente
+      if (esAceroContext && normalizeText(product.categoria).includes("klinox")) score += 40;
       // Boost para Hoteles y Restaurantes cuando el espacio es hotel/restaurante/spa
       if (contextFull.match(/hotel|restaurante|spa|bar/) && normalizeText(product.categoria).includes("hoteles")) score += 25;
       return { product, score };
@@ -308,7 +327,7 @@ export function buildLocalAssistantReply(
   snapshot: CatalogSnapshot,
 ): {
   message: string;
-  suggestions: ChatSuggestion[];
+  suggestions?: ChatSuggestion[];
   products?: ChatProductCard[];
 } {
   const normalized = normalizeText(query);
@@ -357,9 +376,18 @@ export function buildLocalAssistantReply(
 
   // Tokens de tipo de producto específico
   const TOKENS_TIPO_ESPECIFICO = new Set([
-    "jabon","jabonera","toalla","papel","servilleta","dental","cepillo","alcohol",
-    "gel","liquido","espuma","secador","automatico","doble","brass","codo","elbow",
-    "servilletero","insumo","repuesto","recarga","napklin","decoklin","racklin",
+    "jabon","jabones","jabonera","jaboneras",
+    "toalla","toallas",
+    "papel","papeles",
+    "servilleta","servilletas",
+    "dental","cepillo","cepillos",
+    "alcohol","gel","liquido","liquidos","espuma","espumas",
+    "secador","secadores",
+    "automatico","automaticos",
+    "doble","dobles","brass","codo","elbow",
+    "servilletero","servilleteros",
+    "insumo","insumos","repuesto","repuestos","recarga","recargas",
+    "napklin","decoklin","racklin",
   ]);
   const tokensQuery = tokenize(normalized);
   const tieneTipoEspecifico = tokensQuery.some((t) => TOKENS_TIPO_ESPECIFICO.has(t));
@@ -472,19 +500,45 @@ export function buildLocalAssistantReply(
   // Detectar contexto del cliente
   const ESPACIOS = ["hotel","restaurante","oficina","clinica","hospital","colegio","hogar","casa","empresa","gym","gimnasio","salon","bodega","fabrica","centro","mall","comercial","plaza","parque","aeropuerto","estadio","universidad","colegio","banco","spa","cafeteria","bar","discoteca","club"];
   const ESPACIOS_SALUD = ["clinica","hospital","laboratorio","consultorio","medico","salud"];
-  const MATERIALES = ["acero","inoxidable","plastico","cromado","abs"];
+  const MATERIALES = ["acero","inoxidable","plastico","cromado","abs","metal","metalico","metalicos","metalica","metalicas"];
   const tieneEspacio = ESPACIOS.some((e) => normalized.includes(e));
   const esEspacioSalud = ESPACIOS_SALUD.some((e) => normalized.includes(e));
   const tieneMaterial = MATERIALES.some((m) => normalized.includes(m));
 
   if (snapshot.matchedProducts.length > 0 || snapshot.matchedCategories.length > 0) {
-    // Sin espacio pero CON material → mostrar productos de ese material y pedir espacio
+    // Sin espacio pero CON material → mostrar productos de ese material con mensaje contextual
     if (!tieneEspacio && tieneMaterial && snapshot.matchedProducts.length > 0) {
-      const label = normalized.includes("acero") || normalized.includes("inoxidable") ? "acero inoxidable" : "plástico ABS";
+      const esAcero = normalized.includes("acero") || normalized.includes("inoxidable") || normalized.includes("metalico") || normalized.includes("metalicos") || normalized.includes("metal");
+      const mensajeMaterial = esAcero
+        ? `¡Excelente elección! 🔩 El acero inoxidable dura 3-5 veces más que el plástico, resiste golpes y humedad constante, y es más higiénico porque no absorbe bacterias ni olores. Aquí los tienes 👇`
+        : `¡Perfecto! 🧴 El plástico ABS es liviano, práctico y muy popular para uso moderado. Aquí las opciones disponibles 👇`;
+
+      const productosParaMostrar = esAcero
+        ? snapshot.matchedProducts.filter((p) => {
+            const n = normalizeText(p.nombre);
+            const c = normalizeText(p.categoria);
+            return c.includes("klinox") || n.includes("acero") || n.includes("inoxidable") || n.includes("brass");
+          })
+        : snapshot.matchedProducts.filter((p) => {
+            const n = normalizeText(p.nombre);
+            const c = normalizeText(p.categoria);
+            return !c.includes("klinox") && !n.includes("acero") && !n.includes("inoxidable") && !n.includes("brass");
+          });
+
+      if (productosParaMostrar.length === 0 && !esAcero) {
+        return {
+          message: `Para esa categoría manejamos principalmente la línea en acero inoxidable KlinOx 👌 ¿Te muestro esas opciones?`,
+          suggestions: [
+            { label: "🔩 Ver en acero inoxidable", action: "acero inoxidable" },
+          ],
+        };
+      }
+
+      const productosFinales = productosParaMostrar.length > 0 ? productosParaMostrar : snapshot.matchedProducts;
+
       return {
-        message: `¡Aquí los dispensadores en ${label} 👇\n\n¿Para qué tipo de espacio los necesitas? Así te completo la recomendación.`,
-        suggestions: buildCategorySuggestions(snapshot.allCategories),
-        products: buildProductCards(snapshot.matchedProducts),
+        message: mensajeMaterial,
+        products: buildProductCards(productosFinales),
       };
     }
 
@@ -514,8 +568,8 @@ export function buildLocalAssistantReply(
       return {
         message: `Tenemos opciones para eso 👌\n\n🔩 **Acero inoxidable** — más duradero, higiénico y profesional. Ideal para uso intensivo y largo plazo.\n🧴 **Plástico ABS** — más económico, práctico para uso moderado.\n\n¿Cuál prefieres?`,
         suggestions: [
-          { label: "Acero inoxidable", href: "/categorias?categoria=klinox-acero-inoxidable" },
-          { label: "Plástico ABS", href: "/categorias" },
+          { label: "🔩 Acero inoxidable", action: "acero inoxidable" },
+          { label: "🧴 Plástico ABS", action: "plastico ABS" },
         ],
         products: productosAceroPreview.length > 0 ? buildProductCards(productosAceroPreview) : undefined,
       };
@@ -552,14 +606,6 @@ export function buildLocalAssistantReply(
     if (!tieneEspacio) {
       return {
         message: `Perfecto, tenemos opciones para eso 👌 ¿Para qué tipo de espacio lo necesitas?`,
-        suggestions: [
-          { label: "🏨 Hotel", action: "hotel" },
-          { label: "🍽️ Restaurante", action: "restaurante" },
-          { label: "🏢 Oficina", action: "oficina" },
-          { label: "🏥 Clínica", action: "clinica" },
-          { label: "🏠 Hogar", action: "hogar" },
-          { label: "🏭 Empresa", action: "empresa" },
-        ],
       };
     }
 
