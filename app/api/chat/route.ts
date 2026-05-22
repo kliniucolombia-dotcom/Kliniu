@@ -104,7 +104,7 @@ export async function POST(request: Request) {
         "DETECCIÓN DE TIPO DE CLIENTE:",
         "Detecta automáticamente si es: hogar, empresa, hotel, restaurante, clínica, oficina, distribuidor o mayorista.",
         "- Hotel → elegancia, estética, experiencia premium, acabados premium.",
-        "- Clínica/hospital → higiene, resistencia, alto tráfico, facilidad de limpieza.",
+        "- Clínica/hospital/laboratorio/salud → SIEMPRE recomendar el Dispensador de Jabón Codo (Elbow) como primera opción. Es operado con el codo o antebrazo, sin contacto de manos, clave en protocolos de higiene médica. Resaltar: 'ideal para clínicas y consultorios porque se activa sin tocar con las manos, manteniendo la esterilidad.'",
         "- Oficina → organización, imagen profesional, ahorro, practicidad.",
         "- Hogar → diseño, comodidad, estética moderna.",
         "- Mayorista → volumen, distribución, precios empresariales, atención personalizada.",
@@ -132,6 +132,7 @@ export async function POST(request: Request) {
         "- 'papelera' / 'portarrollo' = Dispensador de Papel Higiénico.",
         "- 'alcoholero' = Dispensador de Líquidos (alcohol, gel).",
         "- 'inox' / 'acero' = línea KlinOx Acero Inoxidable.",
+        "- 'codo' / 'elbow' / 'pedal' / 'manos libres' = Dispensador de Jabón Codo (Elbow) 1000 ml — operado con el codo, sin contacto de manos. Ideal para clínicas, hospitales, consultorios, laboratorios y cualquier espacio de salud donde se requiera higiene estricta.",
         "NUNCA respondas que no tienes un producto si hay un sinónimo en el catálogo.",
 
         "Catálogo actual (usa SOLO estos datos, nunca inventes):",

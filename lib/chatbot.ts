@@ -51,6 +51,7 @@ const DOMAIN_KEYWORDS = [
   "servilleta","dental","cepillo","repuesto","insumo","acero","inoxidable",
   "automatico","sensor","liquid","rollo","institucional","comercial","hotel",
   "restaurante","oficina","clinica","bano","lavamanos","repisa","klinox",
+  "codo","elbow","pedal","antiseptico","antibacterial","laboratorio","hospital",
 ];
 
 const STOP_WORDS = new Set([
@@ -87,6 +88,14 @@ const SYNONYMS: Record<string, string[]> = {
   "recargas":      ["insumo", "repuesto"],
   "liquido":       ["liquidos", "jabon"],
   "espuma":        ["espuma", "foam"],
+  "codo":          ["codo", "elbow", "jabon"],
+  "elbow":         ["codo", "elbow", "jabon"],
+  "pedal":         ["codo", "elbow", "jabon"],
+  "manos":         ["codo", "jabon"],
+  "antiseptico":   ["jabon", "liquido", "dispensador"],
+  "antibacterial": ["jabon", "liquido", "dispensador"],
+  "laboratorio":   ["codo", "elbow", "clinica"],
+  "salud":         ["clinica", "hospital", "codo"],
 };
 
 function normalizeText(value: string) {
