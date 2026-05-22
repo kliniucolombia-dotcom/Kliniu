@@ -269,6 +269,11 @@ export function CartProvider({
       removeItem: (id: string) => {
         const normalizedId = normalizeCartId(id);
 
+        // Optimistic update — remove immediately from UI
+        setItems((current) =>
+          current.filter((item) => item.id !== normalizedId),
+        );
+
         if (currentUserId) {
           void (async () => {
             const response = await fetch(`/api/cart/${normalizedId}`, {
@@ -280,12 +285,7 @@ export function CartProvider({
               setItems(payload.items);
             }
           })();
-          return;
         }
-
-        setItems((current) =>
-          current.filter((item) => item.id !== normalizedId),
-        );
       },
       clearCart: () => {
         if (currentUserId) {
