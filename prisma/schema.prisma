@@ -7,6 +7,205 @@ datasource db {
   provider = "postgresql"
 }
 
+model Product {
+  id                    String              @id @default(cuid())
+  slug                  String              @unique
+  sku                   String?             @unique
+  oemReference          String?
+  alternativeReferences String[]            @default([])
+  category              String
+  name                  String
+  brand                 String
+  price                 Int
+  previousPrice         Int
+  stock                 Int                 @default(12)
+  minimumStock          Int                 @default(3)
+  image                 String
+  galleryImages         String[]            @default([])
+  availability          String
+  description           String
+  application           String?
+  compatibility         String[]            @default([])
+  warranty              String?
+  technicalSpecs        Json?
+  featured              Boolean             @default(false)
+  active                Boolean             @default(true)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  colorVariants         Json?               @default("[]")
+  campaigns             Campaign[]
+  inventoryMovements    InventoryMovement[]
+  priceHistory          PriceHistory[]
+}
+
+model User {
+  id                String             @id @default(cuid())
+  fullName          String
+  company           String?
+  email             String             @unique
+  phone             String?
+  department        String?
+  city              String?
+  addressLine1      String?
+  addressLine2      String?
+  passwordHash      String
+  role              UserRole           @default(CUSTOMER)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  level             CustomerLevel      @default(AQUA)
+  points            Int                @default(0)
+  bonusBalance      Int                @default(0)
+  bonusExpiry       DateTime?
+  kTier             String             @default("NONE")
+  monthlyPeriod     String             @default("")
+  whatsappPhone     String?
+  campaigns         Campaign[]         @relation("CampaignSeller")
+  cartItems         CartItem[]
+  assignedOrders    Order[]            @relation("AssignedOrders")
+  orders            Order[]
+  pointTransactions PointTransaction[]
+  priceChanges      PriceHistory[]     @relation("PriceChangedBy")
+  rewardRedemptions RewardRedemption[]
+}
+
+model CartItem {
+  id            String   @id @default(cuid())
+  userId        String
+  productId     String
+  name          String
+  price         String
+  image         String
+  quantity      Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  originalPrice String?
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model Order {
+  id               String         @id @default(cuid())
+  userId           String
+  status           OrderStatus    @default(PENDING)
+  paymentStatus    PaymentStatus  @default(PENDING)
+  shippingStatus   ShippingStatus @default(PENDING)
+  customerName     String
+  customerEmail    String
+  customerPhone    String
+  company          String?
+  department       String
+  city             String
+  addressLine1     String
+  addressLine2     String?
+  notes            String?
+  carrier          String?
+  trackingNumber   String?
+  adminNotes       String?
+  shippedAt        DateTime?
+  deliveredAt      DateTime?
+  subtotal         Int
+  totalItems       Int
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  assignedSellerId String?
+  assignedSeller   User?          @relation("AssignedOrders", fields: [assignedSellerId], references: [id])
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items            OrderItem[]
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String
+  name      String
+  image     String
+  unitPrice Int
+  quantity  Int
+  lineTotal Int
+  createdAt DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model InventoryMovement {
+  id         String                @id @default(cuid())
+  productId  String
+  type       InventoryMovementType
+  quantity   Int
+  stockAfter Int
+  note       String?
+  createdAt  DateTime              @default(now())
+  product    Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model PointTransaction {
+  id          String               @id @default(cuid())
+  userId      String
+  type        PointTransactionType
+  points      Int
+  balance     Int
+  description String
+  orderId     String?
+  createdAt   DateTime             @default(now())
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Reward {
+  id          String             @id @default(cuid())
+  name        String
+  description String
+  pointsCost  Int
+  image       String?
+  active      Boolean            @default(true)
+  stock       Int?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  redemptions RewardRedemption[]
+}
+
+model RewardRedemption {
+  id        String   @id @default(cuid())
+  userId    String
+  rewardId  String
+  points    Int
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  reward    Reward   @relation(fields: [rewardId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PriceHistory {
+  id        String   @id @default(cuid())
+  productId String
+  oldPrice  Int
+  newPrice  Int
+  changedBy String
+  note      String?
+  createdAt DateTime @default(now())
+  user      User     @relation("PriceChangedBy", fields: [changedBy], references: [id])
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Campaign {
+  id             String    @id @default(cuid())
+  name           String
+  sellerId       String
+  productId      String?
+  investment     Float     @default(0)
+  sales          Float     @default(0)
+  targetMultiple Float     @default(10)
+  status         String    @default("ACTIVE")
+  platform       String    @default("Meta Ads")
+  startDate      DateTime  @default(now())
+  endDate        DateTime?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  leads          Int       @default(0)
+  product        Product?  @relation(fields: [productId], references: [id])
+  seller         User      @relation("CampaignSeller", fields: [sellerId], references: [id])
+}
+
 enum UserRole {
   CUSTOMER
   ADMIN
@@ -53,206 +252,4 @@ enum PointTransactionType {
   EXPIRED
   ADJUSTED
   BONUS
-}
-
-model Product {
-  id                 String              @id @default(cuid())
-  slug               String              @unique
-  sku                String?             @unique
-  oemReference       String?
-  alternativeReferences String[]         @default([])
-  category           String
-  name               String
-  brand              String
-  price              Int
-  previousPrice      Int
-  stock              Int                 @default(12)
-  minimumStock       Int                 @default(3)
-  image              String
-  galleryImages      String[]            @default([])
-  availability       String
-  description        String
-  application        String?
-  compatibility      String[]            @default([])
-  warranty           String?
-  technicalSpecs     Json?
-  colorVariants      Json?               @default("[]")
-  featured           Boolean             @default(false)
-  active             Boolean             @default(true)
-  inventoryMovements InventoryMovement[]
-  priceHistory       PriceHistory[]
-  campaigns          Campaign[]
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-}
-
-model User {
-  id           String   @id @default(cuid())
-  fullName     String
-  company      String?
-  email        String   @unique
-  phone        String?
-  department   String?
-  city         String?
-  addressLine1 String?
-  addressLine2 String?
-  passwordHash String
-  role              UserRole      @default(CUSTOMER)
-  points            Int           @default(0)
-  level             CustomerLevel @default(AQUA)
-  // Puntos K fields
-  kTier             String        @default("NONE")
-  monthlyPeriod     String        @default("")
-  bonusBalance      Int           @default(0)
-  bonusExpiry       DateTime?
-  cartItems         CartItem[]
-  orders            Order[]
-  pointTransactions PointTransaction[]
-  rewardRedemptions RewardRedemption[]
-  whatsappPhone     String?
-  priceChanges      PriceHistory[]     @relation("PriceChangedBy")
-  campaigns         Campaign[]         @relation("CampaignSeller")
-  assignedOrders    Order[]            @relation("AssignedOrders")
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-}
-
-model CartItem {
-  id            String   @id @default(cuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  productId     String
-  name          String
-  price         String
-  originalPrice String?
-  image         String
-  quantity      Int      @default(1)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@unique([userId, productId])
-}
-
-model Order {
-  id            String        @id @default(cuid())
-  userId        String
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status        OrderStatus   @default(PENDING)
-  paymentStatus PaymentStatus @default(PENDING)
-  shippingStatus ShippingStatus @default(PENDING)
-  customerName  String
-  customerEmail String
-  customerPhone String
-  company       String?
-  department    String
-  city          String
-  addressLine1  String
-  addressLine2  String?
-  notes         String?
-  carrier       String?
-  trackingNumber String?
-  adminNotes    String?
-  shippedAt     DateTime?
-  deliveredAt   DateTime?
-  subtotal         Int
-  totalItems       Int
-  assignedSellerId String?
-  assignedSeller   User?      @relation("AssignedOrders", fields: [assignedSellerId], references: [id])
-  items            OrderItem[]
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
-}
-
-model OrderItem {
-  id        String   @id @default(cuid())
-  orderId   String
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String
-  name      String
-  image     String
-  unitPrice Int
-  quantity  Int
-  lineTotal Int
-  createdAt DateTime @default(now())
-}
-
-model InventoryMovement {
-  id         String                @id @default(cuid())
-  productId  String
-  product    Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
-  type       InventoryMovementType
-  quantity   Int
-  stockAfter Int
-  note       String?
-  createdAt  DateTime              @default(now())
-}
-
-model PointTransaction {
-  id          String               @id @default(cuid())
-  userId      String
-  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type        PointTransactionType
-  points      Int
-  balance     Int
-  description String
-  orderId     String?
-  createdAt   DateTime             @default(now())
-}
-
-model Reward {
-  id          String             @id @default(cuid())
-  name        String
-  description String
-  pointsCost  Int
-  image       String?
-  active      Boolean            @default(true)
-  stock       Int?
-  redemptions RewardRedemption[]
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-}
-
-model RewardRedemption {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  rewardId  String
-  reward    Reward   @relation(fields: [rewardId], references: [id])
-  points    Int
-  status    String   @default("PENDING")
-  createdAt DateTime @default(now())
-}
-
-// ─── Panel Comercial ───
-
-model PriceHistory {
-  id         String   @id @default(cuid())
-  productId  String
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  oldPrice   Int
-  newPrice   Int
-  changedBy  String
-  user       User     @relation("PriceChangedBy", fields: [changedBy], references: [id])
-  note       String?
-  createdAt  DateTime @default(now())
-}
-
-model Campaign {
-  id          String    @id @default(cuid())
-  name        String
-  sellerId    String
-  seller      User      @relation("CampaignSeller", fields: [sellerId], references: [id])
-  productId   String?
-  product     Product?  @relation(fields: [productId], references: [id])
-  investment  Float     @default(0)
-  sales       Float     @default(0)
-  leads       Int       @default(0)
-  targetMultiple Float  @default(10)
-  status      String    @default("ACTIVE")
-  platform    String    @default("Meta Ads")
-  startDate   DateTime  @default(now())
-  endDate     DateTime?
-  notes       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
 }

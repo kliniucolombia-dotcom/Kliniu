@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import WhatsAppAsesor from "../../components/whatsapp-asesor";
@@ -82,42 +82,236 @@ const trustBar = [
 
 function ImageGallery({ nombre, images }: { nombre: string; images: string[] }) {
   const [active, setActive] = useState(0);
+  const [lightbox, setLightbox] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  // Zoom state
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const dragging = useRef(false);
+  const dragStart = useRef({ mx: 0, my: 0, px: 0, py: 0 });
+
+  const resetZoom = () => { setZoom(1); setPan({ x: 0, y: 0 }); };
+
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index);
+    setLightbox(true);
+    resetZoom();
+  };
+
+  const closeLightbox = () => { setLightbox(false); resetZoom(); };
+
+  const goPrev = () => { setLightboxIndex((i) => (i - 1 + images.length) % images.length); resetZoom(); };
+  const goNext = () => { setLightboxIndex((i) => (i + 1) % images.length); resetZoom(); };
+
+  const onWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    setZoom((z) => Math.min(4, Math.max(1, z - e.deltaY * 0.002)));
+    if (zoom <= 1) setPan({ x: 0, y: 0 });
+  };
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    if (zoom <= 1) return;
+    dragging.current = true;
+    dragStart.current = { mx: e.clientX, my: e.clientY, px: pan.x, py: pan.y };
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!dragging.current) return;
+    setPan({
+      x: dragStart.current.px + (e.clientX - dragStart.current.mx),
+      y: dragStart.current.py + (e.clientY - dragStart.current.my),
+    });
+  };
+
+  const onMouseUp = () => { dragging.current = false; };
+
+  const onDblClick = () => {
+    if (zoom > 1) { resetZoom(); } else { setZoom(2.5); }
+  };
+
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowLeft") goPrev();
+      if (e.key === "ArrowRight") goNext();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lightbox, images.length]);
 
   return (
-    <div className="flex gap-3">
-      {/* Thumbnail strip */}
-      <div className="flex flex-col gap-2">
-        {images.map((src, i) => (
+    <>
+      <div className="flex gap-3">
+        {/* Thumbnail strip */}
+        <div className="flex flex-col gap-2">
+          {images.map((src, i) => (
+            <button
+              key={`thumb-${i}`}
+              type="button"
+              onClick={() => setActive(i)}
+              className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 bg-white p-1 transition-all ${
+                active === i ? "border-[#27B1B8]" : "border-black/8 hover:border-[#27B1B8]/40"
+              }`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt={`${nombre} ${i + 1}`}
+                className="h-full w-full object-contain"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
+              />
+            </button>
+          ))}
+        </div>
+
+        {/* Main image — click to open lightbox */}
+        <button
+          type="button"
+          onClick={() => openLightbox(active)}
+          className="group relative aspect-square w-full overflow-hidden rounded-2xl border border-black/8 bg-white p-6 text-left"
+          aria-label="Ver imagen ampliada"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={images[active] || "/product-placeholder.png"}
+            alt={nombre}
+            className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.03]"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
+          />
+          {/* Zoom hint */}
+          <span className="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35M11 8v6M8 11h6" />
+            </svg>
+          </span>
+        </button>
+      </div>
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 backdrop-blur-sm"
+          onClick={closeLightbox}
+        >
+          {/* Close */}
           <button
-            key={`thumb-${i}`}
             type="button"
-            onClick={() => setActive(i)}
-            className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 bg-white p-1 transition-all ${
-              active === i ? "border-[#27B1B8]" : "border-black/8 hover:border-[#27B1B8]/40"
-            }`}
+            onClick={closeLightbox}
+            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+            aria-label="Cerrar"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
+            </svg>
+          </button>
+
+          {/* Prev */}
+          {images.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); goPrev(); }}
+              className="absolute left-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+              aria-label="Anterior"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
+
+          {/* Image + zoom container */}
+          <div
+            className="mx-16 flex max-h-[88vh] max-w-[88vw] items-center justify-center overflow-hidden rounded-2xl"
+            style={{ cursor: zoom > 1 ? "grab" : "zoom-in" }}
+            onClick={(e) => e.stopPropagation()}
+            onWheel={onWheel}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp}
+            onMouseLeave={onMouseUp}
+            onDoubleClick={onDblClick}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={src}
-              alt={`${nombre} ${i + 1}`}
-              className="h-full w-full object-contain"
+              src={images[lightboxIndex] || "/product-placeholder.png"}
+              alt={`${nombre} ${lightboxIndex + 1}`}
+              className="max-h-[88vh] max-w-[88vw] select-none object-contain shadow-[0_32px_80px_rgba(0,0,0,0.5)]"
+              style={{
+                transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
+                transition: dragging.current ? "none" : "transform 0.15s ease",
+              }}
+              draggable={false}
               onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
             />
-          </button>
-        ))}
-      </div>
+          </div>
 
-      {/* Main image */}
-      <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-black/8 bg-white p-6">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={images[active] || "/product-placeholder.png"}
-          alt={nombre}
-          className="h-full w-full object-contain"
-          onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
-        />
-      </div>
-    </div>
+          {/* Zoom hint + reset */}
+          <div className="absolute bottom-14 right-4 flex flex-col items-center gap-1.5">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setZoom((z) => Math.min(4, z + 0.5)); }}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25"
+              aria-label="Acercar"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35M11 8v6M8 11h6" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setZoom((z) => Math.max(1, z - 0.5)); if (zoom <= 1.5) resetZoom(); }}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25"
+              aria-label="Alejar"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35M8 11h6" />
+              </svg>
+            </button>
+            {zoom > 1 && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); resetZoom(); }}
+                className="mt-1 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold text-white transition-colors hover:bg-white/25"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+
+          {/* Next */}
+          {images.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); goNext(); }}
+              className="absolute right-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+              aria-label="Siguiente"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
+
+          {/* Dots */}
+          {images.length > 1 && (
+            <div className="absolute bottom-5 flex gap-2">
+              {images.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setLightboxIndex(i); }}
+                  className={`h-2 w-2 rounded-full transition-all ${i === lightboxIndex ? "w-5 bg-white" : "bg-white/40"}`}
+                  aria-label={`Imagen ${i + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </>
   );
 }
 
