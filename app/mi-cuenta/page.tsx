@@ -19,6 +19,10 @@ export default async function MiCuentaPage() {
     redirect("/login");
   }
 
+  if (user.role === "PACKING") {
+    redirect("/empaque");
+  }
+
   const orders = await getOrdersForUser(session.userId);
 
   return <AccountProfileForm user={user} orders={orders} />;

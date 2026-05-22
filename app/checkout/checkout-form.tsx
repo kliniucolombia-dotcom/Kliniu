@@ -486,9 +486,15 @@ export default function CheckoutForm({
                   </div>
                 ))}
               </div>
-              <div className="mt-4 flex justify-between border-t border-black/8 pt-3 text-sm font-bold">
-                <span>Total</span>
-                <span className="text-[#27B1B8]">{formatCurrency(subtotal)}</span>
+              <div className="mt-4 space-y-2 border-t border-black/8 pt-3 text-sm">
+                <div className="flex justify-between text-[#555]">
+                  <span>Envío</span>
+                  <span className="font-semibold text-green-600">Gratis 🎉</span>
+                </div>
+                <div className="flex justify-between border-t border-black/8 pt-2 font-bold">
+                  <span>Total</span>
+                  <span className="text-[#27B1B8]">{formatCurrency(subtotal)}</span>
+                </div>
               </div>
             </div>
           </aside>

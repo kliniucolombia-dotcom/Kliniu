@@ -1,3 +1,4 @@
+import { cache } from "react";
 import {
   categorias,
   descripcionProducto,
@@ -316,7 +317,7 @@ function getFallbackProducts(): StoreProduct[] {
   }));
 }
 
-export async function getProducts() {
+export const getProducts = cache(async function getProducts() {
   if (!prisma) {
     return getFallbackProducts();
   }
@@ -333,7 +334,7 @@ export async function getProducts() {
   } catch {
     return getFallbackProducts();
   }
-}
+});
 
 export async function getFeaturedProducts() {
   const products = await getProducts();

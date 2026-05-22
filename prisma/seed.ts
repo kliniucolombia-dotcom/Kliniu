@@ -20,6 +20,7 @@ const prisma = new PrismaClient({
 
 async function main() {
   const adminPasswordHash = await hash("123456789", 10);
+  const packingPasswordHash = await hash("empaque2024", 10);
 
   await prisma.user.upsert({
     where: {
@@ -38,9 +39,27 @@ async function main() {
     },
   });
 
-  await prisma.product.deleteMany();
+  await prisma.user.upsert({
+    where: {
+      email: "empaque@kliniu.co",
+    },
+    update: {
+      fullName: "Empaque Kliniu",
+      role: "PACKING",
+      passwordHash: packingPasswordHash,
+    },
+    create: {
+      fullName: "Empaque Kliniu",
+      email: "empaque@kliniu.co",
+      passwordHash: packingPasswordHash,
+      role: "PACKING",
+    },
+  });
 
-  for (const [index, producto] of productosCatalogo.entries()) {
+  // Solo sembrar productos si la BD está vacía — nunca borrar productos existentes
+  const productCount = await prisma.product.count();
+  if (productCount === 0) {
+    for (const [index, producto] of productosCatalogo.entries()) {
     const stock = producto.stock ?? 12;
     const stockMinimo = producto.stockMinimo ?? 3;
 
@@ -83,6 +102,7 @@ async function main() {
         },
       },
     });
+    }
   }
 }
 

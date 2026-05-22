@@ -234,6 +234,11 @@ export default function PedidosPage() {
               <p className="mt-3 text-sm leading-7 text-[#6e7379]">
                 {selectedOrder.customerName} · {selectedOrder.customerEmail} · {selectedOrder.customerPhone}
               </p>
+              {selectedOrder.assignedSeller && (
+                <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-[#f0fafa] px-3 py-1 text-xs font-semibold text-[#0C535B]">
+                  👤 Vendedor: {selectedOrder.assignedSeller.fullName}
+                </p>
+              )}
               <p className="text-sm leading-7 text-[#6e7379]">
                 {selectedOrder.department}, {selectedOrder.city} · {selectedOrder.addressLine1}
                 {selectedOrder.addressLine2 ? ` · ${selectedOrder.addressLine2}` : ""}
@@ -459,6 +464,11 @@ export default function PedidosPage() {
                     <p className="mt-0.5 text-sm text-[#7a7f86]">
                       {new Date(order.createdAt).toLocaleDateString("es-CO")} · {order.totalItems} producto{order.totalItems === 1 ? "" : "s"}
                     </p>
+                    {order.assignedSeller && (
+                      <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#f0fafa] px-2.5 py-0.5 text-xs font-semibold text-[#0C535B]">
+                        👤 {order.assignedSeller.fullName}
+                      </p>
+                    )}
                     <p className="mt-3 text-xl font-semibold text-[#27B1B8]">{formatCurrency(order.subtotal)}</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <span className="rounded-full bg-[#EAF8F6] px-3 py-1 text-xs font-semibold text-[#0C535B]">

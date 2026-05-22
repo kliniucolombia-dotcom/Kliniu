@@ -24,12 +24,16 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const initialProducts = await getProducts();
-  const session = await getSessionFromCookies();
-  const currentUser = session ? await getUserById(session.userId) : null;
-  const initialCartItems = currentUser
-    ? await getCartItemsForUser(currentUser.id)
-    : [];
+  const [initialProducts, session] = await Promise.all([
+    getProducts(),
+    getSessionFromCookies(),
+  ]);
+  const [currentUser, initialCartItems] = session
+    ? await Promise.all([
+        getUserById(session.userId),
+        getCartItemsForUser(session.userId),
+      ])
+    : [null, []];
   const cartProviderKey = `${currentUser?.id ?? "guest"}:${initialCartItems
     .map((item) => `${item.id}:${item.cantidad}`)
     .join("|")}`;

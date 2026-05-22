@@ -4,7 +4,7 @@ import type { ShippingStatus } from "@/generated/prisma/client";
 
 export async function GET() {
   const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
+  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER" && session.role !== "PACKING")) {
     return Response.json({ error: "No autorizado" }, { status: 401 });
   }
   if (!prisma) return Response.json([]);
@@ -27,7 +27,7 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
+  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER" && session.role !== "PACKING")) {
     return Response.json({ error: "No autorizado" }, { status: 401 });
   }
   if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });

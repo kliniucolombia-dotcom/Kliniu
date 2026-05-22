@@ -1,14 +1,16 @@
+import sharp from "sharp";
 import { getStorageBucket, createSupabaseStorageClient } from "@/lib/supabase-storage";
 import { slugify } from "@/app/data/catalog";
 import { requireAdminUser } from "@/lib/admin";
 
-const MAX_FILE_SIZE_BYTES = 3 * 1024 * 1024;
+const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB antes de comprimir
 const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-function getFileExtension(fileName: string) {
-  const cleanName = fileName.toLowerCase();
-  const parts = cleanName.split(".");
-  return parts.length > 1 ? parts.at(-1) || "jpg" : "jpg";
+async function compressImage(buffer: Buffer): Promise<Buffer> {
+  return sharp(buffer)
+    .resize(800, 800, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 82 })
+    .toBuffer();
 }
 
 export async function POST(request: Request) {
@@ -43,19 +45,21 @@ export async function POST(request: Request) {
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
       return Response.json(
-        { error: "La imagen supera el límite de 3 MB." },
+        { error: "La imagen supera el límite de 20 MB." },
         { status: 400 },
       );
     }
 
+    const rawBuffer = Buffer.from(await file.arrayBuffer());
+    const compressed = await compressImage(rawBuffer);
+
     const bucket = getStorageBucket();
-    const extension = getFileExtension(file.name);
-    const filePath = `products/${Date.now()}-${slugify(productName)}.${extension}`;
+    const filePath = `products/${Date.now()}-${slugify(productName)}.webp`;
 
     const { error: uploadError } = await supabase.storage
       .from(bucket)
-      .upload(filePath, file, {
-        contentType: file.type || "application/octet-stream",
+      .upload(filePath, compressed, {
+        contentType: "image/webp",
         upsert: false,
       });
 

@@ -133,7 +133,8 @@ export default function LoginPage() {
 
   const completeLogin = async (payload: {
     message?: string;
-    user?: { id: string; role: "CUSTOMER" | "ADMIN" | "SELLER" };
+    redirectTo?: string;
+    user?: { id: string; role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" };
   }) => {
     setIsEnteringAccount(true);
     setForm(initialState);
@@ -148,19 +149,15 @@ export default function LoginPage() {
 
     const requestedPath = searchParams.get("next");
     const userId = payload.user?.id;
-    const nextPath =
-      payload.user?.role === "ADMIN"
-        ? "/admin"
-        : payload.user?.role === "SELLER"
-          ? "/panel"
-          : requestedPath === "/admin"
-            ? "/mi-cuenta"
-            : requestedPath || "/mi-cuenta";
 
     window.setTimeout(async () => {
       if (userId) {
         await syncGuestCartAfterLogin(userId);
       }
+      // redirectTo viene del servidor — siempre es la fuente de verdad
+      const nextPath = payload.redirectTo
+        || (requestedPath === "/admin" ? "/mi-cuenta" : requestedPath || "/mi-cuenta");
+
       router.push(nextPath);
       router.refresh();
     }, 500);
@@ -189,7 +186,8 @@ export default function LoginPage() {
     const payload = (await response.json()) as {
       error?: string;
       message?: string;
-      user?: { id: string; role: "CUSTOMER" | "ADMIN" | "SELLER" };
+      redirectTo?: string;
+      user?: { id: string; role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" };
       requiresAdminPin?: boolean;
     };
 

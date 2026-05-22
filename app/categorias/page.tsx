@@ -101,6 +101,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
   const { addItem } = useCart();
   const [agregado, setAgregado] = useState(false);
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); }, []);
@@ -119,6 +120,12 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
     ? (variaciones.find((v) => v.color === hoveredColor)?.image ?? producto.imagen)
     : producto.imagen;
 
+  const prevImagenRef = useRef(imagenActual);
+  if (prevImagenRef.current !== imagenActual) {
+    prevImagenRef.current = imagenActual;
+    setImgLoaded(false);
+  }
+
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-black/8 bg-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.10)]">
       {/* Badge */}
@@ -129,13 +136,21 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
       )}
 
       {/* Image */}
-      <div className="flex h-44 items-center justify-center bg-white px-6 py-4">
+      <div className="relative flex h-44 items-center justify-center bg-white px-6 py-4">
+        {!imgLoaded && (
+          <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-[#f0f0f0] via-[#e8e8e8] to-[#f0f0f0]" />
+        )}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={imagenActual}
+          src={imagenActual || "/product-placeholder.png"}
           alt={producto.nombre}
-          className="max-h-36 w-auto max-w-full object-contain transition-opacity duration-150"
-          onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
+          loading="lazy"
+          className={`max-h-36 w-auto max-w-full object-contain transition-opacity duration-300 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+          onLoad={() => setImgLoaded(true)}
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png";
+            setImgLoaded(true);
+          }}
         />
       </div>
 

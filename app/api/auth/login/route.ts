@@ -50,8 +50,15 @@ export async function POST(request: Request) {
       role: user.role,
     });
 
+    const redirectTo =
+      user.role === "ADMIN"   ? "/admin"   :
+      user.role === "SELLER"  ? "/panel"   :
+      user.role === "PACKING" ? "/empaque" :
+      "/mi-cuenta";
+
     return Response.json({
       user,
+      redirectTo,
       message: "Inicio de sesión correcto.",
     });
   } catch (error) {

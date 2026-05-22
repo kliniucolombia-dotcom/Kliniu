@@ -11,7 +11,7 @@ import WhatsAppAsesor from "./whatsapp-asesor";
 type SiteHeaderProps = {
   currentUser: {
     fullName: string;
-    role: "CUSTOMER" | "ADMIN" | "SELLER";
+    role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING";
   } | null;
 };
 
