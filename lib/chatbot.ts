@@ -96,6 +96,10 @@ const SYNONYMS: Record<string, string[]> = {
   "antibacterial": ["jabon", "liquido", "dispensador"],
   "laboratorio":   ["codo", "elbow", "clinica"],
   "salud":         ["clinica", "hospital", "codo"],
+  "clinica":       ["codo", "elbow", "jabon"],
+  "hospital":      ["codo", "elbow", "jabon"],
+  "consultorio":   ["codo", "elbow", "jabon"],
+  "medico":        ["codo", "elbow", "jabon"],
 };
 
 function normalizeText(value: string) {
@@ -370,8 +374,10 @@ export function buildLocalAssistantReply(
 
   // Detectar contexto del cliente
   const ESPACIOS = ["hotel","restaurante","oficina","clinica","hospital","colegio","hogar","casa","empresa","gym","gimnasio","salon","bodega","fabrica"];
+  const ESPACIOS_SALUD = ["clinica","hospital","laboratorio","consultorio","medico","salud"];
   const MATERIALES = ["acero","inoxidable","plastico","cromado","abs"];
   const tieneEspacio = ESPACIOS.some((e) => normalized.includes(e));
+  const esEspacioSalud = ESPACIOS_SALUD.some((e) => normalized.includes(e));
   const tieneMaterial = MATERIALES.some((m) => normalized.includes(m));
 
   if (snapshot.matchedProducts.length > 0 || snapshot.matchedCategories.length > 0) {
@@ -390,6 +396,15 @@ export function buildLocalAssistantReply(
       return {
         message: `Perfecto, tenemos opciones para eso 👌 Para recomendarte lo ideal, ¿para qué tipo de espacio lo necesitas?\n\n🏨 Hotel · 🍽️ Restaurante · 🏢 Oficina · 🏥 Clínica · 🏠 Hogar · 🏭 Empresa`,
         suggestions: buildCategorySuggestions(snapshot.allCategories),
+      };
+    }
+
+    // Espacio de salud (clínica/hospital) → mostrar directo sin preguntar material
+    if (esEspacioSalud && snapshot.matchedProducts.length > 0) {
+      return {
+        message: `Para clínicas y espacios de salud tenemos estas opciones 👇\n\n🏥 El Dispensador Codo (Elbow) es clave en protocolos de higiene médica: se activa con el codo o antebrazo sin contacto de manos. ¿Te armo una cotización?`,
+        suggestions: buildProductSuggestions(snapshot.matchedProducts),
+        products: buildProductCards(snapshot.matchedProducts),
       };
     }
 
