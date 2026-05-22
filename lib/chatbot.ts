@@ -355,12 +355,21 @@ export function buildLocalAssistantReply(
     };
   }
 
-  // Consulta muy genérica de "dispensador" sin tipo ni espacio → guiar por tipo
-  const CONSULTA_GENERICA = ["dispensador","dispensadores","dispensadora","producto","productos","tienen","catalogo","opciones","algo","venden"];
-  const esConsultaGenerica = normalized.split(/\s+/).filter(Boolean).every((t) => CONSULTA_GENERICA.includes(t) || t.length <= 2) ||
-    (normalized.match(/^(hola\s*)?(quiero|busco|necesito|tienen|muestrame)?\s*(un|una|los|las|algún|algun)?\s*(dispensador|producto)s?\s*(de\s*(kliniu|ustedes))?\s*[?.!]*$/) !== null);
+  // Tokens de tipo de producto específico
+  const TOKENS_TIPO_ESPECIFICO = new Set([
+    "jabon","jabonera","toalla","papel","servilleta","dental","cepillo","alcohol",
+    "gel","liquido","espuma","secador","automatico","doble","brass","codo","elbow",
+    "servilletero","insumo","repuesto","recarga","napklin","decoklin","racklin",
+  ]);
+  const tokensQuery = tokenize(normalized);
+  const tieneTipoEspecifico = tokensQuery.some((t) => TOKENS_TIPO_ESPECIFICO.has(t));
 
-  if (esConsultaGenerica && snapshot.matchedProducts.length === 0) {
+  // Consulta genérica sin tipo ni espacio → mostrar menú de tipos
+  const esConsultaGenerica = !tieneTipoEspecifico && !normalized.split(/\s+/).some((t) =>
+    [...new Set([...["hotel","restaurante","oficina","clinica","hospital","colegio","hogar","casa","empresa","gym","gimnasio","salon","bodega","fabrica","centro","mall","comercial","plaza","aeropuerto","estadio","universidad","banco","spa","cafeteria","bar","club"])].includes(t.normalize("NFD").replace(/[̀-ͯ]/g,""))
+  ));
+
+  if (esConsultaGenerica && normalized.match(/dispensador|producto/)) {
     return {
       message: "¡Claro! ¿Qué tipo de dispensador necesitas? 👇",
       suggestions: [
@@ -542,8 +551,15 @@ export function buildLocalAssistantReply(
     // Sin espacio y sin producto específico → preguntar espacio primero
     if (!tieneEspacio) {
       return {
-        message: `Perfecto, tenemos opciones para eso 👌 Para recomendarte lo ideal, ¿para qué tipo de espacio lo necesitas?\n\n🏨 Hotel · 🍽️ Restaurante · 🏢 Oficina · 🏥 Clínica · 🏠 Hogar · 🏭 Empresa`,
-        suggestions: buildCategorySuggestions(snapshot.allCategories),
+        message: `Perfecto, tenemos opciones para eso 👌 ¿Para qué tipo de espacio lo necesitas?`,
+        suggestions: [
+          { label: "🏨 Hotel", action: "hotel" },
+          { label: "🍽️ Restaurante", action: "restaurante" },
+          { label: "🏢 Oficina", action: "oficina" },
+          { label: "🏥 Clínica", action: "clinica" },
+          { label: "🏠 Hogar", action: "hogar" },
+          { label: "🏭 Empresa", action: "empresa" },
+        ],
       };
     }
 
