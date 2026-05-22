@@ -109,7 +109,7 @@ function FeaturedCarousel({ products }: { products: ProductoCatalogo[] }) {
             {product.descuento}
           </span>
         )}
-        <ProductImage product={product} maxHeight={280} />
+        <ProductImage product={product} maxHeight={220} />
 
         {/* Flecha izquierda */}
         <button
@@ -232,10 +232,8 @@ export default function OutletPage() {
 
           {/* Carrusel encima en desktop */}
           {carouselProducts.length > 0 && (
-            <div className="absolute hidden items-center lg:flex" style={{ left: "54%", right: "2%", top: "8%", bottom: "22%" }}>
-              <div className="w-full max-w-[400px]">
-                <FeaturedCarousel products={carouselProducts} />
-              </div>
+            <div className="absolute hidden lg:block" style={{ right: "3%", top: "50%", transform: "translateY(-50%)", width: "320px" }}>
+              <FeaturedCarousel products={carouselProducts} />
             </div>
           )}
         </section>
