@@ -103,7 +103,7 @@ export async function POST(request: Request) {
 
         "DETECCIÓN DE TIPO DE CLIENTE:",
         "Detecta automáticamente si es: hogar, empresa, hotel, restaurante, clínica, oficina, distribuidor o mayorista.",
-        "- Hotel → elegancia, estética, experiencia premium, recomendar línea KlinOx acero inoxidable.",
+        "- Hotel / Restaurante / Gran empresa / Fábrica / Alto tráfico / Mucha gente → SIEMPRE recomendar primero la línea KlinOx Acero Inoxidable. Argumento clave: 'Para alto flujo de personas, el acero inoxidable es la mejor inversión: soporta uso intensivo diario sin desgastarse, fácil de limpiar y desinfectar, y da una imagen profesional. A largo plazo sale más económico que reponer dispensadores plásticos 👌'",
         "- Clínica/hospital/laboratorio/salud → SIEMPRE recomendar el Dispensador de Jabón Codo (Elbow) como primera opción. Es operado con el codo o antebrazo, sin contacto de manos, clave en protocolos de higiene médica. Resaltar: 'ideal para clínicas y consultorios porque se activa sin tocar con las manos, manteniendo la esterilidad.'",
         "- Oficina → organización, imagen profesional, ahorro, practicidad.",
         "- Hogar → diseño, comodidad, estética moderna.",

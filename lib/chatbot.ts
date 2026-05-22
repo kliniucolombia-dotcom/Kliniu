@@ -174,6 +174,7 @@ function getMatchedCategories(query: string) {
 const SLUGS_SALUD = ["dispensador-de-jabon-codo-elbow-1000-ml"];
 const KEYWORDS_SALUD = ["clinica","hospital","laboratorio","consultorio","medico","salud","codo","elbow"];
 const KEYWORDS_CALIDAD = ["durabilidad","durable","dura","duradero","duraderos","largo plazo","calidad","higienico","higienicos","mejor","mejores","resistente","resistentes","profesional","premium"];
+const KEYWORDS_ALTO_FLUJO = ["hotel","restaurante","empresa","empresas","fabrica","bodega","gym","gimnasio","alto flujo","alto trafico","mucha gente","muchas personas","concurrido","institucional"];
 
 export async function getCatalogSnapshot(query: string): Promise<CatalogSnapshot> {
   const products = await getProducts();
@@ -183,6 +184,7 @@ export async function getCatalogSnapshot(query: string): Promise<CatalogSnapshot
   const normalizedQuery = normalizeText(query);
   const esSalud = KEYWORDS_SALUD.some((k) => normalizedQuery.includes(k));
   const esCalidad = KEYWORDS_CALIDAD.some((k) => normalizedQuery.includes(k));
+  const esAltoFlujo = KEYWORDS_ALTO_FLUJO.some((k) => normalizedQuery.includes(k));
 
   const scored = products
     .map((product) => {
@@ -190,8 +192,8 @@ export async function getCatalogSnapshot(query: string): Promise<CatalogSnapshot
         (matchedCategories.includes(product.categoria) ? 6 : 0);
       // Boost para productos de salud (Codo/Elbow)
       if (esSalud && SLUGS_SALUD.includes(product.slug)) score += 50;
-      // Boost para KlinOx cuando preguntan por durabilidad/calidad/lo mejor
-      if (esCalidad && normalizeText(product.categoria).includes("klinox")) score += 30;
+      // Boost para KlinOx cuando preguntan por durabilidad/calidad/lo mejor o alto flujo
+      if ((esCalidad || esAltoFlujo) && normalizeText(product.categoria).includes("klinox")) score += 30;
       return { product, score };
     })
     .filter((entry) => entry.score > 0)
