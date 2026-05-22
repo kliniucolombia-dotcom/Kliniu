@@ -8,7 +8,8 @@ import { getProducts, type StoreProduct } from "@/lib/products";
 
 export type ChatSuggestion = {
   label: string;
-  href: string;
+  href?: string;
+  action?: string;
 };
 
 export type ChatProductCard = {
@@ -351,6 +352,23 @@ export function buildLocalAssistantReply(
       message:
         "¡Hola! Soy KLINIU AI 👋 Me especializo en dispensadores institucionales y soluciones de higiene para empresas, hoteles, clínicas y hogares en Colombia. ¿Para qué tipo de espacio estás buscando?",
       suggestions: buildCategorySuggestions(snapshot.allCategories),
+    };
+  }
+
+  // Consulta muy genérica de "dispensador" sin tipo ni espacio → guiar por tipo
+  const CONSULTA_GENERICA = ["dispensador","dispensadores","dispensadora","producto","productos","tienen","catalogo","opciones","algo","venden"];
+  const esConsultaGenerica = normalized.split(/\s+/).filter(Boolean).every((t) => CONSULTA_GENERICA.includes(t) || t.length <= 2) ||
+    (normalized.match(/^(hola\s*)?(quiero|busco|necesito|tienen|muestrame)?\s*(un|una|los|las|algún|algun)?\s*(dispensador|producto)s?\s*(de\s*(kliniu|ustedes))?\s*[?.!]*$/) !== null);
+
+  if (esConsultaGenerica && snapshot.matchedProducts.length === 0) {
+    return {
+      message: "¡Claro! ¿Qué tipo de dispensador necesitas? 👇",
+      suggestions: [
+        { label: "💧 Jabón / Líquidos", action: "dispensador de jabón" },
+        { label: "🧻 Papel / Toallas", action: "dispensador de papel y toallas" },
+        { label: "🍽️ Servilletas", action: "dispensador de servilletas" },
+        { label: "🦷 Crema dental", action: "dispensador de crema dental" },
+      ],
     };
   }
 

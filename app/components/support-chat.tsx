@@ -6,7 +6,8 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 
 type ChatSuggestion = {
   label: string;
-  href: string;
+  href?: string;
+  action?: string;
 };
 
 type ChatProductCard = {
@@ -217,6 +218,30 @@ export default function SupportChat() {
                           Kliniu
                         </p>
                         <p className="whitespace-pre-line">{message.content}</p>
+                        {message.suggestions && message.suggestions.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {message.suggestions.map((s) =>
+                              s.action ? (
+                                <button
+                                  key={s.action}
+                                  type="button"
+                                  onClick={() => sendMessage(s.action!)}
+                                  className="rounded-full border border-[#27B1B8] bg-white px-3 py-1.5 text-xs font-semibold text-[#0C535B] transition-colors duration-150 hover:bg-[#EAF8F6]"
+                                >
+                                  {s.label}
+                                </button>
+                              ) : s.href ? (
+                                <Link
+                                  key={s.href}
+                                  href={s.href}
+                                  className="rounded-full border border-[#27B1B8] bg-white px-3 py-1.5 text-xs font-semibold text-[#0C535B] transition-colors duration-150 hover:bg-[#EAF8F6]"
+                                >
+                                  {s.label}
+                                </Link>
+                              ) : null
+                            )}
+                          </div>
+                        )}
                         {message.products && message.products.length > 0 && (
                           <div className="mt-3 flex flex-col gap-2">
                             {message.products.map((product) => (
