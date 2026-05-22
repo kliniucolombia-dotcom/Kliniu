@@ -269,10 +269,11 @@ export function CartProvider({
       removeItem: (id: string) => {
         const normalizedId = normalizeCartId(id);
 
-        // Optimistic update — remove immediately from UI
-        setItems((current) =>
-          current.filter((item) => item.id !== normalizedId),
-        );
+        // Normalizar ambos lados para manejar IDs con o sin prefijo en el estado
+        const removeFilter = (current: CartItem[]) =>
+          current.filter((item) => normalizeCartId(item.id) !== normalizedId);
+
+        setItems(removeFilter);
 
         if (currentUserId) {
           void (async () => {
@@ -280,11 +281,7 @@ export function CartProvider({
               method: "DELETE",
             });
             if (!response.ok) return;
-            // Don't overwrite state with server response — optimistic removal already handled it.
-            // Re-apply the filter in case a concurrent update re-added the item.
-            setItems((current) =>
-              current.filter((item) => item.id !== normalizedId),
-            );
+            setItems(removeFilter);
           })();
         }
       },
