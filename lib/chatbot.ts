@@ -88,6 +88,11 @@ const SYNONYMS: Record<string, string[]> = {
   "recargas":      ["insumo", "repuesto"],
   "liquido":       ["liquidos", "jabon"],
   "espuma":        ["espuma", "foam"],
+  "shampoo":       ["doble", "antigoteo", "liquido"],
+  "champu":        ["doble", "antigoteo", "liquido"],
+  "champoo":       ["doble", "antigoteo", "liquido"],
+  "doble":         ["doble", "dual"],
+  "dual":          ["doble", "dual"],
   "codo":          ["codo", "elbow", "jabon"],
   "elbow":         ["codo", "elbow", "jabon"],
   "pedal":         ["codo", "elbow", "jabon"],
@@ -173,6 +178,8 @@ function getMatchedCategories(query: string) {
 
 const SLUGS_SALUD = ["dispensador-de-jabon-codo-elbow-1000-ml"];
 const KEYWORDS_SALUD = ["clinica","hospital","laboratorio","consultorio","medico","salud","codo","elbow"];
+const SLUGS_DOBLE = ["dispensador-antigoteo-doble-800-ml"];
+const KEYWORDS_DOBLE = ["doble","dual","dos productos","jabon y shampoo","shampoo y jabon","jabon y champu","champu y jabon","dos liquidos","dos compartimentos","dos usos","doble uso"];
 const KEYWORDS_CALIDAD = ["durabilidad","durable","dura","duradero","duraderos","largo plazo","calidad","higienico","higienicos","mejor","mejores","resistente","resistentes","profesional","premium"];
 const KEYWORDS_ALTO_FLUJO = ["hotel","restaurante","oficina","empresa","empresas","fabrica","bodega","gym","gimnasio","salon","colegio","hospital","alto flujo","alto trafico","mucha gente","muchas personas","concurrido","institucional","comercial"];
 
@@ -186,6 +193,7 @@ export async function getCatalogSnapshot(query: string, spaceContext?: string): 
   const esSalud = KEYWORDS_SALUD.some((k) => contextFull.includes(k));
   const esCalidad = KEYWORDS_CALIDAD.some((k) => contextFull.includes(k));
   const esAltoFlujo = KEYWORDS_ALTO_FLUJO.some((k) => contextFull.includes(k));
+  const esDoble = KEYWORDS_DOBLE.some((k) => contextFull.includes(k));
 
   const scored = products
     .map((product) => {
@@ -193,6 +201,8 @@ export async function getCatalogSnapshot(query: string, spaceContext?: string): 
         (matchedCategories.includes(product.categoria) ? 6 : 0);
       // Boost para productos de salud (Codo/Elbow)
       if (esSalud && SLUGS_SALUD.includes(product.slug)) score += 50;
+      // Boost para dispensador doble cuando buscan dos productos
+      if (esDoble && SLUGS_DOBLE.includes(product.slug)) score += 50;
       // Boost para KlinOx cuando preguntan por durabilidad/calidad/lo mejor o alto flujo
       if ((esCalidad || esAltoFlujo) && normalizeText(product.categoria).includes("klinox")) score += 30;
       return { product, score };

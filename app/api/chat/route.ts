@@ -139,6 +139,7 @@ export async function POST(request: Request) {
         "- 'alcoholero' = Dispensador de Líquidos (alcohol, gel).",
         "- 'inox' / 'acero' = línea KlinOx Acero Inoxidable.",
         "- 'codo' / 'elbow' / 'pedal' / 'manos libres' = Dispensador de Jabón Codo (Elbow) 1000 ml — operado con el codo, sin contacto de manos. Ideal para clínicas, hospitales, consultorios, laboratorios y cualquier espacio de salud donde se requiera higiene estricta.",
+        "- 'doble' / 'dual' / 'jabón y shampoo' / 'dos productos' / 'dos líquidos' = Dispensador Antigoteo Doble 800 ml — tiene dos compartimentos independientes para dispensar dos líquidos distintos (jabón + shampoo, jabón + gel antibacterial, etc.). SIEMPRE recomendar este cuando el cliente mencione que necesita dos productos a la vez.",
         "NUNCA respondas que no tienes un producto si hay un sinónimo en el catálogo.",
 
         "Catálogo actual (usa SOLO estos datos, nunca inventes):",
