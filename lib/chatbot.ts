@@ -469,6 +469,8 @@ export function buildLocalAssistantReply(
       "automatico","automaticos","sensor","secador","doble","dual","brass","laton",
       "espuma","foam","codo","elbow","autocorte","palanca","dental","cepillo","kids",
       "napklin","servilletero","servilleteros","decoklin","racklin","flotante",
+      "jabon","jabonera","toalla","papel","servilleta","liquido","alcohol","gel",
+      "higienico","insumo","repuesto","recarga",
     ];
     // Tokens genéricos que no definen el tipo de producto
     const TOKENS_GENERICOS = new Set(["dispensador","dispensadores","dispensadora","higiene","liquido","liquidos","jabon","producto","productos"]);

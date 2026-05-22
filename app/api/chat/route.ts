@@ -57,18 +57,29 @@ export async function POST(request: Request) {
     // siempre combinar con el mensaje anterior para no perder el producto buscado.
     const SPACE_WORDS = new Set(["hotel","restaurante","oficina","clinica","hospital","colegio","hogar","casa","empresa","gym","gimnasio","salon","bodega","fabrica","bano","centro","mall","comercial","plaza","aeropuerto","estadio","universidad","banco","spa","cafeteria","bar","club","acero","inoxidable","plastico","abs","klinox"]);
     const latestTokens = latestUserMessage.content.toLowerCase().trim().split(/\s+/).filter(Boolean);
-    const isPurelySpace = latestTokens.length <= 2 && latestTokens.every((t) => SPACE_WORDS.has(t.normalize("NFD").replace(/[̀-ͯ]/g, "")));
+    const normalize = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+    const isPurelySpace = latestTokens.length <= 2 && latestTokens.every((t) => SPACE_WORDS.has(normalize(t)));
 
     const userMessages = messages.filter((m) => m.role === "user");
     const prevUserMessage = userMessages[userMessages.length - 2];
 
+    // Detectar aclaraciones del tipo "pero de jabón", "solo de toalla", "de papel" — refina búsqueda anterior
+    const CLARIFICATION_STARTERS = ["pero","solo","solamente","especificamente","de","uno de","quiero de","es de","sea de"];
+    const latestLower = latestUserMessage.content.toLowerCase().trim();
+    const isClarification = Boolean(prevUserMessage) && latestTokens.length <= 5 &&
+      CLARIFICATION_STARTERS.some((s) => latestLower.startsWith(s));
+
     let snapshot;
     if (isPurelySpace && prevUserMessage) {
-      // Buscar producto con el mensaje anterior; el espacio se pasa como contexto separado
-      // para no contaminar el scoring (evita que "hogar" en nombre de producto gane por coincidencia)
       snapshot = await getCatalogSnapshot(prevUserMessage.content, latestUserMessage.content);
       if (snapshot.matchedProducts.length === 0 && snapshot.matchedCategories.length === 0) {
         snapshot = await getCatalogSnapshot(`${prevUserMessage.content} ${latestUserMessage.content}`);
+      }
+    } else if (isClarification && prevUserMessage) {
+      // Combinar aclaración con contexto previo para no perder el producto anterior
+      snapshot = await getCatalogSnapshot(`${prevUserMessage.content} ${latestUserMessage.content}`);
+      if (snapshot.matchedProducts.length === 0 && snapshot.matchedCategories.length === 0) {
+        snapshot = await getCatalogSnapshot(latestUserMessage.content);
       }
     } else {
       snapshot = await getCatalogSnapshot(latestUserMessage.content);
