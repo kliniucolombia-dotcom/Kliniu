@@ -365,9 +365,9 @@ export function buildLocalAssistantReply(
   const tieneTipoEspecifico = tokensQuery.some((t) => TOKENS_TIPO_ESPECIFICO.has(t));
 
   // Consulta genérica sin tipo ni espacio → mostrar menú de tipos
-  const esConsultaGenerica = !tieneTipoEspecifico && !normalized.split(/\s+/).some((t) =>
-    [...new Set([...["hotel","restaurante","oficina","clinica","hospital","colegio","hogar","casa","empresa","gym","gimnasio","salon","bodega","fabrica","centro","mall","comercial","plaza","aeropuerto","estadio","universidad","banco","spa","cafeteria","bar","club"])].includes(t.normalize("NFD").replace(/[̀-ͯ]/g,""))
-  ));
+  const ESPACIOS_SET = new Set(["hotel","restaurante","oficina","clinica","hospital","colegio","hogar","casa","empresa","gym","gimnasio","salon","bodega","fabrica","centro","mall","comercial","plaza","aeropuerto","estadio","universidad","banco","spa","cafeteria","bar","club"]);
+  const tieneEspacioEnQuery = normalized.split(/\s+/).some((t) => ESPACIOS_SET.has(t.normalize("NFD").replace(/[̀-ͯ]/g, "")));
+  const esConsultaGenerica = !tieneTipoEspecifico && !tieneEspacioEnQuery;
 
   if (esConsultaGenerica && normalized.match(/dispensador|producto/)) {
     return {
