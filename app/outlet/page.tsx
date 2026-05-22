@@ -100,7 +100,7 @@ function FeaturedCarousel({ products }: { products: ProductoCatalogo[] }) {
       style={{ background: "linear-gradient(160deg, #0f0c2e 0%, #1a1060 60%, #2d1080 100%)" }}
     >
       {/* Imagen con flechas */}
-      <div className="relative flex aspect-square items-center justify-center bg-white p-8">
+      <div className="relative flex h-[320px] w-full items-center justify-center bg-white p-8">
         {product.descuento && (
           <span
             className="absolute left-4 top-4 rounded-xl px-3 py-1.5 text-sm font-black text-white shadow-lg"
