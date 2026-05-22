@@ -96,12 +96,9 @@ const SYNONYMS: Record<string, string[]> = {
   "doble":         ["doble", "dual"],
   "dual":          ["doble", "dual"],
   // Automáticos / sin contacto
-  "automatico":    ["automatico", "sensor"],
-  "automaticos":   ["automatico", "sensor"],
   "sensor":        ["automatico", "sensor"],
   "touchless":     ["automatico", "sensor"],
   "touch":         ["automatico", "sensor"],
-  "sin":           [],
   // Secador de manos
   "secador":       ["secador", "manos"],
   "secado":        ["secador", "manos"],
@@ -473,18 +470,24 @@ export function buildLocalAssistantReply(
       "higienico","insumo","repuesto","recarga",
     ];
     // Tokens genéricos que no definen el tipo de producto
-    const TOKENS_GENERICOS = new Set(["dispensador","dispensadores","dispensadora","higiene","liquido","liquidos","jabon","producto","productos"]);
+    const TOKENS_GENERICOS = new Set(["dispensador","dispensadores","dispensadora","higiene","producto","productos"]);
     const queryTokensAll = tokenize(normalized);
     const esMuyEspecifico = KEYWORDS_DIRECTO.some((k) => queryTokensAll.includes(k) || normalized.includes(k));
 
     if (!tieneEspacio && esMuyEspecifico && snapshot.matchedProducts.length > 0) {
       // Filtrar: el producto debe coincidir con el token específico, no solo con tokens genéricos
       const tokensEspecificos = queryTokensAll.filter((t) => !TOKENS_GENERICOS.has(t));
+      // Tokens de tipo de producto (jabón, toalla, papel...) deben ALL coincidir para filtrar
+      const TIPO_PRODUCTO = new Set(["jabon","jabonera","toalla","papel","servilleta","dental","alcohol","gel","espuma","liquido","liquidos","crema","secador","doble"]);
+      const tipoTokens = tokensEspecificos.filter((t) => TIPO_PRODUCTO.has(t));
+
       const productosEspecificos = tokensEspecificos.length > 0
         ? snapshot.matchedProducts.filter((p) => {
             const n = normalizeText(p.nombre);
             const d = normalizeText(p.descripcion || "");
             const h = `${n} ${d} ${p.slug}`;
+            // Si hay tokens de tipo de producto, el producto debe coincidir con AL MENOS UNO
+            if (tipoTokens.length > 0) return tipoTokens.some((t) => h.includes(t));
             return tokensEspecificos.some((t) => h.includes(t));
           })
         : snapshot.matchedProducts;
