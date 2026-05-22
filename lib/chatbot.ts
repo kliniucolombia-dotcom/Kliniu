@@ -428,16 +428,28 @@ export function buildLocalAssistantReply(
       };
     }
 
-    // Tiene espacio pero no material → mostrar opciones con KlinOx primero
+    // Tiene espacio pero no material → KlinOx primero; plástico solo para hogar
     if (!tieneMaterial && snapshot.matchedProducts.length > 0) {
       const espacio = normalized.match(new RegExp(ESPACIOS.join("|")))?.[0] ?? "ese espacio";
+      const esHogar = normalized.includes("hogar") || normalized.includes("casa");
+
+      const productosAcero = snapshot.matchedProducts.filter((p) => {
+        const n = normalizeText(p.nombre);
+        const c = normalizeText(p.categoria);
+        return c.includes("klinox") || n.includes("acero") || n.includes("inoxidable") || n.includes("brass") || n.includes("codo") || n.includes("elbow");
+      });
+
+      const productosParaMostrar = !esHogar && productosAcero.length > 0 ? productosAcero : snapshot.matchedProducts;
+
       return {
-        message: `Para ${espacio} tenemos estas opciones 👇\n\n💪 Te recomiendo empezar por los de acero inoxidable: más duraderos, higiénicos y profesionales. También tenemos opciones en plástico ABS si buscas algo más económico.`,
+        message: !esHogar && productosAcero.length > 0
+          ? `Para ${espacio} te recomiendo estos 👇\n\n💪 Son los más usados en espacios con alto flujo: acero inoxidable, duraderos, fáciles de limpiar y con imagen profesional. También tenemos opciones en plástico ABS si buscas algo más económico.`
+          : `Para ${espacio} tenemos estas opciones 👇`,
         suggestions: [
           { label: "Ver todos", href: "/categorias" },
-          ...buildProductSuggestions(snapshot.matchedProducts).slice(0, 3),
+          ...buildProductSuggestions(productosParaMostrar).slice(0, 3),
         ],
-        products: buildProductCards(snapshot.matchedProducts),
+        products: buildProductCards(productosParaMostrar),
       };
     }
 
