@@ -64,11 +64,16 @@ export async function POST(request: Request) {
 
     let snapshot;
     if (isPurelySpace && prevUserMessage) {
-      snapshot = await getCatalogSnapshot(`${prevUserMessage.content} ${latestUserMessage.content}`);
+      // Buscar producto con el mensaje anterior; el espacio se pasa como contexto separado
+      // para no contaminar el scoring (evita que "hogar" en nombre de producto gane por coincidencia)
+      snapshot = await getCatalogSnapshot(prevUserMessage.content, latestUserMessage.content);
+      if (snapshot.matchedProducts.length === 0 && snapshot.matchedCategories.length === 0) {
+        snapshot = await getCatalogSnapshot(`${prevUserMessage.content} ${latestUserMessage.content}`);
+      }
     } else {
       snapshot = await getCatalogSnapshot(latestUserMessage.content);
       if (snapshot.matchedProducts.length === 0 && snapshot.matchedCategories.length === 0 && prevUserMessage) {
-        snapshot = await getCatalogSnapshot(`${prevUserMessage.content} ${latestUserMessage.content}`);
+        snapshot = await getCatalogSnapshot(prevUserMessage.content, latestUserMessage.content);
       }
     }
     const fallback = buildLocalAssistantReply(latestUserMessage.content, snapshot);

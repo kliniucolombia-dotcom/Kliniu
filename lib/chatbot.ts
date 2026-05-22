@@ -176,15 +176,16 @@ const KEYWORDS_SALUD = ["clinica","hospital","laboratorio","consultorio","medico
 const KEYWORDS_CALIDAD = ["durabilidad","durable","dura","duradero","duraderos","largo plazo","calidad","higienico","higienicos","mejor","mejores","resistente","resistentes","profesional","premium"];
 const KEYWORDS_ALTO_FLUJO = ["hotel","restaurante","oficina","empresa","empresas","fabrica","bodega","gym","gimnasio","salon","colegio","hospital","alto flujo","alto trafico","mucha gente","muchas personas","concurrido","institucional","comercial"];
 
-export async function getCatalogSnapshot(query: string): Promise<CatalogSnapshot> {
+export async function getCatalogSnapshot(query: string, spaceContext?: string): Promise<CatalogSnapshot> {
   const products = await getProducts();
   const queryTokens = tokenize(query);
   const matchedCategories = getMatchedCategories(query);
 
   const normalizedQuery = normalizeText(query);
-  const esSalud = KEYWORDS_SALUD.some((k) => normalizedQuery.includes(k));
-  const esCalidad = KEYWORDS_CALIDAD.some((k) => normalizedQuery.includes(k));
-  const esAltoFlujo = KEYWORDS_ALTO_FLUJO.some((k) => normalizedQuery.includes(k));
+  const contextFull = spaceContext ? `${normalizedQuery} ${normalizeText(spaceContext)}` : normalizedQuery;
+  const esSalud = KEYWORDS_SALUD.some((k) => contextFull.includes(k));
+  const esCalidad = KEYWORDS_CALIDAD.some((k) => contextFull.includes(k));
+  const esAltoFlujo = KEYWORDS_ALTO_FLUJO.some((k) => contextFull.includes(k));
 
   const scored = products
     .map((product) => {
