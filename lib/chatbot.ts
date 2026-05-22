@@ -130,7 +130,7 @@ function scoreProduct(product: StoreProduct, queryTokens: string[]) {
   const categoria = normalizeText(product.categoria);
   const marca = normalizeText(product.marca);
   const haystack = normalizeText(
-    [product.nombre, product.marca, product.categoria, product.descripcion || "", product.sku || "", product.disponibilidad].join(" "),
+    [product.nombre, product.marca, product.categoria, product.descripcion || "", product.sku || "", product.disponibilidad, product.slug].join(" "),
   );
   const nombreTokens = nombre.split(/\s+/);
   const haystackTokens = haystack.split(/\s+/);
@@ -164,25 +164,32 @@ function getMatchedCategories(query: string) {
   });
 }
 
+const SLUGS_SALUD = ["dispensador-de-jabon-codo-elbow-1000-ml"];
+const KEYWORDS_SALUD = ["clinica","hospital","laboratorio","consultorio","medico","salud","codo","elbow"];
+
 export async function getCatalogSnapshot(query: string): Promise<CatalogSnapshot> {
   const products = await getProducts();
   const queryTokens = tokenize(query);
   const matchedCategories = getMatchedCategories(query);
 
-  const matchedProducts = products
-    .map((product) => ({
-      product,
-      score:
-        scoreProduct(product, queryTokens) +
-        (matchedCategories.includes(product.categoria) ? 6 : 0),
-    }))
+  const normalizedQuery = normalizeText(query);
+  const esSalud = KEYWORDS_SALUD.some((k) => normalizedQuery.includes(k));
+
+  const scored = products
+    .map((product) => {
+      let score = scoreProduct(product, queryTokens) +
+        (matchedCategories.includes(product.categoria) ? 6 : 0);
+      // Boost explícito para productos de salud cuando aplica
+      if (esSalud && SLUGS_SALUD.includes(product.slug)) score += 50;
+      return { product, score };
+    })
     .filter((entry) => entry.score > 0)
     .sort((left, right) => right.score - left.score)
     .slice(0, 6)
     .map((entry) => entry.product);
 
   return {
-    matchedProducts,
+    matchedProducts: scored,
     matchedCategories,
     allCategories: categorias,
   };
