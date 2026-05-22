@@ -464,7 +464,24 @@ export function buildLocalAssistantReply(
       };
     }
 
-    // Sin espacio y sin material → preguntar espacio primero
+    // Sin espacio pero producto MUY específico → mostrar directo sin pedir espacio
+    const KEYWORDS_DIRECTO = [
+      "automatico","automaticos","sensor","secador","doble","dual","brass","laton",
+      "espuma","foam","codo","elbow","autocorte","palanca","dental","cepillo","kids",
+      "napklin","servilletero","servilleteros","decoklin","racklin","flotante",
+    ];
+    const queryTokensAll = tokenize(normalized);
+    const esMuyEspecifico = KEYWORDS_DIRECTO.some((k) => queryTokensAll.includes(k) || normalized.includes(k));
+
+    if (!tieneEspacio && esMuyEspecifico && snapshot.matchedProducts.length > 0) {
+      return {
+        message: `¡Claro! Aquí los tienes 👇\n\n¿Para qué tipo de espacio los necesitas? Así te doy más detalles sobre la mejor opción.`,
+        suggestions: buildProductSuggestions(snapshot.matchedProducts),
+        products: buildProductCards(snapshot.matchedProducts),
+      };
+    }
+
+    // Sin espacio y sin producto específico → preguntar espacio primero
     if (!tieneEspacio) {
       return {
         message: `Perfecto, tenemos opciones para eso 👌 Para recomendarte lo ideal, ¿para qué tipo de espacio lo necesitas?\n\n🏨 Hotel · 🍽️ Restaurante · 🏢 Oficina · 🏥 Clínica · 🏠 Hogar · 🏭 Empresa`,
