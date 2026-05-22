@@ -53,7 +53,24 @@ export async function POST(request: Request) {
       );
     }
 
-    const snapshot = await getCatalogSnapshot(latestUserMessage.content);
+    // Si el último mensaje es solo un tipo de espacio (hogar, restaurante, etc.),
+    // siempre combinar con el mensaje anterior para no perder el producto buscado.
+    const SPACE_WORDS = new Set(["hotel","restaurante","oficina","clinica","hospital","colegio","hogar","casa","empresa","gym","gimnasio","salon","bodega","fabrica","casa","bano"]);
+    const latestTokens = latestUserMessage.content.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    const isPurelySpace = latestTokens.length <= 2 && latestTokens.every((t) => SPACE_WORDS.has(t.normalize("NFD").replace(/[̀-ͯ]/g, "")));
+
+    const userMessages = messages.filter((m) => m.role === "user");
+    const prevUserMessage = userMessages[userMessages.length - 2];
+
+    let snapshot;
+    if (isPurelySpace && prevUserMessage) {
+      snapshot = await getCatalogSnapshot(`${prevUserMessage.content} ${latestUserMessage.content}`);
+    } else {
+      snapshot = await getCatalogSnapshot(latestUserMessage.content);
+      if (snapshot.matchedProducts.length === 0 && snapshot.matchedCategories.length === 0 && prevUserMessage) {
+        snapshot = await getCatalogSnapshot(`${prevUserMessage.content} ${latestUserMessage.content}`);
+      }
+    }
     const fallback = buildLocalAssistantReply(latestUserMessage.content, snapshot);
 
     if (!openai) {
@@ -94,10 +111,10 @@ export async function POST(request: Request) {
 
         "FLUJO DE VENTA ESTRICTO — sigue este orden siempre:",
         "PASO 1 — Si no sabes el espacio: PREGUNTA primero. Nunca muestres productos sin saber el tipo de espacio (hotel, restaurante, oficina, clínica, hogar, empresa...).",
-        "PASO 2 — Si sabes el espacio pero no el material/uso: Recomienda UN solo producto con nombre, precio y link. Pregunta si prefiere acero inoxidable o plástico ABS.",
-        "PASO 3 — Después de recomendar el producto individual: ofrece el combo/kit. Ejemplo: 'Si llevas el set completo (jabón + papel + toallas) te sale con descuento 👌'",
+        "PASO 2 — Si sabes el espacio: Muestra entre 2 y 3 opciones relevantes del catálogo con nombre y precio. Resalta brevemente qué diferencia a cada una (material, capacidad, precio).",
+        "PASO 3 — Después de mostrar los productos: ofrece el combo/kit. Ejemplo: 'Si llevas el set completo (jabón + papel + toallas) te sale con descuento 👌'",
         "PASO 4 — Cierre: pide nombre, ciudad, cantidad y WhatsApp para enviar cotización.",
-        "REGLA CRÍTICA: NUNCA muestres más de 1 producto a la vez en la primera recomendación. Primero recomienda el más adecuado, luego ofrece opciones adicionales.",,
+        "REGLA: Muestra siempre entre 2 y 3 productos. Nunca solo 1 (a menos que solo haya 1 en el catálogo para esa búsqueda). Sé conciso al describir cada uno.",,
 
         "SI PREGUNTAN POR PRECIO: '¿Cuántas unidades necesitas y para qué espacio sería? Así te recomiendo la mejor opción y te cotizo correctamente 👌'",
         "SI EL CLIENTE DUDA: genera confianza → 'Ese modelo es muy usado en empresas.' / 'Es de los más recomendados para alto tráfico.' / 'Tiene excelente presentación para espacios premium.'",
@@ -107,6 +124,15 @@ export async function POST(request: Request) {
         "CASOS ESPECIALES:",
         "- Si preguntan '¿qué venden?' o '¿qué tienen?': lista las categorías de forma amigable y pregunta por el tipo de espacio.",
         "- Si el cliente quiere cotizar volumen grande: sugiérele contactar por WhatsApp.",
+
+        "VOCABULARIO DEL CLIENTE — estos términos SÍ existen en el catálogo:",
+        "- 'servilletero' / 'servilleteros' = Dispensador de Servilletas (tenemos Napklin Blanco, Gris, Humo, Verde).",
+        "- 'jabonera' = Dispensador de Jabón.",
+        "- 'toallero' = Dispensador de Toallas.",
+        "- 'papelera' / 'portarrollo' = Dispensador de Papel Higiénico.",
+        "- 'alcoholero' = Dispensador de Líquidos (alcohol, gel).",
+        "- 'inox' / 'acero' = línea KlinOx Acero Inoxidable.",
+        "NUNCA respondas que no tienes un producto si hay un sinónimo en el catálogo.",
 
         "Catálogo actual (usa SOLO estos datos, nunca inventes):",
         buildCatalogContext(snapshot),

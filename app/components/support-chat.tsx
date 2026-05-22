@@ -163,12 +163,12 @@ export default function SupportChat() {
     >
       {isOpen && (
         <div className="w-[min(92vw,380px)] overflow-hidden rounded-[1.6rem] border border-black/10 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
-          <div className="border-b border-[#27B1B8]/35 bg-white px-4 py-4 text-[#0C535B]">
+          <div className="bg-white px-4 py-4 text-[#0C535B]">
             <div className="flex items-start justify-between gap-4">
               <div className="flex min-w-0 items-start gap-3">
                 <div className="relative h-16 w-14 shrink-0">
                   <Image
-                    src="/chatbot/kliniu-bot.png"
+                    src="/foca-saludando.webp"
                     alt="Kliniu"
                     fill
                     sizes="56px"
@@ -221,7 +221,7 @@ export default function SupportChat() {
                     <div className="flex max-w-[92%] items-start gap-3">
                       <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-[#0C535B]/10 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
                         <Image
-                          src="/chatbot/kliniu-icon.png"
+                          src="/foca-saludando.webp"
                           alt="Kliniu"
                           fill
                           sizes="40px"
@@ -257,19 +257,6 @@ export default function SupportChat() {
                                 <svg className="h-4 w-4 shrink-0 text-[#27B1B8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                                   <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
-                              </Link>
-                            ))}
-                          </div>
-                        )}
-                        {message.suggestions && message.suggestions.length > 0 && !message.products && (
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {message.suggestions.map((suggestion) => (
-                              <Link
-                                key={`${message.id}-${suggestion.href}`}
-                                href={suggestion.href}
-                                className="rounded-full border border-[#0C535B]/12 bg-[#f6f8fb] px-3 py-1.5 text-xs font-semibold text-[#0C535B] transition-colors duration-200 hover:bg-[#0C535B] hover:text-white"
-                              >
-                                {suggestion.label}
                               </Link>
                             ))}
                           </div>
@@ -329,7 +316,7 @@ export default function SupportChat() {
         <span className="absolute -left-1 -top-1 h-3 w-3 rounded-full bg-[#43c172] shadow-[0_0_0_6px_rgba(67,193,114,0.18)]" />
         <span className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-white">
           <Image
-            src="/chatbot/kliniu-icon.png"
+            src="/foca-saludando.webp"
             alt="Kliniu"
             fill
             sizes="44px"

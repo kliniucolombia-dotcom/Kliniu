@@ -817,6 +817,7 @@ export default function AdminPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ slug: string; nombre: string } | null>(null);
   const [orderForm, setOrderForm] = useState<OrderEditState>({
     shippingStatus: "PENDING",
     paymentStatus: "PENDING",
@@ -2078,8 +2079,8 @@ export default function AdminPage() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleDeleteProduct(product.slug)}
-                              className="inline-flex rounded-full border border-black/10 px-5 py-3 text-sm font-semibold text-[#0C535B] transition-colors duration-200 hover:bg-[#0C535B] hover:text-white"
+                              onClick={() => setConfirmDelete({ slug: product.slug, nombre: product.nombre })}
+                              className="inline-flex rounded-full border border-black/10 px-5 py-3 text-sm font-semibold text-[#0C535B] transition-colors duration-200 hover:bg-red-500 hover:border-red-500 hover:text-white"
                             >
                               Eliminar
                             </button>
@@ -3184,6 +3185,46 @@ export default function AdminPage() {
           </div>
         </div>
       </section>
+
+      {/* Modal confirmación eliminar */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl border border-black/8 bg-white p-6 shadow-2xl">
+            <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-full bg-red-50">
+              <svg viewBox="0 0 24 24" className="h-5 w-5 text-red-500" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                <path d="M10 11v6M14 11v6" />
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+              </svg>
+            </div>
+            <h3 className="mt-3 text-base font-bold text-[#111]">¿Eliminar producto?</h3>
+            <p className="mt-1 text-sm text-[#6e7379]">
+              <span className="font-semibold text-[#111]">{confirmDelete.nombre}</span> será eliminado permanentemente. Esta acción no se puede deshacer.
+            </p>
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(null)}
+                className="flex-1 rounded-full border border-black/10 py-2.5 text-sm font-semibold text-[#333] transition-colors hover:bg-[#f5f5f5]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const slug = confirmDelete.slug;
+                  setConfirmDelete(null);
+                  await handleDeleteProduct(slug);
+                }}
+                className="flex-1 rounded-full bg-red-500 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-600"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

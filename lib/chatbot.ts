@@ -66,6 +66,29 @@ const FUERA_CATALOGO = [
   "ropa","zapato","comida","medicamento","droga","planta","mascota","juguete","libro",
 ];
 
+// Sinónimos: palabra del usuario → términos equivalentes del catálogo
+const SYNONYMS: Record<string, string[]> = {
+  "servilletero":  ["servilleta", "servilletas", "napklin"],
+  "servilleteros": ["servilleta", "servilletas", "napklin"],
+  "jabonera":      ["jabon", "dispensador"],
+  "jaboneras":     ["jabon", "dispensador"],
+  "toallero":      ["toalla", "dispensador"],
+  "toalleros":     ["toalla", "dispensador"],
+  "papelera":      ["papel", "higienico"],
+  "papeleras":     ["papel", "higienico"],
+  "alcoholero":    ["alcohol", "liquido", "dispensador"],
+  "dispensadora":  ["dispensador"],
+  "dispensadores": ["dispensador"],
+  "inox":          ["inoxidable", "acero", "klinox"],
+  "acero":         ["inoxidable", "klinox"],
+  "dental":        ["crema dental", "cepillo"],
+  "repuesto":      ["insumo", "repuesto"],
+  "recarga":       ["insumo", "repuesto"],
+  "recargas":      ["insumo", "repuesto"],
+  "liquido":       ["liquidos", "jabon"],
+  "espuma":        ["espuma", "foam"],
+};
+
 function normalizeText(value: string) {
   return value
     .normalize("NFD")
@@ -75,9 +98,16 @@ function normalizeText(value: string) {
 }
 
 function tokenize(value: string) {
-  return normalizeText(value)
+  const base = normalizeText(value)
     .split(/[^a-z0-9]+/)
     .filter((t) => t.length > 2 && !STOP_WORDS.has(t));
+
+  const expanded = new Set(base);
+  for (const token of base) {
+    const synonyms = SYNONYMS[token];
+    if (synonyms) synonyms.forEach((s) => expanded.add(s));
+  }
+  return [...expanded];
 }
 
 function scoreProduct(product: StoreProduct, queryTokens: string[]) {
@@ -135,7 +165,7 @@ export async function getCatalogSnapshot(query: string): Promise<CatalogSnapshot
     }))
     .filter((entry) => entry.score > 0)
     .sort((left, right) => right.score - left.score)
-    .slice(0, 5)
+    .slice(0, 6)
     .map((entry) => entry.product);
 
   return {
@@ -166,14 +196,14 @@ export function buildCatalogContext(snapshot: CatalogSnapshot) {
 }
 
 function buildProductSuggestions(products: StoreProduct[]): ChatSuggestion[] {
-  return products.slice(0, 3).map((product) => ({
+  return products.slice(0, 4).map((product) => ({
     label: product.nombre,
     href: `/producto/${product.slug}`,
   }));
 }
 
 function buildProductCards(products: StoreProduct[]): ChatProductCard[] {
-  return products.slice(0, 3).map((product) => ({
+  return products.slice(0, 4).map((product) => ({
     slug: product.slug,
     nombre: product.nombre,
     precio: product.precio,
@@ -208,8 +238,11 @@ export function buildLocalAssistantReply(
   }
 
   // Producto fuera del catálogo (con fuzzy matching para typos)
+  // Primero verificar que el mensaje no sea un tipo de espacio conocido (casa, hogar, etc.)
+  const ESPACIOS_CHECK = ["hotel","restaurante","oficina","clinica","hospital","colegio","hogar","casa","empresa","gym","gimnasio","salon","bodega","fabrica"];
+  const esEspacio = ESPACIOS_CHECK.some((e) => normalized.includes(e));
   const queryTokens2 = tokenize(normalized);
-  const fueraItem = FUERA_CATALOGO.find((word) =>
+  const fueraItem = !esEspacio && FUERA_CATALOGO.find((word) =>
     normalized.includes(word) || queryTokens2.some((t) => fuzzyMatch(t, word))
   );
   if (fueraItem) {
@@ -341,16 +374,16 @@ export function buildLocalAssistantReply(
       };
     }
 
-    // Tiene espacio pero no material → mostrar 1 producto estrella + preguntar material
+    // Tiene espacio pero no material → mostrar hasta 4 productos + preguntar material
     if (!tieneMaterial && snapshot.matchedProducts.length > 0) {
-      const top = snapshot.matchedProducts[0];
+      const espacio = normalized.match(new RegExp(ESPACIOS.join("|")))?.[0] ?? "ese espacio";
       return {
-        message: `Para ${normalized.match(new RegExp(ESPACIOS.join("|")))?.[0] ?? "ese espacio"} te recomiendo este 👇\n\n¿Prefieres en acero inoxidable (más duradero) o plástico ABS (más económico)?`,
+        message: `Para ${espacio} tenemos estas opciones 👇\n\n¿Prefieres en acero inoxidable (más duradero) o plástico ABS (más económico)?`,
         suggestions: [
           { label: "Ver todos", href: "/categorias" },
-          { label: top.nombre, href: `/producto/${top.slug}` },
+          ...buildProductSuggestions(snapshot.matchedProducts).slice(0, 3),
         ],
-        products: buildProductCards([top]),
+        products: buildProductCards(snapshot.matchedProducts),
       };
     }
 
