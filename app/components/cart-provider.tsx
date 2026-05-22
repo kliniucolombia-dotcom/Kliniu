@@ -276,14 +276,15 @@ export function CartProvider({
 
         if (currentUserId) {
           void (async () => {
-            const response = await fetch(`/api/cart/${normalizedId}`, {
+            const response = await fetch(`/api/cart/${encodeURIComponent(normalizedId)}`, {
               method: "DELETE",
             });
             if (!response.ok) return;
-            const payload = (await response.json()) as { items?: CartItem[] };
-            if (payload.items) {
-              setItems(payload.items);
-            }
+            // Don't overwrite state with server response — optimistic removal already handled it.
+            // Re-apply the filter in case a concurrent update re-added the item.
+            setItems((current) =>
+              current.filter((item) => item.id !== normalizedId),
+            );
           })();
         }
       },
