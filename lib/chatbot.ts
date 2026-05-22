@@ -96,6 +96,13 @@ const SYNONYMS: Record<string, string[]> = {
   "antibacterial": ["jabon", "liquido", "dispensador"],
   "laboratorio":   ["codo", "elbow", "clinica"],
   "salud":         ["clinica", "hospital", "codo"],
+  "durabilidad":   ["acero", "inoxidable", "klinox"],
+  "duradero":      ["acero", "inoxidable", "klinox"],
+  "duraderos":     ["acero", "inoxidable", "klinox"],
+  "calidad":       ["acero", "inoxidable", "klinox"],
+  "resistente":    ["acero", "inoxidable", "klinox"],
+  "resistentes":   ["acero", "inoxidable", "klinox"],
+  "premium":       ["acero", "inoxidable", "klinox"],
   "clinica":       ["codo", "elbow", "jabon"],
   "hospital":      ["codo", "elbow", "jabon"],
   "consultorio":   ["codo", "elbow", "jabon"],
@@ -166,6 +173,7 @@ function getMatchedCategories(query: string) {
 
 const SLUGS_SALUD = ["dispensador-de-jabon-codo-elbow-1000-ml"];
 const KEYWORDS_SALUD = ["clinica","hospital","laboratorio","consultorio","medico","salud","codo","elbow"];
+const KEYWORDS_CALIDAD = ["durabilidad","durable","dura","duradero","duraderos","largo plazo","calidad","higienico","higienicos","mejor","mejores","resistente","resistentes","profesional","premium"];
 
 export async function getCatalogSnapshot(query: string): Promise<CatalogSnapshot> {
   const products = await getProducts();
@@ -174,13 +182,16 @@ export async function getCatalogSnapshot(query: string): Promise<CatalogSnapshot
 
   const normalizedQuery = normalizeText(query);
   const esSalud = KEYWORDS_SALUD.some((k) => normalizedQuery.includes(k));
+  const esCalidad = KEYWORDS_CALIDAD.some((k) => normalizedQuery.includes(k));
 
   const scored = products
     .map((product) => {
       let score = scoreProduct(product, queryTokens) +
         (matchedCategories.includes(product.categoria) ? 6 : 0);
-      // Boost explícito para productos de salud cuando aplica
+      // Boost para productos de salud (Codo/Elbow)
       if (esSalud && SLUGS_SALUD.includes(product.slug)) score += 50;
+      // Boost para KlinOx cuando preguntan por durabilidad/calidad/lo mejor
+      if (esCalidad && normalizeText(product.categoria).includes("klinox")) score += 30;
       return { product, score };
     })
     .filter((entry) => entry.score > 0)
