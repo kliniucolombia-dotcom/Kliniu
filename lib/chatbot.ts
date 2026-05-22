@@ -462,17 +462,37 @@ export function buildLocalAssistantReply(
     }
 
     // Sin espacio pero producto MUY específico → mostrar directo sin pedir espacio
+    // Productos tan específicos que no necesitan pregunta de material ni espacio
     const KEYWORDS_DIRECTO = [
       "automatico","automaticos","sensor","secador","doble","dual","brass","laton",
       "espuma","foam","codo","elbow","autocorte","palanca","dental","cepillo","kids",
       "napklin","servilletero","servilleteros","decoklin","racklin","flotante",
-      "jabon","jabonera","toalla","papel","servilleta","liquido","alcohol","gel",
-      "higienico","insumo","repuesto","recarga",
+      "insumo","repuesto","recarga",
     ];
+    // Tipos de producto que sí tienen versión acero y plástico → preguntar material
+    const TIPOS_CON_MATERIAL = ["jabon","jabonera","toalla","papel","servilleta","liquido","alcohol","gel","higienico"];
     // Tokens genéricos que no definen el tipo de producto
     const TOKENS_GENERICOS = new Set(["dispensador","dispensadores","dispensadora","higiene","producto","productos"]);
     const queryTokensAll = tokenize(normalized);
     const esMuyEspecifico = KEYWORDS_DIRECTO.some((k) => queryTokensAll.includes(k) || normalized.includes(k));
+
+    // Tipo de producto con versión acero y plástico → preguntar material primero
+    const tieneTipoConMaterial = TIPOS_CON_MATERIAL.some((k) => queryTokensAll.includes(k) || normalized.includes(k));
+    if (!tieneEspacio && !tieneMaterial && tieneTipoConMaterial && snapshot.matchedProducts.length > 0) {
+      const productosAceroPreview = snapshot.matchedProducts.filter((p) => {
+        const c = normalizeText(p.categoria);
+        const n = normalizeText(p.nombre);
+        return c.includes("klinox") || n.includes("acero") || n.includes("inoxidable") || n.includes("brass");
+      });
+      return {
+        message: `Tenemos opciones para eso 👌\n\n🔩 **Acero inoxidable** — más duradero, higiénico y profesional. Ideal para uso intensivo y largo plazo.\n🧴 **Plástico ABS** — más económico, práctico para uso moderado.\n\n¿Cuál prefieres?`,
+        suggestions: [
+          { label: "Acero inoxidable", href: "/categorias?categoria=klinox-acero-inoxidable" },
+          { label: "Plástico ABS", href: "/categorias" },
+        ],
+        products: productosAceroPreview.length > 0 ? buildProductCards(productosAceroPreview) : undefined,
+      };
+    }
 
     if (!tieneEspacio && esMuyEspecifico && snapshot.matchedProducts.length > 0) {
       // Filtrar: el producto debe coincidir con el token específico, no solo con tokens genéricos
