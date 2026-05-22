@@ -52,6 +52,8 @@ const DOMAIN_KEYWORDS = [
   "automatico","sensor","liquid","rollo","institucional","comercial","hotel",
   "restaurante","oficina","clinica","bano","lavamanos","repisa","klinox",
   "codo","elbow","pedal","antiseptico","antibacterial","laboratorio","hospital",
+  "secador","brass","espuma","antigoteo","autocorte","palanca","center","pull",
+  "napklin","racklin","decoklin","flotante","repisa","luxury","ecotowel",
 ];
 
 const STOP_WORDS = new Set([
@@ -93,6 +95,44 @@ const SYNONYMS: Record<string, string[]> = {
   "champoo":       ["doble", "antigoteo", "liquido"],
   "doble":         ["doble", "dual"],
   "dual":          ["doble", "dual"],
+  // Automáticos / sin contacto
+  "automatico":    ["automatico", "sensor"],
+  "automaticos":   ["automatico", "sensor"],
+  "sensor":        ["automatico", "sensor"],
+  "touchless":     ["automatico", "sensor"],
+  "touch":         ["automatico", "sensor"],
+  "sin":           [],
+  // Secador de manos
+  "secador":       ["secador", "manos"],
+  "secado":        ["secador", "manos"],
+  "airblade":      ["secador"],
+  "soplador":      ["secador"],
+  // Brass / materiales premium
+  "brass":         ["brass", "cobre", "zinc"],
+  "laton":         ["brass"],
+  "bronce":        ["brass"],
+  "dorado":        ["brass"],
+  "cromado":       ["brass", "acero"],
+  // Espuma
+  "foam":          ["espuma"],
+  // Hotel / decorativo
+  "decorativo":    ["decoklin", "hotel", "restaurante"],
+  "minimalista":   ["decoklin", "hotel"],
+  "flotante":      ["flotante", "decoklin"],
+  "repisa":        ["racklin", "repisa"],
+  // Paper / toalla
+  "rollo":         ["rollo", "toalla", "papel"],
+  "autocorte":     ["autocorte", "rollo"],
+  "palanca":       ["palanca", "rollo"],
+  "interfoleada":  ["toalla", "ecotowel"],
+  "center":        ["center", "pull", "toalla"],
+  "pull":          ["center", "pull", "toalla"],
+  // Higiene dental
+  "pasta":         ["crema dental", "cepillo"],
+  "cepillo":       ["dental", "cepillo"],
+  "dientes":       ["dental", "cepillo"],
+  "niños":         ["kids", "dental"],
+  "kids":          ["kids", "dental"],
   "codo":          ["codo", "elbow", "jabon"],
   "elbow":         ["codo", "elbow", "jabon"],
   "pedal":         ["codo", "elbow", "jabon"],
@@ -205,6 +245,8 @@ export async function getCatalogSnapshot(query: string, spaceContext?: string): 
       if (esDoble && SLUGS_DOBLE.includes(product.slug)) score += 50;
       // Boost para KlinOx cuando preguntan por durabilidad/calidad/lo mejor o alto flujo
       if ((esCalidad || esAltoFlujo) && normalizeText(product.categoria).includes("klinox")) score += 30;
+      // Boost para Hoteles y Restaurantes cuando el espacio es hotel/restaurante/spa
+      if (contextFull.match(/hotel|restaurante|spa|bar/) && normalizeText(product.categoria).includes("hoteles")) score += 25;
       return { product, score };
     })
     .filter((entry) => entry.score > 0)
