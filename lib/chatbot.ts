@@ -174,7 +174,7 @@ function getMatchedCategories(query: string) {
 const SLUGS_SALUD = ["dispensador-de-jabon-codo-elbow-1000-ml"];
 const KEYWORDS_SALUD = ["clinica","hospital","laboratorio","consultorio","medico","salud","codo","elbow"];
 const KEYWORDS_CALIDAD = ["durabilidad","durable","dura","duradero","duraderos","largo plazo","calidad","higienico","higienicos","mejor","mejores","resistente","resistentes","profesional","premium"];
-const KEYWORDS_ALTO_FLUJO = ["hotel","restaurante","empresa","empresas","fabrica","bodega","gym","gimnasio","alto flujo","alto trafico","mucha gente","muchas personas","concurrido","institucional"];
+const KEYWORDS_ALTO_FLUJO = ["hotel","restaurante","oficina","empresa","empresas","fabrica","bodega","gym","gimnasio","salon","colegio","hospital","alto flujo","alto trafico","mucha gente","muchas personas","concurrido","institucional","comercial"];
 
 export async function getCatalogSnapshot(query: string): Promise<CatalogSnapshot> {
   const products = await getProducts();
@@ -428,11 +428,11 @@ export function buildLocalAssistantReply(
       };
     }
 
-    // Tiene espacio pero no material → mostrar hasta 4 productos + preguntar material
+    // Tiene espacio pero no material → mostrar opciones con KlinOx primero
     if (!tieneMaterial && snapshot.matchedProducts.length > 0) {
       const espacio = normalized.match(new RegExp(ESPACIOS.join("|")))?.[0] ?? "ese espacio";
       return {
-        message: `Para ${espacio} tenemos estas opciones 👇\n\n¿Prefieres en acero inoxidable (más duradero) o plástico ABS (más económico)?`,
+        message: `Para ${espacio} tenemos estas opciones 👇\n\n💪 Te recomiendo empezar por los de acero inoxidable: más duraderos, higiénicos y profesionales. También tenemos opciones en plástico ABS si buscas algo más económico.`,
         suggestions: [
           { label: "Ver todos", href: "/categorias" },
           ...buildProductSuggestions(snapshot.matchedProducts).slice(0, 3),
