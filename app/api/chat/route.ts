@@ -55,7 +55,7 @@ export async function POST(request: Request) {
 
     // Si el último mensaje es solo un tipo de espacio (hogar, restaurante, etc.),
     // siempre combinar con el mensaje anterior para no perder el producto buscado.
-    const SPACE_WORDS = new Set(["hotel","restaurante","oficina","clinica","hospital","colegio","hogar","casa","empresa","gym","gimnasio","salon","bodega","fabrica","bano","acero","inoxidable","plastico","abs","klinox"]);
+    const SPACE_WORDS = new Set(["hotel","restaurante","oficina","clinica","hospital","colegio","hogar","casa","empresa","gym","gimnasio","salon","bodega","fabrica","bano","centro","mall","comercial","plaza","aeropuerto","estadio","universidad","banco","spa","cafeteria","bar","club","acero","inoxidable","plastico","abs","klinox"]);
     const latestTokens = latestUserMessage.content.toLowerCase().trim().split(/\s+/).filter(Boolean);
     const isPurelySpace = latestTokens.length <= 2 && latestTokens.every((t) => SPACE_WORDS.has(t.normalize("NFD").replace(/[̀-ͯ]/g, "")));
 

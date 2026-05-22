@@ -221,7 +221,7 @@ const KEYWORDS_SALUD = ["clinica","hospital","laboratorio","consultorio","medico
 const SLUGS_DOBLE = ["dispensador-antigoteo-doble-800-ml"];
 const KEYWORDS_DOBLE = ["doble","dual","dos productos","jabon y shampoo","shampoo y jabon","jabon y champu","champu y jabon","dos liquidos","dos compartimentos","dos usos","doble uso"];
 const KEYWORDS_CALIDAD = ["durabilidad","durable","dura","duradero","duraderos","largo plazo","calidad","higienico","higienicos","mejor","mejores","resistente","resistentes","profesional","premium"];
-const KEYWORDS_ALTO_FLUJO = ["hotel","restaurante","oficina","empresa","empresas","fabrica","bodega","gym","gimnasio","salon","colegio","hospital","alto flujo","alto trafico","mucha gente","muchas personas","concurrido","institucional","comercial"];
+const KEYWORDS_ALTO_FLUJO = ["hotel","restaurante","oficina","empresa","empresas","fabrica","bodega","gym","gimnasio","salon","colegio","hospital","centro","mall","comercial","plaza","aeropuerto","estadio","universidad","banco","spa","cafeteria","bar","club","alto flujo","alto trafico","mucha gente","muchas personas","concurrido","institucional"];
 
 export async function getCatalogSnapshot(query: string, spaceContext?: string): Promise<CatalogSnapshot> {
   const products = await getProducts();
@@ -446,7 +446,7 @@ export function buildLocalAssistantReply(
   }
 
   // Detectar contexto del cliente
-  const ESPACIOS = ["hotel","restaurante","oficina","clinica","hospital","colegio","hogar","casa","empresa","gym","gimnasio","salon","bodega","fabrica"];
+  const ESPACIOS = ["hotel","restaurante","oficina","clinica","hospital","colegio","hogar","casa","empresa","gym","gimnasio","salon","bodega","fabrica","centro","mall","comercial","plaza","parque","aeropuerto","estadio","universidad","colegio","banco","spa","cafeteria","bar","discoteca","club"];
   const ESPACIOS_SALUD = ["clinica","hospital","laboratorio","consultorio","medico","salud"];
   const MATERIALES = ["acero","inoxidable","plastico","cromado","abs"];
   const tieneEspacio = ESPACIOS.some((e) => normalized.includes(e));
