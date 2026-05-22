@@ -366,7 +366,17 @@ export function buildLocalAssistantReply(
   const tieneMaterial = MATERIALES.some((m) => normalized.includes(m));
 
   if (snapshot.matchedProducts.length > 0 || snapshot.matchedCategories.length > 0) {
-    // Sin espacio → preguntar espacio primero
+    // Sin espacio pero CON material → mostrar productos de ese material y pedir espacio
+    if (!tieneEspacio && tieneMaterial && snapshot.matchedProducts.length > 0) {
+      const label = normalized.includes("acero") || normalized.includes("inoxidable") ? "acero inoxidable" : "plástico ABS";
+      return {
+        message: `¡Aquí los dispensadores en ${label} 👇\n\n¿Para qué tipo de espacio los necesitas? Así te completo la recomendación.`,
+        suggestions: buildCategorySuggestions(snapshot.allCategories),
+        products: buildProductCards(snapshot.matchedProducts),
+      };
+    }
+
+    // Sin espacio y sin material → preguntar espacio primero
     if (!tieneEspacio) {
       return {
         message: `Perfecto, tenemos opciones para eso 👌 Para recomendarte lo ideal, ¿para qué tipo de espacio lo necesitas?\n\n🏨 Hotel · 🍽️ Restaurante · 🏢 Oficina · 🏥 Clínica · 🏠 Hogar · 🏭 Empresa`,
@@ -387,13 +397,12 @@ export function buildLocalAssistantReply(
       };
     }
 
-    // Tiene espacio + material (o suficiente contexto) → mostrar producto + sugerir combo
-    const topProduct = snapshot.matchedProducts[0];
+    // Tiene espacio + material → mostrar todas las opciones relevantes + sugerir combo
     const hasCombo = snapshot.matchedProducts.length > 1;
     return {
-      message: `Aquí tienes la mejor opción para ese espacio 👇${hasCombo ? `\n\n💡 Si llevas varios, te sale un **${Math.min(snapshot.matchedProducts.length * 2 + 1, 10)}% más económico** en combo. ¿Te armo una cotización?` : ""}`,
+      message: `Aquí tienes las opciones para ese espacio 👇${hasCombo ? `\n\n💡 Si llevas el set completo te sale más económico. ¿Te armo una cotización?` : ""}`,
       suggestions: buildProductSuggestions(snapshot.matchedProducts),
-      products: buildProductCards([topProduct]),
+      products: buildProductCards(snapshot.matchedProducts),
     };
   }
 
