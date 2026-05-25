@@ -298,27 +298,136 @@ function LandingCategorias({ onSelect }: { onSelect: (cat: string) => void }) {
 
 /* ─────────────────────── helpers filtro ─────────────────────── */
 function getSpec(p: ProductoCatalogo, etiqueta: string) {
-  return p.especificacionesTecnicas?.find((e) => e.etiqueta === etiqueta)?.valor ?? "";
+  const target = etiqueta.toLowerCase();
+  return (
+    p.especificacionesTecnicas?.find(
+      (e) => e.etiqueta.trim().toLowerCase() === target,
+    )?.valor.trim() ?? ""
+  );
+}
+
+function getProductText(p: ProductoCatalogo, includeApplication = true) {
+  return [
+    p.nombre,
+    p.descripcion,
+    includeApplication ? p.aplicacion : "",
+    p.especificacionesTecnicas
+      ?.map((e) => `${e.etiqueta}: ${e.valor}`)
+      .join(" "),
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function getAutoManual(p: ProductoCatalogo): string | null {
-  const desc = (p.descripcion ?? "").toLowerCase();
-  const spec = getSpec(p, "Tipo").toLowerCase();
-  const text = desc + " " + spec;
+  const text = getProductText(p).toLowerCase();
   if (text.includes("automático") || text.includes("automatico")) return "Automático";
   if (text.includes("manual")) return "Manual";
   return null;
 }
 
+function normalizeFilterValue(value: string) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function normalizeCapacity(value: string) {
+  const match = value.match(
+    /\b(\d{1,4}(?:[.,]\d{1,3})?)\s*(ml|l|lt|litro|litros|cepillo|cepillos|c[aá]mara|c[aá]maras)\b/i,
+  );
+  if (!match) return normalizeFilterValue(value);
+
+  const numeric = match[1].replace(/[.,]/g, "");
+  const unitMap: Record<string, string> = {
+    litro: "L",
+    litros: "L",
+    lt: "L",
+    l: "L",
+    ml: "ml",
+    cepillo: "cepillo",
+    cepillos: "cepillos",
+    camara: "cámaras",
+    "cámara": "cámaras",
+    camaras: "cámaras",
+    "cámaras": "cámaras",
+  };
+  const unit = unitMap[match[2].toLowerCase()] ?? match[2].toLowerCase();
+  const amount = Number(numeric);
+  const formatted = Number.isFinite(amount)
+    ? new Intl.NumberFormat("es-CO").format(amount)
+    : match[1];
+
+  return `${formatted} ${unit}`;
+}
+
+function getCapacidad(p: ProductoCatalogo) {
+  const spec = getSpec(p, "Capacidad");
+  if (spec) return normalizeCapacity(spec);
+
+  const text = [p.nombre, p.descripcion].filter(Boolean).join(" ");
+  const match = text.match(
+    /\b\d{1,4}(?:[.,]\d{1,3})?\s*(?:ml|l|lt|litro|litros|cepillo|cepillos|c[aá]mara|c[aá]maras)\b/i,
+  );
+  return match ? normalizeCapacity(match[0]) : "";
+}
+
+const MATERIAL_MATCHERS: Array<[string, RegExp]> = [
+  ["Acero inoxidable", /\bacero\s+inoxidable\b|\binoxidable\b/i],
+  ["ABS", /\babs\b/i],
+  ["Aluminio", /\baluminio\b/i],
+  ["Brass", /\bbrass\b/i],
+  ["Metal", /\bmetal(?:ico|ico)?\b/i],
+  ["PET", /\bpet\b/i],
+  ["Policarbonato", /\bpolicarbonato\b/i],
+  ["Polietileno", /\bpolietileno\b|\bpe\b/i],
+  ["Polipropileno", /\bpolipropileno\b|\bpp\b/i],
+  ["Plástico", /\bpl[aá]stico\b/i],
+];
+
+function getMateriales(p: ProductoCatalogo): string[] {
+  const explicit = getSpec(p, "Material")
+    .split(/[,/]+| y /i)
+    .map(normalizeFilterValue)
+    .filter(Boolean);
+  const text = getProductText(p);
+  const found = MATERIAL_MATCHERS.filter(([, matcher]) => matcher.test(text)).map(
+    ([label]) => label,
+  );
+
+  return [...new Set([...explicit, ...found])];
+}
+
+const COLOR_MATCHERS: Array<[string, RegExp]> = [
+  ["Amarillo", /\bamarillo\b/i],
+  ["Azul", /\bazul\b/i],
+  ["Beige", /\bbeige\b/i],
+  ["Blanco", /\bblanc[oa]s?\b/i],
+  ["Cromado", /\bcromad[oa]s?\b/i],
+  ["Gris", /\bgris(?:es)?\b/i],
+  ["Negro", /\bnegr[oa]s?\b/i],
+  ["Plateado", /\bplatead[oa]s?\b/i],
+  ["Rojo", /\broj[oa]s?\b/i],
+  ["Transparente", /\btransparente(?:s)?\b/i],
+  ["Verde", /\bverde(?:s)?\b/i],
+];
+
 function getColores(p: ProductoCatalogo): string[] {
-  const variantes = (p.variacionesColor ?? []).map((v) => v.label);
-  return variantes.length > 0 ? ["Blanco", ...variantes] : ["Blanco"];
+  const text = getProductText(p);
+  const explicit = getSpec(p, "Color")
+    .split(/[,/]+| y /i)
+    .map(normalizeFilterValue)
+    .filter(Boolean);
+  const inferred = COLOR_MATCHERS.filter(([, matcher]) => matcher.test(text)).map(
+    ([label]) => label,
+  );
+  const variants = (p.variacionesColor ?? []).map((v) => v.label);
+
+  return [...new Set([...explicit, ...inferred, ...variants].filter(Boolean))];
 }
 
 function derivarOpcionesFiltros(productos: ProductoCatalogo[]) {
   const am = [...new Set(productos.map(getAutoManual).filter(Boolean) as string[])].sort();
-  const cap = [...new Set(productos.map((p) => getSpec(p, "Capacidad")).filter(Boolean))].sort();
-  const mat = [...new Set(productos.map((p) => getSpec(p, "Material")).filter(Boolean))].sort();
+  const cap = [...new Set(productos.map(getCapacidad).filter(Boolean))].sort();
+  const mat = [...new Set(productos.flatMap(getMateriales).filter(Boolean))].sort();
   const col = [...new Set(productos.flatMap(getColores).filter(Boolean))].sort();
   return { "Automático / Manual": am, Capacidad: cap, Material: mat, Color: col };
 }
@@ -330,12 +439,12 @@ function aplicarFiltros(productos: ProductoCatalogo[], filtros: FiltrosState) {
       if (!val || !filtros["Automático / Manual"].includes(val)) return false;
     }
     if (filtros["Capacidad"]?.length > 0) {
-      const cap = getSpec(p, "Capacidad");
+      const cap = getCapacidad(p);
       if (!filtros["Capacidad"].includes(cap)) return false;
     }
     if (filtros["Material"]?.length > 0) {
-      const mat = getSpec(p, "Material");
-      if (!filtros["Material"].includes(mat)) return false;
+      const materiales = getMateriales(p);
+      if (!filtros["Material"].some((m) => materiales.includes(m))) return false;
     }
     if (filtros["Color"]?.length > 0) {
       const colores = getColores(p);
@@ -580,6 +689,14 @@ export default function CategoriasPage() {
   const [paginaState, setPaginaState] = useState({ key: pageKey, value: 1 });
   const pagina = paginaState.key === pageKey ? paginaState.value : 1;
   const setPagina = (value: number) => setPaginaState({ key: pageKey, value });
+  const setFiltrosAndReset: Dispatch<SetStateAction<FiltrosState>> = (updater) => {
+    setFiltros((current) =>
+      typeof updater === "function"
+        ? (updater as (previous: FiltrosState) => FiltrosState)(current)
+        : updater,
+    );
+    setPaginaState({ key: pageKey, value: 1 });
+  };
 
   const productosPorCategoria = products.filter((p) => {
     const esInsumos = tipoActivo === "insumos";
@@ -635,7 +752,7 @@ export default function CategoriasPage() {
         pagina={pagina}
         setPagina={setPagina}
         filtros={filtros}
-        setFiltros={setFiltros}
+        setFiltros={setFiltrosAndReset}
         hayFiltros={hayFiltros}
         opcionesFiltros={opcionesFiltros}
       />
@@ -711,7 +828,7 @@ export default function CategoriasPage() {
           {hayFiltros && (
             <button
               type="button"
-              onClick={() => setFiltros({})}
+              onClick={() => setFiltrosAndReset({})}
               className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-500 transition-colors hover:bg-red-100"
             >
               Borrar Filtros
@@ -724,7 +841,7 @@ export default function CategoriasPage() {
                 label={label}
                 opciones={opciones}
                 activos={filtros[label] ?? []}
-                onChange={(vals) => setFiltros((prev) => ({ ...prev, [label]: vals }))}
+                onChange={(vals) => setFiltrosAndReset((prev) => ({ ...prev, [label]: vals }))}
               />
             ))}
           </div>

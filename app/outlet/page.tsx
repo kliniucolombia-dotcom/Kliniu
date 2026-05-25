@@ -38,7 +38,7 @@ function AddOutletButton({ product, featured = false }: { product: ProductoCatal
       style={product.puedeComprar === false ? undefined : { background: "linear-gradient(135deg, #3b82f6, #7c3aed, #d946ef)" }}
       className={`inline-flex items-center justify-center rounded-full font-bold text-white transition-all duration-200 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-400 ${
         featured
-          ? "min-h-11 w-full px-6 py-3 text-[15px] shadow-[0_8px_28px_rgba(124,58,237,0.5)] hover:-translate-y-0.5 hover:opacity-90"
+          ? "min-h-10 w-full px-5 py-2.5 text-sm shadow-[0_8px_28px_rgba(124,58,237,0.5)] hover:-translate-y-0.5 hover:opacity-90"
           : "mt-3 min-h-10 w-full px-4 py-2.5 text-sm hover:opacity-90"
       }`}
     >
@@ -106,26 +106,26 @@ function FeaturedCarousel({ products }: { products: ProductoCatalogo[] }) {
 
   return (
     <article
-      className="overflow-hidden rounded-2xl shadow-[0_24px_64px_rgba(0,0,0,0.45)]"
+      className="flex aspect-square flex-col overflow-hidden rounded-2xl shadow-[0_24px_64px_rgba(0,0,0,0.45)]"
       style={{ background: "linear-gradient(160deg, #0f0c2e 0%, #1a1060 60%, #2d1080 100%)" }}
     >
       {/* Imagen con flechas */}
-      <div className="relative flex h-[320px] w-full items-center justify-center bg-white p-8">
+      <div className="relative flex h-[58%] min-h-0 w-full items-center justify-center bg-white p-5">
         {showDiscount && (
           <span
-            className="absolute left-4 top-4 rounded-xl px-3 py-1.5 text-sm font-black text-white shadow-lg"
+            className="absolute left-3 top-3 rounded-lg px-2.5 py-1 text-xs font-black text-white shadow-lg"
             style={{ background: "linear-gradient(135deg, #3b82f6, #7c3aed)" }}
           >
             {product.descuento}
           </span>
         )}
-        <ProductImage product={product} maxHeight={220} />
+        <ProductImage product={product} maxHeight={190} />
 
         {/* Flecha izquierda */}
         <button
           type="button"
           onClick={prev}
-          className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md transition-all hover:scale-105 hover:shadow-lg"
+          className="absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md transition-all hover:scale-105 hover:shadow-lg"
           style={{ border: "1px solid rgba(124,58,237,0.2)" }}
           aria-label="Anterior"
         >
@@ -138,7 +138,7 @@ function FeaturedCarousel({ products }: { products: ProductoCatalogo[] }) {
         <button
           type="button"
           onClick={next}
-          className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md transition-all hover:scale-105 hover:shadow-lg"
+          className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md transition-all hover:scale-105 hover:shadow-lg"
           style={{ border: "1px solid rgba(124,58,237,0.2)" }}
           aria-label="Siguiente"
         >
@@ -149,10 +149,10 @@ function FeaturedCarousel({ products }: { products: ProductoCatalogo[] }) {
       </div>
 
       {/* Info */}
-      <div className="px-5 pb-5 pt-4">
-        <div className="mb-2 flex items-center justify-between">
+      <div className="flex min-h-0 flex-1 flex-col px-5 pb-4 pt-3">
+        <div className="mb-2 flex items-center justify-between gap-2">
           <div
-            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white"
+            className="inline-flex min-w-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-white"
             style={{ background: "rgba(99,102,241,0.35)", border: "1px solid rgba(139,92,246,0.4)" }}
           >
             <svg viewBox="0 0 16 16" className="h-3 w-3 fill-[#c084fc]">
@@ -178,26 +178,26 @@ function FeaturedCarousel({ products }: { products: ProductoCatalogo[] }) {
           </div>
         </div>
 
-        <h2 className="text-[15px] font-semibold leading-snug text-white/90">
+        <h2 className="line-clamp-2 text-[13px] font-semibold leading-snug text-white/90">
           {product.nombre}
         </h2>
 
-        <div className="mt-3 flex items-end gap-3">
-          <p className="text-3xl font-black leading-none tracking-tight text-white">
+        <div className="mt-auto flex items-end gap-2 pt-2">
+          <p className="text-2xl font-black leading-none tracking-tight text-white">
             {product.precio}
           </p>
           {product.precioAnterior && (
-            <p className="pb-0.5 text-sm font-medium text-white/40 line-through">
+            <p className="pb-0.5 text-xs font-medium text-white/40 line-through">
               {product.precioAnterior}
             </p>
           )}
         </div>
 
-        <div className="mt-4 flex gap-2">
+        <div className="mt-3 flex gap-2">
           <AddOutletButton product={product} featured />
           <Link
             href="#ofertas"
-            className="inline-flex shrink-0 items-center justify-center rounded-full px-4 py-2.5 text-xs font-semibold text-white/80 transition-colors hover:text-white"
+            className="inline-flex shrink-0 items-center justify-center rounded-full px-3 py-2 text-[11px] font-semibold text-white/80 transition-colors hover:text-white"
             style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)" }}
           >
             Ver todas
@@ -239,7 +239,15 @@ export default function OutletPage() {
 
           {/* Carrusel encima en desktop */}
           {carouselProducts.length > 0 && (
-            <div className="absolute hidden lg:block" style={{ right: "3%", top: "50%", transform: "translateY(-50%)", width: "320px" }}>
+            <div
+              className="absolute hidden lg:block"
+              style={{
+                right: "8%",
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: "clamp(360px, 24vw, 420px)",
+              }}
+            >
               <FeaturedCarousel products={carouselProducts} />
             </div>
           )}
