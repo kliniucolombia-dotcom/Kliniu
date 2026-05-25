@@ -952,6 +952,7 @@ export default function AdminPage() {
   }, [orderSearch, orderShippingFilter, orders]);
 
   const productCountLabel = `${adminProducts.length} producto${adminProducts.length === 1 ? "" : "s"} en catálogo`;
+  const isOutletForm = form.categoria === "Outlet";
 
   useEffect(() => {
     if (previewImageUrl?.startsWith("blob:")) {
@@ -1412,6 +1413,7 @@ export default function AdminPage() {
     setSelectedExtraImages(Array.from({ length: EXTRA_IMAGE_SLOTS }, () => null));
     setPrimaryImageIndex(0);
     setEditingSlug(null);
+    setEditCategoryFilter("Outlet" as Categoria);
     setRequestError("");
     setFileInputKey((current) => current + 1);
     setActiveTab("create");
@@ -1675,11 +1677,16 @@ export default function AdminPage() {
               <div className="mb-8 flex items-center justify-between gap-4">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#8b8d91]">
-                    Nuevo producto
+                    {isOutletForm ? "Nuevo producto outlet" : "Nuevo producto"}
                   </p>
                   <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-[#0C535B]">
-                    Crear producto
+                    {isOutletForm ? "Crear producto para Outlet" : "Crear producto"}
                   </h2>
+                  {isOutletForm && (
+                    <p className="mt-2 text-sm leading-6 text-[#6e7379]">
+                      Este producto quedará marcado en la categoría Outlet y será el único tipo que aparece en /outlet.
+                    </p>
+                  )}
                 </div>
                 {saved && (
                   <span className="rounded-full bg-[#0C535B] px-4 py-2 text-sm font-semibold text-white">
@@ -1786,16 +1793,22 @@ export default function AdminPage() {
                 </label>
 
                 <label className="space-y-2">
-                  <span className="text-sm font-medium text-[#4f545a]">Precio anterior</span>
+                  <span className="text-sm font-medium text-[#4f545a]">
+                    {isOutletForm ? "Precio anterior para mostrar descuento" : "Precio anterior"}
+                  </span>
                   <input
                     name="precioAnteriorValor"
                     type="number"
                     min="1"
                     value={form.precioAnteriorValor}
                     onChange={handleChange}
-                    required
                     className="w-full rounded-2xl border border-black/10 bg-[#fafaf9] px-4 py-3 text-sm text-[#1f2328] outline-none transition-colors duration-200 focus:border-[#27B1B8]"
                   />
+                  <p className="text-xs leading-6 text-[#6e7379]">
+                    {isOutletForm
+                      ? "Opcional, pero recomendado para que el outlet muestre el porcentaje de descuento."
+                      : "Opcional. Si lo dejas vacío, se usará el precio actual."}
+                  </p>
                 </label>
 
                 <label className="space-y-2">
@@ -2275,9 +2288,11 @@ export default function AdminPage() {
                         min="1"
                         value={form.precioAnteriorValor}
                         onChange={handleChange}
-                        required
                         className="w-full rounded-2xl border border-black/10 bg-[#fafaf9] px-4 py-3 text-sm text-[#1f2328] outline-none transition-colors duration-200 focus:border-[#27B1B8]"
                       />
+                      <p className="text-xs leading-6 text-[#6e7379]">
+                        Opcional. Si lo dejas vacío, se usará el precio actual.
+                      </p>
                     </label>
 
                     <label className="space-y-2">

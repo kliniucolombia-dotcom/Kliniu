@@ -8,6 +8,13 @@ import { useProducts } from "../components/products-provider";
 import type { ProductoCatalogo } from "../data/catalog";
 import SiteFooter from "../components/site-footer";
 
+function isOutletProduct(product: ProductoCatalogo) {
+  return product.categoria === "Outlet";
+}
+
+function hasVisibleDiscount(product: ProductoCatalogo) {
+  return Boolean(product.descuento && product.descuento !== "-0%");
+}
 
 function AddOutletButton({ product, featured = false }: { product: ProductoCatalogo; featured?: boolean }) {
   const { addItem } = useCart();
@@ -55,13 +62,15 @@ function ProductImage({ product, maxHeight }: { product: ProductoCatalogo; maxHe
 }
 
 function ProductCard({ product }: { product: ProductoCatalogo }) {
+  const showDiscount = hasVisibleDiscount(product);
+
   return (
     <article
       className="group flex min-h-[240px] flex-col overflow-hidden rounded-2xl shadow-[0_8px_28px_rgba(0,0,0,0.3)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(124,58,237,0.35)]"
       style={{ background: "linear-gradient(160deg, #0f0c2e 0%, #1a1060 60%, #2d1080 100%)" }}
     >
       <div className="relative flex h-[130px] items-center justify-center bg-white px-4">
-        {product.descuento ? (
+        {showDiscount ? (
           <span
             className="absolute left-3 top-3 z-10 rounded-lg px-2.5 py-1 text-[11px] font-black text-white"
             style={{ background: "linear-gradient(135deg, #3b82f6, #7c3aed)" }}
@@ -90,6 +99,7 @@ function FeaturedCarousel({ products }: { products: ProductoCatalogo[] }) {
   const [index, setIndex] = useState(0);
   const product = products[index];
   if (!product) return null;
+  const showDiscount = hasVisibleDiscount(product);
 
   const prev = () => setIndex((i) => (i - 1 + products.length) % products.length);
   const next = () => setIndex((i) => (i + 1) % products.length);
@@ -101,7 +111,7 @@ function FeaturedCarousel({ products }: { products: ProductoCatalogo[] }) {
     >
       {/* Imagen con flechas */}
       <div className="relative flex h-[320px] w-full items-center justify-center bg-white p-8">
-        {product.descuento && (
+        {showDiscount && (
           <span
             className="absolute left-4 top-4 rounded-xl px-3 py-1.5 text-sm font-black text-white shadow-lg"
             style={{ background: "linear-gradient(135deg, #3b82f6, #7c3aed)" }}
@@ -200,20 +210,17 @@ function FeaturedCarousel({ products }: { products: ProductoCatalogo[] }) {
 
 export default function OutletPage() {
   const { products } = useProducts();
-  const featuredProduct = useMemo(
-    () =>
-      products.find((p) => p.nombre.toLowerCase().includes("doble de jabón 800")) ??
-      products.find((p) => p.nombre.toLowerCase().includes("dispensador")) ??
-      products[0],
+  const outletCatalog = useMemo(
+    () => products.filter(isOutletProduct),
     [products],
   );
   const outletProducts = useMemo(
-    () => products.filter((p) => p.slug !== featuredProduct?.slug).slice(0, 5),
-    [featuredProduct?.slug, products],
+    () => outletCatalog.slice(0, 5),
+    [outletCatalog],
   );
   const carouselProducts = useMemo(
-    () => products.slice(0, 8),
-    [products],
+    () => outletCatalog.slice(0, 8),
+    [outletCatalog],
   );
 
   return (
@@ -267,11 +274,20 @@ export default function OutletPage() {
               </Link>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-              {outletProducts.map((product) => (
-                <ProductCard key={product.slug} product={product} />
-              ))}
-            </div>
+            {outletCatalog.length > 0 ? (
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                {outletProducts.map((product) => (
+                  <ProductCard key={product.slug} product={product} />
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-white/10 bg-white/8 px-6 py-10 text-center text-white">
+                <p className="text-lg font-bold">Aún no hay productos en Outlet.</p>
+                <p className="mt-2 text-sm text-white/70">
+                  Crea productos desde el administrador usando el botón Crear Outlet.
+                </p>
+              </div>
+            )}
 
             <aside className="relative mt-4 overflow-hidden rounded-2xl" style={{ aspectRatio: "16/4" }}>
               <Image
