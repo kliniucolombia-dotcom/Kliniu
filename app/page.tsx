@@ -86,16 +86,14 @@ export default async function Home() {
       <HeroCarousel />
 
       {/* ── Productos destacados ── */}
-      <section className="py-16">
-        <div className="mx-auto max-w-[1440px] px-6">
-          <div className="flex items-start gap-10">
-            <div className="w-56 shrink-0 pt-1">
-              <h2 className="text-3xl font-extrabold leading-tight tracking-tight text-[#27B1B8]">
-                Productos
-                <br />
-                destacados
+      <section className="py-10 md:py-16">
+        <div className="mx-auto max-w-[1440px] px-4 sm:px-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10">
+            <div className="flex items-baseline justify-between lg:block lg:w-56 lg:shrink-0 lg:pt-1">
+              <h2 className="text-2xl font-extrabold leading-tight tracking-tight text-[#27B1B8] md:text-3xl">
+                Productos destacados
               </h2>
-              <p className="mt-2 text-sm leading-5 text-[#6e7379]">
+              <p className="hidden text-sm leading-5 text-[#6e7379] lg:mt-2 lg:block">
                 Los más elegidos
                 <br />
                 por nuestros clientes
@@ -107,10 +105,10 @@ export default async function Home() {
       </section>
 
       {/* ── Soluciones para cada necesidad (videos) ── */}
-      <section className="bg-[#f0f8f8] py-16">
-        <div className="mx-auto max-w-[1440px] px-6">
-          <div className="mb-8 text-center">
-            <h2 className="text-2xl font-extrabold tracking-tight text-[#27B1B8]">
+      <section className="bg-[#f0f8f8] py-10 md:py-16">
+        <div className="mx-auto max-w-[1440px] px-4 sm:px-6">
+          <div className="mb-6 text-center md:mb-8">
+            <h2 className="text-xl font-extrabold tracking-tight text-[#27B1B8] sm:text-2xl">
               Soluciones para cada necesidad
             </h2>
             <p className="mt-2 text-sm text-[#6e7379]">
@@ -127,22 +125,19 @@ export default async function Home() {
       </section>
 
       {/* ── Combos recomendados ── */}
-      <section className="bg-white py-16">
-        <div className="mx-auto max-w-[1440px] px-6">
-          <div className="flex items-start gap-10">
-            <div className="w-56 shrink-0 pt-1">
-              <h2 className="text-3xl font-extrabold leading-tight tracking-tight text-[#27B1B8]">
-                Combos
-                <br />
-                recomendados
+      <section className="bg-white py-10 md:py-16">
+        <div className="mx-auto max-w-[1440px] px-4 sm:px-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10">
+            <div className="flex items-baseline justify-between lg:block lg:w-56 lg:shrink-0 lg:pt-1">
+              <h2 className="text-2xl font-extrabold leading-tight tracking-tight text-[#27B1B8] md:text-3xl">
+                Combos recomendados
               </h2>
-              <p className="mt-2 text-sm leading-5 text-[#6e7379]">
+              <p className="hidden text-sm leading-5 text-[#6e7379] lg:mt-2 lg:block">
                 Todo lo que necesitas en
                 <br />
                 un solo combo
               </p>
             </div>
-
             <ComboCarousel combos={combos} />
           </div>
         </div>
@@ -150,23 +145,23 @@ export default async function Home() {
 
       {/* ── Features strip ── */}
       <section className="relative overflow-visible bg-[#0C535B] py-6">
-        <div className="mx-auto max-w-[1440px] px-6">
-          <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-            <div style={{ flex: 1, display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "20px 20px" }}>
+        <div className="mx-auto max-w-[1440px] px-4 sm:px-6">
+          <div className="flex items-center gap-6">
+            <div className="grid flex-1 grid-cols-3 gap-4 sm:grid-cols-5">
               {features.map((f) => (
                 <div
                   key={f.titulo}
                   className="flex min-w-0 flex-col items-center gap-2 text-center text-white"
                 >
-                  <img src={f.icon} alt={f.titulo} className="h-10 w-10 object-contain brightness-0 invert" />
+                  <img src={f.icon} alt={f.titulo} className="h-9 w-9 object-contain brightness-0 invert sm:h-10 sm:w-10" />
                   <div className="min-w-0">
-                    <p className="whitespace-pre-line text-xs font-bold leading-tight">{f.titulo}</p>
-                    <p className="mt-0.5 whitespace-pre-line text-[10px] leading-4 text-white/65">{f.desc}</p>
+                    <p className="whitespace-pre-line text-[10px] font-bold leading-tight sm:text-xs">{f.titulo}</p>
+                    <p className="mt-0.5 hidden whitespace-pre-line text-[10px] leading-4 text-white/65 sm:block">{f.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="hidden w-56 shrink-0 md:block" style={{ marginTop: "-60px", marginBottom: "-60px" }}>
+            <div className="hidden w-44 shrink-0 md:block lg:w-56" style={{ marginTop: "-60px", marginBottom: "-60px" }}>
               <Image
                 src="/foca-ok-kliniu-original.png"
                 alt="Foca Kliniu"
@@ -180,18 +175,16 @@ export default async function Home() {
       </section>
 
       {/* ── Dos CTAs ── */}
-      <section className="bg-white px-6 py-16">
-        <div className="mx-auto grid max-w-[1440px] gap-5 md:grid-cols-2">
+      <section className="bg-white px-4 py-10 sm:px-6 md:py-16">
+        <div className="mx-auto grid max-w-[1440px] gap-4 md:grid-cols-2 md:gap-5">
           {/* Asesoría */}
           <div className="flex overflow-hidden rounded-2xl border border-black/8" style={{ background: "#EAF8F7" }}>
-            <div className="flex flex-1 flex-col justify-center p-8 md:max-w-[48%]">
+            <div className="flex flex-1 flex-col justify-center p-6 sm:p-8 md:max-w-[52%]">
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#27B1B8]">
                 Asesoría personalizada
               </p>
-              <h3 className="mt-3 text-xl font-extrabold leading-snug tracking-tight text-[#0C535B]">
-                Te ayudamos a elegir
-                <br />
-                la mejor solución
+              <h3 className="mt-3 text-lg font-extrabold leading-snug tracking-tight text-[#0C535B] sm:text-xl">
+                Te ayudamos a elegir la mejor solución
               </h3>
               <p className="mt-2 text-sm leading-6 text-[#5a7a7c]">
                 Nuestro equipo experto te acompaña en cada paso.
@@ -217,14 +210,12 @@ export default async function Home() {
 
           {/* Reposición */}
           <div className="flex overflow-hidden rounded-2xl border border-black/8" style={{ background: "#EAF8F7" }}>
-            <div className="flex flex-1 flex-col justify-center p-8 md:max-w-[48%]">
+            <div className="flex flex-1 flex-col justify-center p-6 sm:p-8 md:max-w-[52%]">
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#27B1B8]">
                 Reposición fácil y rápida
               </p>
-              <h3 className="mt-3 text-xl font-extrabold leading-snug tracking-tight text-[#111]">
-                Insumos que tu espacio
-                <br />
-                necesita, siempre a tiempo
+              <h3 className="mt-3 text-lg font-extrabold leading-snug tracking-tight text-[#111] sm:text-xl">
+                Insumos que tu espacio necesita, siempre a tiempo
               </h3>
               <p className="mt-2 text-sm leading-6 text-[#6e7379]">
                 Compra recurrente que facilita tu operación.

@@ -123,7 +123,15 @@ export default function ContactoPage() {
           fill
           priority
           sizes="100vw"
-          className="object-cover object-center"
+          className="hidden object-cover object-center md:block"
+        />
+        <Image
+          src="/resp-banner-contacto.jpg"
+          alt="Atención Kliniu"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center md:hidden"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-[#f1dfcc]/95 via-[#f1dfcc]/45 to-transparent md:from-[#f1dfcc]/80 md:via-transparent" />
         <div className="relative mx-auto flex min-h-[250px] max-w-[1440px] items-center px-5 py-10 md:min-h-[300px] md:pl-[100px]">
@@ -166,11 +174,11 @@ export default function ContactoPage() {
       </section>
 
       {/* Paises donde operamos */}
-      <section className="bg-white py-14">
+      <section className="bg-white py-10 md:py-14">
         <div className="mx-auto max-w-[1440px] px-5">
-          <div className="grid gap-10 lg:grid-cols-[300px_1fr]">
+          <div className="grid gap-8 lg:grid-cols-[280px_1fr] lg:gap-10">
             {/* Left */}
-            <div className="flex min-h-[430px] flex-col">
+            <div className="flex flex-col lg:min-h-[430px]">
               <h2 className="text-3xl font-black leading-[0.95] tracking-tight text-[#0C535B]">
                 Países donde
                 <br />
@@ -185,7 +193,7 @@ export default function ContactoPage() {
                 alt="Foca Kliniu señalando"
                 width={300}
                 height={275}
-                className="mt-auto w-[255px] object-contain"
+                className="hidden w-[220px] object-contain lg:mt-auto lg:block"
               />
             </div>
 

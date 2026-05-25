@@ -5,19 +5,20 @@ export type CategoriaMeta = {
   iconoImagen?: string;
   bannerImagen?: string;
   heroBannerImagen?: string;
+  heroBannerMovil?: string;
   bannerCopy?: string;
   heroTitulo1?: string;
   heroTitulo2?: string;
   heroDestacado?: string;
   textoDark?: boolean;
   beneficiosInline?: boolean;
-  beneficiosHero?: { icono: string; texto: string }[];
+  beneficiosHero?: { icono: string; imagen?: string; texto: string }[];
   comoElegirFoca?: string;
   comoElegirTitulo?: string;
   comoElegirTituloCompleto?: string;
   comoElegirSubtitulo?: string;
   comoElegirDark?: boolean;
-  comoElegir?: { icono: string; titulo: string; descripcion: string }[];
+  comoElegir?: { icono: string; imagen?: string; titulo: string; descripcion: string }[];
 };
 
 export const categoriasData: readonly CategoriaMeta[] = [
@@ -27,6 +28,7 @@ export const categoriasData: readonly CategoriaMeta[] = [
     icono: "◒",
     bannerImagen: "/cat-liquidos.png",
     heroBannerImagen: "/category-banner-liquidos.jpg",
+    heroBannerMovil: "/resp-banner-liquidos.jpg",
     iconoImagen: "/cat-liquidos.png",
     bannerCopy: "Soluciones de dispensación líquida para higiene eficiente en cualquier espacio.",
     heroTitulo1: "Dispensadores para",
@@ -36,16 +38,16 @@ export const categoriasData: readonly CategoriaMeta[] = [
     comoElegirFoca: "/foca-como-elegir-liquidos.png",
     comoElegirTitulo: "dispensador de líquidos ideal",
     beneficiosHero: [
-      { icono: "💧", texto: "Dosificación exacta" },
-      { icono: "💰", texto: "Ahorro de insumos" },
-      { icono: "🛡️", texto: "Higiene superior y confiable" },
-      { icono: "🔧", texto: "Fáciles de instalar y mantener" },
+      { icono: "💧", imagen: "/iconos/dosificacion.png", texto: "Dosificación exacta" },
+      { icono: "💰", imagen: "/iconos/ahorro-insumos.png", texto: "Ahorro de insumos" },
+      { icono: "🛡️", imagen: "/iconos/higiene-premium.png", texto: "Higiene superior y confiable" },
+      { icono: "🔧", imagen: "/iconos/mantenimiento.png", texto: "Fáciles de instalar y mantener" },
     ],
     comoElegir: [
-      { icono: "👥", titulo: "Capacidad", descripcion: "Elige según el número de personas que lo usarán diariamente." },
-      { icono: "💧", titulo: "Tipo de líquido", descripcion: "Asegúrate de que el dispensador sea compatible con el líquido que vas a usar." },
-      { icono: "🔩", titulo: "Instalación", descripcion: "Considera el tipo de montaje y el espacio disponible." },
-      { icono: "🚦", titulo: "Tipo de uso", descripcion: "Alto tráfico requiere dispensadores automáticos de mayor capacidad." },
+      { icono: "👥", imagen: "/iconos/grafica-capacidad.png", titulo: "Capacidad", descripcion: "Elige según el número de personas que lo usarán diariamente." },
+      { icono: "💧", imagen: "/iconos/jabon-espuma.png", titulo: "Tipo de líquido", descripcion: "Asegúrate de que el dispensador sea compatible con el líquido que vas a usar." },
+      { icono: "🔩", imagen: "/iconos/llave-instalacion.png", titulo: "Instalación", descripcion: "Considera el tipo de montaje y el espacio disponible." },
+      { icono: "🚦", imagen: "/iconos/sensor-uso.png", titulo: "Tipo de uso", descripcion: "Alto tráfico requiere dispensadores automáticos de mayor capacidad." },
     ],
   },
   {
@@ -54,6 +56,7 @@ export const categoriasData: readonly CategoriaMeta[] = [
     icono: "◎",
     bannerImagen: "/cat-papel.png",
     heroBannerImagen: "/category-banner-papel.jpg",
+    heroBannerMovil: "/resp-banner-papel.jpg",
     iconoImagen: "/cat-papel.png",
     bannerCopy: "Sistemas de dispensación de papel diseñados para crear higiene, ahorro y eficiencia en cada uso.",
     heroTitulo1: "Dispensadores de",
@@ -63,16 +66,16 @@ export const categoriasData: readonly CategoriaMeta[] = [
     comoElegirFoca: "/foca-como-elegir-papel.png",
     comoElegirTitulo: "papel y toalla ideal",
     beneficiosHero: [
-      { icono: "💰", texto: "Ahorro en consumo" },
-      { icono: "📦", texto: "Despacho controlado" },
-      { icono: "💪", texto: "Alta resistencia y durabilidad" },
-      { icono: "🔧", texto: "Fácil instalación y mantenimiento" },
+      { icono: "💰", imagen: "/iconos/ahorro-insumos.png", texto: "Ahorro en consumo" },
+      { icono: "📦", imagen: "/iconos/rollo-papel.png", texto: "Despacho controlado" },
+      { icono: "💪", imagen: "/iconos/calidad-premium.png", texto: "Alta resistencia y durabilidad" },
+      { icono: "🔧", imagen: "/iconos/herramienta.png", texto: "Fácil instalación y mantenimiento" },
     ],
     comoElegir: [
-      { icono: "👥", titulo: "Capacidad", descripcion: "Elige según el flujo de personas y la frecuencia de uso." },
-      { icono: "📄", titulo: "Tipo de papel", descripcion: "Interdoblado, rollo o jumbo según tus necesidades." },
-      { icono: "🚦", titulo: "Nivel de uso", descripcion: "Alto tráfico requiere dispensadores más resistentes y de mayor capacidad." },
-      { icono: "🔩", titulo: "Instalación", descripcion: "Considera el tipo de montaje y el espacio disponible." },
+      { icono: "👥", imagen: "/iconos/grafica-capacidad.png", titulo: "Capacidad", descripcion: "Elige según el flujo de personas y la frecuencia de uso." },
+      { icono: "📄", imagen: "/iconos/rollo-papel2.png", titulo: "Tipo de papel", descripcion: "Interdoblado, rollo o jumbo según tus necesidades." },
+      { icono: "🚦", imagen: "/iconos/personas.png", titulo: "Nivel de uso", descripcion: "Alto tráfico requiere dispensadores más resistentes y de mayor capacidad." },
+      { icono: "🔩", imagen: "/iconos/llave-instalacion.png", titulo: "Instalación", descripcion: "Considera el tipo de montaje y el espacio disponible." },
     ],
   },
   {
@@ -81,6 +84,7 @@ export const categoriasData: readonly CategoriaMeta[] = [
     icono: "◍",
     bannerImagen: "/cat-klinox.png",
     heroBannerImagen: "/category-banner-klinox.jpg",
+    heroBannerMovil: "/resp-banner-klinox.jpg",
     iconoImagen: "/cat-klinox.png",
     bannerCopy: "Dispensadores premium en acero inoxidable diseñados para máxima durabilidad.",
     heroTitulo1: "Dispensadores en",
@@ -91,16 +95,16 @@ export const categoriasData: readonly CategoriaMeta[] = [
     comoElegirTitulo: "dispensador inoxidable ideal",
     beneficiosInline: true,
     beneficiosHero: [
-      { icono: "🏷️", texto: "Acero inoxidable de alta calidad" },
-      { icono: "🛡️", texto: "Resistente a la corrosión y humedad" },
-      { icono: "💎", texto: "Diseño elegante y moderno" },
-      { icono: "🔧", texto: "Fácil instalación y mantenimiento" },
+      { icono: "🏷️", imagen: "/iconos/calidad-premium.png", texto: "Acero inoxidable de alta calidad" },
+      { icono: "🛡️", imagen: "/iconos/antibacterial.png", texto: "Resistente a la corrosión y humedad" },
+      { icono: "💎", imagen: "/iconos/higiene-premium.png", texto: "Diseño elegante y moderno" },
+      { icono: "🔧", imagen: "/iconos/mantenimiento.png", texto: "Fácil instalación y mantenimiento" },
     ],
     comoElegir: [
-      { icono: "👥", titulo: "Capacidad", descripcion: "Elige según el flujo de personas y la frecuencia de uso." },
-      { icono: "🧴", titulo: "Tipo de producto", descripcion: "Define si necesitas jabón, papel o una solución combinada." },
-      { icono: "🚦", titulo: "Nivel de uso", descripcion: "Alto tráfico requiere mayor capacidad y resistencia." },
-      { icono: "🔩", titulo: "Instalación", descripcion: "Considera el tipo de montaje y el espacio disponible." },
+      { icono: "👥", imagen: "/iconos/grafica-capacidad.png", titulo: "Capacidad", descripcion: "Elige según el flujo de personas y la frecuencia de uso." },
+      { icono: "🧴", imagen: "/iconos/botella-liquido.png", titulo: "Tipo de producto", descripcion: "Define si necesitas jabón, papel o una solución combinada." },
+      { icono: "🚦", imagen: "/iconos/personas.png", titulo: "Nivel de uso", descripcion: "Alto tráfico requiere mayor capacidad y resistencia." },
+      { icono: "🔩", imagen: "/iconos/llave-instalacion.png", titulo: "Instalación", descripcion: "Considera el tipo de montaje y el espacio disponible." },
     ],
   },
   {
@@ -109,6 +113,7 @@ export const categoriasData: readonly CategoriaMeta[] = [
     icono: "◇",
     bannerImagen: "/cat-crema-dental.png",
     heroBannerImagen: "/category-banner-crema-dental.jpg",
+    heroBannerMovil: "/resp-banner-crema-dental.jpg",
     iconoImagen: "/cat-crema-dental.png",
     bannerCopy: "Sistemas de dispensación higiénica de crema dental para instituciones, colegios y empresas.",
     heroTitulo1: "Dispensador de",
@@ -118,16 +123,16 @@ export const categoriasData: readonly CategoriaMeta[] = [
     comoElegirFoca: "/foca-como-elegir-crema-dental.png",
     comoElegirTitulo: "dispensador de crema dental ideal",
     beneficiosHero: [
-      { icono: "🧴", texto: "Dosificación higiénica" },
-      { icono: "💰", texto: "Ahorro y control" },
-      { icono: "🛡️", texto: "Mayor higiene y seguridad" },
-      { icono: "🔧", texto: "Fácil instalación y recarga" },
+      { icono: "🧴", imagen: "/iconos/higiene-premium.png", texto: "Dosificación higiénica" },
+      { icono: "💰", imagen: "/iconos/ahorro-insumos.png", texto: "Ahorro y control" },
+      { icono: "🛡️", imagen: "/iconos/antibacterial.png", texto: "Mayor higiene y seguridad" },
+      { icono: "🔧", imagen: "/iconos/herramienta.png", texto: "Fácil instalación y recarga" },
     ],
     comoElegir: [
-      { icono: "🖐️", titulo: "Tipo de dispensador", descripcion: "Manual o automático según el nivel de uso y preferencia." },
-      { icono: "👥", titulo: "Capacidad", descripcion: "Elige la capacidad adecuada según la cantidad de usuarios." },
-      { icono: "🔩", titulo: "Instalación", descripcion: "Pared o sobreponer, según el espacio disponible." },
-      { icono: "🏫", titulo: "Uso recomendado", descripcion: "Institucional, empresarial, colegios y más." },
+      { icono: "🖐️", imagen: "/iconos/disp-sensor.png", titulo: "Tipo de dispensador", descripcion: "Manual o automático según el nivel de uso y preferencia." },
+      { icono: "👥", imagen: "/iconos/grafica-capacidad.png", titulo: "Capacidad", descripcion: "Elige la capacidad adecuada según la cantidad de usuarios." },
+      { icono: "🔩", imagen: "/iconos/llave-instalacion.png", titulo: "Instalación", descripcion: "Pared o sobreponer, según el espacio disponible." },
+      { icono: "🏫", imagen: "/iconos/clinica.png", titulo: "Uso recomendado", descripcion: "Institucional, empresarial, colegios y más." },
     ],
   },
   {
@@ -136,6 +141,7 @@ export const categoriasData: readonly CategoriaMeta[] = [
     icono: "◓",
     bannerImagen: "/cat-hoteles.png",
     heroBannerImagen: "/category-banner-hoteles.jpg",
+    heroBannerMovil: "/resp-banner-hotel.jpg",
     iconoImagen: "/cat-hoteles.png",
     bannerCopy: "Sistemas de dispensación de papel diseñados para crear higiene, ahorro y eficiencia en cada uso.",
     heroTitulo1: "Dispensadores para",
@@ -147,16 +153,16 @@ export const categoriasData: readonly CategoriaMeta[] = [
     comoElegirTituloCompleto: "¿Por qué elegir KLINIU para tu negocio?",
     comoElegirSubtitulo: "Soluciones pensadas para mejorar la experiencia de tus clientes y la eficiencia de tu operación.",
     beneficiosHero: [
-      { icono: "⭐", texto: "Experiencia superior" },
-      { icono: "💰", texto: "Ahorro y eficiencia" },
-      { icono: "🛡️", texto: "Higiene garantizada" },
-      { icono: "✨", texto: "Diseños que elevan tu marca" },
+      { icono: "⭐", imagen: "/iconos/hotel.png", texto: "Experiencia superior" },
+      { icono: "💰", imagen: "/iconos/ahorro-insumos.png", texto: "Ahorro y eficiencia" },
+      { icono: "🛡️", imagen: "/iconos/antibacterial.png", texto: "Higiene garantizada" },
+      { icono: "✨", imagen: "/iconos/restaurante.png", texto: "Diseños que elevan tu marca" },
     ],
     comoElegir: [
-      { icono: "💰", titulo: "Ahorro en consumo", descripcion: "Reduce el gasto en insumos con sistemas de dosificación controlada." },
-      { icono: "🛡️", titulo: "Higiene profesional", descripcion: "Garantiza estándares de higiene para tus clientes y colaboradores." },
-      { icono: "🔧", titulo: "Fácil mantenimiento", descripcion: "Diseñados para una recarga y limpieza rápida y sin complicaciones." },
-      { icono: "🤝", titulo: "Soporte especializado", descripcion: "Acompañamiento técnico y comercial en todo momento." },
+      { icono: "💰", imagen: "/iconos/grafica-capacidad.png", titulo: "Ahorro en consumo", descripcion: "Reduce el gasto en insumos con sistemas de dosificación controlada." },
+      { icono: "🛡️", imagen: "/iconos/jabon-espuma.png", titulo: "Higiene profesional", descripcion: "Garantiza estándares de higiene para tus clientes y colaboradores." },
+      { icono: "🔧", imagen: "/iconos/llave-instalacion.png", titulo: "Fácil mantenimiento", descripcion: "Diseñados para una recarga y limpieza rápida y sin complicaciones." },
+      { icono: "🤝", imagen: "/iconos/soporte2.png", titulo: "Soporte especializado", descripcion: "Acompañamiento técnico y comercial en todo momento." },
     ],
   },
   {
@@ -165,6 +171,7 @@ export const categoriasData: readonly CategoriaMeta[] = [
     icono: "◈",
     bannerImagen: "/cat-insumos.png",
     heroBannerImagen: "/category-banner-insumos.jpg",
+    heroBannerMovil: "/resp-banner-insumos.jpg",
     iconoImagen: "/cat-insumos.png",
     bannerCopy: "Insumos y repuestos originales para mantener tus dispensadores KLINIU siempre en óptimas condiciones.",
     heroTitulo1: "Insumos y",
@@ -174,16 +181,16 @@ export const categoriasData: readonly CategoriaMeta[] = [
     comoElegirTituloCompleto: "¿Por qué usar repuestos originales KLINIU?",
     comoElegirSubtitulo: "Garantiza el correcto funcionamiento y vida útil de tu dispensador.",
     beneficiosHero: [
-      { icono: "🔧", texto: "Compatibilidad garantizada" },
-      { icono: "💰", texto: "Ahorro a largo plazo" },
-      { icono: "🛡️", texto: "Durabilidad y calidad" },
-      { icono: "⚡", texto: "Reposición rápida" },
+      { icono: "🔧", imagen: "/iconos/compatibilidad.png", texto: "Compatibilidad garantizada" },
+      { icono: "💰", imagen: "/iconos/ahorro-insumos.png", texto: "Ahorro a largo plazo" },
+      { icono: "🛡️", imagen: "/iconos/garantia.png", texto: "Durabilidad y calidad" },
+      { icono: "⚡", imagen: "/iconos/reposicion-rapida.png", texto: "Reposición rápida" },
     ],
     comoElegir: [
-      { icono: "🔍", titulo: "Identifica tu modelo", descripcion: "Revisa el modelo de tu dispensador antes de elegir el repuesto." },
-      { icono: "🧴", titulo: "Tipo de insumo", descripcion: "Jabón, papel, repuestos mecánicos o kits de mantenimiento." },
-      { icono: "📦", titulo: "Cantidad", descripcion: "Compra en mayor cantidad para reducir costos de reposición." },
-      { icono: "🤝", titulo: "Asesoría", descripcion: "Nuestro equipo te ayuda a encontrar el repuesto correcto." },
+      { icono: "🔍", imagen: "/iconos/llave-instalacion.png", titulo: "Identifica tu modelo", descripcion: "Revisa el modelo de tu dispensador antes de elegir el repuesto." },
+      { icono: "🧴", imagen: "/iconos/botella-liquido.png", titulo: "Tipo de insumo", descripcion: "Jabón, papel, repuestos mecánicos o kits de mantenimiento." },
+      { icono: "📦", imagen: "/iconos/grafica-capacidad.png", titulo: "Cantidad", descripcion: "Compra en mayor cantidad para reducir costos de reposición." },
+      { icono: "🤝", imagen: "/iconos/soporte2.png", titulo: "Asesoría", descripcion: "Nuestro equipo te ayuda a encontrar el repuesto correcto." },
     ],
   },
   {

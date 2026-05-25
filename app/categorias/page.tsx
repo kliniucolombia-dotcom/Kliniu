@@ -13,6 +13,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "../components/cart-provider";
 import WhatsAppAsesor from "../components/whatsapp-asesor";
+import AsesorBanner from "../components/asesor-banner";
 import { useProducts } from "../components/products-provider";
 import {
   categoriaDesdeSlug,
@@ -99,9 +100,9 @@ function DropdownFiltro({
 /* ─────────────────────── Tarjeta Producto ─────────────────────── */
 function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
   const { addItem } = useCart();
+  const router = useRouter();
   const [agregado, setAgregado] = useState(false);
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
-  const [imgLoaded, setImgLoaded] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); }, []);
@@ -113,6 +114,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => setAgregado(false), 1400);
   };
+  const goToDetail = () => router.push(`/producto/${producto.slug}`);
 
   const tipoBadge = producto.descripcion?.split("·")[0]?.trim();
   const variaciones = producto.variacionesColor ?? [];
@@ -120,14 +122,21 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
     ? (variaciones.find((v) => v.color === hoveredColor)?.image ?? producto.imagen)
     : producto.imagen;
 
-  const prevImagenRef = useRef(imagenActual);
-  if (prevImagenRef.current !== imagenActual) {
-    prevImagenRef.current = imagenActual;
-    setImgLoaded(false);
-  }
-
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-black/8 bg-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.10)]">
+    <article
+      role="link"
+      tabIndex={0}
+      onClick={goToDetail}
+      onKeyDown={(event) => {
+        if (event.currentTarget !== event.target) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          goToDetail();
+        }
+      }}
+      className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-black/8 bg-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.10)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#27B1B8]"
+      aria-label={`Ver detalle de ${producto.nombre}`}
+    >
       {/* Badge */}
       {producto.destacado && (
         <span className="absolute left-3 top-3 z-10 rounded-lg bg-[#f5a623] px-2.5 py-1 text-[10px] font-bold text-white">
@@ -137,19 +146,15 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
 
       {/* Image */}
       <div className="relative flex h-44 items-center justify-center bg-white px-6 py-4">
-        {!imgLoaded && (
-          <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-[#f0f0f0] via-[#e8e8e8] to-[#f0f0f0]" />
-        )}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
+          key={imagenActual}
           src={imagenActual || "/product-placeholder.png"}
           alt={producto.nombre}
           loading="lazy"
-          className={`max-h-36 w-auto max-w-full object-contain transition-opacity duration-300 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
-          onLoad={() => setImgLoaded(true)}
+          className="max-h-36 w-auto max-w-full object-contain transition-opacity duration-300"
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png";
-            setImgLoaded(true);
           }}
         />
       </div>
@@ -173,6 +178,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
                 key={v.color}
                 type="button"
                 title={v.label}
+                onClick={(event) => event.stopPropagation()}
                 onMouseEnter={() => setHoveredColor(v.color)}
                 onMouseLeave={() => setHoveredColor(null)}
                 className={`h-4 w-4 rounded-full border transition-transform duration-150 hover:scale-125 ${
@@ -194,13 +200,17 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
         <div className="flex gap-2 pt-2">
           <Link
             href={`/producto/${producto.slug}`}
+            onClick={(event) => event.stopPropagation()}
             className="flex-1 rounded-full border border-[#27B1B8] px-3 py-2 text-center text-xs font-semibold text-[#27B1B8] transition-colors hover:bg-[#27B1B8] hover:text-white"
           >
             Ver detalle
           </Link>
           <button
             type="button"
-            onClick={handleAddToCart}
+            onClick={(event) => {
+              event.stopPropagation();
+              handleAddToCart();
+            }}
             disabled={producto.puedeComprar === false}
             aria-label={`Agregar ${producto.nombre} al carrito`}
             className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
@@ -478,14 +488,22 @@ function InsumosRepuestosPage({
   return (
     <main className="min-h-screen bg-white text-[#073F43]">
       <section className="bg-white">
-        <div className="relative aspect-[2400/500] overflow-hidden bg-[#ead0bd]">
+        <div className="relative aspect-[2400/500] overflow-hidden bg-[#ead0bd] md:aspect-[2400/500] aspect-[4/3]">
           <Image
             src="/insumos/banner-insumos-repuestos.jpg"
             alt="Insumos y repuestos Kliniu"
             fill
             priority
             sizes="100vw"
-            className="object-cover object-center"
+            className="hidden object-cover object-center md:block"
+          />
+          <Image
+            src="/resp-banner-insumos.jpg"
+            alt="Insumos y repuestos Kliniu"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-center md:hidden"
           />
           <div className="absolute inset-0 flex items-center">
             <div className="mx-auto flex h-full w-full max-w-[1440px] items-center px-6 sm:px-10 lg:px-14">
@@ -500,14 +518,14 @@ function InsumosRepuestosPage({
             </p>
             <div className="mt-6 hidden w-fit items-center gap-0 rounded-sm bg-white/92 px-3 py-2 shadow-[0_8px_18px_rgba(7,63,67,0.08)] md:flex">
               {[
-                { label: "Calidad Kliniu", icon: "/icono-calidad.png" },
-                { label: "Compatibilidad garantizada", icon: "/icono-compatibilidad.png" },
-                { label: "Entrega rápida", icon: "/icono-envio-rapido.png" },
+                { label: "Calidad Kliniu", icon: "/iconos/garantia.png" },
+                { label: "Compatibilidad garantizada", icon: "/iconos/compatibilidad.png" },
+                { label: "Entrega rápida", icon: "/iconos/envio-rapido.png" },
               ].map((beneficio, index) => (
                 <div key={beneficio.label} className="flex items-center gap-2 px-3 text-[10px] font-bold leading-tight text-[#073F43]">
                   {index > 0 && <span className="-ml-3 mr-1 h-7 border-l border-[#073F43]/15" />}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={beneficio.icon} alt="" className="h-5 w-5 shrink-0" />
+                  <img src={beneficio.icon} alt="" className="h-7 w-7 shrink-0 object-contain" />
                   <span className="max-w-[86px]">{beneficio.label}</span>
                 </div>
               ))}
@@ -622,49 +640,9 @@ function InsumosRepuestosPage({
         </div>
       </section>
 
-      <section className="px-6" style={{ paddingTop: 160, paddingBottom: 80 }}>
+      <section className="px-6" style={{ paddingTop: 160, paddingBottom: 140 }}>
         <div className="mx-auto max-w-[1440px]">
-          <div className="relative flex items-center gap-0 rounded-2xl border border-black/8 pr-6 md:pr-8" style={{ minHeight: 96, background: "#f8f8f7" }}>
-            <div className="absolute" style={{ left: 8, top: "50%", transform: "translateY(-50%)", height: 272, width: 238 }}>
-              <Image
-                src="/foca-celular-ayuda.png"
-                alt="Foca Kliniu"
-                fill
-                className="object-contain object-bottom"
-              />
-            </div>
-            <div className="shrink-0" style={{ width: 248 }} />
-            <div className="min-w-0 flex-1 py-5 pl-5">
-              <p className="font-bold text-[#0C535B]">¿Necesitas ayuda para elegir?</p>
-              <p className="mt-0.5 text-sm text-[#6e7379]">
-                Nuestro equipo de expertos está listo para asesorarte sin compromiso
-              </p>
-            </div>
-            {(() => {
-              const WaIcon = () => (
-                <svg viewBox="0 0 24 24" className="h-8 w-8 shrink-0 text-[#27B1B8]" fill="currentColor">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884" />
-                </svg>
-              );
-              return (
-                <div className="hidden items-center gap-5 lg:flex">
-                  {[
-                    "Asesoría gratuita sin compromiso.",
-                    "Respuesta rápida por WhatsApp",
-                    "Cotizaciones personalizadas",
-                  ].map((txt) => (
-                    <div key={txt} className="flex items-center gap-2 text-xs text-[#555]">
-                      <WaIcon />
-                      <span className="max-w-[90px] leading-tight">{txt}</span>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
-            <WhatsAppAsesor className="ml-6 shrink-0 rounded-full bg-[#073F43] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90">
-              Hablar con un asesor 💬
-            </WhatsAppAsesor>
-          </div>
+          <AsesorBanner />
         </div>
       </section>
 
@@ -768,6 +746,7 @@ export default function CategoriasPage() {
     <main className="min-h-screen bg-white text-[#111]">
       {/* ── Hero banner ── */}
       <section className={`relative overflow-hidden ${dark ? "bg-white" : "bg-[#0a0f14]"}`}>
+        {/* Imagen desktop */}
         {(catMeta.heroBannerImagen ?? catMeta.bannerImagen) && (
           <Image
             src={(catMeta.heroBannerImagen ?? catMeta.bannerImagen)!}
@@ -775,7 +754,18 @@ export default function CategoriasPage() {
             fill
             priority
             sizes="100vw"
-            className={`object-cover object-center ${dark ? "opacity-100" : "opacity-60"}`}
+            className={`object-cover object-center ${catMeta.heroBannerMovil ? "hidden md:block" : ""} ${dark ? "opacity-100" : "opacity-60"}`}
+          />
+        )}
+        {/* Imagen móvil */}
+        {catMeta.heroBannerMovil && (
+          <Image
+            src={catMeta.heroBannerMovil}
+            alt={catMeta.nombre}
+            fill
+            priority
+            sizes="100vw"
+            className={`object-cover object-center md:hidden ${dark ? "opacity-100" : "opacity-60"}`}
           />
         )}
         <div className="relative mx-auto max-w-[1440px] px-8 py-8 md:py-10">
@@ -788,21 +778,23 @@ export default function CategoriasPage() {
             {catMeta.bannerCopy}
           </p>
           {catMeta.beneficiosHero && (
-            <div className={`mt-5 flex flex-wrap items-center gap-x-0 gap-y-2 ${dark ? "pt-0" : "border-t border-white/10 pt-4"}`}>
-              {catMeta.beneficiosHero.map((b, i) => (
-                <div key={b.texto} className={`flex items-center text-xs ${dark ? "text-[#3a4a4b]" : "text-white/80"}`}>
-                  {i > 0 && <span className={`mx-4 hidden h-8 border-l sm:block ${dark ? "border-black/15" : "border-white/20"}`} />}
-                  {catMeta.beneficiosInline ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{b.icono}</span>
-                      <span className="max-w-[100px] leading-tight">{b.texto}</span>
-                    </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {catMeta.beneficiosHero.map((b) => (
+                <div
+                  key={b.texto}
+                  className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-xs font-semibold leading-tight ${
+                    dark
+                      ? "border-black/12 bg-white/80 text-[#1A1A1A]"
+                      : "border-white/20 bg-white/10 text-white"
+                  }`}
+                >
+                  {b.imagen ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={b.imagen} alt="" className="h-7 w-7 shrink-0 object-contain" />
                   ) : (
-                    <div className="flex flex-col items-center gap-1 text-center">
-                      <span className="text-base">{b.icono}</span>
-                      <span className="max-w-[80px] leading-tight">{b.texto}</span>
-                    </div>
+                    <span className="text-lg leading-none">{b.icono}</span>
                   )}
+                  <span className="max-w-[120px]">{b.texto}</span>
                 </div>
               ))}
             </div>
@@ -892,7 +884,7 @@ export default function CategoriasPage() {
                 style={{ background: "linear-gradient(to right, #051e22, #0C535B, #0f6e78)" }}
               >
                 {/* Foca — absolute, overflows upward slightly into section padding */}
-                <div className="absolute bottom-0 left-0 h-[200px] w-[190px]">
+                <div className="absolute bottom-0 left-0 h-[240px] w-[220px]">
                   <Image
                     src={catMeta.comoElegirFoca ?? "/foca-ok-kliniu-original.png"}
                     alt="Foca Kliniu"
@@ -902,9 +894,9 @@ export default function CategoriasPage() {
                 </div>
 
                 {/* Single flat row */}
-                <div className="flex items-stretch min-w-0">
+                <div className="flex min-h-[220px] items-stretch min-w-0">
                   {/* Spacer for foca */}
-                  <div className="w-[190px] shrink-0" />
+                  <div className="w-[260px] shrink-0" />
 
                   {/* Title + subtitle */}
                   <div className="flex w-[250px] shrink-0 flex-col justify-center border-r border-white/10 px-6 py-7">
@@ -928,17 +920,24 @@ export default function CategoriasPage() {
                   {catMeta.comoElegir.map((factor, i) => (
                     <div
                       key={factor.titulo}
-                      className={`flex flex-1 items-start gap-3 px-5 py-6 ${i > 0 ? "border-l border-white/10" : ""}`}
+                      className={`flex flex-1 flex-col justify-center px-5 py-6 ${i > 0 ? "border-l border-white/10" : ""}`}
                     >
-                      <svg viewBox="0 0 24 24" className="mt-0.5 h-6 w-6 shrink-0 text-[#27B1B8]" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                      </svg>
-                      <div>
-                        <p className="text-sm font-bold text-white">{factor.titulo}</p>
-                        <p className="mt-0.5 text-[11px] leading-4 text-white/60">{factor.descripcion}</p>
+                      <div className="flex items-start gap-3">
+                        {factor.imagen ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={factor.imagen} alt="" className="mt-0.5 h-9 w-9 shrink-0 object-contain brightness-0 invert" />
+                        ) : (
+                          <svg viewBox="0 0 24 24" className="mt-0.5 h-6 w-6 shrink-0 text-[#27B1B8]" fill="none" stroke="currentColor" strokeWidth="1.5">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                          </svg>
+                        )}
+                        <div>
+                          <p className="text-sm font-bold text-white">{factor.titulo}</p>
+                          <p className="mt-0.5 text-[11px] leading-4 text-white/60">{factor.descripcion}</p>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -984,21 +983,24 @@ export default function CategoriasPage() {
                   </div>
 
                   {/* Right: criterios */}
-                  <div className="p-6" style={{ background: "rgba(255,255,255,0.7)" }}>
-                    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                      {catMeta.comoElegir.map((factor) => (
-                        <div key={factor.titulo}>
-                          <svg viewBox="0 0 24 24" className="h-7 w-7 text-[#27B1B8]" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <div className="flex divide-x divide-black/8" style={{ background: "rgba(255,255,255,0.7)" }}>
+                    {catMeta.comoElegir.map((factor) => (
+                      <div key={factor.titulo} className="flex flex-1 flex-col justify-center p-5">
+                        {factor.imagen ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={factor.imagen} alt="" className="h-14 w-14 object-contain" />
+                        ) : (
+                          <svg viewBox="0 0 24 24" className="h-14 w-14 text-[#27B1B8]" fill="none" stroke="currentColor" strokeWidth="1.5">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                             <circle cx="9" cy="7" r="4"/>
                             <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
                             <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                           </svg>
-                          <p className="mt-2 font-semibold text-[#073F43]">{factor.titulo}</p>
-                          <p className="mt-1 text-sm leading-5 text-[#607175]">{factor.descripcion}</p>
-                        </div>
-                      ))}
-                    </div>
+                        )}
+                        <p className="mt-2 text-sm font-bold text-[#073F43]">{factor.titulo}</p>
+                        <p className="mt-1 text-xs leading-5 text-[#607175]">{factor.descripcion}</p>
+                      </div>
+                    ))}
                   </div>
 
                 </div>
@@ -1009,57 +1011,9 @@ export default function CategoriasPage() {
       )}
 
       {/* ── ¿Necesitas ayuda? ── */}
-      <section className="px-6" style={{ paddingTop: 160, paddingBottom: 80 }}>
+      <section className="px-6" style={{ paddingTop: 160, paddingBottom: 140 }}>
         <div className="mx-auto max-w-[1440px]">
-          <div className="relative flex items-center gap-0 rounded-2xl border border-black/8 pr-6 md:pr-8" style={{ minHeight: 96, background: "#f8f8f7" }}>
-            {/* Foca con celular — absolute para no inflar el alto */}
-            <div className="absolute" style={{ left: 8, top: "50%", transform: "translateY(-50%)", height: 272, width: 238 }}>
-              <Image
-                src="/foca-celular-ayuda.png"
-                alt="Foca Kliniu"
-                fill
-                className="object-contain object-bottom"
-              />
-            </div>
-            {/* Espaciador horizontal para la foca */}
-            <div className="shrink-0" style={{ width: 248 }} />
-
-            {/* Texto */}
-            <div className="min-w-0 flex-1 py-5 pl-5">
-              <p className="font-bold text-[#0C535B]">¿Necesitas ayuda para elegir?</p>
-              <p className="mt-0.5 text-sm text-[#6e7379]">
-                Nuestro equipo de expertos está listo para asesorarte sin compromiso
-              </p>
-            </div>
-
-            {/* Beneficios */}
-            {(() => {
-              const WaIcon = () => (
-                <svg viewBox="0 0 24 24" className="h-8 w-8 shrink-0 text-[#27B1B8]" fill="currentColor">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884" />
-                </svg>
-              );
-              return (
-                <div className="hidden items-center gap-5 lg:flex">
-                  {[
-                    "Asesoría gratuita sin compromiso.",
-                    "Respuesta rápida por WhatsApp",
-                    "Cotizaciones personalizadas",
-                  ].map((txt) => (
-                    <div key={txt} className="flex items-center gap-2 text-xs text-[#555]">
-                      <WaIcon />
-                      <span className="max-w-[90px] leading-tight">{txt}</span>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
-
-            {/* CTA */}
-            <WhatsAppAsesor className="ml-6 shrink-0 rounded-full bg-[#073F43] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90">
-              Hablar con un asesor 💬
-            </WhatsAppAsesor>
-          </div>
+          <AsesorBanner />
         </div>
       </section>
 

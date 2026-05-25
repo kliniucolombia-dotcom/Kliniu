@@ -427,7 +427,7 @@ export default function RegistroPage() {
             fill
             priority
             sizes="50vw"
-            className="object-cover object-center"
+            className="object-cover" style={{ objectPosition: "center calc(10% - 400px)" }}
           />
         </div>
       </div>

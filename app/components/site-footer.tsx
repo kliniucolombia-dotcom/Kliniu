@@ -3,17 +3,17 @@ import Link from "next/link";
 
 const colNuestrosProductos = [
   { label: "Dispensadores", href: "/categorias" },
-  { label: "Envases", href: "/categorias" },
-  { label: "Empaques", href: "/categorias" },
-  { label: "Productos para el hogar", href: "/categorias" },
-  { label: "Insumos líquidos", href: "/categorias" },
+  { label: "Envases", href: "/categorias?q=envase" },
+  { label: "Empaques", href: "/categorias?q=empaque" },
+  { label: "Productos para el hogar", href: "/categorias?q=hogar" },
+  { label: "Insumos líquidos", href: "/categorias?tipo=insumos&q=jabon" },
 ];
 
 const colPoliticas = [
-  { label: "Políticas de privacidad", href: "/contacto" },
-  { label: "Garantía de Productos", href: "/contacto" },
-  { label: "Devoluciones", href: "/contacto" },
-  { label: "Tratamiento de datos personales", href: "/contacto" },
+  { label: "Políticas de privacidad", href: "/politicas/privacidad" },
+  { label: "Garantía de Productos", href: "/politicas/garantia" },
+  { label: "Devoluciones", href: "/politicas/devoluciones" },
+  { label: "Tratamiento de datos personales", href: "/politicas/tratamiento-datos" },
 ];
 
 const colContacto = [
@@ -32,8 +32,8 @@ export default function SiteFooter() {
   return (
     <footer className="relative overflow-hidden" style={{ background: "#050C14", color: "#fff" }}>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_46%_34%,rgba(39,177,184,0.34)_0%,rgba(12,83,91,0.24)_24%,rgba(5,12,20,0)_58%)]" />
-      <div className="relative z-10 mx-auto max-w-[1440px] px-6 py-14 lg:px-8">
-        <div style={{ display: "grid", gap: 40, gridTemplateColumns: "260px 1fr" }}>
+      <div className="relative z-10 mx-auto max-w-[1440px] px-6 py-10 lg:px-8 lg:py-14">
+        <div className="grid gap-8 lg:grid-cols-[220px_1fr] lg:gap-10">
           {/* Brand */}
           <div className="flex flex-col">
             <Link href="/" className="inline-flex">
@@ -42,7 +42,7 @@ export default function SiteFooter() {
                 alt="Kliniu"
                 width={180}
                 height={62}
-                style={{ width: "180px", height: "auto" }}
+                style={{ width: "150px", height: "auto" }}
               />
             </Link>
           </div>

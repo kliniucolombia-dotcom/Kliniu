@@ -109,15 +109,15 @@ export default function QuienesSomosPage() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-white text-[#111]">
       {/* Hero */}
-      <section className="mx-auto max-w-[1440px] px-6 py-16">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
+      <section className="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 md:py-16">
+        <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
           <div>
-            <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-[#111] md:text-5xl">
+            <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-[#111] sm:text-4xl md:text-5xl">
               Acerca de{" "}
               <span className="text-[#27B1B8]">nosotros</span>
             </h1>
             <div className="mt-3 h-1 w-12 rounded-full bg-[#27B1B8]" />
-            <p className="mt-6 text-base leading-8 text-[#555]">
+            <p className="mt-5 text-sm leading-7 text-[#555] sm:text-base sm:leading-8">
               Somos Kliniu, una compañía colombiana dedicada a desarrollar y comercializar ideas de
               dispensadores y limpieza. Desarrollamos nuestras ideas haciéndolas realidad a través
               de un proceso de creatividad e industrial en donde hacemos los moldes de inyección de
@@ -133,113 +133,72 @@ export default function QuienesSomosPage() {
               alt="Productos Kliniu en ambiente de baño"
               width={600}
               height={420}
-              className="h-72 w-full object-cover lg:h-96"
+              className="h-56 w-full object-cover sm:h-72 lg:h-96"
             />
           </div>
         </div>
       </section>
 
       {/* Misión / Visión */}
-      <section className="mx-auto w-full max-w-[1440px] px-6 pb-20">
-        <div className="mx-auto grid max-w-[1080px] gap-5 md:grid-cols-2">
+      <section className="mx-auto w-full max-w-[1440px] px-4 pb-10 sm:px-6 md:pb-16">
+        <div className="mx-auto grid max-w-[1080px] gap-4 md:grid-cols-2 md:gap-5">
           {/* Misión */}
-          <div className="relative pb-6">
-            <div
-              className="relative min-h-[270px] overflow-hidden rounded-lg px-7 py-8 text-white sm:min-h-[290px] sm:px-10 md:px-8 lg:px-10"
-              style={{
-                background: "linear-gradient(150deg, #145F64 0%, #003E42 100%)",
-              }}
-            >
-              <div className="absolute inset-y-0 left-0 z-[1] w-[72%] bg-gradient-to-r from-[#145F64] via-[#145F64]/95 to-transparent" />
-              <div className="relative z-10 flex max-w-[235px] items-start gap-4 sm:max-w-[260px] md:max-w-[230px] lg:max-w-[280px]">
-                <div className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full border border-white/90">
-                  <Image
-                    src="/nosotros-iconos/mision.png"
-                    alt=""
-                    width={36}
-                    height={36}
-                    className="h-9 w-9 object-contain brightness-0 invert"
-                  />
+          <div
+            className="flex min-h-[200px] overflow-hidden rounded-2xl text-white sm:min-h-[260px]"
+            style={{ background: "linear-gradient(150deg, #145F64 0%, #003E42 100%)" }}
+          >
+            {/* Foca izquierda */}
+            <div className="w-[120px] shrink-0 self-end sm:w-[170px]">
+              <Image src="/foca-vision-cutout.png" alt="" width={320} height={205} className="h-auto w-full object-contain object-bottom" />
+            </div>
+            {/* Info derecha */}
+            <div className="flex flex-1 flex-col justify-center py-6 pl-4 pr-5 sm:py-8 sm:pl-5 sm:pr-8">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-white/70 sm:h-[56px] sm:w-[56px]">
+                  <Image src="/nosotros-iconos/mision.png" alt="" width={30} height={30} className="h-5 w-5 object-contain brightness-0 invert sm:h-7 sm:w-7" />
                 </div>
-                <div className="pt-1">
-                  <h2 className="text-[21px] font-black uppercase leading-none tracking-tight">MISIÓN</h2>
-                  <p
-                    className="mt-2 text-[13px] font-semibold leading-[1.12] text-white"
-                    style={{ maxWidth: 215 }}
-                  >
-                    Nuestra misión es fabricar ideas en productos que ayuden a la limpieza y
-                    desinfección.
-                  </p>
-                  <div className="mt-2 h-0.5 w-9 bg-white" />
-                </div>
+                <h2 className="text-2xl font-black uppercase leading-none tracking-tight sm:text-[30px]">MISIÓN</h2>
               </div>
-              <Image
-                src="/foca-vision-cutout.png"
-                alt=""
-                width={320}
-                height={205}
-                className="pointer-events-none absolute bottom-[-42px] right-[-42px] z-0 w-[250px] object-contain sm:bottom-[-48px] sm:right-[-48px] sm:w-[315px] md:right-[-70px] md:w-[295px] lg:right-[-58px] lg:w-[345px]"
-                style={{
-                  height: "auto",
-                }}
-              />
+              <p className="mt-3 text-sm font-semibold leading-snug text-white/90 sm:mt-4 sm:text-[16px]">
+                Nuestra misión es fabricar ideas en productos que ayuden a la limpieza y desinfección.
+              </p>
+              <div className="mt-3 h-0.5 w-10 bg-white/50" />
             </div>
           </div>
 
           {/* Visión */}
-          <div className="relative pb-6">
-            <div
-              className="relative min-h-[270px] overflow-hidden rounded-lg px-7 py-8 text-white sm:min-h-[290px] sm:px-10 md:px-8 lg:px-10"
-              style={{
-                background: "linear-gradient(150deg, #45B9AD 0%, #7ABCB9 100%)",
-              }}
-            >
-              <div className="absolute inset-y-0 left-0 z-[1] w-[74%] bg-gradient-to-r from-[#45B9AD] via-[#45B9AD]/95 to-transparent" />
-              <div className="relative z-10 flex max-w-[235px] items-start gap-4 sm:max-w-[270px] md:max-w-[230px] lg:max-w-[285px]">
-                <div className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full border border-white/90">
-                  <Image
-                    src="/nosotros-iconos/vision.png"
-                    alt=""
-                    width={36}
-                    height={36}
-                    className="h-9 w-9 object-contain brightness-0 invert"
-                  />
+          <div
+            className="flex min-h-[200px] overflow-hidden rounded-2xl text-white sm:min-h-[260px]"
+            style={{ background: "linear-gradient(150deg, #45B9AD 0%, #7ABCB9 100%)" }}
+          >
+            {/* Foca izquierda */}
+            <div className="w-[120px] shrink-0 self-end sm:w-[170px]">
+              <Image src="/foca-mision-cutout.png" alt="" width={330} height={245} className="h-auto w-full object-contain object-bottom" />
+            </div>
+            {/* Info derecha */}
+            <div className="flex flex-1 flex-col justify-center py-6 pl-4 pr-5 sm:py-8 sm:pl-5 sm:pr-8">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-white/70 sm:h-[56px] sm:w-[56px]">
+                  <Image src="/nosotros-iconos/vision.png" alt="" width={30} height={30} className="h-5 w-5 object-contain brightness-0 invert sm:h-7 sm:w-7" />
                 </div>
-                <div className="pt-1">
-                  <h2 className="text-[21px] font-black uppercase leading-none tracking-tight">VISIÓN</h2>
-                  <p
-                    className="mt-2 text-[13px] font-semibold leading-[1.13] text-white"
-                    style={{ maxWidth: 235 }}
-                  >
-                    Nuestra visión es ser líderes en el 2.023 en la fabricación y comercialización
-                    en Colombia, Centro América y El Caribe de dispensadores e insumos de aseo
-                    personal.
-                  </p>
-                  <div className="mt-2 h-0.5 w-9 bg-white" />
-                </div>
+                <h2 className="text-2xl font-black uppercase leading-none tracking-tight sm:text-[30px]">VISIÓN</h2>
               </div>
-              <Image
-                src="/foca-mision-cutout.png"
-                alt=""
-                width={330}
-                height={245}
-                className="pointer-events-none absolute bottom-[-64px] right-[-54px] z-0 w-[250px] object-contain sm:bottom-[-76px] sm:right-[-66px] sm:w-[330px] md:right-[-96px] md:w-[300px] lg:bottom-[-92px] lg:right-[-78px] lg:w-[360px]"
-                style={{
-                  height: "auto",
-                }}
-              />
+              <p className="mt-3 text-sm font-semibold leading-snug text-white/90 sm:mt-4 sm:text-[16px]">
+                Nuestra visión es ser líderes en el 2.023 en la fabricación y comercialización en Colombia, Centro América y El Caribe de dispensadores e insumos de aseo personal.
+              </p>
+              <div className="mt-3 h-0.5 w-10 bg-white/50" />
             </div>
           </div>
         </div>
       </section>
 
       {/* Valores corporativos */}
-      <section className="bg-[#f8f8f7] py-16">
-        <div className="mx-auto max-w-[1440px] px-6">
-          <h2 className="mb-10 text-center text-3xl font-extrabold tracking-tight text-[#111]">
+      <section className="bg-[#f8f8f7] py-10 md:py-16">
+        <div className="mx-auto max-w-[1440px] px-4 sm:px-6">
+          <h2 className="mb-8 text-center text-2xl font-extrabold tracking-tight text-[#111] sm:text-3xl md:mb-10">
             Valores corporativos
           </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
             {valores.map((v) => (
               <div
                 key={v.titulo}
@@ -263,7 +222,7 @@ export default function QuienesSomosPage() {
       </section>
 
       {/* Calidad banner */}
-      <section className="bg-white px-6 py-16">
+      <section className="bg-white px-4 py-10 sm:px-6 md:py-16">
         <div className="mx-auto max-w-[1440px]">
           <div className="relative overflow-hidden rounded-[10px] bg-white pb-8 shadow-[0_18px_40px_rgba(12,83,91,0.08)] md:pb-10">
             <Image
@@ -275,9 +234,9 @@ export default function QuienesSomosPage() {
               priority={false}
             />
 
-            <div className="relative z-10 grid min-h-[280px] bg-white md:min-h-[315px] md:grid-cols-[30%_1fr] md:bg-transparent lg:min-h-[330px]">
-              <div className="bg-[#0C535B] px-8 py-10 text-white md:bg-transparent md:pl-12 md:pr-8 lg:pl-14">
-                <h3 className="text-3xl font-extrabold tracking-tight md:text-4xl">
+            <div className="relative z-10 grid min-h-[200px] bg-white md:min-h-[315px] md:grid-cols-[30%_1fr] md:bg-transparent lg:min-h-[330px]">
+              <div className="bg-[#0C535B] px-6 py-8 text-white md:bg-transparent md:pl-12 md:pr-8 lg:pl-14">
+                <h3 className="text-2xl font-extrabold tracking-tight sm:text-3xl md:text-4xl">
                   Calidad
                 </h3>
                 <div className="mt-3 h-0.5 w-16 bg-white" />

@@ -242,7 +242,7 @@ export default function OutletPage() {
             <div
               className="absolute hidden lg:block"
               style={{
-                right: "8%",
+                right: "calc(8% + 100px)",
                 top: "50%",
                 transform: "translateY(-50%)",
                 width: "clamp(360px, 24vw, 420px)",
@@ -297,28 +297,38 @@ export default function OutletPage() {
               </div>
             )}
 
-            <aside className="relative mt-4 overflow-hidden rounded-2xl" style={{ aspectRatio: "16/4" }}>
-              <Image
-                src="/outlet/banner-super-ofertas.jpg"
-                alt="Super Ofertas Kliniu - Outlet Virtual"
-                fill
-                sizes="100vw"
-                className="object-cover object-center"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-black/20 to-black/85" />
-              <div className="absolute inset-y-0 right-0 flex w-[45%] flex-col justify-center gap-3 px-10">
-                <p className="text-2xl font-bold leading-snug text-white drop-shadow lg:text-3xl">
-                  ¡Inscríbete al programa de puntos Kliniu!
-                </p>
-                <p className="text-sm text-white/80 drop-shadow lg:text-base">
-                  Acumula puntos en cada compra y canjéalos por descuentos exclusivos.
-                </p>
-                <Link
-                  href="/puntos"
-                  className="inline-flex w-fit rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-[#0C535B] transition-colors duration-200 hover:bg-white/90"
-                >
-                  Inscribirme a puntos
-                </Link>
+            <aside className="relative mt-4 overflow-hidden rounded-2xl">
+              <div className="relative aspect-[4/3] sm:aspect-[16/6] lg:aspect-[16/4]">
+                <Image
+                  src="/outlet/banner-super-ofertas.jpg"
+                  alt="Super Ofertas Kliniu - Outlet Virtual"
+                  fill
+                  sizes="100vw"
+                  className="object-cover object-center"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent sm:bg-gradient-to-r sm:from-transparent sm:via-black/20 sm:to-black/85" />
+                <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 px-5 pb-5 sm:inset-y-0 sm:bottom-auto sm:left-[38%] sm:right-0 sm:justify-center sm:gap-3 sm:px-8 sm:pb-0">
+                  <span className="inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white sm:text-xs" style={{ background: "rgba(192,64,255,0.35)", border: "1px solid rgba(192,64,255,0.5)" }}>
+                    ⏳ Solo 15 días
+                  </span>
+                  <p className="text-2xl font-black leading-tight text-white drop-shadow-lg sm:text-[clamp(1.5rem,3.5vw,3.2rem)]">
+                    ¡Descuentos de hasta{" "}
+                    <span style={{ background: "linear-gradient(90deg,#c084fc,#60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                      70% OFF
+                    </span>
+                    !
+                  </p>
+                  <p className="text-sm leading-relaxed text-white/85 drop-shadow sm:max-w-[380px] sm:text-[clamp(0.85rem,1.4vw,1.15rem)]">
+                    Estas ofertas desaparecen en 15 días. No dejes ir los mejores precios del año.
+                  </p>
+                  <Link
+                    href="#ofertas"
+                    className="inline-flex w-fit rounded-full px-5 py-2 text-sm font-black text-white shadow-lg transition-all duration-200 hover:scale-105 sm:px-6 sm:py-2.5"
+                    style={{ background: "linear-gradient(135deg, #7c3aed, #3b82f6)" }}
+                  >
+                    Ver ofertas ahora →
+                  </Link>
+                </div>
               </div>
             </aside>
           </div>

@@ -17,6 +17,7 @@ type SiteHeaderProps = {
 
 export default function SiteHeader({ currentUser }: SiteHeaderProps) {
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
   const [hidden, setHidden] = useState(false);
   const lastScrollY = useRef(0);
   const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -34,6 +35,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
       } else if (current > lastScrollY.current + 6) {
         setHidden(true);
         setMenuAbierto(false);
+        setMobileMenu(false);
       } else if (current < lastScrollY.current - 6) {
         setHidden(false);
       }
@@ -45,6 +47,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
 
   const irACategoria = (categoria?: string) => {
     setMenuAbierto(false);
+    setMobileMenu(false);
     const url = categoria
       ? `/categorias?categoria=${slugCategoria(categoria)}`
       : "/categorias";
@@ -62,8 +65,14 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenu(false);
+  }, [pathname]);
+
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setMobileMenu(false);
     const formData = new FormData(event.currentTarget);
     const query = String(formData.get("q") || "").trim();
     const params = new URLSearchParams(searchParams.toString());
@@ -89,229 +98,393 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
   };
 
   return (
-    <header
-      ref={menuRef}
-      className="fixed top-0 left-0 right-0 z-50 border-b border-black/8 bg-white shadow-[0_4px_20px_rgba(15,23,42,0.06)]"
-      style={{ transform: hidden ? "translateY(-100%)" : "translateY(0)", transition: "transform 300ms ease-in-out" }}
-    >
-      <div className="mx-auto max-w-[1440px] px-5 py-3">
-        <div className="flex items-center gap-6">
-          {/* Logo */}
-          <Link href="/" className="shrink-0">
-            <Image
-              src="/logo.png"
-              alt="Kliniu"
-              width={110}
-              height={30}
-              style={{ width: "110px", height: "auto" }}
-              priority
-            />
-          </Link>
-
-          {/* Nav */}
-          <nav className="hidden items-center gap-1 lg:flex">
-            {/* Productos dropdown */}
-            <div
-              className="relative"
-              onMouseEnter={() => {
-                if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
-                setMenuAbierto(true);
-              }}
-              onMouseLeave={() => {
-                hoverTimeout.current = setTimeout(() => setMenuAbierto(false), 120);
-              }}
+    <>
+      <header
+        ref={menuRef}
+        className="fixed top-0 left-0 right-0 z-50 border-b border-black/8 bg-white shadow-[0_4px_20px_rgba(15,23,42,0.06)]"
+        style={{ transform: hidden ? "translateY(-100%)" : "translateY(0)", transition: "transform 300ms ease-in-out" }}
+      >
+        <div className="mx-auto max-w-[1440px] px-4 py-3 sm:px-5">
+          <div className="flex items-center gap-3 sm:gap-6">
+            {/* Hamburger — mobile only */}
+            <button
+              type="button"
+              aria-label="Abrir menú"
+              onClick={() => setMobileMenu((v) => !v)}
+              className="flex h-9 w-9 shrink-0 flex-col items-center justify-center gap-[5px] lg:hidden"
             >
-              <button
-                type="button"
-                className={`flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-                  pathname === "/categorias"
-                    ? "text-[#0C535B] underline decoration-[#27B1B8] decoration-2 underline-offset-4"
-                    : "text-[#0C535B] hover:text-[#27B1B8]"
+              <span className={`block h-0.5 w-5 rounded-full bg-[#0C535B] transition-all duration-200 ${mobileMenu ? "translate-y-[7px] rotate-45" : ""}`} />
+              <span className={`block h-0.5 w-5 rounded-full bg-[#0C535B] transition-all duration-200 ${mobileMenu ? "opacity-0" : ""}`} />
+              <span className={`block h-0.5 w-5 rounded-full bg-[#0C535B] transition-all duration-200 ${mobileMenu ? "-translate-y-[7px] -rotate-45" : ""}`} />
+            </button>
+
+            {/* Logo */}
+            <Link href="/" className="shrink-0">
+              <Image
+                src="/logo.png"
+                alt="Kliniu"
+                width={110}
+                height={30}
+                style={{ width: "100px", height: "auto" }}
+                priority
+              />
+            </Link>
+
+            {/* Nav — desktop */}
+            <nav className="hidden items-center gap-1 lg:flex">
+              {/* Productos dropdown */}
+              <div
+                className="relative"
+                onMouseEnter={() => {
+                  if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+                  setMenuAbierto(true);
+                }}
+                onMouseLeave={() => {
+                  hoverTimeout.current = setTimeout(() => setMenuAbierto(false), 120);
+                }}
+              >
+                <button
+                  type="button"
+                  className={`flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                    pathname === "/categorias"
+                      ? "text-[#0C535B] underline decoration-[#27B1B8] decoration-2 underline-offset-4"
+                      : "text-[#0C535B] hover:text-[#27B1B8]"
+                  }`}
+                >
+                  Productos
+                  <svg viewBox="0 0 12 12" className={`h-3 w-3 opacity-50 transition-transform ${menuAbierto ? "rotate-180" : ""}`} fill="currentColor">
+                    <path d="M6 8L1 3h10z" />
+                  </svg>
+                </button>
+              </div>
+
+              <Link
+                href="/categorias?tipo=insumos"
+                className="rounded-lg px-3 py-2 text-sm font-semibold text-[#0C535B] transition-colors hover:text-[#27B1B8]"
+              >
+                Insumos/Repuestos
+              </Link>
+              <Link
+                href="/outlet"
+                className={`rounded-lg px-3 py-2 text-sm font-black transition-colors ${
+                  pathname === "/outlet"
+                    ? "text-[#27B1B8] underline decoration-[#27B1B8] decoration-2 underline-offset-4"
+                    : "text-[#27B1B8] hover:text-[#0C535B]"
                 }`}
               >
-                Productos
-                <svg viewBox="0 0 12 12" className={`h-3 w-3 opacity-50 transition-transform ${menuAbierto ? "rotate-180" : ""}`} fill="currentColor">
-                  <path d="M6 8L1 3h10z" />
+                Outlet
+              </Link>
+              <Link
+                href="/quienes-somos"
+                className="rounded-lg px-3 py-2 text-sm font-semibold text-[#0C535B] transition-colors hover:text-[#27B1B8]"
+              >
+                Nosotros
+              </Link>
+              <Link
+                href="/contacto"
+                className="rounded-lg px-3 py-2 text-sm font-semibold text-[#0C535B] transition-colors hover:text-[#27B1B8]"
+              >
+                Contacto
+              </Link>
+              <Link
+                href="/puntos"
+                className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-black transition-all ${
+                  pathname === "/puntos"
+                    ? "bg-[#7c3aed] text-white shadow-[0_4px_14px_rgba(124,58,237,0.4)]"
+                    : "bg-[#7c3aed] text-white shadow-[0_2px_8px_rgba(124,58,237,0.3)] hover:shadow-[0_4px_14px_rgba(124,58,237,0.45)] hover:opacity-90"
+                }`}
+              >
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+                Puntos
+              </Link>
+            </nav>
+
+            {/* Search */}
+            <form
+              onSubmit={handleSearch}
+              className="flex flex-1 items-center gap-2 rounded-full border border-black/10 bg-[#f8f8f7] px-3 py-2 transition-all focus-within:border-[#27B1B8]/40 focus-within:bg-white sm:px-4 sm:py-2.5"
+            >
+              <svg
+                className="h-4 w-4 shrink-0 text-[#0C535B]/50"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                key={searchParams.get("q") || ""}
+                name="q"
+                type="search"
+                defaultValue={searchParams.get("q") || ""}
+                placeholder="Buscar productos..."
+                className="w-full bg-transparent text-sm text-[#0C535B] outline-none placeholder:text-[#0C535B]/40"
+              />
+            </form>
+
+            {/* Account + Cart */}
+            <div className="flex shrink-0 items-center gap-3 sm:gap-4">
+              {currentUser ? (
+                <Link
+                  href={currentUser.role === "ADMIN" ? "/admin" : "/mi-cuenta"}
+                  className="flex flex-col items-center gap-0.5 text-[#0C535B] transition-colors hover:text-[#27B1B8]"
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M20 21a8 8 0 0 0-16 0" />
+                    <circle cx="12" cy="8" r="4" />
+                  </svg>
+                  <span className="hidden text-[10px] font-semibold sm:block">{currentUser.fullName.split(" ")[0]}</span>
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  className="flex flex-col items-center gap-0.5 text-[#0C535B] transition-colors hover:text-[#27B1B8]"
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M20 21a8 8 0 0 0-16 0" />
+                    <circle cx="12" cy="8" r="4" />
+                  </svg>
+                  <span className="hidden text-[10px] font-semibold sm:block">Mi cuenta</span>
+                </Link>
+              )}
+
+              <Link
+                href="/carrito"
+                className="relative flex flex-col items-center gap-0.5 text-[#0C535B] transition-colors hover:text-[#27B1B8]"
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <path d="M16 10a4 4 0 0 1-8 0" />
+                </svg>
+                {totalProducts > 0 && (
+                  <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#27B1B8] px-1 text-[9px] font-bold text-white">
+                    {totalProducts}
+                  </span>
+                )}
+                <span className="hidden text-[10px] font-semibold sm:block">Carrito</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Mega-menú productos (desktop) ── */}
+        {menuAbierto && (
+          <div
+            className="absolute left-0 right-0 top-full z-50 border-t border-black/8 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.13)]"
+            onMouseEnter={() => {
+              if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+            }}
+            onMouseLeave={() => {
+              hoverTimeout.current = setTimeout(() => setMenuAbierto(false), 120);
+            }}
+          >
+            <div className="mx-auto max-w-[1510px] px-5 py-5">
+              <div className="scrollbar-hidden flex items-start gap-5 overflow-x-auto">
+                {categoriasData.filter((cat) => cat.nombre !== "Outlet" && cat.nombre !== "Insumos/Repuesto").map((cat) => {
+                  return (
+                    <button
+                      key={cat.nombre}
+                      type="button"
+                      onClick={() => irACategoria(cat.nombre)}
+                      className="group flex h-[249px] w-[224px] shrink-0 flex-col items-center justify-between rounded-[14px] border border-[#e2e8e8] bg-white px-6 pb-7 pt-7 text-center transition-all duration-300 hover:-translate-y-1 hover:border-[#9bdddf] hover:shadow-[0_18px_36px_rgba(10,92,99,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8ed9dd]"
+                    >
+                      <div className="relative flex h-[142px] w-full items-center justify-center">
+                        {cat.bannerImagen && (
+                          <Image
+                            src={cat.bannerImagen}
+                            alt={cat.nombre}
+                            width={150}
+                            height={140}
+                            className="h-[118px] w-auto max-w-[132px] object-contain transition-transform duration-300 group-hover:scale-[1.04]"
+                          />
+                        )}
+                      </div>
+                      <p className="max-w-[180px] text-[15px] font-bold leading-[1.25] text-[#064f59]">
+                        {cat.nombre}
+                      </p>
+                    </button>
+                  );
+                })}
+
+                {/* CTA card */}
+                <div className="flex h-[249px] w-[224px] shrink-0 flex-col items-center justify-center rounded-[14px] border border-[#9bdddf] bg-[#e9f7f8] px-7 py-7 text-center">
+                  <Image
+                    src="/foca-ok-kliniu-original.png"
+                    alt="Foca Kliniu"
+                    width={82}
+                    height={78}
+                    className="mb-4 h-[72px] w-[76px] object-contain"
+                  />
+                  <p className="max-w-[178px] text-[16px] font-extrabold leading-[1.25] text-[#064f59]">
+                    ¿No sabes cuál necesitas?
+                  </p>
+                  <p className="mt-2 max-w-[174px] text-[12px] font-medium leading-[1.35] text-[#3d8b93]">
+                    Te ayudamos a elegir la mejor solución para tu espacio.
+                  </p>
+                  <WhatsAppAsesor className="mt-4 inline-flex min-h-9 items-center justify-center rounded-full bg-[#075762] px-6 text-[12px] font-extrabold text-white shadow-[0_10px_20px_rgba(7,87,98,0.12)] transition-colors hover:bg-[#0C535B]">
+                    Te asesoramos ☎
+                  </WhatsAppAsesor>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* ── Menú móvil ── */}
+      {mobileMenu && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setMobileMenu(false)}
+          />
+          {/* Drawer */}
+          <nav className="absolute left-0 top-0 bottom-0 w-[280px] overflow-y-auto bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-black/8 px-5 py-4">
+              <Image src="/logo.png" alt="Kliniu" width={90} height={26} style={{ width: "90px", height: "auto" }} />
+              <button
+                type="button"
+                aria-label="Cerrar menú"
+                onClick={() => setMobileMenu(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-[#0C535B] hover:bg-[#f0f8f8]"
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
                 </svg>
               </button>
             </div>
 
-            <Link
-              href="/categorias?tipo=insumos"
-              className="rounded-lg px-3 py-2 text-sm font-semibold text-[#0C535B] transition-colors hover:text-[#27B1B8]"
-            >
-              Insumos/Repuestos
-            </Link>
-            <Link
-              href="/outlet"
-              className={`rounded-lg px-3 py-2 text-sm font-black transition-colors ${
-                pathname === "/outlet"
-                  ? "text-[#27B1B8] underline decoration-[#27B1B8] decoration-2 underline-offset-4"
-                  : "text-[#27B1B8] hover:text-[#0C535B]"
-              }`}
-            >
-              Outlet
-            </Link>
-            <Link
-              href="/quienes-somos"
-              className="rounded-lg px-3 py-2 text-sm font-semibold text-[#0C535B] transition-colors hover:text-[#27B1B8]"
-            >
-              Nosotros
-            </Link>
-            <Link
-              href="/contacto"
-              className="rounded-lg px-3 py-2 text-sm font-semibold text-[#0C535B] transition-colors hover:text-[#27B1B8]"
-            >
-              Contacto
-            </Link>
-            <Link
-              href="/puntos"
-              className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-black transition-all ${
-                pathname === "/puntos"
-                  ? "bg-[#7c3aed] text-white shadow-[0_4px_14px_rgba(124,58,237,0.4)]"
-                  : "bg-[#7c3aed] text-white shadow-[0_2px_8px_rgba(124,58,237,0.3)] hover:shadow-[0_4px_14px_rgba(124,58,237,0.45)] hover:opacity-90"
-              }`}
-            >
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
-              Puntos
-            </Link>
-          </nav>
-
-          {/* Search */}
-          <form
-            onSubmit={handleSearch}
-            className="flex flex-1 items-center gap-2 rounded-full border border-black/10 bg-[#f8f8f7] px-4 py-2.5 transition-all focus-within:border-[#27B1B8]/40 focus-within:bg-white"
-          >
-            <svg
-              className="h-4 w-4 shrink-0 text-[#0C535B]/50"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-            <input
-              key={searchParams.get("q") || ""}
-              name="q"
-              type="search"
-              defaultValue={searchParams.get("q") || ""}
-              placeholder="Buscar productos, categorias, insumos..."
-              className="w-full bg-transparent text-sm text-[#0C535B] outline-none placeholder:text-[#0C535B]/40"
-            />
-          </form>
-
-          {/* Account + Cart */}
-          <div className="flex shrink-0 items-center gap-4">
-            {currentUser ? (
-              <Link
-                href={currentUser.role === "ADMIN" ? "/admin" : "/mi-cuenta"}
-                className="flex flex-col items-center gap-0.5 text-[#0C535B] transition-colors hover:text-[#27B1B8]"
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M20 21a8 8 0 0 0-16 0" />
-                  <circle cx="12" cy="8" r="4" />
-                </svg>
-                <span className="text-[10px] font-semibold">{currentUser.fullName.split(" ")[0]}</span>
-              </Link>
-            ) : (
-              <Link
-                href="/login"
-                className="flex flex-col items-center gap-0.5 text-[#0C535B] transition-colors hover:text-[#27B1B8]"
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M20 21a8 8 0 0 0-16 0" />
-                  <circle cx="12" cy="8" r="4" />
-                </svg>
-                <span className="text-[10px] font-semibold">Mi cuenta</span>
-              </Link>
-            )}
-
-            <Link
-              href="/carrito"
-              className="relative flex flex-col items-center gap-0.5 text-[#0C535B] transition-colors hover:text-[#27B1B8]"
-            >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <path d="M16 10a4 4 0 0 1-8 0" />
-              </svg>
-              {totalProducts > 0 && (
-                <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#27B1B8] px-1 text-[9px] font-bold text-white">
-                  {totalProducts}
-                </span>
-              )}
-              <span className="text-[10px] font-semibold">Carrito</span>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Mega-menú productos ── */}
-      {menuAbierto && (
-        <div
-          className="absolute left-0 right-0 top-full z-50 border-t border-black/8 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.13)]"
-          onMouseEnter={() => {
-            if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
-          }}
-          onMouseLeave={() => {
-            hoverTimeout.current = setTimeout(() => setMenuAbierto(false), 120);
-          }}
-        >
-          <div className="mx-auto max-w-[1510px] px-5 py-5">
-            <div className="scrollbar-hidden flex items-start gap-5 overflow-x-auto">
-              {categoriasData.filter((cat) => cat.nombre !== "Outlet" && cat.nombre !== "Insumos/Repuesto").map((cat) => {
-                return (
-                  <button
-                    key={cat.nombre}
-                    type="button"
-                    onClick={() => irACategoria(cat.nombre)}
-                    className="group flex h-[249px] w-[224px] shrink-0 flex-col items-center justify-between rounded-[14px] border border-[#e2e8e8] bg-white px-6 pb-7 pt-7 text-center transition-all duration-300 hover:-translate-y-1 hover:border-[#9bdddf] hover:shadow-[0_18px_36px_rgba(10,92,99,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8ed9dd]"
-                  >
-                    <div className="relative flex h-[142px] w-full items-center justify-center">
+            <div className="px-4 py-5">
+              {/* Categorías */}
+              <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-[#999]">Productos</p>
+              <div className="mb-4 flex flex-col">
+                {categoriasData
+                  .filter((c) => c.nombre !== "Outlet" && c.nombre !== "Insumos/Repuesto")
+                  .map((cat) => (
+                    <button
+                      key={cat.nombre}
+                      type="button"
+                      onClick={() => irACategoria(cat.nombre)}
+                      className="flex items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-[#0C535B] transition-colors hover:bg-[#f0f8f8]"
+                    >
                       {cat.bannerImagen && (
-                        <Image
-                          src={cat.bannerImagen}
-                          alt={cat.nombre}
-                          width={150}
-                          height={140}
-                          className="h-[118px] w-auto max-w-[132px] object-contain transition-transform duration-300 group-hover:scale-[1.04]"
-                        />
+                        <Image src={cat.bannerImagen} alt="" width={32} height={32} className="h-8 w-8 object-contain" />
                       )}
-                    </div>
-                    <p className="max-w-[180px] text-[15px] font-bold leading-[1.25] text-[#064f59]">
                       {cat.nombre}
-                    </p>
-                  </button>
-                );
-              })}
+                    </button>
+                  ))}
+              </div>
 
-              {/* CTA card */}
-              <div className="flex h-[249px] w-[224px] shrink-0 flex-col items-center justify-center rounded-[14px] border border-[#9bdddf] bg-[#e9f7f8] px-7 py-7 text-center">
-                <Image
-                  src="/foca-ok-kliniu-original.png"
-                  alt="Foca Kliniu"
-                  width={82}
-                  height={78}
-                  className="mb-4 h-[72px] w-[76px] object-contain"
-                />
-                <p className="max-w-[178px] text-[16px] font-extrabold leading-[1.25] text-[#064f59]">
-                  ¿No sabes cuál necesitas?
-                </p>
-                <p className="mt-2 max-w-[174px] text-[12px] font-medium leading-[1.35] text-[#3d8b93]">
-                  Te ayudamos a elegir la mejor solución para tu espacio.
-                </p>
-                <WhatsAppAsesor className="mt-4 inline-flex min-h-9 items-center justify-center rounded-full bg-[#075762] px-6 text-[12px] font-extrabold text-white shadow-[0_10px_20px_rgba(7,87,98,0.12)] transition-colors hover:bg-[#0C535B]">
-                  Te asesoramos ☎
-                </WhatsAppAsesor>
+              <div className="mb-1 h-px bg-black/8" />
+
+              <div className="mt-4 flex flex-col gap-1">
+                <Link
+                  href="/categorias?tipo=insumos"
+                  onClick={() => setMobileMenu(false)}
+                  className="flex items-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold text-[#0C535B] hover:bg-[#f0f8f8]"
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-[#27B1B8]" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                  </svg>
+                  Insumos / Repuestos
+                </Link>
+                <Link
+                  href="/outlet"
+                  onClick={() => setMobileMenu(false)}
+                  className="flex items-center gap-2 rounded-xl px-3 py-3 text-sm font-black text-[#27B1B8] hover:bg-[#f0f8f8]"
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                    <line x1="7" y1="7" x2="7.01" y2="7" />
+                  </svg>
+                  Outlet
+                </Link>
+                <Link
+                  href="/quienes-somos"
+                  onClick={() => setMobileMenu(false)}
+                  className="flex items-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold text-[#0C535B] hover:bg-[#f0f8f8]"
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-[#27B1B8]" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                  Nosotros
+                </Link>
+                <Link
+                  href="/contacto"
+                  onClick={() => setMobileMenu(false)}
+                  className="flex items-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold text-[#0C535B] hover:bg-[#f0f8f8]"
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-[#27B1B8]" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.5a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .84h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />
+                  </svg>
+                  Contacto
+                </Link>
+                <Link
+                  href="/puntos"
+                  onClick={() => setMobileMenu(false)}
+                  className="flex items-center gap-2 rounded-xl bg-[#7c3aed] px-3 py-3 text-sm font-black text-white"
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="currentColor">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                  Puntos Kliniu
+                </Link>
+              </div>
+
+              <div className="mt-6 border-t border-black/8 pt-4">
+                {currentUser ? (
+                  <div className="flex flex-col gap-2">
+                    <Link
+                      href={currentUser.role === "ADMIN" ? "/admin" : "/mi-cuenta"}
+                      onClick={() => setMobileMenu(false)}
+                      className="flex items-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold text-[#0C535B] hover:bg-[#f0f8f8]"
+                    >
+                      <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <path d="M20 21a8 8 0 0 0-16 0" />
+                        <circle cx="12" cy="8" r="4" />
+                      </svg>
+                      Mi cuenta
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="flex items-center gap-2 rounded-xl px-3 py-3 text-left text-sm font-semibold text-red-600 hover:bg-red-50"
+                    >
+                      <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                      </svg>
+                      Cerrar sesión
+                    </button>
+                  </div>
+                ) : (
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenu(false)}
+                    className="flex items-center gap-2 rounded-xl border border-[#27B1B8] px-3 py-3 text-sm font-bold text-[#0C535B] hover:bg-[#f0f8f8]"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8">
+                      <path d="M20 21a8 8 0 0 0-16 0" />
+                      <circle cx="12" cy="8" r="4" />
+                    </svg>
+                    Iniciar sesión / Registrarse
+                  </Link>
+                )}
               </div>
             </div>
-          </div>
+          </nav>
         </div>
       )}
-    </header>
+    </>
   );
 }
