@@ -346,7 +346,7 @@ export function buildLocalAssistantReply(
   const esEspacio = ESPACIOS_CHECK.some((e) => normalized.includes(e));
   const queryTokens2 = tokenize(normalized);
   const fueraItem = !esEspacio && FUERA_CATALOGO.find((word) =>
-    normalized.includes(word) || queryTokens2.some((t) => fuzzyMatch(t, word))
+    normalized.includes(word)
   );
   if (fueraItem) {
     const item = fueraItem;
