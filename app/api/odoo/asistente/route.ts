@@ -11,8 +11,6 @@ import OpenAI from "openai";
 
 export const dynamic = "force-dynamic";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 const fmtMoney = (value: number) =>
   new Intl.NumberFormat("es-CO", {
     style: "currency",
@@ -269,6 +267,11 @@ export async function POST(request: Request) {
     if (!message) {
       return Response.json({ error: "Escribe una pregunta." }, { status: 400 });
     }
+
+    if (!process.env.OPENAI_API_KEY) {
+      return Response.json({ error: "Asistente no disponible: falta configuración." }, { status: 503 });
+    }
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     const history = (body.history ?? []).slice(-8).map((m) => ({
       role: m.role as "user" | "assistant",
