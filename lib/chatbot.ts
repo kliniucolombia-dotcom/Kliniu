@@ -667,17 +667,21 @@ export function buildLocalAssistantReply(
     "estoy abriendo","quiero abrir","quiero montar","quiero hacer",
     "para el negocio","para la empresa","para mi local","en mi negocio",
     "en mi empresa","en mi local","en el negocio","para mi tienda","para la tienda",
+    "quiero vender","voy a vender","vendo","para vender","me dedico a vender",
+    "quiero tener un","quiero tener una","voy a tener un","voy a tener una",
+    "tengo negocio","mi negocio","mi tienda","mi local","mi empresa",
   ];
   const tieneIntentNegocio = BUSINESS_INTENT_PHRASES.some((p) => normalized.includes(p));
 
   if (tieneIntentNegocio) {
-    // Extraer tipo de negocio de "negocio de X" / "empresa de X" / "hacer una X"
+    // Extraer tipo de negocio de "negocio de X" / "empresa de X" / "hacer una X" / "vender X"
     const ofMatch = normalized.match(/(?:negocio|empresa|local|tienda|establecimiento)\s+de\s+([a-záéíóúñ]+)/);
     const directMatch = normalized.match(/(?:hacer|abrir|montar|poner|tener)\s+(?:un|una)\s+([a-záéíóúñ]+)/);
-    const businessType = ofMatch?.[1]?.trim() ?? directMatch?.[1]?.trim();
+    const sellMatch = normalized.match(/(?:vender|vendo|vendiendo)\s+([a-záéíóúñ]+)/);
+    const businessType = ofMatch?.[1]?.trim() ?? directMatch?.[1]?.trim() ?? sellMatch?.[1]?.trim();
 
     const SALUD_BIZ = ["clinica","enfermeria","farmacia","veterinaria","odontologia","dentista","optometria","estetica","cosmetologia","medico","salud","hospital","laboratorio","consultorio","morgue","funeraria","tanatologia"];
-    const COMIDA_BIZ = ["restaurante","cafeteria","cocina","comida","panaderia","pasteleria","heladeria","pizzeria","sushi","bar","taberna","cantina","fonda"];
+    const COMIDA_BIZ = ["restaurante","cafeteria","cocina","comida","panaderia","pasteleria","heladeria","pizzeria","sushi","bar","taberna","cantina","fonda","pollo","pollos","carne","carnes","pescado","mariscos","arepas","empanadas","tamales","frutas","verduras","mercado","supermercado","tienda"];
     const HOTEL_BIZ = ["hotel","hostal","posada","alojamiento","residencia","motel"];
 
     const esNegocioSalud = businessType && SALUD_BIZ.some((k) => businessType.includes(k));
