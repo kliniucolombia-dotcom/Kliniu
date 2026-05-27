@@ -305,7 +305,7 @@ function buildProductSuggestions(products: StoreProduct[]): ChatSuggestion[] {
   }));
 }
 
-function buildProductCards(products: StoreProduct[]): ChatProductCard[] {
+export function buildProductCards(products: StoreProduct[]): ChatProductCard[] {
   return products.slice(0, 4).map((product) => ({
     slug: product.slug,
     nombre: product.nombre,
@@ -656,6 +656,36 @@ export function buildLocalAssistantReply(
     return {
       message: `Tenemos justo esa línea: **${snapshot.matchedCategories.join(", ")}** ✨\n\n¿Para qué tipo de espacio lo necesitas? Así te recomiendo el modelo correcto.`,
       suggestions: buildCategorySuggestions(snapshot.matchedCategories),
+    };
+  }
+
+  // Detectar intención de negocio aunque el tipo no esté en la lista predefinida
+  const BUSINESS_INTENT_PHRASES = [
+    "voy a hacer","voy a abrir","voy a montar","voy a poner","voy a tener",
+    "tengo un","tengo una","abrir un","abrir una","montar un","montar una",
+    "para mi negocio","para un negocio","para una empresa","estoy montando",
+    "estoy abriendo","quiero abrir","quiero montar","quiero hacer",
+    "para el negocio","para la empresa","para mi local","en mi negocio",
+    "en mi empresa","en mi local","en el negocio","para mi tienda","para la tienda",
+  ];
+  const tieneIntentNegocio = BUSINESS_INTENT_PHRASES.some((p) => normalized.includes(p));
+
+  if (tieneIntentNegocio) {
+    const businessMatch = normalized.match(
+      /(?:hacer|abrir|montar|poner|tener)\s+(?:un|una)\s+([a-záéíóúñ]+)/
+    );
+    const businessName = businessMatch?.[1]?.trim();
+    const intro = businessName
+      ? `¡Para una ${businessName}, en Kliniu tenemos todo en higiene institucional! 👌`
+      : `¡Para tu negocio, en Kliniu tenemos todo en higiene institucional! 👌`;
+    return {
+      message: `${intro}\n\nDispensadores de jabón, papel, toallas y servilletas para cualquier tipo de espacio comercial. ¿Qué necesitas primero?`,
+      suggestions: [
+        { label: "💧 Jabón / Gel", action: "dispensador de jabón" },
+        { label: "🧻 Papel / Toallas", action: "dispensador de papel y toallas" },
+        { label: "🍽️ Servilletas", action: "dispensador de servilletas" },
+        { label: "🔩 Línea profesional", action: "acero inoxidable" },
+      ],
     };
   }
 

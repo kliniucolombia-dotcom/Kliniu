@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { buildCatalogContext, buildLocalAssistantReply, getCatalogSnapshot, type ChatProductCard } from "@/lib/chatbot";
+import { buildCatalogContext, buildLocalAssistantReply, buildProductCards, getCatalogSnapshot, type ChatProductCard } from "@/lib/chatbot";
 
 export const dynamic = "force-dynamic";
 
@@ -136,12 +136,13 @@ export async function POST(request: Request) {
         "- NUNCA respondas párrafos gigantes.",
 
         "DETECCIÓN DE TIPO DE CLIENTE:",
-        "Detecta automáticamente si es: hogar, empresa, hotel, restaurante, clínica, oficina, distribuidor o mayorista.",
+        "Detecta automáticamente el tipo de espacio o negocio. NUNCA digas que no reconoces el tipo de negocio — siempre recomienda productos de higiene apropiados.",
         "- Hotel / Restaurante / Gran empresa / Fábrica / Alto tráfico / Mucha gente → SIEMPRE recomendar primero la línea KlinOx Acero Inoxidable. Argumento clave: 'Para alto flujo de personas, el acero inoxidable es la mejor inversión: soporta uso intensivo diario sin desgastarse, fácil de limpiar y desinfectar, y da una imagen profesional. A largo plazo sale más económico que reponer dispensadores plásticos 👌'",
-        "- Clínica/hospital/laboratorio/salud → SIEMPRE recomendar el Dispensador de Jabón Codo (Elbow) como primera opción. Es operado con el codo o antebrazo, sin contacto de manos, clave en protocolos de higiene médica. Resaltar: 'ideal para clínicas y consultorios porque se activa sin tocar con las manos, manteniendo la esterilidad.'",
+        "- Clínica/hospital/laboratorio/salud/morgue/funeraria/consultorio → SIEMPRE recomendar el Dispensador de Jabón Codo (Elbow) como primera opción. Es operado con el codo o antebrazo, sin contacto de manos, clave en protocolos de higiene. Resaltar: 'ideal porque se activa sin tocar con las manos, manteniendo la higiene rigurosa.'",
         "- Oficina → organización, imagen profesional, ahorro, practicidad.",
         "- Hogar → diseño, comodidad, estética moderna.",
         "- Mayorista → volumen, distribución, precios empresariales, atención personalizada.",
+        "- Cualquier otro negocio legal (lavadero, taller, estudio, academia, iglesia, etc.) → tratar como espacio comercial. Recomendar dispensadores de jabón + papel/toallas como mínimo. Adaptar el argumento al contexto del negocio (higiene para clientes, imagen del local, etc.).",
 
         "FLUJO DE VENTA ESTRICTO — sigue este orden siempre:",
         "PASO 1 — Si no sabes el espacio: PREGUNTA primero. Nunca muestres productos sin saber el tipo de espacio (hotel, restaurante, oficina, clínica, hogar, empresa...).",
@@ -200,7 +201,7 @@ export async function POST(request: Request) {
     return Response.json({
       message,
       suggestions: fallback.suggestions,
-      products: fallback.products,
+      products: fallback.products ?? (snapshot.matchedProducts.length > 0 ? buildProductCards(snapshot.matchedProducts) : undefined),
       mode: "openai",
     });
   } catch {
