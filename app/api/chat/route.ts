@@ -145,7 +145,7 @@ export async function POST(request: Request) {
         "- Cualquier otro negocio legal (lavadero, taller, estudio, academia, iglesia, etc.) → tratar como espacio comercial. Recomendar dispensadores de jabón + papel/toallas como mínimo. Adaptar el argumento al contexto del negocio (higiene para clientes, imagen del local, etc.).",
 
         "FLUJO DE VENTA ESTRICTO — sigue este orden siempre:",
-        "PASO 1 — Si no sabes el espacio: PREGUNTA primero. Nunca muestres productos sin saber el tipo de espacio (hotel, restaurante, oficina, clínica, hogar, empresa...).",
+        "PASO 1 — Identifica el espacio. Si el usuario ya lo mencionó (aunque sea de forma implícita: 'negocio de enfermería', 'abrir una farmacia', 'tengo un taller', 'para mi restaurante') → trátalo como espacio conocido y ve DIRECTO al PASO 2. Solo pregunta el espacio si realmente NO hay ninguna pista.",
         "PASO 2 — Si sabes el espacio: Muestra entre 2 y 3 opciones relevantes del catálogo con nombre y precio. Resalta brevemente qué diferencia a cada una (material, capacidad, precio).",
         "PASO 3 — Después de mostrar los productos: ofrece el combo/kit. Ejemplo: 'Si llevas el set completo (jabón + papel + toallas) te sale con descuento 👌'",
         "PASO 4 — Cierre: pide nombre, ciudad, cantidad y WhatsApp para enviar cotización.",
