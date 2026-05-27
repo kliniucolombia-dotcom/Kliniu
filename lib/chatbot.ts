@@ -497,6 +497,83 @@ export function buildLocalAssistantReply(
     };
   }
 
+  // Detectar intención de negocio ANTES del bloque de productos para no quedar atrapado
+  // en el "¿Para qué tipo de espacio?" cuando ya está claro que es un negocio
+  const BUSINESS_INTENT_PHRASES_EARLY = [
+    "voy a hacer","voy a abrir","voy a montar","voy a poner","voy a tener",
+    "tengo un","tengo una","abrir un","abrir una","montar un","montar una",
+    "para mi negocio","para un negocio","para una empresa","estoy montando",
+    "estoy abriendo","quiero abrir","quiero montar","quiero hacer",
+    "para el negocio","para la empresa","para mi local","en mi negocio",
+    "en mi empresa","en mi local","en el negocio","para mi tienda","para la tienda",
+    "quiero vender","voy a vender","vendo","para vender","me dedico a vender",
+    "quiero tener un","quiero tener una","voy a tener un","voy a tener una",
+    "tengo negocio","mi negocio","mi tienda","mi local","mi empresa",
+  ];
+  const tieneIntentNegocioEarly = BUSINESS_INTENT_PHRASES_EARLY.some((p) => normalized.includes(p));
+
+  if (tieneIntentNegocioEarly) {
+    const ofMatch = normalized.match(/(?:negocio|empresa|local|tienda|establecimiento)\s+de\s+([a-záéíóúñ]+)/);
+    const directMatch = normalized.match(/(?:hacer|abrir|montar|poner|tener)\s+(?:un|una)\s+([a-záéíóúñ]+)/);
+    const sellMatch = normalized.match(/(?:vender|vendo|vendiendo)\s+([a-záéíóúñ]+)/);
+    const businessType = ofMatch?.[1]?.trim() ?? directMatch?.[1]?.trim() ?? sellMatch?.[1]?.trim();
+
+    const SALUD_BIZ = ["clinica","enfermeria","farmacia","veterinaria","odontologia","dentista","optometria","estetica","cosmetologia","medico","salud","hospital","laboratorio","consultorio","morgue","funeraria","tanatologia"];
+    const COMIDA_BIZ = ["restaurante","cafeteria","cocina","comida","panaderia","pasteleria","heladeria","pizzeria","sushi","bar","taberna","cantina","fonda","pollo","pollos","carne","carnes","pescado","mariscos","arepas","empanadas","tamales","frutas","verduras","mercado","supermercado","tienda"];
+    const HOTEL_BIZ = ["hotel","hostal","posada","alojamiento","residencia","motel"];
+
+    const esNegocioSalud = businessType && SALUD_BIZ.some((k) => businessType.includes(k));
+    const esNegocioComida = businessType && COMIDA_BIZ.some((k) => businessType.includes(k));
+    const esNegocioHotel = businessType && HOTEL_BIZ.some((k) => businessType.includes(k));
+
+    const intro = businessType
+      ? `¡Para una ${businessType}, en Kliniu tenemos exactamente lo que necesitas! 👌`
+      : `¡Para tu negocio, en Kliniu tenemos todo en higiene institucional! 👌`;
+
+    if (esNegocioSalud) {
+      return {
+        message: `${intro}\n\nEn espacios de salud la higiene es crítica. Te recomendamos el Dispensador de Jabón Codo/Elbow (sin contacto de manos) + línea KlinOx Acero Inoxidable. ¿Cuántas unidades necesitas?`,
+        suggestions: [
+          { label: "💧 Jabón sin contacto", action: "dispensador de jabón codo clínica" },
+          { label: "🔩 Línea KlinOx", action: "acero inoxidable clínica" },
+          { label: "🧻 Papel / Toallas", action: "dispensador de papel clínica" },
+          { label: "💬 Cotizar", action: "quiero cotizar" },
+        ],
+      };
+    }
+    if (esNegocioComida) {
+      return {
+        message: `${intro}\n\nPara negocios de comida lo esencial: jabón en cocina y baños, servilleteros para los clientes y toallas de mano. ¿Qué necesitas primero?`,
+        suggestions: [
+          { label: "🍽️ Servilleteros", action: "dispensador de servilletas" },
+          { label: "💧 Jabón", action: "dispensador de jabón restaurante" },
+          { label: "🧻 Toallas de mano", action: "dispensador de toallas restaurante" },
+          { label: "🔩 Línea KlinOx", action: "acero inoxidable restaurante" },
+        ],
+      };
+    }
+    if (esNegocioHotel) {
+      return {
+        message: `${intro}\n\nPara hoteles tenemos la línea premium: dispensadores de acero inoxidable, toallas y papel higiénico institucional. ¿Cuántas habitaciones o baños tienes?`,
+        suggestions: [
+          { label: "🔩 Línea KlinOx", action: "acero inoxidable hotel" },
+          { label: "🧻 Papel institucional", action: "dispensador papel higiénico hotel" },
+          { label: "🛎️ Ver todo hotel", action: "dispensadores para hotel" },
+          { label: "💬 Cotizar", action: "quiero cotizar" },
+        ],
+      };
+    }
+    return {
+      message: `${intro}\n\nDispensadores de jabón, servilleteros, papel y toallas para cualquier tipo de negocio. ¿Qué necesitas primero?`,
+      suggestions: [
+        { label: "💧 Jabón / Gel", action: "dispensador de jabón" },
+        { label: "🍽️ Servilleteros", action: "dispensador de servilletas" },
+        { label: "🧻 Papel / Toallas", action: "dispensador de papel y toallas" },
+        { label: "🔩 Línea profesional", action: "acero inoxidable" },
+      ],
+    };
+  }
+
   // Detectar contexto del cliente
   const ESPACIOS = ["hotel","restaurante","oficina","clinica","hospital","colegio","hogar","casa","empresa","gym","gimnasio","salon","bodega","fabrica","centro","mall","comercial","plaza","parque","aeropuerto","estadio","universidad","colegio","banco","spa","cafeteria","bar","discoteca","club"];
   const ESPACIOS_SALUD = ["clinica","hospital","laboratorio","consultorio","medico","salud","enfermeria","farmacia","veterinaria","odontologia","dentista","morgue","funeraria"];
@@ -656,86 +733,6 @@ export function buildLocalAssistantReply(
     return {
       message: `Tenemos justo esa línea: **${snapshot.matchedCategories.join(", ")}** ✨\n\n¿Para qué tipo de espacio lo necesitas? Así te recomiendo el modelo correcto.`,
       suggestions: buildCategorySuggestions(snapshot.matchedCategories),
-    };
-  }
-
-  // Detectar intención de negocio aunque el tipo no esté en la lista predefinida
-  const BUSINESS_INTENT_PHRASES = [
-    "voy a hacer","voy a abrir","voy a montar","voy a poner","voy a tener",
-    "tengo un","tengo una","abrir un","abrir una","montar un","montar una",
-    "para mi negocio","para un negocio","para una empresa","estoy montando",
-    "estoy abriendo","quiero abrir","quiero montar","quiero hacer",
-    "para el negocio","para la empresa","para mi local","en mi negocio",
-    "en mi empresa","en mi local","en el negocio","para mi tienda","para la tienda",
-    "quiero vender","voy a vender","vendo","para vender","me dedico a vender",
-    "quiero tener un","quiero tener una","voy a tener un","voy a tener una",
-    "tengo negocio","mi negocio","mi tienda","mi local","mi empresa",
-  ];
-  const tieneIntentNegocio = BUSINESS_INTENT_PHRASES.some((p) => normalized.includes(p));
-
-  if (tieneIntentNegocio) {
-    // Extraer tipo de negocio de "negocio de X" / "empresa de X" / "hacer una X" / "vender X"
-    const ofMatch = normalized.match(/(?:negocio|empresa|local|tienda|establecimiento)\s+de\s+([a-záéíóúñ]+)/);
-    const directMatch = normalized.match(/(?:hacer|abrir|montar|poner|tener)\s+(?:un|una)\s+([a-záéíóúñ]+)/);
-    const sellMatch = normalized.match(/(?:vender|vendo|vendiendo)\s+([a-záéíóúñ]+)/);
-    const businessType = ofMatch?.[1]?.trim() ?? directMatch?.[1]?.trim() ?? sellMatch?.[1]?.trim();
-
-    const SALUD_BIZ = ["clinica","enfermeria","farmacia","veterinaria","odontologia","dentista","optometria","estetica","cosmetologia","medico","salud","hospital","laboratorio","consultorio","morgue","funeraria","tanatologia"];
-    const COMIDA_BIZ = ["restaurante","cafeteria","cocina","comida","panaderia","pasteleria","heladeria","pizzeria","sushi","bar","taberna","cantina","fonda","pollo","pollos","carne","carnes","pescado","mariscos","arepas","empanadas","tamales","frutas","verduras","mercado","supermercado","tienda"];
-    const HOTEL_BIZ = ["hotel","hostal","posada","alojamiento","residencia","motel"];
-
-    const esNegocioSalud = businessType && SALUD_BIZ.some((k) => businessType.includes(k));
-    const esNegocioComida = businessType && COMIDA_BIZ.some((k) => businessType.includes(k));
-    const esNegocioHotel = businessType && HOTEL_BIZ.some((k) => businessType.includes(k));
-
-    const intro = businessType
-      ? `¡Para una ${businessType}, en Kliniu tenemos exactamente lo que necesitas! 👌`
-      : `¡Para tu negocio, en Kliniu tenemos todo en higiene institucional! 👌`;
-
-    if (esNegocioSalud) {
-      return {
-        message: `${intro}\n\nEn espacios de salud la higiene es crítica. Te recomendamos el Dispensador de Jabón Codo/Elbow (sin contacto de manos) + línea KlinOx Acero Inoxidable para resistir uso intensivo. ¿Cuántas unidades necesitas?`,
-        suggestions: [
-          { label: "💧 Jabón sin contacto", action: "dispensador de jabón codo clínica" },
-          { label: "🔩 Línea KlinOx", action: "acero inoxidable clínica" },
-          { label: "🧻 Papel / Toallas", action: "dispensador de papel clínica" },
-          { label: "💬 Cotizar", action: "quiero cotizar" },
-        ],
-      };
-    }
-
-    if (esNegocioComida) {
-      return {
-        message: `${intro}\n\nPara negocios de comida lo esencial: jabón en cocina y baños, papel/toallas y servilletas para clientes. La línea KlinOx es ideal por el alto flujo. ¿Qué necesitas primero?`,
-        suggestions: [
-          { label: "💧 Jabón / Gel", action: "dispensador de jabón restaurante" },
-          { label: "🍽️ Servilletas", action: "dispensador de servilletas" },
-          { label: "🔩 Línea KlinOx", action: "acero inoxidable restaurante" },
-          { label: "🧻 Toallas de mano", action: "dispensador de toallas restaurante" },
-        ],
-      };
-    }
-
-    if (esNegocioHotel) {
-      return {
-        message: `${intro}\n\nPara hoteles y alojamientos tenemos la línea premium: dispensadores de acero inoxidable, toallas de mano y papel higiénico institucional. ¿Cuántas habitaciones o baños tienes?`,
-        suggestions: [
-          { label: "🔩 Línea KlinOx", action: "acero inoxidable hotel" },
-          { label: "🧻 Papel institucional", action: "dispensador papel higiénico hotel" },
-          { label: "🛎️ Ver todo hotel", action: "dispensadores para hotel" },
-          { label: "💬 Cotizar", action: "quiero cotizar" },
-        ],
-      };
-    }
-
-    return {
-      message: `${intro}\n\nDispensadores de jabón, papel, toallas y servilletas para cualquier tipo de espacio comercial. ¿Qué necesitas primero?`,
-      suggestions: [
-        { label: "💧 Jabón / Gel", action: "dispensador de jabón" },
-        { label: "🧻 Papel / Toallas", action: "dispensador de papel y toallas" },
-        { label: "🍽️ Servilletas", action: "dispensador de servilletas" },
-        { label: "🔩 Línea profesional", action: "acero inoxidable" },
-      ],
     };
   }
 
