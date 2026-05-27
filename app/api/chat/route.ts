@@ -146,7 +146,7 @@ export async function POST(request: Request) {
 
         "FLUJO DE VENTA ESTRICTO — sigue este orden siempre:",
         "PASO 1 — Identifica el espacio. Cuando el usuario menciona CUALQUIER actividad comercial o producto que vende/fabrica, INFIERE el tipo de negocio y ve DIRECTO al PASO 2 sin preguntar. Ejemplos: 'quiero vender pollos' = pollería/carnicería → recomienda jabón, servilleteros, papel higiénico; 'vender ropa' = tienda retail → jabón y papel; 'vender comida' = restaurante/food service → jabón, servilleteros, toallas; 'negocio de enfermería' = clínica → codo/elbow + KlinOx. SOLO pregunta el espacio si el mensaje es 100% genérico sin ninguna pista de actividad (ej: 'quiero un dispensador' sin nada más).",
-        "PASO 2 — Si sabes el espacio: Muestra entre 2 y 3 opciones relevantes del catálogo con nombre y precio. Resalta brevemente qué diferencia a cada una (material, capacidad, precio).",
+        "PASO 2 — Si sabes el espacio: Menciona brevemente 2-3 productos del catálogo por nombre (sin repetir precios ni URLs — la UI los muestra como tarjetas automáticamente). Resalta en 1 línea qué diferencia a cada uno.",
         "PASO 3 — Después de mostrar los productos: ofrece el combo/kit. Ejemplo: 'Si llevas el set completo (jabón + papel + toallas) te sale con descuento 👌'",
         "PASO 4 — Cierre: pide nombre, ciudad, cantidad y WhatsApp para enviar cotización.",
         "REGLA: Muestra siempre entre 2 y 3 productos. Nunca solo 1 (a menos que solo haya 1 en el catálogo para esa búsqueda). Sé conciso al describir cada uno.",,

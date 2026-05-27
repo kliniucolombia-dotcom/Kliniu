@@ -2,7 +2,33 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode, Fragment } from "react";
+
+function renderMarkdown(text: string): ReactNode {
+  return text.split("\n").map((line, li) => {
+    const parts: ReactNode[] = [];
+    const regex = /\*\*(.*?)\*\*|\[(.*?)\]\((.*?)\)/g;
+    let last = 0;
+    let m: RegExpExecArray | null;
+    while ((m = regex.exec(line)) !== null) {
+      if (m.index > last) parts.push(line.slice(last, m.index));
+      if (m[1] !== undefined) {
+        parts.push(<strong key={m.index}>{m[1]}</strong>);
+      } else if (m[2] !== undefined) {
+        const href = m[3] ?? "#";
+        const isInternal = href.startsWith("/") || href.includes("kliniu.com");
+        const path = isInternal ? href.replace(/^https?:\/\/[^/]+/, "") : href;
+        parts.push(isInternal
+          ? <Link key={m.index} href={path} className="text-[#27B1B8] underline">{m[2]}</Link>
+          : <a key={m.index} href={href} target="_blank" rel="noopener noreferrer" className="text-[#27B1B8] underline">{m[2]}</a>
+        );
+      }
+      last = regex.lastIndex;
+    }
+    if (last < line.length) parts.push(line.slice(last));
+    return <Fragment key={li}>{li > 0 && <br />}{parts}</Fragment>;
+  });
+}
 
 type ChatSuggestion = {
   label: string;
@@ -217,7 +243,7 @@ export default function SupportChat() {
                         <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#27B1B8]">
                           Kliniu
                         </p>
-                        <p className="whitespace-pre-line">{message.content}</p>
+                        <div className="whitespace-pre-line">{renderMarkdown(message.content)}</div>
                         {message.suggestions && message.suggestions.length > 0 && (
                           <div className="mt-3 flex flex-wrap gap-2">
                             {message.suggestions.map((s) =>
