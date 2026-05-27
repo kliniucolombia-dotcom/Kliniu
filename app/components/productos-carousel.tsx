@@ -67,7 +67,7 @@ export default function ProductosCarousel({
                 <p className="h-4 line-clamp-1 text-[11px] text-[#999]">
                   {p.descripcion}
                 </p>
-                <p className="mt-1.5 min-h-[38px] line-clamp-2 text-sm font-semibold leading-snug text-[#111]">
+                <p className="mt-1.5 min-h-[38px] line-clamp-3 text-sm font-semibold leading-snug text-[#111]">
                   {p.nombre}
                 </p>
                 <p className="mt-1.5 text-base font-bold" style={{ color: "#0C535B" }}>{p.precio}</p>

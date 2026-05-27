@@ -146,13 +146,17 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
 
       {/* Image */}
       <div className="relative flex h-44 items-center justify-center bg-white px-6 py-4">
+        {/* Preload variant images */}
+        {variaciones.map((v) => v.image && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img key={v.color} src={v.image} alt="" aria-hidden className="hidden" />
+        ))}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          key={imagenActual}
           src={imagenActual || "/product-placeholder.png"}
           alt={producto.nombre}
           loading="lazy"
-          className="max-h-36 w-auto max-w-full object-contain transition-opacity duration-300"
+          className="max-h-36 w-auto max-w-full object-contain transition-opacity duration-150"
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png";
           }}
@@ -161,7 +165,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
 
       {/* Info */}
       <div className="flex flex-1 flex-col border-t border-black/5 p-4">
-        <h3 className="line-clamp-2 min-h-[40px] text-sm font-semibold leading-snug text-[#111]">
+        <h3 className="line-clamp-3 min-h-[40px] text-sm font-semibold leading-snug text-[#111]">
           {producto.nombre}
         </h3>
 
@@ -768,21 +772,21 @@ export default function CategoriasPage() {
             className={`object-cover object-center md:hidden ${dark ? "opacity-100" : "opacity-60"}`}
           />
         )}
-        <div className="relative mx-auto max-w-[1440px] px-8 py-8 md:py-10">
-          <h1 className={`text-4xl font-extrabold leading-tight tracking-tight md:text-5xl ${dark ? "text-[#0a0f14]" : "text-white"}`}>
+        <div className="relative mx-auto max-w-[1440px] px-4 py-6 sm:px-8 sm:py-8 md:py-10">
+          <h1 className={`text-2xl font-extrabold leading-tight tracking-tight sm:text-4xl md:text-5xl ${dark ? "text-[#0a0f14]" : "text-white"}`}>
             {tituloLinea1}
             <br />
             {tituloLinea2}<span className="text-[#27B1B8]">{tituloDestacado}</span>
           </h1>
-          <p className={`mt-3 max-w-md text-sm leading-6 ${dark ? "text-[#3a4a4b]" : "text-white/70"}`}>
+          <p className={`mt-2 max-w-md text-xs leading-5 sm:mt-3 sm:text-sm sm:leading-6 ${dark ? "text-[#3a4a4b]" : "text-white/70"}`}>
             {catMeta.bannerCopy}
           </p>
           {catMeta.beneficiosHero && (
-            <div className="mt-5 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap gap-2">
               {catMeta.beneficiosHero.map((b) => (
                 <div
                   key={b.texto}
-                  className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-xs font-semibold leading-tight ${
+                  className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold leading-tight sm:gap-2.5 sm:px-3 sm:py-2 sm:text-xs ${
                     dark
                       ? "border-black/12 bg-white/80 text-[#1A1A1A]"
                       : "border-white/20 bg-white/10 text-white"
@@ -790,11 +794,11 @@ export default function CategoriasPage() {
                 >
                   {b.imagen ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={b.imagen} alt="" className="h-7 w-7 shrink-0 object-contain" />
+                    <img src={b.imagen} alt="" className="h-6 w-6 shrink-0 object-contain sm:h-7 sm:w-7" />
                   ) : (
-                    <span className="text-lg leading-none">{b.icono}</span>
+                    <span className="text-base leading-none sm:text-lg">{b.icono}</span>
                   )}
-                  <span className="max-w-[120px]">{b.texto}</span>
+                  <span className="max-w-[100px] sm:max-w-[120px]">{b.texto}</span>
                 </div>
               ))}
             </div>
@@ -803,7 +807,7 @@ export default function CategoriasPage() {
       </section>
 
       {/* ── Products ── */}
-      <section className="mx-auto max-w-[1440px] px-6 pb-16 pt-10">
+      <section className="mx-auto max-w-[1440px] px-4 pb-12 pt-8 sm:px-6 sm:pb-16 sm:pt-10">
         {/* Section heading */}
         <h2 className="mb-6 text-xl font-bold text-[#27B1B8]">
           {headingCategoria[categoriaActiva ?? ""] ?? `Explora ${categoriaActiva ?? "el catálogo"}`}
@@ -877,14 +881,14 @@ export default function CategoriasPage() {
       {catMeta.comoElegir && catMeta.comoElegir.length > 0 && (
         catMeta.comoElegirDark ? (
           /* Dark variant — Hoteles y Restaurantes */
-          <section className="bg-[#f8f8f7] px-6 py-12">
+          <section className="bg-[#f8f8f7] px-4 py-8 sm:px-6 sm:py-12">
             <div className="mx-auto max-w-[1440px]">
               <div
-                className="relative overflow-visible rounded-2xl"
+                className="relative overflow-hidden rounded-2xl"
                 style={{ background: "linear-gradient(to right, #051e22, #0C535B, #0f6e78)" }}
               >
-                {/* Foca — absolute, overflows upward slightly into section padding */}
-                <div className="absolute bottom-0 left-0 h-[240px] w-[220px]">
+                {/* Foca — solo desktop */}
+                <div className="absolute bottom-0 left-0 hidden h-[240px] w-[220px] lg:block">
                   <Image
                     src={catMeta.comoElegirFoca ?? "/foca-ok-kliniu-original.png"}
                     alt="Foca Kliniu"
@@ -893,52 +897,44 @@ export default function CategoriasPage() {
                   />
                 </div>
 
-                {/* Single flat row */}
-                <div className="flex min-h-[220px] items-stretch min-w-0">
-                  {/* Spacer for foca */}
-                  <div className="w-[260px] shrink-0" />
+                {/* Header */}
+                <div className="px-6 pt-6 lg:ml-[260px] lg:border-r lg:border-white/10 lg:py-7 lg:w-[250px] lg:flex lg:flex-col lg:justify-center lg:pt-0 lg:mr-0">
+                  <h2 className="text-base font-black leading-snug text-white sm:text-[18px]">
+                    {(() => {
+                      const title = catMeta.comoElegirTituloCompleto ?? "¿Cómo elegir el producto ideal?";
+                      const parts = title.split("KLINIU");
+                      return parts.length === 2 ? (
+                        <>{parts[0]}<span className="text-[#27B1B8]">KLINIU</span>{parts[1]}</>
+                      ) : title;
+                    })()}
+                  </h2>
+                  {catMeta.comoElegirSubtitulo && (
+                    <p className="mt-2 text-[11px] leading-4 text-white/65">
+                      {catMeta.comoElegirSubtitulo}
+                    </p>
+                  )}
+                </div>
 
-                  {/* Title + subtitle */}
-                  <div className="flex w-[250px] shrink-0 flex-col justify-center border-r border-white/10 px-6 py-7">
-                    <h2 className="text-[18px] font-black leading-snug text-white">
-                      {(() => {
-                        const title = catMeta.comoElegirTituloCompleto ?? "¿Cómo elegir el producto ideal?";
-                        const parts = title.split("KLINIU");
-                        return parts.length === 2 ? (
-                          <>{parts[0]}<span className="text-[#27B1B8]">KLINIU</span>{parts[1]}</>
-                        ) : title;
-                      })()}
-                    </h2>
-                    {catMeta.comoElegirSubtitulo && (
-                      <p className="mt-2 text-[11px] leading-4 text-white/65">
-                        {catMeta.comoElegirSubtitulo}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* 4 benefit items in a row */}
+                {/* Benefit items — grid en móvil, fila en desktop */}
+                <div className="mt-4 grid grid-cols-2 gap-px border-t border-white/10 sm:grid-cols-4 lg:ml-[510px] lg:mt-0 lg:flex lg:border-t-0 lg:border-l">
                   {catMeta.comoElegir.map((factor, i) => (
                     <div
                       key={factor.titulo}
-                      className={`flex flex-1 flex-col justify-center px-5 py-6 ${i > 0 ? "border-l border-white/10" : ""}`}
+                      className={`flex flex-col justify-start px-4 py-5 sm:px-5 ${i > 0 ? "border-l border-white/10" : ""}`}
                     >
-                      <div className="flex items-start gap-3">
-                        {factor.imagen ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={factor.imagen} alt="" className="mt-0.5 h-9 w-9 shrink-0 object-contain brightness-0 invert" />
-                        ) : (
-                          <svg viewBox="0 0 24 24" className="mt-0.5 h-6 w-6 shrink-0 text-[#27B1B8]" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                          </svg>
-                        )}
-                        <div>
-                          <p className="text-sm font-bold text-white">{factor.titulo}</p>
-                          <p className="mt-0.5 text-[11px] leading-4 text-white/60">{factor.descripcion}</p>
-                        </div>
-                      </div>
+                      {factor.imagen ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={factor.imagen} alt="" className="h-8 w-8 shrink-0 object-contain brightness-0 invert sm:h-9 sm:w-9" />
+                      ) : (
+                        <svg viewBox="0 0 24 24" className="h-8 w-8 shrink-0 text-[#27B1B8] sm:h-6 sm:w-6" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                          <circle cx="9" cy="7" r="4"/>
+                          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                      )}
+                      <p className="mt-2 text-xs font-bold text-white sm:text-sm">{factor.titulo}</p>
+                      <p className="mt-0.5 text-[10px] leading-4 text-white/60 sm:text-[11px]">{factor.descripcion}</p>
                     </div>
                   ))}
                 </div>
@@ -947,63 +943,50 @@ export default function CategoriasPage() {
           </section>
         ) : (
           /* Light variant — all other categories */
-          <section className="bg-[#f8f8f7] px-6 py-12">
+          <section className="bg-[#f8f8f7] px-4 py-8 sm:px-6 sm:py-12">
             <div className="mx-auto max-w-[1440px]">
               <div className="overflow-hidden rounded-2xl" style={{ background: "#EAF8F7" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "260px 1fr" }}>
 
-                  {/* Left: título + foca */}
-                  <div className="flex flex-col justify-between overflow-hidden p-6 pb-0">
-                    <div>
-                      <p className="font-bold leading-snug text-[#0C535B]">
-                        ¿Cómo elegir el{" "}
-                        {catMeta.comoElegirTitulo ?? `${catMeta.heroDestacado?.toLowerCase() ?? "producto"} ideal`}?
-                      </p>
-                      <p className="mt-1.5 text-sm text-[#607175]">
-                        Ten en cuenta estos factores para elegir el ideal
-                      </p>
-                    </div>
+                {/* Header con título y foca */}
+                <div className="relative px-6 pt-6 pb-4 pr-32 sm:px-8 sm:pt-7 sm:pb-5 sm:pr-36">
+                  <p className="text-base font-bold leading-snug text-[#0C535B] sm:text-lg">
+                    ¿Cómo elegir el{" "}
+                    {catMeta.comoElegirTitulo ?? `${catMeta.heroDestacado?.toLowerCase() ?? "producto"} ideal`}?
+                  </p>
+                  <p className="mt-1 text-xs text-[#607175] sm:text-sm">
+                    Ten en cuenta estos factores para elegir el ideal
+                  </p>
+                  {/* Foca — absoluta pegada a la esquina inferior derecha del header */}
+                  <div className="absolute bottom-0 right-4 hidden sm:flex sm:items-end">
                     {catMeta.comoElegirFoca ? (
-                      <Image
-                        src={catMeta.comoElegirFoca}
-                        alt="Foca Kliniu"
-                        width={200}
-                        height={200}
-                        className="mt-4 w-52 self-center object-contain"
-                      />
+                      <Image src={catMeta.comoElegirFoca} alt="Foca Kliniu" width={110} height={110} className="w-28 object-contain object-bottom" />
                     ) : (
-                      <Image
-                        src="/foca-ok-kliniu-original.png"
-                        alt="Foca Kliniu"
-                        width={120}
-                        height={120}
-                        className="mt-6 w-28 self-center object-contain"
-                      />
+                      <Image src="/foca-ok-kliniu-original.png" alt="Foca Kliniu" width={90} height={90} className="w-24 object-contain object-bottom" />
                     )}
                   </div>
-
-                  {/* Right: criterios */}
-                  <div className="flex divide-x divide-black/8" style={{ background: "rgba(255,255,255,0.7)" }}>
-                    {catMeta.comoElegir.map((factor) => (
-                      <div key={factor.titulo} className="flex flex-1 flex-col justify-center p-5">
-                        {factor.imagen ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={factor.imagen} alt="" className="h-14 w-14 object-contain" />
-                        ) : (
-                          <svg viewBox="0 0 24 24" className="h-14 w-14 text-[#27B1B8]" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                          </svg>
-                        )}
-                        <p className="mt-2 text-sm font-bold text-[#073F43]">{factor.titulo}</p>
-                        <p className="mt-1 text-xs leading-5 text-[#607175]">{factor.descripcion}</p>
-                      </div>
-                    ))}
-                  </div>
-
                 </div>
+
+                {/* Criterios — grid responsivo */}
+                <div className="mt-4 grid grid-cols-2 divide-x divide-y divide-black/8 sm:grid-cols-4 sm:divide-y-0" style={{ background: "rgba(255,255,255,0.7)" }}>
+                  {catMeta.comoElegir.map((factor) => (
+                    <div key={factor.titulo} className="flex flex-col p-4 sm:p-5">
+                      {factor.imagen ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={factor.imagen} alt="" className="h-10 w-10 object-contain sm:h-14 sm:w-14" />
+                      ) : (
+                        <svg viewBox="0 0 24 24" className="h-10 w-10 text-[#27B1B8] sm:h-14 sm:w-14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                          <circle cx="9" cy="7" r="4"/>
+                          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                      )}
+                      <p className="mt-2 text-xs font-bold text-[#073F43] sm:text-sm">{factor.titulo}</p>
+                      <p className="mt-1 text-[10px] leading-4 text-[#607175] sm:text-xs sm:leading-5">{factor.descripcion}</p>
+                    </div>
+                  ))}
+                </div>
+
               </div>
             </div>
           </section>

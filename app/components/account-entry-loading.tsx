@@ -17,14 +17,13 @@ export default function AccountEntryLoading({
         <div className="relative flex h-[220px] w-[220px] items-center justify-center">
           <div className="absolute h-[220px] w-[220px] rounded-full border-[5px] border-[#0C535B]/10 border-t-[#27B1B8] animate-[spin_1.2s_linear_infinite]" />
           <div className="absolute h-[176px] w-[176px] rounded-full bg-[radial-gradient(circle,_rgba(237,132,53,0.18)_0%,_rgba(237,132,53,0)_70%)] animate-[ping_2.4s_ease-out_infinite]" />
-          <div className="relative rounded-full bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.12)] animate-[pulse_1.8s_ease-in-out_infinite]">
+          <div className="relative overflow-hidden rounded-full bg-white shadow-[0_18px_45px_rgba(15,23,42,0.12)] animate-[pulse_1.8s_ease-in-out_infinite]" style={{ width: 176, height: 176 }}>
             <Image
-              src="/kliniu-loader-logo.png"
-              alt="Logo de Kliniu"
-              width={132}
-              height={132}
+              src="/foca-saliendo-pared.png"
+              alt="Foca Kliniu"
+              fill
               priority
-              className="h-[132px] w-[132px] object-contain"
+              className="object-cover object-top"
             />
           </div>
         </div>

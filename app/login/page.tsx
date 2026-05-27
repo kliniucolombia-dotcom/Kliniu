@@ -77,6 +77,20 @@ export default function LoginPage() {
   const [logoAnimationKey, setLogoAnimationKey] = useState(0);
 
   useEffect(() => {
+    fetch("/api/account")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data?.user) return;
+        const role = data.user.role;
+        if (role === "ADMIN") router.replace("/admin");
+        else if (role === "SELLER") router.replace("/panel");
+        else if (role === "PACKING") router.replace("/empaque");
+        else router.replace("/mi-cuenta");
+      })
+      .catch(() => {});
+  }, [router]);
+
+  useEffect(() => {
     if (!toast) return;
 
     const timeoutId = window.setTimeout(() => {

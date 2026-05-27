@@ -23,6 +23,10 @@ export default async function MiCuentaPage() {
     redirect("/empaque");
   }
 
+  if (user.role === "SELLER" || user.role === "ADMIN") {
+    redirect("/panel");
+  }
+
   const orders = await getOrdersForUser(session.userId);
 
   return <AccountProfileForm user={user} orders={orders} />;

@@ -230,7 +230,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
             <div className="flex shrink-0 items-center gap-3 sm:gap-4">
               {currentUser ? (
                 <Link
-                  href={currentUser.role === "ADMIN" ? "/admin" : "/mi-cuenta"}
+                  href={currentUser.role === "ADMIN" ? "/admin" : currentUser.role === "SELLER" ? "/panel" : "/mi-cuenta"}
                   className="flex flex-col items-center gap-0.5 text-[#0C535B] transition-colors hover:text-[#27B1B8]"
                 >
                   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -444,7 +444,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
                 {currentUser ? (
                   <div className="flex flex-col gap-2">
                     <Link
-                      href={currentUser.role === "ADMIN" ? "/admin" : "/mi-cuenta"}
+                      href={currentUser.role === "ADMIN" ? "/admin" : currentUser.role === "SELLER" ? "/panel" : "/mi-cuenta"}
                       onClick={() => setMobileMenu(false)}
                       className="flex items-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold text-[#0C535B] hover:bg-[#f0f8f8]"
                     >

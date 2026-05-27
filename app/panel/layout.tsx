@@ -3,12 +3,32 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-const NAV = [
-  { href: "/panel",           label: "Dashboard",  icon: "▦" },
-  { href: "/panel/pedidos",   label: "Pedidos",    icon: "📦" },
-  { href: "/panel/productos", label: "Productos",  icon: "◻" },
-  { href: "/panel/metricas",  label: "Métricas",   icon: "◈" },
-  { href: "/panel/campanas",  label: "Campañas",   icon: "◉" },
+type NavItem = {
+  href: string;
+  label: string;
+  icon: string;
+  children?: Array<{ href: string; label: string }>;
+};
+
+const NAV: NavItem[] = [
+  { href: "/panel", label: "Dashboard", icon: "▦" },
+  { href: "/panel/pedidos", label: "Pedidos", icon: "📦" },
+  { href: "/panel/productos", label: "Productos", icon: "◻" },
+  { href: "/panel/metricas", label: "Métricas", icon: "◈" },
+  { href: "/panel/campanas", label: "Campañas", icon: "◉" },
+  {
+    href: "/panel/odoo",
+    label: "Odoo",
+    icon: "◎",
+    children: [
+      { href: "/panel/odoo", label: "Resumen" },
+      { href: "/panel/odoo/aplicaciones", label: "Aplicaciones" },
+      { href: "/panel/odoo/asistente", label: "Asistente" },
+      { href: "/panel/odoo/reportes", label: "Reportes" },
+      { href: "/panel/odoo/productos", label: "Productos" },
+      { href: "/panel/odoo/inventario", label: "Inventario" },
+    ],
+  },
 ];
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
@@ -51,19 +71,48 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
           {NAV.map((item) => {
             const active = pathname === item.href || (item.href !== "/panel" && pathname.startsWith(item.href));
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all ${
-                  active
-                    ? "bg-[#27B1B8] text-white shadow-[0_2px_8px_rgba(39,177,184,0.3)]"
-                    : "text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#1A1A1A]"
-                } ${collapsed ? "justify-center" : ""}`}
-                title={collapsed ? item.label : undefined}
-              >
-                <span className="text-base">{item.icon}</span>
-                {!collapsed && <span>{item.label}</span>}
-              </Link>
+              <div key={item.href} className="mb-1">
+                <Link
+                  href={item.href}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all ${
+                    active
+                      ? "bg-[#27B1B8] text-white shadow-[0_2px_8px_rgba(39,177,184,0.3)]"
+                      : "text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#1A1A1A]"
+                  } ${collapsed ? "justify-center" : ""}`}
+                  title={collapsed ? item.label : undefined}
+                >
+                  <span className="text-base">{item.icon}</span>
+                  {!collapsed && (
+                    <>
+                      <span className="flex-1">{item.label}</span>
+                      {item.children && (
+                        <span className="text-[10px] opacity-70">{active ? "▾" : "›"}</span>
+                      )}
+                    </>
+                  )}
+                </Link>
+                {!collapsed && item.children && active && (
+                  <div className="mt-1 space-y-1 pl-8">
+                    {item.children.map((child) => {
+                      const childActive = pathname === child.href;
+
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          className={`block rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
+                            childActive
+                              ? "bg-[#E8FAFB] text-[#0C535B]"
+                              : "text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#1A1A1A]"
+                          }`}
+                        >
+                          {child.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>

@@ -183,15 +183,16 @@ export async function POST(request: Request) {
         "Catálogo actual (usa SOLO estos datos, nunca inventes):",
         buildCatalogContext(snapshot),
       ].join("\n\n"),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       input: messages.map((message) => ({
         role: message.role,
         content: [
           {
-            type: "input_text",
+            type: message.role === "assistant" ? "output_text" : "input_text",
             text: message.content,
           },
         ],
-      })),
+      })) as any,
     });
 
     const message = response.output_text?.trim() || fallback.message;
