@@ -346,7 +346,7 @@ export default function ProductoDetallePage() {
 
   const handleAddToCart = () => {
     if (!producto || producto.puedeComprar === false) return;
-    const pricing = getVolumePricing(producto.precio, cantidad, producto.slug);
+    const pricing = getVolumePricing(producto.precio, cantidad, producto.slug, producto.preciosPorCantidad);
     const varianteActiva = allVariants[colorActivo];
     const imagenSeleccionada = varianteActiva?.image ?? producto.imagen;
     const colorLabel = allVariants.length > 0 ? varianteActiva?.label : undefined;
@@ -408,7 +408,7 @@ export default function ProductoDetallePage() {
   const relacionados = products
     .filter((p) => p.categoria === producto.categoria && p.slug !== producto.slug)
     .slice(0, 4);
-  const volumePricing = getVolumePricing(producto.precio, cantidad, producto.slug);
+  const volumePricing = getVolumePricing(producto.precio, cantidad, producto.slug, producto.preciosPorCantidad);
 
   const fichaTecnica: ProductoEspecificacion[] =
     producto.especificacionesTecnicas?.length

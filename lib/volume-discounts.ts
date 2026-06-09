@@ -56,7 +56,40 @@ export function getVolumeDiscount(quantity: number) {
   return VOLUME_DISCOUNT_TIERS.find((tier) => quantity >= tier.min) ?? VOLUME_DISCOUNT_TIERS.at(-1)!;
 }
 
-export function getVolumePricing(price: string, quantity: number, productSlug?: string) {
+export function getVolumePricing(
+  price: string,
+  quantity: number,
+  productSlug?: string,
+  preciosPorCantidad?: { cantidad: number; precioUnitario: number }[],
+) {
+  // Primary source: preciosPorCantidad from catalog
+  if (preciosPorCantidad && preciosPorCantidad.length > 0) {
+    const x1 = preciosPorCantidad.find((t) => t.cantidad === 1);
+    const baseUnitPrice = x1?.precioUnitario ?? parsePriceValue(price);
+    // Find the highest matching tier (exact match on cantidad for pack buttons)
+    const match = [...preciosPorCantidad]
+      .sort((a, b) => b.cantidad - a.cantidad)
+      .find((t) => quantity >= t.cantidad);
+
+    if (match) {
+      const discountedUnitPrice = match.precioUnitario;
+      const total = discountedUnitPrice * quantity;
+      const pct = Math.max(
+        0,
+        Math.round(((baseUnitPrice - discountedUnitPrice) / baseUnitPrice) * 100),
+      );
+      return {
+        tier: { min: match.cantidad, pct },
+        baseUnitPrice,
+        discountedUnitPrice,
+        unitPriceLabel: formatPrice(discountedUnitPrice),
+        totalLabel: formatPrice(total),
+        hasDiscount: match.cantidad > 1,
+      };
+    }
+  }
+
+  // Fallback: PRODUCT_VOLUME_PRICES (legacy slugs)
   const exactPricing = productSlug ? PRODUCT_VOLUME_PRICES[productSlug] : undefined;
   const baseUnitPrice = exactPricing?.unit ?? parsePriceValue(price);
   const exactTier = exactPricing?.tiers.find((item) => quantity >= item.min);
@@ -68,7 +101,6 @@ export function getVolumePricing(price: string, quantity: number, productSlug?: 
       0,
       Math.round(((baseUnitPrice - discountedUnitPrice) / baseUnitPrice) * 100),
     );
-
     return {
       tier: { min: exactTier.min, pct },
       baseUnitPrice,
