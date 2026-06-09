@@ -86,11 +86,11 @@ export default async function Home() {
       <HeroCarousel />
 
       {/* ── Productos destacados ── */}
-      <section className="py-10 md:py-16">
+      <section className="home-reveal py-10 md:py-16">
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10">
             <div className="flex items-baseline justify-between lg:block lg:w-56 lg:shrink-0 lg:pt-1">
-              <h2 className="text-2xl font-extrabold leading-tight tracking-tight text-[#27B1B8] md:text-3xl">
+              <h2 className="animated-heading text-2xl font-extrabold leading-tight tracking-tight text-[#27B1B8] md:text-3xl">
                 Productos destacados
               </h2>
               <p className="hidden text-sm leading-5 text-[#6e7379] lg:mt-2 lg:block">
@@ -105,10 +105,10 @@ export default async function Home() {
       </section>
 
       {/* ── Soluciones para cada necesidad (videos) ── */}
-      <section className="bg-[#f0f8f8] py-10 md:py-16">
+      <section className="home-reveal home-delay-1 bg-[#f0f8f8] py-10 md:py-16">
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6">
           <div className="mb-6 text-center md:mb-8">
-            <h2 className="text-xl font-extrabold tracking-tight text-[#27B1B8] sm:text-2xl">
+            <h2 className="animated-heading text-xl font-extrabold tracking-tight text-[#27B1B8] sm:text-2xl">
               Soluciones para cada necesidad
             </h2>
             <p className="mt-2 text-sm text-[#6e7379]">
@@ -125,11 +125,11 @@ export default async function Home() {
       </section>
 
       {/* ── Combos recomendados ── */}
-      <section className="bg-white py-10 md:py-16">
+      <section className="home-reveal bg-white py-10 md:py-16">
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10">
             <div className="flex items-baseline justify-between lg:block lg:w-56 lg:shrink-0 lg:pt-1">
-              <h2 className="text-2xl font-extrabold leading-tight tracking-tight text-[#27B1B8] md:text-3xl">
+              <h2 className="animated-heading text-2xl font-extrabold leading-tight tracking-tight text-[#27B1B8] md:text-3xl">
                 Combos recomendados
               </h2>
               <p className="hidden text-sm leading-5 text-[#6e7379] lg:mt-2 lg:block">
@@ -144,16 +144,16 @@ export default async function Home() {
       </section>
 
       {/* ── Features strip ── */}
-      <section className="relative overflow-visible bg-[#0C535B] py-6">
+      <section className="home-reveal relative overflow-visible bg-[#0C535B] py-6">
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6">
           <div className="flex items-center gap-6">
             <div className="grid flex-1 grid-cols-3 gap-4 sm:grid-cols-5">
               {features.map((f) => (
                 <div
                   key={f.titulo}
-                  className="flex min-w-0 flex-col items-center gap-2 text-center text-white"
+                  className="float-soft flex min-w-0 flex-col items-center gap-2 text-center text-white"
                 >
-                  <img src={f.icon} alt={f.titulo} className="h-9 w-9 object-contain brightness-0 invert sm:h-10 sm:w-10" />
+                  <img src={f.icon} alt={f.titulo} className="feature-icon-pop h-9 w-9 object-contain brightness-0 invert sm:h-10 sm:w-10" />
                   <div className="min-w-0">
                     <p className="whitespace-pre-line text-[10px] font-bold leading-tight sm:text-xs">{f.titulo}</p>
                     <p className="mt-0.5 hidden whitespace-pre-line text-[10px] leading-4 text-white/65 sm:block">{f.desc}</p>
@@ -161,13 +161,14 @@ export default async function Home() {
                 </div>
               ))}
             </div>
-            <div className="hidden w-44 shrink-0 md:block lg:w-56" style={{ marginTop: "-60px", marginBottom: "-60px" }}>
+            <div className="float-soft hidden w-44 shrink-0 md:block lg:w-56" style={{ marginTop: "-60px", marginBottom: "-60px" }}>
               <Image
                 src="/foca-ok-kliniu-original.png"
                 alt="Foca Kliniu"
                 width={224}
                 height={280}
                 className="h-auto w-full object-contain"
+                style={{ height: "auto" }}
               />
             </div>
           </div>
@@ -175,10 +176,10 @@ export default async function Home() {
       </section>
 
       {/* ── Dos CTAs ── */}
-      <section className="bg-white px-4 py-10 sm:px-6 md:py-16">
+      <section className="home-reveal bg-white px-4 py-10 sm:px-6 md:py-16">
         <div className="mx-auto grid max-w-[1440px] gap-4 md:grid-cols-2 md:gap-5">
           {/* Asesoría */}
-          <div className="flex overflow-hidden rounded-2xl border border-black/8" style={{ background: "#EAF8F7" }}>
+          <div className="motion-card interactive-lift flex overflow-hidden rounded-2xl border border-black/8" style={{ background: "#EAF8F7" }}>
             <div className="flex flex-1 flex-col justify-center p-6 sm:p-8 md:max-w-[52%]">
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#27B1B8]">
                 Asesoría personalizada
@@ -203,13 +204,13 @@ export default async function Home() {
                 alt="Asesor Kliniu"
                 fill
                 sizes="(min-width: 768px) 420px, 0px"
-                className="object-cover object-center"
+                className="image-lift object-cover object-center"
               />
             </div>
           </div>
 
           {/* Reposición */}
-          <div className="flex overflow-hidden rounded-2xl border border-black/8" style={{ background: "#EAF8F7" }}>
+          <div className="motion-card interactive-lift flex overflow-hidden rounded-2xl border border-black/8" style={{ background: "#EAF8F7" }}>
             <div className="flex flex-1 flex-col justify-center p-6 sm:p-8 md:max-w-[52%]">
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#27B1B8]">
                 Reposición fácil y rápida
@@ -233,7 +234,7 @@ export default async function Home() {
                 alt="Insumos Kliniu"
                 fill
                 sizes="(min-width: 768px) 420px, 0px"
-                className="object-contain object-center p-2"
+                className="image-lift object-contain object-center p-2"
               />
             </div>
           </div>

@@ -10,7 +10,7 @@ import { useCart } from "../../components/cart-provider";
 import { useProducts } from "../../components/products-provider";
 import SiteFooter from "../../components/site-footer";
 import QuoteModal from "../../components/quote-modal";
-import { getVolumePricing, parsePriceValue } from "@/lib/volume-discounts";
+import { getVolumePricing } from "@/lib/volume-discounts";
 import type { ProductoEspecificacion } from "../../data/catalog";
 
 const trustBadges = [
@@ -332,7 +332,7 @@ export default function ProductoDetallePage() {
   const ajustarUnidad = (delta: number) => {
     const next = Math.max(1, cantidad + delta);
     setCantidad(next);
-    if (next >= 4) {
+    if (next >= 12) {
       setShowComboTip(true);
       if (comboTipTimeout.current) clearTimeout(comboTipTimeout.current);
       comboTipTimeout.current = setTimeout(() => setShowComboTip(false), 8000);
@@ -346,7 +346,7 @@ export default function ProductoDetallePage() {
 
   const handleAddToCart = () => {
     if (!producto || producto.puedeComprar === false) return;
-    const pricing = getVolumePricing(producto.precio, cantidad);
+    const pricing = getVolumePricing(producto.precio, cantidad, producto.slug);
     const varianteActiva = allVariants[colorActivo];
     const imagenSeleccionada = varianteActiva?.image ?? producto.imagen;
     const colorLabel = allVariants.length > 0 ? varianteActiva?.label : undefined;
@@ -405,14 +405,10 @@ export default function ProductoDetallePage() {
     );
   }
 
-  const ajustar = (delta: number) => {
-    setCantidad((n) => Math.min(Math.max(1, n + delta), producto.stock ?? 99));
-  };
-
   const relacionados = products
     .filter((p) => p.categoria === producto.categoria && p.slug !== producto.slug)
     .slice(0, 4);
-  const volumePricing = getVolumePricing(producto.precio, cantidad);
+  const volumePricing = getVolumePricing(producto.precio, cantidad, producto.slug);
 
   const fichaTecnica: ProductoEspecificacion[] =
     producto.especificacionesTecnicas?.length
@@ -441,7 +437,7 @@ export default function ProductoDetallePage() {
           <span className="text-4xl">🔥</span>
           <div className="flex-1">
             <p className="text-base font-black text-white">¡Te sale más barato en combo!</p>
-            <p className="mt-0.5 text-sm text-white/70">Selecciona <strong className="text-[#F07826]">× 4 und</strong> o más y ahorra hasta un <strong className="text-[#F07826]">10%</strong> en tu compra.</p>
+            <p className="mt-0.5 text-sm text-white/70">Selecciona <strong className="text-[#F07826]">× 12 und</strong> o más y ahorra hasta un <strong className="text-[#F07826]">10%</strong> en tu compra.</p>
           </div>
           <button type="button" onClick={() => setShowComboTip(false)} className="text-white/40 hover:text-white text-lg">✕</button>
         </div>
@@ -556,10 +552,9 @@ export default function ProductoDetallePage() {
 
                 {/* Packs fijos */}
                 {[
-                  { label: "× 4 und", qty: 4 },
-                  { label: "× 6 und", qty: 6 },
                   { label: "× 12 und", qty: 12 },
                   { label: "× 48 und", qty: 48 },
+                  { label: "× 100 und", qty: 100 },
                 ].map((pack) => {
                   const isActive = !esUnidad && cantidad === pack.qty;
                   return (

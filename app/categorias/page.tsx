@@ -134,7 +134,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
           goToDetail();
         }
       }}
-      className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-black/8 bg-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.10)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#27B1B8]"
+      className="interactive-lift group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-black/8 bg-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.10)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#27B1B8]"
       aria-label={`Ver detalle de ${producto.nombre}`}
     >
       {/* Badge */}
@@ -156,7 +156,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
           src={imagenActual || "/product-placeholder.png"}
           alt={producto.nombre}
           loading="lazy"
-          className="max-h-36 w-auto max-w-full object-contain transition-opacity duration-150"
+          className="image-lift max-h-36 w-auto max-w-full object-contain transition-opacity duration-150"
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png";
           }}
@@ -165,12 +165,12 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
 
       {/* Info */}
       <div className="flex flex-1 flex-col border-t border-black/5 p-4">
-        <h3 className="line-clamp-3 min-h-[40px] text-sm font-semibold leading-snug text-[#111]">
+        <h3 className="line-clamp-3 h-[54px] text-sm font-semibold leading-snug text-[#111]">
           {producto.nombre}
         </h3>
 
         {/* Description */}
-        <p className="mt-1 line-clamp-3 min-h-[48px] text-[11px] leading-snug text-[#6e7379]">
+        <p className="mt-1 line-clamp-3 h-[48px] text-[11px] leading-snug text-[#6e7379]">
           {tipoBadge ?? ""}
         </p>
 
@@ -205,7 +205,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
           <Link
             href={`/producto/${producto.slug}`}
             onClick={(event) => event.stopPropagation()}
-            className="flex-1 rounded-full border border-[#27B1B8] px-3 py-2 text-center text-xs font-semibold text-[#27B1B8] transition-colors hover:bg-[#27B1B8] hover:text-white"
+            className="shine-sweep flex-1 rounded-full border border-[#27B1B8] px-3 py-2 text-center text-xs font-semibold text-[#27B1B8] transition-colors hover:bg-[#27B1B8] hover:text-white"
           >
             Ver detalle
           </Link>
@@ -217,7 +217,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
             }}
             disabled={producto.puedeComprar === false}
             aria-label={`Agregar ${producto.nombre} al carrito`}
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
+            className={`pulse-ring flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
               agregado ? "bg-[#d4621a] text-white" : "bg-[#F07826] text-white hover:bg-[#d4621a]"
             }`}
           >
@@ -238,9 +238,9 @@ function LandingCategorias({ onSelect }: { onSelect: (cat: string) => void }) {
   return (
     <main className="min-h-screen bg-white">
       {/* Hero sub-banner */}
-      <section className="border-b border-black/8 bg-[#f8f8f7] px-6 py-10">
+      <section className="home-reveal border-b border-black/8 bg-[#f8f8f7] px-6 py-10">
         <div className="mx-auto max-w-[1440px]">
-          <h1 className="text-3xl font-extrabold tracking-tight text-[#0C535B]">
+          <h1 className="animated-heading text-3xl font-extrabold tracking-tight text-[#0C535B]">
             Encuentra tu dispensador ideal
           </h1>
           <p className="mt-2 text-sm text-[#6e7379]">
@@ -250,15 +250,15 @@ function LandingCategorias({ onSelect }: { onSelect: (cat: string) => void }) {
       </section>
 
       {/* Category cards */}
-      <section className="px-6 py-12">
+      <section className="home-reveal px-6 py-12">
         <div className="mx-auto max-w-[1440px]">
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <div className="motion-list grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {categoriasData.filter((cat) => cat.nombre !== "Outlet" && cat.nombre !== "Insumos/Repuesto").map((cat) => (
               <button
                 key={cat.nombre}
                 type="button"
                 onClick={() => onSelect(cat.nombre)}
-                className="group flex flex-col items-center gap-4 overflow-hidden rounded-2xl border border-black/8 bg-white p-6 text-center transition-all hover:-translate-y-0.5 hover:border-[#27B1B8]/40 hover:shadow-md"
+                className="motion-card interactive-lift group flex flex-col items-center gap-4 overflow-hidden rounded-2xl border border-black/8 bg-white p-6 text-center transition-all hover:-translate-y-0.5 hover:border-[#27B1B8]/40 hover:shadow-md"
               >
                 <div className="flex h-36 w-full items-center justify-center overflow-hidden rounded-xl bg-white px-4 py-3">
                   {cat.iconoImagen && (
@@ -267,7 +267,7 @@ function LandingCategorias({ onSelect }: { onSelect: (cat: string) => void }) {
                       alt={cat.nombre}
                       width={190}
                       height={120}
-                      className="max-h-[112px] w-auto max-w-full object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+                      className="image-lift max-h-[112px] w-auto max-w-full object-contain transition-transform duration-300 group-hover:scale-[1.02]"
                     />
                   )}
                 </div>
@@ -278,13 +278,13 @@ function LandingCategorias({ onSelect }: { onSelect: (cat: string) => void }) {
             ))}
 
             {/* CTA card */}
-            <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-[#27B1B8]/25 bg-[#e8f5f5] p-6 text-center">
+            <div className="motion-card interactive-lift flex flex-col items-center justify-center gap-4 rounded-2xl border border-[#27B1B8]/25 bg-[#e8f5f5] p-6 text-center">
               <Image
                 src="/kliniu-loader-logo.png"
                 alt="Kliniu"
                 width={64}
                 height={64}
-                className="object-contain"
+                className="image-lift object-contain"
               />
               <div>
                 <p className="text-sm font-bold leading-snug text-[#0C535B]">
@@ -294,7 +294,7 @@ function LandingCategorias({ onSelect }: { onSelect: (cat: string) => void }) {
                   Te ayudamos a elegir la mejor solución para tu espacio.
                 </p>
               </div>
-              <WhatsAppAsesor className="inline-flex items-center gap-1.5 rounded-full bg-[#0C535B] px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90">
+              <WhatsAppAsesor className="shine-sweep inline-flex items-center gap-1.5 rounded-full bg-[#0C535B] px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90">
                 Te asesoramos
                 <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/>
@@ -491,7 +491,7 @@ function InsumosRepuestosPage({
 }) {
   return (
     <main className="min-h-screen bg-white text-[#073F43]">
-      <section className="bg-white">
+      <section className="home-reveal bg-white">
         <div className="relative aspect-[2400/500] overflow-hidden bg-[#ead0bd] md:aspect-[2400/500] aspect-[4/3]">
           <Image
             src="/insumos/banner-insumos-repuestos.jpg"
@@ -499,7 +499,7 @@ function InsumosRepuestosPage({
             fill
             priority
             sizes="100vw"
-            className="hidden object-cover object-center md:block"
+            className="hero-drift hidden object-cover object-center md:block"
           />
           <Image
             src="/resp-banner-insumos.jpg"
@@ -507,12 +507,12 @@ function InsumosRepuestosPage({
             fill
             priority
             sizes="100vw"
-            className="object-cover object-center md:hidden"
+            className="hero-drift object-cover object-center md:hidden"
           />
           <div className="absolute inset-0 flex items-center">
             <div className="mx-auto flex h-full w-full max-w-[1440px] items-center px-6 sm:px-10 lg:px-14">
             <div className="flex w-[48%] flex-col justify-center">
-            <h1 className="text-[clamp(1.8rem,3.5vw,4.2rem)] font-black leading-[0.98] tracking-tight text-[#073F43]">
+            <h1 className="hero-pop text-[clamp(1.8rem,3.5vw,4.2rem)] font-black leading-[0.98] tracking-tight text-[#073F43]">
               Insumos
               <br />
               <span className="text-[#16A6AE]">y repuestos</span>
@@ -520,16 +520,16 @@ function InsumosRepuestosPage({
             <p className="mt-4 max-w-[320px] text-[11px] font-semibold leading-5 text-[#073F43] sm:text-sm">
               Todo lo que tu espacio necesita para operar de forma eficaz y continua.
             </p>
-            <div className="mt-6 hidden w-fit items-center gap-0 rounded-sm bg-white/92 px-3 py-2 shadow-[0_8px_18px_rgba(7,63,67,0.08)] md:flex">
+            <div className="motion-list mt-6 hidden w-fit items-center gap-0 rounded-sm bg-white/92 px-3 py-2 shadow-[0_8px_18px_rgba(7,63,67,0.08)] md:flex">
               {[
                 { label: "Calidad Kliniu", icon: "/iconos/garantia.png" },
                 { label: "Compatibilidad garantizada", icon: "/iconos/compatibilidad.png" },
                 { label: "Entrega rápida", icon: "/iconos/envio-rapido.png" },
               ].map((beneficio, index) => (
-                <div key={beneficio.label} className="flex items-center gap-2 px-3 text-[10px] font-bold leading-tight text-[#073F43]">
+                <div key={beneficio.label} className="motion-card flex items-center gap-2 px-3 text-[10px] font-bold leading-tight text-[#073F43]">
                   {index > 0 && <span className="-ml-3 mr-1 h-7 border-l border-[#073F43]/15" />}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={beneficio.icon} alt="" className="h-7 w-7 shrink-0 object-contain" />
+                  <img src={beneficio.icon} alt="" className="feature-icon-pop h-7 w-7 shrink-0 object-contain" />
                   <span className="max-w-[86px]">{beneficio.label}</span>
                 </div>
               ))}
@@ -540,8 +540,8 @@ function InsumosRepuestosPage({
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1440px] px-4 pb-12 pt-10 sm:px-6">
-        <h2 className="mb-6 text-xl font-black text-[#16A6AE]">
+      <section className="home-reveal mx-auto max-w-[1440px] px-4 pb-12 pt-10 sm:px-6">
+        <h2 className="animated-heading mb-6 text-xl font-black text-[#16A6AE]">
           Encuentra tus insumos y repuestos ideales.
         </h2>
 
@@ -576,7 +576,7 @@ function InsumosRepuestosPage({
         </div>
 
         {productosPagina.length > 0 ? (
-          <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="motion-list grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {productosPagina.map((producto) => (
               <TarjetaProducto key={producto.slug} producto={producto} />
             ))}
@@ -611,16 +611,16 @@ function InsumosRepuestosPage({
       </section>
 
       <section className="mx-auto max-w-[1440px] px-4 pb-10 sm:px-6">
-        <div className="relative aspect-[1611/336] overflow-hidden rounded-2xl bg-[#ead0bd] shadow-[0_8px_24px_rgba(7,63,67,0.10)]">
+        <div className="home-reveal interactive-lift relative aspect-[1611/336] overflow-hidden rounded-2xl bg-[#ead0bd] shadow-[0_8px_24px_rgba(7,63,67,0.10)]">
           <Image
             src="/insumos/banner-reposicion.png"
             alt="Reposición fácil Kliniu"
             fill
             sizes="100vw"
-            className="object-cover object-center"
+            className="hero-drift object-cover object-center"
           />
           <div className="absolute inset-y-0 left-0 flex w-[48%] flex-col justify-center px-7 sm:px-10 lg:px-14">
-            <p className="text-[clamp(1.05rem,2.1vw,2rem)] font-black leading-none text-[#073F43]">
+            <p className="hero-pop text-[clamp(1.05rem,2.1vw,2rem)] font-black leading-none text-[#073F43]">
               Reposición fácil,
               <br />
               <span className="text-[#16A6AE]">operación continua</span>
@@ -634,8 +634,8 @@ function InsumosRepuestosPage({
                 "Insumos de alto rendimiento y calidad",
                 "Pedidos ágiles y entregas confiables",
               ].map((item) => (
-                <li key={item} className="flex items-center gap-2">
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#16A6AE] text-[9px] text-white">✓</span>
+                <li key={item} className="puntos-check-row flex items-center gap-2">
+                  <span className="pulse-ring flex h-4 w-4 items-center justify-center rounded-full bg-[#16A6AE] text-[9px] text-white">✓</span>
                   {item}
                 </li>
               ))}
@@ -644,7 +644,7 @@ function InsumosRepuestosPage({
         </div>
       </section>
 
-      <section className="px-6" style={{ paddingTop: 160, paddingBottom: 140 }}>
+      <section className="home-reveal px-6" style={{ paddingTop: 160, paddingBottom: 140 }}>
         <div className="mx-auto max-w-[1440px]">
           <AsesorBanner />
         </div>
@@ -749,7 +749,7 @@ export default function CategoriasPage() {
   return (
     <main className="min-h-screen bg-white text-[#111]">
       {/* ── Hero banner ── */}
-      <section className={`relative overflow-hidden ${dark ? "bg-white" : "bg-[#0a0f14]"}`}>
+      <section className={`home-reveal hero-energy relative overflow-hidden ${dark ? "bg-white" : "bg-[#0a0f14]"}`}>
         {/* Imagen desktop */}
         {(catMeta.heroBannerImagen ?? catMeta.bannerImagen) && (
           <Image
@@ -758,7 +758,7 @@ export default function CategoriasPage() {
             fill
             priority
             sizes="100vw"
-            className={`object-cover object-center ${catMeta.heroBannerMovil ? "hidden md:block" : ""} ${dark ? "opacity-100" : "opacity-60"}`}
+            className={`hero-drift object-cover object-center ${catMeta.heroBannerMovil ? "hidden md:block" : ""} ${dark ? "opacity-100" : "opacity-60"}`}
           />
         )}
         {/* Imagen móvil */}
@@ -769,11 +769,11 @@ export default function CategoriasPage() {
             fill
             priority
             sizes="100vw"
-            className={`object-cover object-center md:hidden ${dark ? "opacity-100" : "opacity-60"}`}
+            className={`hero-drift object-cover object-center md:hidden ${dark ? "opacity-100" : "opacity-60"}`}
           />
         )}
         <div className="relative mx-auto max-w-[1440px] px-4 py-6 sm:px-8 sm:py-8 md:py-10">
-          <h1 className={`text-2xl font-extrabold leading-tight tracking-tight sm:text-4xl md:text-5xl ${dark ? "text-[#0a0f14]" : "text-white"}`}>
+          <h1 className={`hero-pop text-2xl font-extrabold leading-tight tracking-tight sm:text-4xl md:text-5xl ${dark ? "text-[#0a0f14]" : "text-white"}`}>
             {tituloLinea1}
             <br />
             {tituloLinea2}<span className="text-[#27B1B8]">{tituloDestacado}</span>
@@ -782,11 +782,11 @@ export default function CategoriasPage() {
             {catMeta.bannerCopy}
           </p>
           {catMeta.beneficiosHero && (
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="motion-list mt-4 flex flex-wrap gap-2">
               {catMeta.beneficiosHero.map((b) => (
                 <div
                   key={b.texto}
-                  className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold leading-tight sm:gap-2.5 sm:px-3 sm:py-2 sm:text-xs ${
+                  className={`motion-card interactive-lift flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold leading-tight sm:gap-2.5 sm:px-3 sm:py-2 sm:text-xs ${
                     dark
                       ? "border-black/12 bg-white/80 text-[#1A1A1A]"
                       : "border-white/20 bg-white/10 text-white"
@@ -794,7 +794,7 @@ export default function CategoriasPage() {
                 >
                   {b.imagen ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={b.imagen} alt="" className="h-6 w-6 shrink-0 object-contain sm:h-7 sm:w-7" />
+                    <img src={b.imagen} alt="" className="feature-icon-pop h-6 w-6 shrink-0 object-contain sm:h-7 sm:w-7" />
                   ) : (
                     <span className="text-base leading-none sm:text-lg">{b.icono}</span>
                   )}
@@ -807,15 +807,15 @@ export default function CategoriasPage() {
       </section>
 
       {/* ── Products ── */}
-      <section className="mx-auto max-w-[1440px] px-4 pb-12 pt-8 sm:px-6 sm:pb-16 sm:pt-10">
+      <section className="home-reveal mx-auto max-w-[1440px] px-4 pb-12 pt-8 sm:px-6 sm:pb-16 sm:pt-10">
         {/* Section heading */}
-        <h2 className="mb-6 text-xl font-bold text-[#27B1B8]">
+        <h2 className="animated-heading mb-6 text-xl font-bold text-[#27B1B8]">
           {headingCategoria[categoriaActiva ?? ""] ?? `Explora ${categoriaActiva ?? "el catálogo"}`}
         </h2>
 
         {/* Filter bar */}
         <div className="mb-6 flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-black/15 px-4 py-2 text-sm font-semibold text-[#111]">
+          <span className="pulse-ring inline-flex items-center gap-1.5 rounded-full border border-black/15 px-4 py-2 text-sm font-semibold text-[#111]">
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
             </svg>
@@ -845,7 +845,7 @@ export default function CategoriasPage() {
 
         {/* Product grid */}
         {productosPagina.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="motion-list grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {productosPagina.map((producto) => (
               <TarjetaProducto key={producto.slug} producto={producto} />
             ))}
@@ -881,10 +881,10 @@ export default function CategoriasPage() {
       {catMeta.comoElegir && catMeta.comoElegir.length > 0 && (
         catMeta.comoElegirDark ? (
           /* Dark variant — Hoteles y Restaurantes */
-          <section className="bg-[#f8f8f7] px-4 py-8 sm:px-6 sm:py-12">
+          <section className="home-reveal bg-[#f8f8f7] px-4 py-8 sm:px-6 sm:py-12">
             <div className="mx-auto max-w-[1440px]">
               <div
-                className="relative overflow-hidden rounded-2xl"
+                className="hero-energy interactive-lift relative overflow-hidden rounded-2xl"
                 style={{ background: "linear-gradient(to right, #051e22, #0C535B, #0f6e78)" }}
               >
                 {/* Foca — solo desktop */}
@@ -893,13 +893,13 @@ export default function CategoriasPage() {
                     src={catMeta.comoElegirFoca ?? "/foca-ok-kliniu-original.png"}
                     alt="Foca Kliniu"
                     fill
-                    className="object-contain object-bottom"
+                    className="float-soft object-contain object-bottom"
                   />
                 </div>
 
                 {/* Header */}
                 <div className="px-6 pt-6 lg:ml-[260px] lg:border-r lg:border-white/10 lg:py-7 lg:w-[250px] lg:flex lg:flex-col lg:justify-center lg:pt-0 lg:mr-0">
-                  <h2 className="text-base font-black leading-snug text-white sm:text-[18px]">
+                  <h2 className="hero-pop text-base font-black leading-snug text-white sm:text-[18px]">
                     {(() => {
                       const title = catMeta.comoElegirTituloCompleto ?? "¿Cómo elegir el producto ideal?";
                       const parts = title.split("KLINIU");
@@ -916,15 +916,15 @@ export default function CategoriasPage() {
                 </div>
 
                 {/* Benefit items — grid en móvil, fila en desktop */}
-                <div className="mt-4 grid grid-cols-2 gap-px border-t border-white/10 sm:grid-cols-4 lg:ml-[510px] lg:mt-0 lg:flex lg:border-t-0 lg:border-l">
+                <div className="motion-list mt-4 grid grid-cols-2 gap-px border-t border-white/10 sm:grid-cols-4 lg:ml-[510px] lg:mt-0 lg:flex lg:border-t-0 lg:border-l">
                   {catMeta.comoElegir.map((factor, i) => (
                     <div
                       key={factor.titulo}
-                      className={`flex flex-col justify-start px-4 py-5 sm:px-5 ${i > 0 ? "border-l border-white/10" : ""}`}
+                      className={`motion-card flex flex-col justify-start px-4 py-5 sm:px-5 ${i > 0 ? "border-l border-white/10" : ""}`}
                     >
                       {factor.imagen ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={factor.imagen} alt="" className="h-8 w-8 shrink-0 object-contain brightness-0 invert sm:h-9 sm:w-9" />
+                        <img src={factor.imagen} alt="" className="feature-icon-pop h-8 w-8 shrink-0 object-contain brightness-0 invert sm:h-9 sm:w-9" />
                       ) : (
                         <svg viewBox="0 0 24 24" className="h-8 w-8 shrink-0 text-[#27B1B8] sm:h-6 sm:w-6" fill="none" stroke="currentColor" strokeWidth="1.5">
                           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -943,13 +943,13 @@ export default function CategoriasPage() {
           </section>
         ) : (
           /* Light variant — all other categories */
-          <section className="bg-[#f8f8f7] px-4 py-8 sm:px-6 sm:py-12">
+          <section className="home-reveal bg-[#f8f8f7] px-4 py-8 sm:px-6 sm:py-12">
             <div className="mx-auto max-w-[1440px]">
-              <div className="overflow-hidden rounded-2xl" style={{ background: "#EAF8F7" }}>
+              <div className="interactive-lift overflow-hidden rounded-2xl" style={{ background: "#EAF8F7" }}>
 
                 {/* Header con título y foca */}
                 <div className="relative px-6 pt-6 pb-4 pr-32 sm:px-8 sm:pt-7 sm:pb-5 sm:pr-36">
-                  <p className="text-base font-bold leading-snug text-[#0C535B] sm:text-lg">
+                  <p className="hero-pop text-base font-bold leading-snug text-[#0C535B] sm:text-lg">
                     ¿Cómo elegir el{" "}
                     {catMeta.comoElegirTitulo ?? `${catMeta.heroDestacado?.toLowerCase() ?? "producto"} ideal`}?
                   </p>
@@ -959,20 +959,20 @@ export default function CategoriasPage() {
                   {/* Foca — absoluta pegada a la esquina inferior derecha del header */}
                   <div className="absolute bottom-0 right-4 hidden sm:flex sm:items-end">
                     {catMeta.comoElegirFoca ? (
-                      <Image src={catMeta.comoElegirFoca} alt="Foca Kliniu" width={110} height={110} className="w-28 object-contain object-bottom" />
+                      <Image src={catMeta.comoElegirFoca} alt="Foca Kliniu" width={110} height={110} className="float-soft w-28 object-contain object-bottom" />
                     ) : (
-                      <Image src="/foca-ok-kliniu-original.png" alt="Foca Kliniu" width={90} height={90} className="w-24 object-contain object-bottom" />
+                      <Image src="/foca-ok-kliniu-original.png" alt="Foca Kliniu" width={90} height={90} className="float-soft w-24 object-contain object-bottom" />
                     )}
                   </div>
                 </div>
 
                 {/* Criterios — grid responsivo */}
-                <div className="mt-4 grid grid-cols-2 divide-x divide-y divide-black/8 sm:grid-cols-4 sm:divide-y-0" style={{ background: "rgba(255,255,255,0.7)" }}>
+                <div className="motion-list mt-4 grid grid-cols-2 divide-x divide-y divide-black/8 sm:grid-cols-4 sm:divide-y-0" style={{ background: "rgba(255,255,255,0.7)" }}>
                   {catMeta.comoElegir.map((factor) => (
-                    <div key={factor.titulo} className="flex flex-col p-4 sm:p-5">
+                    <div key={factor.titulo} className="motion-card flex flex-col p-4 sm:p-5">
                       {factor.imagen ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={factor.imagen} alt="" className="h-10 w-10 object-contain sm:h-14 sm:w-14" />
+                        <img src={factor.imagen} alt="" className="feature-icon-pop h-10 w-10 object-contain sm:h-14 sm:w-14" />
                       ) : (
                         <svg viewBox="0 0 24 24" className="h-10 w-10 text-[#27B1B8] sm:h-14 sm:w-14" fill="none" stroke="currentColor" strokeWidth="1.5">
                           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -994,7 +994,7 @@ export default function CategoriasPage() {
       )}
 
       {/* ── ¿Necesitas ayuda? ── */}
-      <section className="px-6" style={{ paddingTop: 160, paddingBottom: 140 }}>
+      <section className="home-reveal px-6" style={{ paddingTop: 160, paddingBottom: 140 }}>
         <div className="mx-auto max-w-[1440px]">
           <AsesorBanner />
         </div>

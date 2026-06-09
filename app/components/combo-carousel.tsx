@@ -33,11 +33,11 @@ export default function ComboCarousel({ combos }: { combos: Combo[] }) {
         ‹
       </button>
 
-      <div ref={scrollRef} className="scrollbar-hidden flex gap-4 overflow-x-auto pb-2">
+      <div ref={scrollRef} className="motion-list scrollbar-hidden flex gap-4 overflow-x-auto pb-2">
         {combos.map((combo) => (
           <div
             key={combo.id}
-            className="relative w-[210px] min-w-[210px] shrink-0 overflow-hidden rounded-2xl border border-black/8 bg-white"
+            className="motion-card interactive-lift relative w-[210px] min-w-[210px] shrink-0 overflow-hidden rounded-2xl border border-black/8 bg-white"
           >
             {combo.destacado && (
               <span className="absolute left-3 top-3 z-10 rounded-lg bg-[#f5a623] px-2.5 py-1 text-[10px] font-bold text-white">
@@ -46,7 +46,7 @@ export default function ComboCarousel({ combos }: { combos: Combo[] }) {
             )}
             <div className="flex h-36 items-center justify-center bg-[#f8f8f7] p-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={combo.imagen} alt={combo.nombre} className="h-full w-full object-contain" />
+              <img src={combo.imagen} alt={combo.nombre} className="image-lift h-full w-full object-contain" />
             </div>
             <div className="space-y-2 p-4">
               <p className="font-semibold text-[#111]">{combo.nombre}</p>
@@ -72,7 +72,7 @@ export default function ComboCarousel({ combos }: { combos: Combo[] }) {
         ))}
 
         {/* CTA card */}
-        <div className="relative flex w-[260px] min-w-[260px] shrink-0 flex-col items-center overflow-hidden rounded-[8px] bg-[#b9e5dc] px-8 pb-5 pt-7 text-center text-[#0C535B]">
+        <div className="motion-card interactive-lift relative flex w-[260px] min-w-[260px] shrink-0 flex-col items-center overflow-hidden rounded-[8px] bg-[#b9e5dc] px-8 pb-5 pt-7 text-center text-[#0C535B]">
           <div className="relative z-10">
             <p className="text-[20px] font-extrabold leading-tight text-[#07131A]">Arma tu combo</p>
             <p className="mx-auto mt-3 max-w-[13rem] text-[14px] font-bold leading-[1.15] text-[#07131A]">
@@ -85,12 +85,12 @@ export default function ComboCarousel({ combos }: { combos: Combo[] }) {
               alt="Foca Kliniu con productos para armar combo"
               width={260}
               height={174}
-              className="h-auto w-full object-contain"
+              className="image-lift h-auto w-full object-contain"
             />
           </div>
           <Link
             href="/contacto"
-            className="relative z-10 mt-6 inline-flex rounded-full bg-[#0C535B] px-7 py-2.5 text-[14px] font-extrabold leading-none text-white transition-opacity hover:opacity-90"
+            className="shine-sweep relative z-10 mt-6 inline-flex rounded-full bg-[#0C535B] px-7 py-2.5 text-[14px] font-extrabold leading-none text-white transition-opacity hover:opacity-90"
           >
             Cotizar ahora
           </Link>

@@ -36,7 +36,7 @@ function AddOutletButton({ product, featured = false }: { product: ProductoCatal
         window.setTimeout(() => setAdded(false), 1200);
       }}
       style={product.puedeComprar === false ? undefined : { background: "linear-gradient(135deg, #3b82f6, #7c3aed, #d946ef)" }}
-      className={`inline-flex items-center justify-center rounded-full font-bold text-white transition-all duration-200 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-400 ${
+      className={`shine-sweep inline-flex items-center justify-center rounded-full font-bold text-white transition-all duration-200 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-400 ${
         featured
           ? "min-h-10 w-full px-5 py-2.5 text-sm shadow-[0_8px_28px_rgba(124,58,237,0.5)] hover:-translate-y-0.5 hover:opacity-90"
           : "mt-3 min-h-10 w-full px-4 py-2.5 text-sm hover:opacity-90"
@@ -66,7 +66,7 @@ function ProductCard({ product }: { product: ProductoCatalogo }) {
 
   return (
     <article
-      className="group flex min-h-[240px] flex-col overflow-hidden rounded-2xl shadow-[0_8px_28px_rgba(0,0,0,0.3)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(124,58,237,0.35)]"
+      className="motion-card interactive-lift group flex min-h-[240px] flex-col overflow-hidden rounded-2xl shadow-[0_8px_28px_rgba(0,0,0,0.3)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(124,58,237,0.35)]"
       style={{ background: "linear-gradient(160deg, #0f0c2e 0%, #1a1060 60%, #2d1080 100%)" }}
     >
       <div className="relative flex h-[130px] items-center justify-center bg-white px-4">
@@ -78,7 +78,9 @@ function ProductCard({ product }: { product: ProductoCatalogo }) {
             {product.descuento}
           </span>
         ) : null}
-        <ProductImage product={product} maxHeight={98} />
+        <div className="outlet-product-pop">
+          <ProductImage product={product} maxHeight={98} />
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col p-4">
@@ -106,26 +108,28 @@ function FeaturedCarousel({ products }: { products: ProductoCatalogo[] }) {
 
   return (
     <article
-      className="flex aspect-square flex-col overflow-hidden rounded-2xl shadow-[0_24px_64px_rgba(0,0,0,0.45)]"
+      className="outlet-featured-shell flex aspect-square flex-col overflow-hidden rounded-2xl shadow-[0_24px_64px_rgba(0,0,0,0.45)]"
       style={{ background: "linear-gradient(160deg, #0f0c2e 0%, #1a1060 60%, #2d1080 100%)" }}
     >
       {/* Imagen con flechas */}
       <div className="relative flex h-[58%] min-h-0 w-full items-center justify-center bg-white p-5">
         {showDiscount && (
           <span
-            className="absolute left-3 top-3 rounded-lg px-2.5 py-1 text-xs font-black text-white shadow-lg"
+            className="outlet-badge-pop absolute left-3 top-3 rounded-lg px-2.5 py-1 text-xs font-black text-white shadow-lg"
             style={{ background: "linear-gradient(135deg, #3b82f6, #7c3aed)" }}
           >
             {product.descuento}
           </span>
         )}
-        <ProductImage product={product} maxHeight={190} />
+        <div className="outlet-product-pop">
+          <ProductImage product={product} maxHeight={190} />
+        </div>
 
         {/* Flecha izquierda */}
         <button
           type="button"
           onClick={prev}
-          className="absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md transition-all hover:scale-105 hover:shadow-lg"
+          className="nav-pulse absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md transition-all hover:scale-105 hover:shadow-lg"
           style={{ border: "1px solid rgba(124,58,237,0.2)" }}
           aria-label="Anterior"
         >
@@ -138,7 +142,7 @@ function FeaturedCarousel({ products }: { products: ProductoCatalogo[] }) {
         <button
           type="button"
           onClick={next}
-          className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md transition-all hover:scale-105 hover:shadow-lg"
+          className="nav-pulse absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md transition-all hover:scale-105 hover:shadow-lg"
           style={{ border: "1px solid rgba(124,58,237,0.2)" }}
           aria-label="Siguiente"
         >
@@ -167,7 +171,7 @@ function FeaturedCarousel({ products }: { products: ProductoCatalogo[] }) {
                 key={i}
                 type="button"
                 onClick={() => setIndex(i)}
-                className="h-1.5 rounded-full transition-all"
+                className={`h-1.5 rounded-full transition-all ${i === index ? "pulse-ring" : ""}`}
                 style={{
                   width: i === index ? "18px" : "6px",
                   background: i === index ? "#c084fc" : "rgba(255,255,255,0.25)",
@@ -227,14 +231,14 @@ export default function OutletPage() {
     <>
       <main className="min-h-screen bg-[#f4f6f8]">
         {/* Hero banner */}
-        <section className="relative isolate overflow-hidden bg-[#0a0630]">
+        <section className="outlet-sparkle-layer relative isolate overflow-hidden bg-[#0a0630]">
           {/* Imagen a ancho completo, proporciones naturales */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/banner-outlet.jpg"
             alt=""
             aria-hidden="true"
-            className="block w-full"
+            className="outlet-hero-bg block w-full"
           />
 
           {/* Carrusel encima en desktop */}
@@ -243,19 +247,21 @@ export default function OutletPage() {
               className="absolute hidden lg:block"
               style={{
                 right: "calc(8% + 100px)",
-                top: "50%",
+                top: "42%",
                 transform: "translateY(-50%)",
                 width: "clamp(360px, 24vw, 420px)",
               }}
             >
-              <FeaturedCarousel products={carouselProducts} />
+              <div className="outlet-featured-card-mobile">
+                <FeaturedCarousel products={carouselProducts} />
+              </div>
             </div>
           )}
         </section>
 
         {/* Carrusel en móvil/tablet — debajo del banner */}
         {carouselProducts.length > 0 && (
-          <div className="block px-4 py-6 sm:px-6 lg:hidden" style={{ background: "linear-gradient(180deg, #08052a 0%, #100840 100%)" }}>
+          <div className="outlet-featured-card-mobile block px-4 py-6 sm:px-6 lg:hidden" style={{ background: "linear-gradient(180deg, #08052a 0%, #100840 100%)" }}>
             <FeaturedCarousel products={carouselProducts} />
           </div>
         )}
@@ -283,7 +289,7 @@ export default function OutletPage() {
             </div>
 
             {outletCatalog.length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+              <div className="motion-list grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                 {outletProducts.map((product) => (
                   <ProductCard key={product.slug} product={product} />
                 ))}
@@ -297,14 +303,14 @@ export default function OutletPage() {
               </div>
             )}
 
-            <aside className="relative mt-4 overflow-hidden rounded-2xl">
+            <aside className="outlet-sparkle-layer interactive-lift relative mt-4 overflow-hidden rounded-2xl">
               <div className="relative aspect-[4/3] sm:aspect-[16/6] lg:aspect-[16/4]">
                 <Image
                   src="/outlet/banner-super-ofertas.jpg"
                   alt="Super Ofertas Kliniu - Outlet Virtual"
                   fill
                   sizes="100vw"
-                  className="object-cover object-center"
+                  className="outlet-hero-bg object-cover object-center"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent sm:bg-gradient-to-r sm:from-transparent sm:via-black/20 sm:to-black/85" />
                 <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 px-5 pb-5 sm:inset-y-0 sm:bottom-auto sm:left-[38%] sm:right-0 sm:justify-center sm:gap-3 sm:px-8 sm:pb-0">
@@ -312,7 +318,7 @@ export default function OutletPage() {
                     ⏳ Solo 15 días
                   </span>
                   <p className="text-2xl font-black leading-tight text-white drop-shadow-lg sm:text-[clamp(1.5rem,3.5vw,3.2rem)]">
-                    ¡Descuentos de hasta{" "}
+                    <span className="outlet-banner-title">¡Descuentos de hasta</span>{" "}
                     <span style={{ background: "linear-gradient(90deg,#c084fc,#60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                       70% OFF
                     </span>

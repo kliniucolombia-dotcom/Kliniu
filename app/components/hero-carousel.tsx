@@ -51,7 +51,7 @@ function Dots({
           onClick={() => onSelect(index)}
           className={`h-2 rounded-full transition-all duration-300 ${
             current === index
-              ? "w-8 bg-[#27B1B8]"
+              ? "pulse-ring w-8 bg-[#27B1B8]"
               : light
               ? "w-2 bg-white/60 hover:bg-white"
               : "w-2 bg-black/25 hover:bg-black/40"
@@ -77,7 +77,7 @@ export default function HeroCarousel() {
   }, []);
 
   return (
-    <section className="relative overflow-hidden">
+    <section className="hero-energy relative overflow-hidden home-reveal-soft">
       <div
         className="flex transition-transform duration-700 ease-out"
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
@@ -92,7 +92,7 @@ export default function HeroCarousel() {
                 <img
                   src={slide.imageMobile}
                   alt={slide.title}
-                  className="w-full"
+                  className="w-full hero-drift"
                   style={{ aspectRatio: "4/3", objectFit: "cover", objectPosition: "center", display: "block" }}
                 />
                 {/* Flechas sobre la imagen en móvil */}
@@ -100,7 +100,7 @@ export default function HeroCarousel() {
                   type="button"
                   aria-label="Banner anterior"
                   onClick={goToPrev}
-                  className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/20 text-xl text-white"
+                  className="nav-pulse absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/20 text-xl text-white"
                 >
                   ‹
                 </button>
@@ -108,7 +108,7 @@ export default function HeroCarousel() {
                   type="button"
                   aria-label="Banner siguiente"
                   onClick={advanceSlide}
-                  className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/20 text-xl text-white"
+                  className="nav-pulse absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/20 text-xl text-white"
                 >
                   ›
                 </button>
@@ -120,17 +120,17 @@ export default function HeroCarousel() {
 
               {/* Texto y botones debajo */}
               <div className="bg-[#f4f0ea] px-5 py-5">
-                <h1 className="text-[24px] font-extrabold leading-[1.05] tracking-tight text-[#07131A]">
+                <h1 className="home-reveal text-[24px] font-extrabold leading-[1.05] tracking-tight text-[#07131A]">
                   <span className="block">{slide.title}</span>
                   <span className="block">
                     {slide.titleSecond}{" "}
                     <span className="text-[#27B1B8]">{slide.titleHighlight}</span>
                   </span>
                 </h1>
-                <div className="mt-4 flex overflow-hidden rounded-[10px] shadow-[0_8px_20px_rgba(15,23,42,0.1)]">
+                <div className="hero-pop home-reveal home-delay-1 mt-4 flex overflow-hidden rounded-[10px] shadow-[0_8px_20px_rgba(15,23,42,0.1)]">
                   <Link
                     href="/categorias"
-                    className="inline-flex flex-1 items-center gap-3 px-4 py-4 text-left text-white transition-opacity hover:opacity-90"
+                    className="shine-sweep inline-flex flex-1 items-center gap-3 px-4 py-4 text-left text-white transition-opacity hover:opacity-90"
                     style={{ backgroundColor: "#075f68" }}
                   >
                     <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -169,7 +169,7 @@ export default function HeroCarousel() {
                 <img
                   src={slide.image}
                   alt={slide.title}
-                  className="h-full w-full"
+                  className="h-full w-full hero-drift"
                   style={{ objectFit: "cover", objectPosition: "center center" }}
                 />
               </div>
@@ -178,7 +178,7 @@ export default function HeroCarousel() {
                 style={{ paddingBottom: "4px" }}
               >
                 <h1
-                  className="mb-5 max-w-[760px] font-extrabold tracking-tight text-[#07131A] md:mb-6"
+                  className="home-reveal mb-5 max-w-[760px] font-extrabold tracking-tight text-[#07131A] md:mb-6"
                   style={{ fontSize: "clamp(38px, 4.35vw, 56px)", lineHeight: 1.05 }}
                 >
                   <span className="block">{slide.title}</span>
@@ -188,12 +188,12 @@ export default function HeroCarousel() {
                   </span>
                 </h1>
                 <div
-                  className="flex overflow-hidden rounded-[12px] shadow-[0_14px_32px_rgba(15,23,42,0.12)]"
+                  className="hero-pop home-reveal home-delay-1 flex overflow-hidden rounded-[12px] shadow-[0_14px_32px_rgba(15,23,42,0.12)]"
                   style={{ width: "min(88vw, 528px)" }}
                 >
                   <Link
                     href="/categorias"
-                    className="inline-flex flex-1 items-center gap-4 px-6 py-5 text-left text-white transition-opacity hover:opacity-90 md:px-8"
+                    className="shine-sweep inline-flex flex-1 items-center gap-4 px-6 py-5 text-left text-white transition-opacity hover:opacity-90 md:px-8"
                     style={{ backgroundColor: "#075f68", minHeight: "122px" }}
                   >
                     <svg viewBox="0 0 24 24" className="h-10 w-10 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -232,7 +232,7 @@ export default function HeroCarousel() {
         type="button"
         aria-label="Banner anterior"
         onClick={goToPrev}
-        className="absolute left-4 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/20 text-xl transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8] md:flex"
+        className="nav-pulse absolute left-4 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/20 text-xl transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8] md:flex"
       >
         ‹
       </button>
@@ -240,7 +240,7 @@ export default function HeroCarousel() {
         type="button"
         aria-label="Banner siguiente"
         onClick={advanceSlide}
-        className="absolute right-4 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/20 text-xl transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8] md:flex"
+        className="nav-pulse absolute right-4 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/20 text-xl transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8] md:flex"
       >
         ›
       </button>

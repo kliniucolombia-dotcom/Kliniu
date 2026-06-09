@@ -102,14 +102,14 @@ export default async function PuntosPage() {
     <main className="min-h-screen bg-white text-[#1A1A1A]">
 
       {/* ─── HERO ─── */}
-      <section className="relative w-full overflow-hidden bg-[#7B3FCF]" style={{ minHeight: 580 }}>
+      <section className="puntos-hero-energy relative w-full overflow-hidden bg-[#7B3FCF]" style={{ minHeight: 580 }}>
         <Image
           src="/puntos-k-banner.jpg"
           alt="Puntos K Kliniu"
           fill
           priority
           sizes="100vw"
-          className="object-cover object-right"
+          className="puntos-hero-bg object-cover object-right"
         />
         {/* Left overlay gradient */}
         <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(60,20,130,0.88) 0%, rgba(90,35,170,0.65) 40%, rgba(90,35,170,0.15) 65%, transparent 80%)" }} />
@@ -123,7 +123,7 @@ export default async function PuntosPage() {
                   <span>✦</span> Programa de fidelización KLINIU®
                 </div>
 
-                <h1 className="mt-3 font-black leading-none tracking-tight">
+                <h1 className="hero-pop mt-3 font-black leading-none tracking-tight">
                   <span className="block" style={{ fontSize: "clamp(1.8rem,3vw,3rem)", color: "rgba(255,255,255,0.85)", fontWeight: 500, letterSpacing: "0.08em" }}>PROGRAMA</span>
                   <span className="block" style={{ fontSize: "clamp(3.5rem,7vw,6rem)" }}>Puntos <span style={{ color: "#E9D5FF" }}>K</span></span>
                 </h1>
@@ -135,21 +135,21 @@ export default async function PuntosPage() {
 
                 <div className="mt-5 flex gap-2">
                   {["#F87171","#FB923C","#4ADE80","#38BDF8","#A78BFA"].map((c) => (
-                    <div key={c} className="h-2 w-12 rounded-full" style={{ background: c }} />
+                    <div key={c} className="puntos-color-pill h-2 w-12 rounded-full" style={{ background: c }} />
                   ))}
                 </div>
 
                 <div className="mt-8 flex flex-wrap gap-3">
                   {session ? (
-                    <Link href="/mi-cuenta/puntos" className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-black text-[#6B21A8] shadow-xl hover:opacity-90">
+                    <Link href="/mi-cuenta/puntos" className="shine-sweep hero-pop inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-black text-[#6B21A8] shadow-xl hover:opacity-90">
                       Ver mi bono →
                     </Link>
                   ) : (
                     <>
-                      <Link href="/registro" className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-black text-[#6B21A8] shadow-xl hover:opacity-90">
+                      <Link href="/registro" className="shine-sweep hero-pop inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-black text-[#6B21A8] shadow-xl hover:opacity-90">
                         Únete gratis →
                       </Link>
-                      <Link href="#categorias" className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white" style={{ border: "2px solid rgba(255,255,255,0.4)" }}>
+                      <Link href="#categorias" className="pulse-ring inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white" style={{ border: "2px solid rgba(255,255,255,0.4)" }}>
                         Ver categorías
                       </Link>
                     </>
@@ -161,7 +161,7 @@ export default async function PuntosPage() {
         </div>
 
         {/* Floating card — right */}
-        <div className="absolute bottom-8 right-8 hidden max-w-[200px] rounded-2xl bg-[#5B1FA8]/80 p-5 text-white backdrop-blur-md lg:block">
+        <div className="puntos-floating-card absolute bottom-8 right-8 hidden max-w-[200px] rounded-2xl bg-[#5B1FA8]/80 p-5 text-white backdrop-blur-md lg:block">
           <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
             <span className="text-lg">⭐</span>
           </div>
@@ -175,7 +175,7 @@ export default async function PuntosPage() {
         <section className="bg-[#F5F0FF] px-6 py-8">
           <div className="mx-auto max-w-[1200px]">
             <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-2xl bg-white p-5 shadow-sm">
+              <div className="motion-card interactive-lift rounded-2xl bg-white p-5 shadow-sm">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#888]">Compra acumulada este mes</p>
                 <p className="mt-1 text-3xl font-black text-[#6B21A8]">{fmt(kData.monthlySpend)}</p>
                 <p className="mt-1 text-xs text-[#999]">
@@ -184,7 +184,7 @@ export default async function PuntosPage() {
                     : `Categoría este mes: ${kData.currentTier}`}
                 </p>
               </div>
-              <div className="rounded-2xl bg-white p-5 shadow-sm" style={{ borderLeft: `4px solid ${userTierData?.color ?? "#ddd"}` }}>
+              <div className="motion-card interactive-lift rounded-2xl bg-white p-5 shadow-sm" style={{ borderLeft: `4px solid ${userTierData?.color ?? "#ddd"}` }}>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#888]">Tu categoría este mes</p>
                 <p className="mt-1 text-3xl font-black" style={{ color: userTierData?.color ?? "#888" }}>
                   {kData.currentTier === "NONE" ? "Sin categoría" : kData.currentTier}
@@ -193,7 +193,7 @@ export default async function PuntosPage() {
                   {userTierData ? `Bono: ${userTierData.bonusPercent}% en producto KLINIU®` : "Compra desde $2.000.000 para ganar bono"}
                 </p>
               </div>
-              <div className="rounded-2xl bg-[#6B21A8] p-5 text-white shadow-sm">
+              <div className="motion-card interactive-lift rounded-2xl bg-[#6B21A8] p-5 text-white shadow-sm">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">Bono recompra disponible</p>
                 <p className="mt-1 text-3xl font-black">{kData.bonusBalance > 0 ? fmt(kData.bonusBalance) : "$0"}</p>
                 <p className="mt-1 text-xs text-white/70">
@@ -202,7 +202,7 @@ export default async function PuntosPage() {
                     : "Se asigna al cierre de cada mes"}
                 </p>
                 {kData.bonusBalance > 0 && (
-                  <Link href="/mi-cuenta/puntos" className="mt-3 inline-block rounded-full bg-white px-4 py-1.5 text-xs font-bold text-[#6B21A8] hover:opacity-90">
+                  <Link href="/mi-cuenta/puntos" className="shine-sweep mt-3 inline-block rounded-full bg-white px-4 py-1.5 text-xs font-bold text-[#6B21A8] hover:opacity-90">
                     Redimir →
                   </Link>
                 )}
@@ -217,7 +217,7 @@ export default async function PuntosPage() {
         <div className="mx-auto max-w-[1200px]">
           <div className="mb-2 flex items-center justify-center gap-3">
             <span className="text-[#A78BFA]">✦</span>
-            <h2 className="text-center text-3xl font-black text-[#1A1A1A]">Categorías y beneficios</h2>
+            <h2 className="animated-heading text-center text-3xl font-black text-[#1A1A1A]">Categorías y beneficios</h2>
             <span className="text-[#A78BFA]">✦</span>
           </div>
           <p className="mt-2 text-center text-sm text-[#666]">Tu categoría depende del total de compra acumulada en el mes.</p>
@@ -230,7 +230,7 @@ export default async function PuntosPage() {
               return (
                 <FadeIn key={tier.key} delay={idx * 100} direction="up">
                 <div
-                  className="group overflow-hidden rounded-3xl transition-all duration-300 hover:-translate-y-2"
+                  className="puntos-tier-card interactive-lift group overflow-hidden rounded-3xl transition-all duration-300 hover:-translate-y-2"
                   style={{
                     background: "#fff",
                     boxShadow: cfg?.shadow,
@@ -240,13 +240,13 @@ export default async function PuntosPage() {
                   {/* Foca con fondo degradado */}
                   <div className="relative flex h-56 items-end justify-center overflow-hidden px-4 pb-0" style={{ background: cfg?.gradientStyle }}>
                     {/* Brillo decorativo */}
-                    <div className="absolute right-4 top-4 h-20 w-20 rounded-full opacity-20" style={{ background: "white", filter: "blur(20px)" }} />
+                    <div className="float-soft absolute right-4 top-4 h-20 w-20 rounded-full opacity-20" style={{ background: "white", filter: "blur(20px)" }} />
                     <Image
                       src={FOCA_IMAGES[idx]}
                       alt={`Foca ${tier.label}`}
                       width={170}
                       height={185}
-                      className="relative z-10 object-contain object-bottom drop-shadow-lg"
+                      className="puntos-foca-pop relative z-10 object-contain object-bottom drop-shadow-lg"
                     />
                     {isUserTier && (
                       <span className="absolute left-3 top-3 rounded-full px-3 py-1 text-[9px] font-black text-white" style={{ background: "rgba(0,0,0,0.35)" }}>
@@ -256,7 +256,7 @@ export default async function PuntosPage() {
                   </div>
 
                   {/* Badge + nombre */}
-                  <div className="flex items-center justify-center gap-2 py-3.5" style={{ background: cfg?.gradientStyle }}>
+                  <div className="puntos-gradient-run flex items-center justify-center gap-2 py-3.5" style={{ background: cfg?.gradientStyle }}>
                     <span className="text-xl drop-shadow">
                       {idx === 0 ? "🥈" : idx === 1 ? "🥇" : idx === 2 ? "⭐" : "💎"}
                     </span>
@@ -278,7 +278,7 @@ export default async function PuntosPage() {
                       <p className="mt-1 text-xs font-semibold text-[#aaa]">en producto KLINIU®</p>
                     </div>
 
-                    <div className="rounded-xl px-3 py-2 text-xs font-semibold" style={{ background: cfg?.gradientStyle, color: "#fff" }}>
+                    <div className="puntos-gradient-run rounded-xl px-3 py-2 text-xs font-semibold" style={{ background: cfg?.gradientStyle, color: "#fff" }}>
                       Redimible el mes siguiente
                     </div>
                   </div>
@@ -301,17 +301,17 @@ export default async function PuntosPage() {
         <div className="relative mx-auto max-w-[1200px]">
           {/* Encabezado centrado */}
           <div className="mb-12 text-center">
-            <div className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold uppercase tracking-widest text-[#7C3AED]" style={{ background: "rgba(124,58,237,0.10)" }}>
+            <div className="pulse-ring inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold uppercase tracking-widest text-[#7C3AED]" style={{ background: "rgba(124,58,237,0.10)" }}>
               ✦ Así funciona el programa
             </div>
-            <h2 className="mt-4 text-4xl font-black text-[#1A1A1A]">Todo lo que necesitas saber</h2>
+            <h2 className="animated-heading mt-4 text-4xl font-black text-[#1A1A1A]">Todo lo que necesitas saber</h2>
           </div>
 
           <div className="grid gap-8 lg:grid-cols-2">
 
             {/* Left: ¿Cómo funciona? */}
             <FadeIn delay={0} direction="left">
-            <div className="overflow-hidden rounded-3xl bg-white shadow-lg" style={{ boxShadow: "0 8px 40px rgba(124,58,237,0.12)" }}>
+            <div className="interactive-lift overflow-hidden rounded-3xl bg-white shadow-lg" style={{ boxShadow: "0 8px 40px rgba(124,58,237,0.12)" }}>
               {/* Header de la tarjeta */}
               <div className="px-7 py-5" style={{ background: "linear-gradient(135deg, #7C3AED, #A855F7)" }}>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">Reglas del programa</p>
@@ -325,10 +325,10 @@ export default async function PuntosPage() {
                 <div className="space-y-5">
                   {[...CONDITIONS_LEFT, ...CONDITIONS_RIGHT].map((c) => (
                     <div key={c.num} className="relative flex gap-4">
-                      <div className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-black text-white shadow-md" style={{ background: "linear-gradient(135deg, #7C3AED, #A855F7)" }}>
+                      <div className="puntos-timeline-step relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-black text-white shadow-md" style={{ background: "linear-gradient(135deg, #7C3AED, #A855F7)" }}>
                         {c.num}
                       </div>
-                      <div className="flex-1 rounded-2xl bg-white p-4" style={{ boxShadow: "0 2px 12px rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.10)" }}>
+                      <div className="interactive-lift flex-1 rounded-2xl bg-white p-4" style={{ boxShadow: "0 2px 12px rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.10)" }}>
                         <div className="flex items-center gap-2">
                           <span className="text-lg">{c.icon}</span>
                           <h4 className="text-sm font-black text-[#1A1A1A]">{c.title}</h4>
@@ -354,7 +354,7 @@ export default async function PuntosPage() {
             <div className="flex flex-col gap-6">
 
               {/* Timeline card */}
-              <div className="overflow-hidden rounded-3xl bg-white shadow-lg" style={{ boxShadow: "0 8px 40px rgba(124,58,237,0.12)" }}>
+              <div className="interactive-lift overflow-hidden rounded-3xl bg-white shadow-lg" style={{ boxShadow: "0 8px 40px rgba(124,58,237,0.12)" }}>
                 <div className="px-7 py-5" style={{ background: "linear-gradient(135deg, #7C3AED, #A855F7)" }}>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">Proceso de redención</p>
                   <h3 className="mt-1 text-xl font-black text-white">Redime tu bono recompra</h3>
@@ -373,7 +373,7 @@ export default async function PuntosPage() {
                     ].map((item) => (
                       <div key={item.label} className="relative z-10 flex flex-col items-center text-center">
                         <div
-                          className="flex h-14 w-14 items-center justify-center rounded-2xl text-2xl shadow-md"
+                          className="puntos-timeline-step flex h-14 w-14 items-center justify-center rounded-2xl text-2xl shadow-md"
                           style={{ background: item.active ? "linear-gradient(135deg, #7C3AED, #A855F7)" : "#EDE9FE" }}
                         >
                           {item.emoji}
@@ -387,10 +387,10 @@ export default async function PuntosPage() {
               </div>
 
               {/* Checklist */}
-              <div className="overflow-hidden rounded-3xl bg-white shadow-lg" style={{ boxShadow: "0 8px 40px rgba(124,58,237,0.12)" }}>
+              <div className="interactive-lift overflow-hidden rounded-3xl bg-white shadow-lg" style={{ boxShadow: "0 8px 40px rgba(124,58,237,0.12)" }}>
                 <div className="divide-y divide-[#F0EBFF]">
                   {REDEEM_CHECKS.map((item, i) => (
-                    <div key={i} className="flex items-start gap-4 px-6 py-4">
+                    <div key={i} className="puntos-check-row flex items-start gap-4 px-6 py-4">
                       <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-white" style={{ background: "#7C3AED" }}>
                         <svg viewBox="0 0 20 20" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <path d="M4 10l4 4 8-8" strokeLinecap="round" strokeLinejoin="round"/>
@@ -403,7 +403,7 @@ export default async function PuntosPage() {
               </div>
 
               {/* Tip card */}
-              <div className="flex items-center gap-4 rounded-3xl p-6 text-white" style={{ background: "linear-gradient(135deg, #5B1FA8, #8B3FD8)" }}>
+              <div className="puntos-gradient-run interactive-lift flex items-center gap-4 rounded-3xl p-6 text-white" style={{ background: "linear-gradient(135deg, #5B1FA8, #8B3FD8)" }}>
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl" style={{ background: "rgba(255,255,255,0.15)" }}>💡</div>
                 <p className="text-sm leading-relaxed">
                   Entre más acumules cada mes, más alta tu categoría y mejor tu beneficio.{" "}
@@ -433,12 +433,12 @@ export default async function PuntosPage() {
             <p className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>Para más información consulta los términos y condiciones en kliniu.com</p>
           </div>
           {!session && (
-            <Link href="/registro" className="rounded-full px-6 py-2.5 text-sm font-bold text-white" style={{ background: "#7C3AED" }}>
+            <Link href="/registro" className="shine-sweep hero-pop rounded-full px-6 py-2.5 text-sm font-bold text-white" style={{ background: "#7C3AED" }}>
               Únete gratis →
             </Link>
           )}
           {session && (
-            <Link href="/mi-cuenta/puntos" className="rounded-full px-6 py-2.5 text-sm font-bold text-white" style={{ background: "#7C3AED" }}>
+            <Link href="/mi-cuenta/puntos" className="shine-sweep hero-pop rounded-full px-6 py-2.5 text-sm font-bold text-white" style={{ background: "#7C3AED" }}>
               Ver mi bono →
             </Link>
           )}

@@ -166,9 +166,9 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
               </Link>
               <Link
                 href="/outlet"
-                className={`rounded-lg px-3 py-2 text-sm font-black transition-colors ${
+                className={`nav-animated-link rounded-lg px-3 py-2 text-sm font-black transition-colors ${
                   pathname === "/outlet"
-                    ? "text-[#27B1B8] underline decoration-[#27B1B8] decoration-2 underline-offset-4"
+                    ? "nav-animated-link-active text-[#27B1B8]"
                     : "text-[#27B1B8] hover:text-[#0C535B]"
                 }`}
               >

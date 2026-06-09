@@ -116,14 +116,14 @@ export default function ContactoPage() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-white text-[#111]">
       {/* Hero */}
-      <section className="relative min-h-[250px] overflow-hidden bg-[#f4e6d6] md:min-h-[300px]">
+      <section className="home-reveal hero-energy relative min-h-[250px] overflow-hidden bg-[#f4e6d6] md:min-h-[300px]">
         <Image
           src="/banner-contacto-kliniu.jpg"
           alt="Atención Kliniu"
           fill
           priority
           sizes="100vw"
-          className="hidden object-cover object-center md:block"
+          className="hero-drift hidden object-cover object-center md:block"
         />
         <Image
           src="/resp-banner-contacto.jpg"
@@ -131,12 +131,12 @@ export default function ContactoPage() {
           fill
           priority
           sizes="100vw"
-          className="object-cover object-center md:hidden"
+          className="hero-drift object-cover object-center md:hidden"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-[#f1dfcc]/95 via-[#f1dfcc]/45 to-transparent md:from-[#f1dfcc]/80 md:via-transparent" />
         <div className="relative mx-auto flex min-h-[250px] max-w-[1440px] items-center px-5 py-10 md:min-h-[300px] md:pl-[100px]">
           <div className="max-w-[460px]">
-            <h1 className="text-[28px] font-black leading-[0.98] tracking-tight text-[#0C535B] md:text-[38px]">
+            <h1 className="hero-pop text-[28px] font-black leading-[0.98] tracking-tight text-[#0C535B] md:text-[38px]">
               Estamos cerca de ti,
               <br />
               <span className="text-[#111]">en cada lugar</span>
@@ -151,18 +151,18 @@ export default function ContactoPage() {
       </section>
 
       {/* Contact bar */}
-      <section className="border-y border-black/8 bg-white">
+      <section className="home-reveal border-y border-black/8 bg-white">
         <div className="mx-auto max-w-[1440px] px-5">
-          <div className="grid grid-cols-2 divide-x divide-black/8 md:grid-cols-4">
+          <div className="motion-list grid grid-cols-2 divide-x divide-black/8 md:grid-cols-4">
             {contactBar.map((item) => (
               <a
                 key={item.label}
                 href={item.href}
                 target={item.href.startsWith("http") ? "_blank" : undefined}
                 rel={item.href.startsWith("http") ? "noreferrer" : undefined}
-                className="flex flex-col items-center gap-2 px-4 py-5 text-center transition-colors hover:bg-[#f0f8f8]"
+                className="motion-card interactive-lift flex flex-col items-center gap-2 px-4 py-5 text-center transition-colors hover:bg-[#f0f8f8]"
               >
-                <span className="text-[#27B1B8]">{item.icon}</span>
+                <span className="feature-icon-pop text-[#27B1B8]">{item.icon}</span>
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6e7379]">
                   {item.label}
                 </span>
@@ -174,12 +174,12 @@ export default function ContactoPage() {
       </section>
 
       {/* Paises donde operamos */}
-      <section className="bg-white py-10 md:py-14">
+      <section className="home-reveal bg-white py-10 md:py-14">
         <div className="mx-auto max-w-[1440px] px-5">
           <div className="grid gap-8 lg:grid-cols-[280px_1fr] lg:gap-10">
             {/* Left */}
             <div className="flex flex-col lg:min-h-[430px]">
-              <h2 className="text-3xl font-black leading-[0.95] tracking-tight text-[#0C535B]">
+              <h2 className="animated-heading text-3xl font-black leading-[0.95] tracking-tight text-[#0C535B]">
                 Países donde
                 <br />
                 <span className="text-[#27B1B8]">operamos</span>
@@ -193,23 +193,23 @@ export default function ContactoPage() {
                 alt="Foca Kliniu señalando"
                 width={300}
                 height={275}
-                className="hidden w-[220px] object-contain lg:mt-auto lg:block"
+                className="float-soft hidden w-[220px] object-contain lg:mt-auto lg:block"
               />
             </div>
 
             {/* Grid de países */}
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="motion-list grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {paises.map((p) => (
                 <div
                   key={p.nombre}
-                  className="flex min-h-[185px] flex-col rounded border border-black/10 bg-white px-5 py-5 shadow-sm transition-shadow hover:shadow-md"
+                  className="motion-card interactive-lift flex min-h-[185px] flex-col rounded border border-black/10 bg-white px-5 py-5 shadow-sm transition-shadow hover:shadow-md"
                 >
                   <Image
                     src={p.bandera}
                     alt={`Bandera ${p.nombre.replace(/\n/g, " ")}`}
                     width={46}
                     height={46}
-                    className="h-[46px] w-[46px] rounded-full object-cover"
+                    className="feature-icon-pop h-[46px] w-[46px] rounded-full object-cover"
                   />
                   <p className="mt-4 whitespace-pre-line text-[15px] font-black leading-[1.02] text-black">
                     {p.nombre}
@@ -222,7 +222,7 @@ export default function ContactoPage() {
                     href={p.wa}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-auto inline-flex items-center gap-1.5 pt-4 text-[11px] font-black text-[#0C535B] hover:underline"
+                    className="shine-sweep mt-auto inline-flex items-center gap-1.5 pt-4 text-[11px] font-black text-[#0C535B] hover:underline"
                   >
                     <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
                       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
@@ -238,7 +238,7 @@ export default function ContactoPage() {
       </section>
 
       {/* Formulario */}
-      <div className="border-t border-black/8 bg-white">
+      <div className="home-reveal border-t border-black/8 bg-white">
         <ContactForm />
       </div>
 

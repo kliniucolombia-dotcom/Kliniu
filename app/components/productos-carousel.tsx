@@ -45,36 +45,36 @@ export default function ProductosCarousel({
 
       <div
         ref={scrollRef}
-        className="scrollbar-hidden mx-11 flex gap-4 overflow-x-auto pb-2 2xl:gap-5"
+        className="motion-list scrollbar-hidden mx-11 flex gap-4 overflow-x-auto pb-2 2xl:gap-5"
       >
         {products.map((p) => {
           const added = addedSlugs.has(p.slug);
           return (
             <div
               key={p.slug}
-              className="flex h-[348px] w-[200px] min-w-[200px] shrink-0 flex-col overflow-hidden rounded-2xl border border-black/8 bg-white 2xl:w-[190px] 2xl:min-w-[190px]"
+              className="interactive-lift flex h-[370px] w-[200px] min-w-[200px] shrink-0 flex-col overflow-hidden rounded-2xl border border-black/8 bg-white 2xl:w-[190px] 2xl:min-w-[190px]"
             >
               <div className="flex h-40 items-center justify-center bg-white p-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={p.imagen}
                   alt={p.nombre}
-                  className="max-h-32 w-auto object-contain"
+                  className="image-lift max-h-32 w-auto object-contain"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
                 />
               </div>
               <div className="flex flex-1 flex-col p-3">
-                <p className="h-4 line-clamp-1 text-[11px] text-[#999]">
+                <p className="h-5 line-clamp-1 text-[11px] text-[#999]">
                   {p.descripcion}
                 </p>
-                <p className="mt-1.5 min-h-[38px] line-clamp-3 text-sm font-semibold leading-snug text-[#111]">
+                <p className="mt-1.5 h-[54px] line-clamp-3 text-sm font-semibold leading-snug text-[#111]">
                   {p.nombre}
                 </p>
-                <p className="mt-1.5 text-base font-bold" style={{ color: "#0C535B" }}>{p.precio}</p>
+                <p className="mt-1.5 h-6 text-base font-bold" style={{ color: "#0C535B" }}>{p.precio}</p>
                 <button
                   type="button"
                   onClick={() => handleAdd(p)}
-                  className={`mt-auto w-full rounded-full py-2 text-xs font-bold transition-colors ${
+                  className={`shine-sweep mt-auto w-full rounded-full py-2 text-xs font-bold transition-colors ${
                     added
                       ? "bg-[#d4621a] text-white"
                       : "bg-[#F07826] text-white hover:bg-[#d4621a]"

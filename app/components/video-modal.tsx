@@ -21,13 +21,13 @@ export default function VideoModal({ videos }: { videos: Video[] }) {
 
   return (
     <>
-      <div className="scrollbar-hidden flex justify-center gap-4 overflow-x-auto px-2 pb-2">
+      <div className="motion-list scrollbar-hidden flex justify-center gap-4 overflow-x-auto px-2 pb-2">
         {videos.map((v) => (
           <button
             key={v.id}
             type="button"
             onClick={() => setActiveHref(v.href)}
-            className="group flex h-44 w-40 shrink-0 cursor-pointer flex-col items-center justify-end overflow-hidden rounded-2xl border border-black/8 bg-white transition-shadow hover:shadow-md"
+            className="motion-card interactive-lift group flex h-44 w-40 shrink-0 cursor-pointer flex-col items-center justify-end overflow-hidden rounded-2xl border border-black/8 bg-white transition-shadow hover:shadow-md"
           >
             {v.thumb ? (
               <div className="relative flex flex-1 w-full items-center justify-center overflow-hidden">
@@ -35,10 +35,10 @@ export default function VideoModal({ videos }: { videos: Video[] }) {
                 <img
                   src={v.thumb}
                   alt={v.titulo}
-                  className="h-full w-full object-cover object-center"
+                  className="image-lift h-full w-full object-cover object-center"
                 />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/15 transition-colors group-hover:bg-black/25">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-[#27B1B8] shadow-md transition-transform group-hover:scale-110">
+                  <div className="pulse-ring flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-[#27B1B8] shadow-md transition-transform group-hover:scale-110">
                     <svg viewBox="0 0 24 24" className="h-5 w-5 translate-x-0.5" fill="currentColor">
                       <polygon points="5 3 19 12 5 21 5 3" />
                     </svg>

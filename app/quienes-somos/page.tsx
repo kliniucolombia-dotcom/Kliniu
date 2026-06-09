@@ -109,14 +109,20 @@ export default function QuienesSomosPage() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-white text-[#111]">
       {/* Hero */}
-      <section className="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 md:py-16">
+      <section className="nosotros-section-energy home-reveal mx-auto max-w-[1440px] px-4 py-10 sm:px-6 md:py-16">
         <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
           <div>
-            <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-[#111] sm:text-4xl md:text-5xl">
+            <h1 className="nosotros-title-pop hero-pop text-3xl font-extrabold leading-tight tracking-tight text-[#111] sm:text-4xl md:text-5xl">
               Acerca de{" "}
               <span className="text-[#27B1B8]">nosotros</span>
             </h1>
-            <div className="mt-3 h-1 w-12 rounded-full bg-[#27B1B8]" />
+            <div className="mt-3 h-1 w-12 rounded-full bg-[#27B1B8] animated-heading" />
+            <div className="nosotros-color-dots mt-5 flex gap-2">
+              <span className="h-3 w-12 rounded-full bg-[#27B1B8]" />
+              <span className="h-3 w-12 rounded-full bg-[#F07826]" />
+              <span className="h-3 w-12 rounded-full bg-[#0C535B]" />
+              <span className="h-3 w-12 rounded-full bg-[#7C3AED]" />
+            </div>
             <p className="mt-5 text-sm leading-7 text-[#555] sm:text-base sm:leading-8">
               Somos Kliniu, una compañía colombiana dedicada a desarrollar y comercializar ideas de
               dispensadores y limpieza. Desarrollamos nuestras ideas haciéndolas realidad a través
@@ -127,35 +133,35 @@ export default function QuienesSomosPage() {
               segura e inteligente.
             </p>
           </div>
-          <div className="flex items-center justify-center overflow-hidden rounded-2xl bg-[#f8f8f7]">
+          <div className="interactive-lift flex items-center justify-center overflow-hidden rounded-2xl bg-[#f8f8f7]">
             <Image
               src="/banner-foto-nosotros.png"
               alt="Productos Kliniu en ambiente de baño"
               width={600}
               height={420}
-              className="h-56 w-full object-cover sm:h-72 lg:h-96"
+              className="nosotros-hero-photo h-56 w-full object-cover sm:h-72 lg:h-96"
             />
           </div>
         </div>
       </section>
 
       {/* Misión / Visión */}
-      <section className="mx-auto w-full max-w-[1440px] px-4 pb-10 sm:px-6 md:pb-16">
+      <section className="nosotros-section-energy mx-auto w-full max-w-[1440px] px-4 pb-10 sm:px-6 md:pb-16">
         <div className="mx-auto grid max-w-[1080px] gap-4 md:grid-cols-2 md:gap-5">
           {/* Misión */}
           <div
-            className="flex min-h-[200px] overflow-hidden rounded-2xl text-white sm:min-h-[260px]"
+            className="nosotros-panel flex min-h-[200px] overflow-hidden rounded-2xl text-white sm:min-h-[260px]"
             style={{ background: "linear-gradient(150deg, #145F64 0%, #003E42 100%)" }}
           >
             {/* Foca izquierda */}
             <div className="w-[120px] shrink-0 self-end sm:w-[170px]">
-              <Image src="/foca-vision-cutout.png" alt="" width={320} height={205} className="h-auto w-full object-contain object-bottom" />
+              <Image src="/foca-vision-cutout.png" alt="" width={320} height={205} className="nosotros-foca h-auto w-full object-contain object-bottom" />
             </div>
             {/* Info derecha */}
             <div className="flex flex-1 flex-col justify-center py-6 pl-4 pr-5 sm:py-8 sm:pl-5 sm:pr-8">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-white/70 sm:h-[56px] sm:w-[56px]">
-                  <Image src="/nosotros-iconos/mision.png" alt="" width={30} height={30} className="h-5 w-5 object-contain brightness-0 invert sm:h-7 sm:w-7" />
+                  <Image src="/nosotros-iconos/mision.png" alt="" width={30} height={30} className="nosotros-icon h-5 w-5 object-contain brightness-0 invert sm:h-7 sm:w-7" />
                 </div>
                 <h2 className="text-2xl font-black uppercase leading-none tracking-tight sm:text-[30px]">MISIÓN</h2>
               </div>
@@ -168,18 +174,18 @@ export default function QuienesSomosPage() {
 
           {/* Visión */}
           <div
-            className="flex min-h-[200px] overflow-hidden rounded-2xl text-white sm:min-h-[260px]"
+            className="nosotros-panel flex min-h-[200px] overflow-hidden rounded-2xl text-white sm:min-h-[260px]"
             style={{ background: "linear-gradient(150deg, #45B9AD 0%, #7ABCB9 100%)" }}
           >
             {/* Foca izquierda */}
             <div className="w-[120px] shrink-0 self-end sm:w-[170px]">
-              <Image src="/foca-mision-cutout.png" alt="" width={330} height={245} className="h-auto w-full object-contain object-bottom" />
+              <Image src="/foca-mision-cutout.png" alt="" width={330} height={245} className="nosotros-foca h-auto w-full object-contain object-bottom" />
             </div>
             {/* Info derecha */}
             <div className="flex flex-1 flex-col justify-center py-6 pl-4 pr-5 sm:py-8 sm:pl-5 sm:pr-8">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-white/70 sm:h-[56px] sm:w-[56px]">
-                  <Image src="/nosotros-iconos/vision.png" alt="" width={30} height={30} className="h-5 w-5 object-contain brightness-0 invert sm:h-7 sm:w-7" />
+                  <Image src="/nosotros-iconos/vision.png" alt="" width={30} height={30} className="nosotros-icon h-5 w-5 object-contain brightness-0 invert sm:h-7 sm:w-7" />
                 </div>
                 <h2 className="text-2xl font-black uppercase leading-none tracking-tight sm:text-[30px]">VISIÓN</h2>
               </div>
@@ -193,16 +199,16 @@ export default function QuienesSomosPage() {
       </section>
 
       {/* Valores corporativos */}
-      <section className="bg-[#f8f8f7] py-10 md:py-16">
+      <section className="nosotros-section-energy bg-[#f8f8f7] py-10 md:py-16">
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6">
-          <h2 className="mb-8 text-center text-2xl font-extrabold tracking-tight text-[#111] sm:text-3xl md:mb-10">
+          <h2 className="animated-heading mb-8 text-center text-2xl font-extrabold tracking-tight text-[#111] sm:text-3xl md:mb-10">
             Valores corporativos
           </h2>
-          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+          <div className="nosotros-values-grid grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
             {valores.map((v) => (
               <div
                 key={v.titulo}
-                className="rounded-2xl border border-black/8 bg-white p-5 text-center shadow-sm"
+                className="motion-card interactive-lift rounded-2xl border border-black/8 bg-white p-5 text-center shadow-sm"
               >
                 <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#e8f5f5]">
                   <Image
@@ -210,7 +216,7 @@ export default function QuienesSomosPage() {
                     alt=""
                     width={30}
                     height={30}
-                    className="h-8 w-8 object-contain"
+                    className="nosotros-icon h-8 w-8 object-contain"
                   />
                 </div>
                 <p className="text-sm font-extrabold text-[#0C535B]">{v.titulo}</p>
@@ -222,15 +228,15 @@ export default function QuienesSomosPage() {
       </section>
 
       {/* Calidad banner */}
-      <section className="bg-white px-4 py-10 sm:px-6 md:py-16">
+      <section className="nosotros-section-energy bg-white px-4 py-10 sm:px-6 md:py-16">
         <div className="mx-auto max-w-[1440px]">
-          <div className="relative overflow-hidden rounded-[10px] bg-white pb-8 shadow-[0_18px_40px_rgba(12,83,91,0.08)] md:pb-10">
+          <div className="nosotros-quality-card interactive-lift relative overflow-hidden rounded-[10px] bg-white pb-8 shadow-[0_18px_40px_rgba(12,83,91,0.08)] md:pb-10">
             <Image
               src="/nosotros-calidad/foca-calidad-cuadro.png"
               alt=""
               width={1352}
               height={376}
-              className="pointer-events-none absolute inset-0 hidden h-full w-full object-cover object-left md:block"
+              className="nosotros-hero-photo pointer-events-none absolute inset-0 hidden h-full w-full object-cover object-left md:block"
               priority={false}
             />
 
@@ -251,7 +257,7 @@ export default function QuienesSomosPage() {
                 {certificaciones.map((cert) => (
                   <figure
                     key={cert.titulo}
-                    className="flex min-h-[92px] flex-col items-center justify-end gap-2 text-center"
+                    className="nosotros-cert flex min-h-[92px] flex-col items-center justify-end gap-2 text-center"
                   >
                     <Image
                       src={cert.imagen}
