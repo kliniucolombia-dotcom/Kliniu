@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import ComboCarousel from "./components/combo-carousel";
 import HeroCarousel from "./components/hero-carousel";
-import OfferRoulette from "./components/offer-roulette";
 import ProductosCarousel from "./components/productos-carousel";
 import SiteFooter from "./components/site-footer";
 import VideoModal from "./components/video-modal";
@@ -82,7 +81,6 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-white text-[#111]">
-      <OfferRoulette />
       <HeroCarousel />
 
       {/* ── Productos destacados ── */}

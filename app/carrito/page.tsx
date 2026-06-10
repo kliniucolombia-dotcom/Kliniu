@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useCart } from "../components/cart-provider";
 import { useProducts } from "../components/products-provider";
 import SiteFooter from "../components/site-footer";
+import OfferRoulette from "../components/offer-roulette";
 
 function parsePrecio(precio: string) {
   return Number(precio.replace(/[^\d]/g, "")) || 0;
@@ -48,6 +49,7 @@ export default function CarritoPage() {
 
   return (
     <main className="min-h-screen bg-white text-[#111]">
+      <OfferRoulette />
       <section className="mx-auto max-w-[1440px] px-6 py-10">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">

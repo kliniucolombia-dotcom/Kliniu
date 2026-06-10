@@ -33,6 +33,7 @@ const prizes = [
 
 export default function OfferRoulette() {
   const [mounted, setMounted] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isNarrow, setIsNarrow] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -93,6 +94,7 @@ export default function OfferRoulette() {
 
   useEffect(() => {
     setMounted(true);
+    fetch("/api/account").then((r) => { if (r.ok) setIsLoggedIn(true); });
     const update = () => setIsNarrow(window.innerWidth < 820);
     update();
     window.addEventListener("resize", update);
@@ -101,7 +103,7 @@ export default function OfferRoulette() {
 
   const segmentAngle = 360 / prizes.length;
 
-  if (!mounted || !isOpen) return null;
+  if (!mounted || !isOpen || !isLoggedIn) return null;
 
   const wheelSize = isNarrow ? "min(72vw, 320px)" : 360;
   const selectedPrize = selectedIndex === null ? null : prizes[selectedIndex];
