@@ -145,6 +145,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
               >
                 <button
                   type="button"
+                  onClick={() => setMenuAbierto((v) => !v)}
                   className={`flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
                     pathname === "/categorias"
                       ? "text-[#0C535B] underline decoration-[#27B1B8] decoration-2 underline-offset-4"

@@ -13,14 +13,14 @@ import {
   type ProductoCatalogo,
   type VariacionColor,
 } from "@/app/data/catalog";
-import { prisma } from "@/lib/prisma";
+import { supabaseDb } from "@/lib/supabase-db";
 
 type ProductRecord = {
-  id?: string;
+  id: string;
   slug: string;
   sku?: string | null;
   oemReference?: string | null;
-  alternativeReferences?: string[] | null;
+  alternativeReferences: string[];
   category: string;
   name: string;
   brand: string;
@@ -29,15 +29,18 @@ type ProductRecord = {
   stock: number;
   minimumStock: number;
   image: string;
-  galleryImages?: string[] | null;
+  galleryImages: string[];
   availability: string;
   description: string;
   application?: string | null;
-  compatibility?: string[] | null;
+  compatibility: string[];
   warranty?: string | null;
   technicalSpecs?: unknown;
   colorVariants?: unknown;
   featured: boolean;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type StoreProduct = ProductoCatalogo & {
@@ -318,22 +321,22 @@ function getFallbackProducts(): StoreProduct[] {
 }
 
 export const getProducts = cache(async function getProducts() {
-  if (!prisma) {
+  if (!supabaseDb) {
     return getFallbackProducts();
   }
 
-  try {
-    const products = await prisma.product.findMany({
-      where: {
-        active: true,
-      },
-      orderBy: [{ featured: "desc" }, { name: "asc" }],
-    });
+  const { data: products, error } = await supabaseDb
+    .from("Product")
+    .select("*")
+    .eq("active", true)
+    .order("featured", { ascending: false })
+    .order("name", { ascending: true });
 
-    return products.map(toStoreProduct);
-  } catch {
+  if (error || !products) {
     return getFallbackProducts();
   }
+
+  return (products as ProductRecord[]).map(toStoreProduct);
 });
 
 export async function getFeaturedProducts() {
@@ -345,7 +348,7 @@ export async function getFeaturedProducts() {
 }
 
 export async function createProduct(input: ProductMutationInput) {
-  if (!prisma) {
+  if (!supabaseDb) {
     throw new Error("DATABASE_NOT_CONFIGURED");
   }
 
@@ -355,7 +358,13 @@ export async function createProduct(input: ProductMutationInput) {
   let slug = baseSlug;
   let suffix = 1;
 
-  while (await prisma.product.findUnique({ where: { slug } })) {
+  while (true) {
+    const { data: existing } = await supabaseDb
+      .from("Product")
+      .select("id")
+      .eq("slug", slug)
+      .maybeSingle();
+    if (!existing) break;
     slug = `${baseSlug}-${suffix}`;
     suffix += 1;
   }
@@ -373,19 +382,24 @@ export async function createProduct(input: ProductMutationInput) {
   let sku = baseSku;
   let skuSuffix = 1;
 
-  while (await prisma.product.findUnique({ where: { sku } })) {
+  while (true) {
+    const { data: existing } = await supabaseDb
+      .from("Product")
+      .select("id")
+      .eq("sku", sku)
+      .maybeSingle();
+    if (!existing) break;
     sku = `${baseSku}-${skuSuffix}`;
     skuSuffix += 1;
   }
 
-  const created = await prisma.product.create({
-    data: {
+  const { data: created, error } = await supabaseDb
+    .from("Product")
+    .insert({
       slug,
       sku,
       oemReference: input.oemReferencia?.trim() || null,
-      alternativeReferences: {
-        set: normalizeTextList(input.referenciasAlternas || []),
-      },
+      alternativeReferences: normalizeTextList(input.referenciasAlternas || []),
       category: input.categoria,
       name: nombre,
       brand: marca,
@@ -394,52 +408,53 @@ export async function createProduct(input: ProductMutationInput) {
       stock,
       minimumStock: stockMinimo,
       image: imagen,
-      galleryImages: {
-        set: imagenesExtra,
-      },
+      galleryImages: imagenesExtra,
       availability: normalizeStockAvailability(input.disponibilidad, stock, stockMinimo),
       description:
         input.descripcion?.trim() ||
-        descripcionProducto({
-          nombre,
-          categoria: input.categoria,
-          marca,
-        }),
+        descripcionProducto({ nombre, categoria: input.categoria, marca }),
       application: input.aplicacion?.trim() || null,
-      compatibility: {
-        set: normalizeTextList(input.compatibilidad || []),
-      },
+      compatibility: normalizeTextList(input.compatibilidad || []),
       warranty: input.garantia?.trim() || "1 año de garantía del fabricante",
       technicalSpecs: normalizeTechnicalSpecs(input.especificacionesTecnicas),
       colorVariants: input.variacionesColor ?? [],
       featured: false,
       active: true,
-      inventoryMovements: {
-        create: {
-          type: "CREATED",
-          quantity: stock,
-          stockAfter: stock,
-          note: "Inventario inicial del producto",
-        },
-      },
-    },
+    })
+    .select()
+    .single();
+
+  if (error || !created) {
+    throw new Error(error?.message || "Error al crear producto");
+  }
+
+  await supabaseDb.from("InventoryMovement").insert({
+    productId: created.id,
+    type: "CREATED",
+    quantity: stock,
+    stockAfter: stock,
+    note: "Inventario inicial del producto",
   });
 
-  return toStoreProduct(created);
+  return toStoreProduct(created as ProductRecord);
 }
 
 export async function updateProduct(slug: string, input: ProductMutationInput) {
-  if (!prisma) {
+  if (!supabaseDb) {
     throw new Error("DATABASE_NOT_CONFIGURED");
   }
 
-  const existing = await prisma.product.findUnique({
-    where: { slug },
-  });
+  const { data: existing, error: findError } = await supabaseDb
+    .from("Product")
+    .select("*")
+    .eq("slug", slug)
+    .single();
 
-  if (!existing) {
+  if (findError || !existing) {
     throw new Error("PRODUCT_NOT_FOUND");
   }
+
+  const existingRecord = existing as ProductRecord;
 
   const nombre = input.nombre.trim();
   const marca = input.marca.trim();
@@ -450,7 +465,7 @@ export async function updateProduct(slug: string, input: ProductMutationInput) {
   );
   const stock = Math.max(0, Math.round(input.stock));
   const stockMinimo = Math.max(0, Math.round(input.stockMinimo));
-  const imagen = normalizeProductImage(input.imagen) || existing.image;
+  const imagen = normalizeProductImage(input.imagen) || existingRecord.image;
   const imagenesExtra = normalizeGalleryImages(input.imagenesExtra || []);
 
   const nextSlugBase = slugify(nombre) || slug;
@@ -460,49 +475,47 @@ export async function updateProduct(slug: string, input: ProductMutationInput) {
     nextSlug = nextSlugBase;
     let suffix = 1;
 
-    while (
-      await prisma.product.findFirst({
-        where: {
-          slug: nextSlug,
-          NOT: { id: existing.id },
-        },
-      })
-    ) {
+    while (true) {
+      const { data: conflict } = await supabaseDb
+        .from("Product")
+        .select("id")
+        .eq("slug", nextSlug)
+        .neq("id", existingRecord.id)
+        .maybeSingle();
+      if (!conflict) break;
       nextSlug = `${nextSlugBase}-${suffix}`;
       suffix += 1;
     }
   }
 
-  const nextSkuBase = (input.sku?.trim() || existing.sku || createSkuFromName(nombre)).toUpperCase();
+  const nextSkuBase = (input.sku?.trim() || existingRecord.sku || createSkuFromName(nombre)).toUpperCase();
   let nextSku = nextSkuBase;
 
-  if (nextSkuBase !== existing.sku) {
+  if (nextSkuBase !== existingRecord.sku) {
     let skuSuffix = 1;
 
-    while (
-      await prisma.product.findFirst({
-        where: {
-          sku: nextSku,
-          NOT: { id: existing.id },
-        },
-      })
-    ) {
+    while (true) {
+      const { data: conflict } = await supabaseDb
+        .from("Product")
+        .select("id")
+        .eq("sku", nextSku)
+        .neq("id", existingRecord.id)
+        .maybeSingle();
+      if (!conflict) break;
       nextSku = `${nextSkuBase}-${skuSuffix}`;
       skuSuffix += 1;
     }
   }
 
-  const stockDelta = stock - existing.stock;
+  const stockDelta = stock - existingRecord.stock;
 
-  const updated = await prisma.product.update({
-    where: { slug },
-    data: {
+  const { data: updated, error: updateError } = await supabaseDb
+    .from("Product")
+    .update({
       slug: nextSlug,
       sku: nextSku,
       oemReference: input.oemReferencia?.trim() || null,
-      alternativeReferences: {
-        set: normalizeTextList(input.referenciasAlternas || []),
-      },
+      alternativeReferences: normalizeTextList(input.referenciasAlternas || []),
       category: input.categoria,
       name: nombre,
       brand: marca,
@@ -511,49 +524,51 @@ export async function updateProduct(slug: string, input: ProductMutationInput) {
       stock,
       minimumStock: stockMinimo,
       image: imagen,
-      galleryImages: {
-        set: imagenesExtra,
-      },
+      galleryImages: imagenesExtra,
       availability: normalizeStockAvailability(input.disponibilidad, stock, stockMinimo),
       description:
         input.descripcion?.trim() ||
-        descripcionProducto({
-          nombre,
-          categoria: input.categoria,
-          marca,
-        }),
+        descripcionProducto({ nombre, categoria: input.categoria, marca }),
       application: input.aplicacion?.trim() || null,
-      compatibility: {
-        set: normalizeTextList(input.compatibilidad || []),
-      },
+      compatibility: normalizeTextList(input.compatibilidad || []),
       warranty: input.garantia?.trim() || "1 año de garantía del fabricante",
       technicalSpecs: normalizeTechnicalSpecs(input.especificacionesTecnicas),
       colorVariants: input.variacionesColor ?? [],
-      inventoryMovements:
-        stockDelta !== 0
-          ? {
-              create: {
-                type: "ADJUSTMENT",
-                quantity: stockDelta,
-                stockAfter: stock,
-                note: "Ajuste manual desde el panel admin",
-              },
-            }
-          : undefined,
-    },
-  });
+    })
+    .eq("slug", slug)
+    .select()
+    .single();
 
-  return toStoreProduct(updated);
+  if (updateError || !updated) {
+    throw new Error(updateError?.message || "Error al actualizar producto");
+  }
+
+  if (stockDelta !== 0) {
+    await supabaseDb.from("InventoryMovement").insert({
+      productId: existingRecord.id,
+      type: "ADJUSTMENT",
+      quantity: stockDelta,
+      stockAfter: stock,
+      note: "Ajuste manual desde el panel admin",
+    });
+  }
+
+  return toStoreProduct(updated as ProductRecord);
 }
 
 export async function deleteProduct(slug: string) {
-  if (!prisma) {
+  if (!supabaseDb) {
     throw new Error("DATABASE_NOT_CONFIGURED");
   }
 
-  await prisma.product.delete({
-    where: { slug },
-  });
+  const { error } = await supabaseDb
+    .from("Product")
+    .delete()
+    .eq("slug", slug);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }
 
 export async function adjustProductInventory(
@@ -561,84 +576,89 @@ export async function adjustProductInventory(
   quantity: number,
   note?: string,
 ) {
-  if (!prisma) {
+  if (!supabaseDb) {
     throw new Error("DATABASE_NOT_CONFIGURED");
   }
 
-  const product = await prisma.product.findUnique({
-    where: { slug },
-  });
+  const { data: product, error: findError } = await supabaseDb
+    .from("Product")
+    .select("*")
+    .eq("slug", slug)
+    .single();
 
-  if (!product) {
+  if (findError || !product) {
     throw new Error("PRODUCT_NOT_FOUND");
   }
 
+  const productRecord = product as ProductRecord;
   const normalizedQuantity = Math.trunc(quantity);
 
   if (normalizedQuantity === 0) {
     throw new Error("INVALID_QUANTITY");
   }
 
-  const nextStock = product.stock + normalizedQuantity;
+  const nextStock = productRecord.stock + normalizedQuantity;
 
   if (nextStock < 0) {
     throw new Error("INSUFFICIENT_STOCK");
   }
 
-  const updated = await prisma.product.update({
-    where: { slug },
-    data: {
+  const { data: updated, error: updateError } = await supabaseDb
+    .from("Product")
+    .update({
       stock: nextStock,
       availability:
         nextStock <= 0
           ? "Agotado"
-          : nextStock <= product.minimumStock
+          : nextStock <= productRecord.minimumStock
             ? "Disponible por pedido"
             : "Entrega inmediata",
-      inventoryMovements: {
-        create: {
-          type: "ADJUSTMENT",
-          quantity: normalizedQuantity,
-          stockAfter: nextStock,
-          note: note?.trim() || "Ajuste rápido desde inventario",
-        },
-      },
-    },
+    })
+    .eq("slug", slug)
+    .select()
+    .single();
+
+  if (updateError || !updated) {
+    throw new Error(updateError?.message || "Error al ajustar inventario");
+  }
+
+  await supabaseDb.from("InventoryMovement").insert({
+    productId: productRecord.id,
+    type: "ADJUSTMENT",
+    quantity: normalizedQuantity,
+    stockAfter: nextStock,
+    note: note?.trim() || "Ajuste rápido desde inventario",
   });
 
-  return toStoreProduct(updated);
+  return toStoreProduct(updated as ProductRecord);
 }
 
 export async function getRecentInventoryMovements(limit = 16) {
-  if (!prisma) {
-    throw new Error("DATABASE_NOT_CONFIGURED");
+  if (!supabaseDb) {
+    return [];
   }
 
-  const movements = await prisma.inventoryMovement.findMany({
-    orderBy: { createdAt: "desc" },
-    take: limit,
-    include: {
-      product: {
-        select: {
-          slug: true,
-          name: true,
-          sku: true,
-        },
-      },
-    },
-  });
+  const { data: movements, error } = await supabaseDb
+    .from("InventoryMovement")
+    .select("*, product:productId(slug, name, sku)")
+    .order("createdAt", { ascending: false })
+    .limit(limit);
+
+  if (error || !movements) {
+    return [];
+  }
 
   return movements.map(
-    (movement): InventoryMovementSummary => ({
-      id: movement.id,
+    (movement: Record<string, unknown> & { product: { slug: string; name: string; sku: string | null } }): InventoryMovementSummary => ({
+      id: movement.id as string,
       productSlug: movement.product.slug,
       productName: movement.product.name,
       productSku: movement.product.sku,
-      type: movement.type,
-      quantity: movement.quantity,
-      stockAfter: movement.stockAfter,
-      note: movement.note,
-      createdAt: movement.createdAt,
+      type: movement.type as "CREATED" | "ADJUSTMENT" | "ORDER_DEDUCTION",
+      quantity: movement.quantity as number,
+      stockAfter: movement.stockAfter as number,
+      note: (movement.note as string | null) || null,
+      createdAt: new Date(movement.createdAt as string),
     }),
   );
 }
