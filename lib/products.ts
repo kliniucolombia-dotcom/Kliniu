@@ -396,6 +396,7 @@ export async function createProduct(input: ProductMutationInput) {
   const { data: created, error } = await supabaseDb
     .from("Product")
     .insert({
+      id: crypto.randomUUID(),
       slug,
       sku,
       oemReference: input.oemReferencia?.trim() || null,
@@ -429,6 +430,7 @@ export async function createProduct(input: ProductMutationInput) {
   }
 
   await supabaseDb.from("InventoryMovement").insert({
+    id: crypto.randomUUID(),
     productId: created.id,
     type: "CREATED",
     quantity: stock,
@@ -545,6 +547,7 @@ export async function updateProduct(slug: string, input: ProductMutationInput) {
 
   if (stockDelta !== 0) {
     await supabaseDb.from("InventoryMovement").insert({
+      id: crypto.randomUUID(),
       productId: existingRecord.id,
       type: "ADJUSTMENT",
       quantity: stockDelta,
@@ -623,6 +626,7 @@ export async function adjustProductInventory(
   }
 
   await supabaseDb.from("InventoryMovement").insert({
+    id: crypto.randomUUID(),
     productId: productRecord.id,
     type: "ADJUSTMENT",
     quantity: normalizedQuantity,
