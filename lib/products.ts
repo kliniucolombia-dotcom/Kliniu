@@ -397,6 +397,8 @@ export async function createProduct(input: ProductMutationInput) {
     .from("Product")
     .insert({
       id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       slug,
       sku,
       oemReference: input.oemReferencia?.trim() || null,
@@ -431,6 +433,7 @@ export async function createProduct(input: ProductMutationInput) {
 
   await supabaseDb.from("InventoryMovement").insert({
     id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
     productId: created.id,
     type: "CREATED",
     quantity: stock,
@@ -536,6 +539,7 @@ export async function updateProduct(slug: string, input: ProductMutationInput) {
       warranty: input.garantia?.trim() || "1 año de garantía del fabricante",
       technicalSpecs: normalizeTechnicalSpecs(input.especificacionesTecnicas),
       colorVariants: input.variacionesColor ?? [],
+      updatedAt: new Date().toISOString(),
     })
     .eq("slug", slug)
     .select()
@@ -548,6 +552,7 @@ export async function updateProduct(slug: string, input: ProductMutationInput) {
   if (stockDelta !== 0) {
     await supabaseDb.from("InventoryMovement").insert({
       id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
       productId: existingRecord.id,
       type: "ADJUSTMENT",
       quantity: stockDelta,
@@ -616,6 +621,7 @@ export async function adjustProductInventory(
           : nextStock <= productRecord.minimumStock
             ? "Disponible por pedido"
             : "Entrega inmediata",
+      updatedAt: new Date().toISOString(),
     })
     .eq("slug", slug)
     .select()
@@ -627,6 +633,7 @@ export async function adjustProductInventory(
 
   await supabaseDb.from("InventoryMovement").insert({
     id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
     productId: productRecord.id,
     type: "ADJUSTMENT",
     quantity: normalizedQuantity,
