@@ -20,7 +20,7 @@ export const PRODUCT_VOLUME_PRICES: Record<
   "dispensador-antigoteo-de-liquidos-1000-ml": { unit: 58899.37, tiers: [{ min: 100, unitPrice: 30378.5 }, { min: 48, unitPrice: 35469.125 }, { min: 12, unitPrice: 39430 }] },
   "dispensador-antigoteo-de-liquidos-500ml": { unit: 49908.92, tiers: [{ min: 100, unitPrice: 22762.5 }, { min: 48, unitPrice: 27139.125 }, { min: 12, unitPrice: 31576 }] },
   "dispensador-antigoteo-de-liquidos-600ml": { unit: 49909, tiers: [{ min: 100, unitPrice: 22762.5 }, { min: 48, unitPrice: 27139.125 }, { min: 12, unitPrice: 31576 }] },
-  "dispensador-antigoteo-doble-800-ml": { unit: 99900.82, tiers: [{ min: 100, unitPrice: 72028.5 }, { min: 48, unitPrice: 75572.125 }, { min: 12, unitPrice: 81080 }] },
+  "dispensador-antigoteo-doble-800-ml": { unit: 53898.99, tiers: [{ min: 100, unitPrice: 30378.5 }, { min: 48, unitPrice: 34993.125 }, { min: 12, unitPrice: 36931 }] },
   "dispensador-de-crema-dental-4-cepillos": { unit: 49899.4, tiers: [{ min: 100, unitPrice: 24038 }, { min: 48, unitPrice: 26775 }, { min: 12, unitPrice: 33321 }] },
   "dispensador-de-crema-dental-5-cepillos": { unit: 49899.4, tiers: [{ min: 100, unitPrice: 24038 }, { min: 48, unitPrice: 26775 }, { min: 12, unitPrice: 33321 }] },
   "dispensador-de-crema-dental-kids-2-cepillos": { unit: 44863.32, tiers: [{ min: 100, unitPrice: 18478.5 }, { min: 48, unitPrice: 23001.708333 }, { min: 12, unitPrice: 26916.833333 }] },
