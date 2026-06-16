@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 function getReelId(href: string) {
   const match = href.match(/reel\/([^/?]+)/);
@@ -16,8 +17,43 @@ interface Video {
 
 export default function VideoModal({ videos }: { videos: Video[] }) {
   const [activeHref, setActiveHref] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const reelId = activeHref ? getReelId(activeHref) : null;
+
+  const modal = activeHref && reelId && (
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 p-4"
+      onClick={() => setActiveHref(null)}
+    >
+      <div
+        className="relative w-full max-w-sm overflow-hidden rounded-2xl bg-black"
+        style={{ maxHeight: "calc(100vh - 2rem)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={() => setActiveHref(null)}
+          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+        >
+          ✕
+        </button>
+        <iframe
+          src={`https://www.instagram.com/reel/${reelId}/embed/`}
+          className="block w-full"
+          style={{ height: "min(600px, calc(100vh - 2rem))" }}
+          frameBorder="0"
+          scrolling="no"
+          allowTransparency
+          allowFullScreen
+        />
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -59,35 +95,7 @@ export default function VideoModal({ videos }: { videos: Video[] }) {
         ))}
       </div>
 
-      {activeHref && reelId && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center sm:p-4"
-          onClick={() => setActiveHref(null)}
-        >
-          <div
-            className="relative w-full max-w-sm overflow-hidden rounded-t-2xl bg-black sm:rounded-2xl"
-            style={{ maxHeight: "90dvh" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => setActiveHref(null)}
-              className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
-            >
-              ✕
-            </button>
-            <iframe
-              src={`https://www.instagram.com/reel/${reelId}/embed/`}
-              className="w-full"
-              style={{ height: "min(600px, 88dvh)" }}
-              frameBorder="0"
-              scrolling="no"
-              allowTransparency
-              allowFullScreen
-            />
-          </div>
-        </div>
-      )}
+      {mounted && modal && createPortal(modal, document.body)}
     </>
   );
 }
