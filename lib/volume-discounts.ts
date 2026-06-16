@@ -19,7 +19,7 @@ export const PRODUCT_VOLUME_PRICES: Record<
   "dispensador-de-toallas-luxury": { unit: 123310.5, tiers: [{ min: 100, unitPrice: 97956 }, { min: 48, unitPrice: 99852.083333 }, { min: 12, unitPrice: 105435 }] },
   "dispensador-antigoteo-de-liquidos-1000-ml": { unit: 58899.37, tiers: [{ min: 100, unitPrice: 30378.5 }, { min: 48, unitPrice: 35469.125 }, { min: 12, unitPrice: 39430 }] },
   "dispensador-antigoteo-de-liquidos-500ml": { unit: 49908.92, tiers: [{ min: 100, unitPrice: 22762.5 }, { min: 48, unitPrice: 27139.125 }, { min: 12, unitPrice: 31576 }] },
-  "dispensador-antigoteo-de-liquidos-600ml": { unit: 49909, tiers: [{ min: 100, unitPrice: 22763 }, { min: 48, unitPrice: 27139 }, { min: 12, unitPrice: 31576 }] },
+  "dispensador-antigoteo-de-liquidos-600ml": { unit: 49909, tiers: [{ min: 100, unitPrice: 22762.5 }, { min: 48, unitPrice: 27139.125 }, { min: 12, unitPrice: 31576 }] },
   "dispensador-antigoteo-doble-800-ml": { unit: 99900.82, tiers: [{ min: 100, unitPrice: 72028.5 }, { min: 48, unitPrice: 75572.125 }, { min: 12, unitPrice: 81080 }] },
   "dispensador-de-crema-dental-4-cepillos": { unit: 49899.4, tiers: [{ min: 100, unitPrice: 24038 }, { min: 48, unitPrice: 26775 }, { min: 12, unitPrice: 33321 }] },
   "dispensador-de-crema-dental-5-cepillos": { unit: 49899.4, tiers: [{ min: 100, unitPrice: 24038 }, { min: 48, unitPrice: 26775 }, { min: 12, unitPrice: 33321 }] },
@@ -41,9 +41,22 @@ export const PRODUCT_VOLUME_PRICES: Record<
   "dispensador-racklin-soporte-negro": { unit: 59898.97, tiers: [{ min: 100, unitPrice: 34424.5 }, { min: 48, unitPrice: 34633.75 }, { min: 12, unitPrice: 38583 }] },
   "dispensador-racklin-soporte-plateado": { unit: 54899.78, tiers: [{ min: 100, unitPrice: 32044.5 }, { min: 48, unitPrice: 34395.75 }, { min: 12, unitPrice: 36203 }] },
   "dispensador-xpert-professional-para-jabon-espuma": { unit: 109899.2, tiers: [{ min: 100, unitPrice: 69258 }, { min: 48, unitPrice: 78788.291667 }, { min: 12, unitPrice: 83301 }] },
+  "dispensador-xpert-professional-para-jabon-espuma--frasco": { unit: 109899.2, tiers: [{ min: 100, unitPrice: 72828 }, { min: 48, unitPrice: 78788.291667 }, { min: 12, unitPrice: 83301 }] },
   "dispensador-xpert-professional-para-jabon-liquido": { unit: 109899.2, tiers: [{ min: 100, unitPrice: 72828 }, { min: 48, unitPrice: 78788.291667 }, { min: 12, unitPrice: 84491 }] },
+  "dispensador-xpert-professional-para-jabon-liquido--frasco": { unit: 109899.2, tiers: [{ min: 100, unitPrice: 71638 }, { min: 48, unitPrice: 78788.291667 }, { min: 12, unitPrice: 84491 }] },
   "organizador-de-maquinas-y-cepillos": { unit: 34001, tiers: [{ min: 100, unitPrice: 14696.5 }, { min: 48, unitPrice: 15817.083333 }, { min: 12, unitPrice: 17891 }] },
   "secador-de-manos-ak2618": { unit: 1089104, tiers: [{ min: 100, unitPrice: 1021650 }, { min: 48, unitPrice: 1048704 }, { min: 12, unitPrice: 1063031 }] },
+};
+
+export const TIPO_VARIANTES: Record<string, { label: string; slugSuffix: string }[]> = {
+  "dispensador-xpert-professional-para-jabon-espuma": [
+    { label: "Bolsa", slugSuffix: "" },
+    { label: "Frasco", slugSuffix: "--frasco" },
+  ],
+  "dispensador-xpert-professional-para-jabon-liquido": [
+    { label: "Bolsa", slugSuffix: "" },
+    { label: "Frasco", slugSuffix: "--frasco" },
+  ],
 };
 
 export function parsePriceValue(price: string): number {

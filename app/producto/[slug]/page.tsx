@@ -10,7 +10,7 @@ import { useCart } from "../../components/cart-provider";
 import { useProducts } from "../../components/products-provider";
 import SiteFooter from "../../components/site-footer";
 import QuoteModal from "../../components/quote-modal";
-import { getVolumePricing } from "@/lib/volume-discounts";
+import { getVolumePricing, TIPO_VARIANTES } from "@/lib/volume-discounts";
 import type { ProductoEspecificacion } from "../../data/catalog";
 
 const trustBadges = [
@@ -324,6 +324,7 @@ export default function ProductoDetallePage() {
   const [esUnidad, setEsUnidad] = useState(true);
   const [showComboTip, setShowComboTip] = useState(false);
   const [colorActivo, setColorActivo] = useState(0);
+  const [tipoActivo, setTipoActivo] = useState(0);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [agregado, setAgregado] = useState(false);
   const agregadoTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -344,13 +345,19 @@ export default function ProductoDetallePage() {
   const slug = params.slug;
   const producto = products.find((p) => p.slug === slug);
 
+  const tiposVariantes = producto ? TIPO_VARIANTES[producto.slug] : undefined;
+  const effectiveSlug = tiposVariantes
+    ? `${slug}${tiposVariantes[tipoActivo].slugSuffix}`
+    : slug;
+
   const handleAddToCart = () => {
     if (!producto || producto.puedeComprar === false) return;
-    const pricing = getVolumePricing(producto.precio, cantidad, producto.slug, producto.preciosPorCantidad);
+    const pricing = getVolumePricing(producto.precio, cantidad, effectiveSlug, producto.preciosPorCantidad);
     const varianteActiva = allVariants[colorActivo];
     const imagenSeleccionada = varianteActiva?.image ?? producto.imagen;
     const colorLabel = allVariants.length > 0 ? varianteActiva?.label : undefined;
-    const itemId = colorLabel ? `${producto.slug}--${varianteActiva?.color}` : producto.slug;
+    const tipoLabel = tiposVariantes ? tiposVariantes[tipoActivo].label : undefined;
+    const itemId = [producto.slug, varianteActiva?.color, tipoLabel].filter(Boolean).join("--");
     addItem({
       id: itemId,
       nombre: producto.nombre,
@@ -359,6 +366,7 @@ export default function ProductoDetallePage() {
       imagen: imagenSeleccionada,
       cantidad,
       colorLabel,
+      tipoLabel,
     });
     setAgregado(true);
     if (agregadoTimeout.current) clearTimeout(agregadoTimeout.current);
@@ -408,7 +416,7 @@ export default function ProductoDetallePage() {
   const relacionados = products
     .filter((p) => p.categoria === producto.categoria && p.slug !== producto.slug)
     .slice(0, 4);
-  const volumePricing = getVolumePricing(producto.precio, cantidad, producto.slug, producto.preciosPorCantidad);
+  const volumePricing = getVolumePricing(producto.precio, cantidad, effectiveSlug, producto.preciosPorCantidad);
 
   const fichaTecnica: ProductoEspecificacion[] =
     producto.especificacionesTecnicas?.length
@@ -526,6 +534,31 @@ export default function ProductoDetallePage() {
                           : "rgba(0,0,0,0.08)",
                       }}
                     />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tipo (Bolsa / Frasco) */}
+            {tiposVariantes && tiposVariantes.length > 0 && (
+              <div>
+                <p className="mb-2 text-sm font-semibold text-[#333]">
+                  Presentación: <span className="font-normal text-[#555]">{tiposVariantes[tipoActivo].label}</span>
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {tiposVariantes.map((tipo, i) => (
+                    <button
+                      key={tipo.label}
+                      type="button"
+                      onClick={() => setTipoActivo(i)}
+                      className={`rounded-full border px-4 py-1.5 text-xs font-semibold transition-all duration-150 ${
+                        tipoActivo === i
+                          ? "border-[#27B1B8] bg-[#27B1B8] text-white shadow-sm"
+                          : "border-black/12 bg-white text-[#444] hover:border-[#27B1B8]/60 hover:text-[#27B1B8]"
+                      }`}
+                    >
+                      {tipo.label}
+                    </button>
                   ))}
                 </div>
               </div>
