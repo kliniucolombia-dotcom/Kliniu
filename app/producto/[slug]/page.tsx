@@ -502,7 +502,7 @@ export default function ProductoDetallePage() {
             {/* Price */}
             <div>
               <p className="text-3xl font-extrabold text-[#27B1B8]">
-                {volumePricing.hasDiscount ? volumePricing.unitPriceLabel : producto.precio}
+                {(volumePricing.hasDiscount || varianteSuffix !== "") ? volumePricing.unitPriceLabel : producto.precio}
                 {volumePricing.hasDiscount && <span className="ml-1 text-base font-semibold text-[#27B1B8]/70">c/u</span>}
               </p>
               {volumePricing.hasDiscount && (
