@@ -17,7 +17,6 @@ type SiteHeaderProps = {
 
 export default function SiteHeader({ currentUser }: SiteHeaderProps) {
   const [menuAbierto, setMenuAbierto] = useState(false);
-  const [mobileMenu, setMobileMenu] = useState(false);
   const [hidden, setHidden] = useState(false);
   const lastScrollY = useRef(0);
   const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -35,7 +34,6 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
       } else if (current > lastScrollY.current + 6) {
         setHidden(true);
         setMenuAbierto(false);
-        setMobileMenu(false);
       } else if (current < lastScrollY.current - 6) {
         setHidden(false);
       }
@@ -47,7 +45,6 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
 
   const irACategoria = (categoria?: string) => {
     setMenuAbierto(false);
-    setMobileMenu(false);
     const url = categoria
       ? `/categorias?categoria=${slugCategoria(categoria)}`
       : "/categorias";
@@ -65,14 +62,8 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileMenu(false);
-  }, [pathname]);
-
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setMobileMenu(false);
     const formData = new FormData(event.currentTarget);
     const query = String(formData.get("q") || "").trim();
     const params = new URLSearchParams(searchParams.toString());
@@ -91,11 +82,70 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
     router.push(targetUrl);
   };
 
-  const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/");
-    router.refresh();
-  };
+  const bottomNavItems = [
+    {
+      label: "Inicio",
+      href: "/",
+      active: pathname === "/",
+      icon: (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" strokeLinejoin="round" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+      ),
+    },
+    {
+      label: "Productos",
+      href: "/categorias",
+      active: pathname === "/categorias",
+      icon: (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <rect x="3" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="3" width="7" height="7" rx="1" />
+          <rect x="3" y="14" width="7" height="7" rx="1" />
+          <rect x="14" y="14" width="7" height="7" rx="1" />
+        </svg>
+      ),
+    },
+    {
+      label: "Outlet",
+      href: "/outlet",
+      active: pathname === "/outlet",
+      icon: (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+          <line x1="7" y1="7" x2="7.01" y2="7" />
+        </svg>
+      ),
+    },
+    {
+      label: "Puntos",
+      href: "/puntos",
+      active: pathname === "/puntos",
+      icon: (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+        </svg>
+      ),
+    },
+    {
+      label: currentUser ? currentUser.fullName.split(" ")[0] : "Cuenta",
+      href: currentUser
+        ? currentUser.role === "ADMIN"
+          ? "/admin"
+          : currentUser.role === "SELLER"
+          ? "/panel"
+          : "/mi-cuenta"
+        : "/login",
+      active: pathname === "/mi-cuenta" || pathname === "/login",
+      icon: (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path d="M20 21a8 8 0 0 0-16 0" />
+          <circle cx="12" cy="8" r="4" />
+        </svg>
+      ),
+    },
+  ];
 
   return (
     <>
@@ -106,18 +156,6 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
       >
         <div className="mx-auto max-w-[1440px] px-4 py-3 sm:px-5">
           <div className="flex items-center gap-3 sm:gap-6">
-            {/* Hamburger — mobile only */}
-            <button
-              type="button"
-              aria-label="Abrir menú"
-              onClick={() => setMobileMenu((v) => !v)}
-              className="flex h-9 w-9 shrink-0 flex-col items-center justify-center gap-[5px] lg:hidden"
-            >
-              <span className={`block h-0.5 w-5 rounded-full bg-[#0C535B] transition-all duration-200 ${mobileMenu ? "translate-y-[7px] rotate-45" : ""}`} />
-              <span className={`block h-0.5 w-5 rounded-full bg-[#0C535B] transition-all duration-200 ${mobileMenu ? "opacity-0" : ""}`} />
-              <span className={`block h-0.5 w-5 rounded-full bg-[#0C535B] transition-all duration-200 ${mobileMenu ? "-translate-y-[7px] -rotate-45" : ""}`} />
-            </button>
-
             {/* Logo */}
             <Link href="/" className="shrink-0">
               <Image
@@ -337,155 +375,25 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
         )}
       </header>
 
-      {/* ── Menú móvil ── */}
-      {mobileMenu && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setMobileMenu(false)}
-          />
-          {/* Drawer */}
-          <nav className="absolute left-0 top-0 bottom-0 w-[280px] overflow-y-auto bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-black/8 px-5 py-4">
-              <Image src="/logo.png" alt="Kliniu" width={90} height={26} style={{ width: "90px", height: "auto" }} />
-              <button
-                type="button"
-                aria-label="Cerrar menú"
-                onClick={() => setMobileMenu(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-[#0C535B] hover:bg-[#f0f8f8]"
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="px-4 py-5">
-              {/* Categorías */}
-              <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-[#999]">Productos</p>
-              <div className="mb-4 flex flex-col">
-                {categoriasData
-                  .filter((c) => c.nombre !== "Outlet" && c.nombre !== "Insumos/Repuesto")
-                  .map((cat) => (
-                    <button
-                      key={cat.nombre}
-                      type="button"
-                      onClick={() => irACategoria(cat.nombre)}
-                      className="flex items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-[#0C535B] transition-colors hover:bg-[#f0f8f8]"
-                    >
-                      {cat.bannerImagen && (
-                        <Image src={cat.bannerImagen} alt="" width={32} height={32} className="h-8 w-8 object-contain" />
-                      )}
-                      {cat.nombre}
-                    </button>
-                  ))}
-              </div>
-
-              <div className="mb-1 h-px bg-black/8" />
-
-              <div className="mt-4 flex flex-col gap-1">
-                <Link
-                  href="/categorias?tipo=insumos"
-                  onClick={() => setMobileMenu(false)}
-                  className="flex items-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold text-[#0C535B] hover:bg-[#f0f8f8]"
-                >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-[#27B1B8]" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                  </svg>
-                  Insumos / Repuestos
-                </Link>
-                <Link
-                  href="/outlet"
-                  onClick={() => setMobileMenu(false)}
-                  className="flex items-center gap-2 rounded-xl px-3 py-3 text-sm font-black text-[#27B1B8] hover:bg-[#f0f8f8]"
-                >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-                    <line x1="7" y1="7" x2="7.01" y2="7" />
-                  </svg>
-                  Outlet
-                </Link>
-                <Link
-                  href="/quienes-somos"
-                  onClick={() => setMobileMenu(false)}
-                  className="flex items-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold text-[#0C535B] hover:bg-[#f0f8f8]"
-                >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-[#27B1B8]" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                  Nosotros
-                </Link>
-                <Link
-                  href="/contacto"
-                  onClick={() => setMobileMenu(false)}
-                  className="flex items-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold text-[#0C535B] hover:bg-[#f0f8f8]"
-                >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-[#27B1B8]" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.5a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .84h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />
-                  </svg>
-                  Contacto
-                </Link>
-                <Link
-                  href="/puntos"
-                  onClick={() => setMobileMenu(false)}
-                  className="flex items-center gap-2 rounded-xl bg-[#7c3aed] px-3 py-3 text-sm font-black text-white"
-                >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="currentColor">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                  Puntos Kliniu
-                </Link>
-              </div>
-
-              <div className="mt-6 border-t border-black/8 pt-4">
-                {currentUser ? (
-                  <div className="flex flex-col gap-2">
-                    <Link
-                      href={currentUser.role === "ADMIN" ? "/admin" : currentUser.role === "SELLER" ? "/panel" : "/mi-cuenta"}
-                      onClick={() => setMobileMenu(false)}
-                      className="flex items-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold text-[#0C535B] hover:bg-[#f0f8f8]"
-                    >
-                      <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8">
-                        <path d="M20 21a8 8 0 0 0-16 0" />
-                        <circle cx="12" cy="8" r="4" />
-                      </svg>
-                      Mi cuenta
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="flex items-center gap-2 rounded-xl px-3 py-3 text-left text-sm font-semibold text-red-600 hover:bg-red-50"
-                    >
-                      <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                        <polyline points="16 17 21 12 16 7" />
-                        <line x1="21" y1="12" x2="9" y2="12" />
-                      </svg>
-                      Cerrar sesión
-                    </button>
-                  </div>
-                ) : (
-                  <Link
-                    href="/login"
-                    onClick={() => setMobileMenu(false)}
-                    className="flex items-center gap-2 rounded-xl border border-[#27B1B8] px-3 py-3 text-sm font-bold text-[#0C535B] hover:bg-[#f0f8f8]"
-                  >
-                    <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8">
-                      <path d="M20 21a8 8 0 0 0-16 0" />
-                      <circle cx="12" cy="8" r="4" />
-                    </svg>
-                    Iniciar sesión / Registrarse
-                  </Link>
-                )}
-              </div>
-            </div>
-          </nav>
+      {/* ── Bottom Navigation — mobile only ── */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-black/10 bg-white shadow-[0_-4px_20px_rgba(15,23,42,0.08)] lg:hidden">
+        <div className="flex items-center justify-around px-1 pb-safe pt-1">
+          {bottomNavItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex flex-col items-center gap-0.5 rounded-xl px-3 py-2 transition-colors ${
+                item.active
+                  ? "text-[#27B1B8]"
+                  : "text-[#0C535B]/60 hover:text-[#0C535B]"
+              }`}
+            >
+              {item.icon}
+              <span className="text-[10px] font-semibold leading-none">{item.label}</span>
+            </Link>
+          ))}
         </div>
-      )}
+      </nav>
     </>
   );
 }

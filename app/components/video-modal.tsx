@@ -61,11 +61,12 @@ export default function VideoModal({ videos }: { videos: Video[] }) {
 
       {activeHref && reelId && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center sm:p-4"
           onClick={() => setActiveHref(null)}
         >
           <div
-            className="relative w-full max-w-sm overflow-hidden rounded-2xl bg-black"
+            className="relative w-full max-w-sm overflow-hidden rounded-t-2xl bg-black sm:rounded-2xl"
+            style={{ maxHeight: "90dvh" }}
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -77,7 +78,8 @@ export default function VideoModal({ videos }: { videos: Video[] }) {
             </button>
             <iframe
               src={`https://www.instagram.com/reel/${reelId}/embed/`}
-              className="h-[600px] w-full"
+              className="w-full"
+              style={{ height: "min(600px, 88dvh)" }}
               frameBorder="0"
               scrolling="no"
               allowTransparency
