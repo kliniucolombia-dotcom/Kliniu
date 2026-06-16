@@ -572,9 +572,21 @@ export const productosCatalogo: ProductoCatalogo[] = [
       { cantidad: 48,  precioUnitario: 39716 },
       { cantidad: 100, precioUnitario: 38913 },
     ],
-    imagen: "/motor-ventilador-axis-compact.png",
+    imagen: "https://yotsdpjfnsrejtoufkuu.supabase.co/storage/v1/object/public/product-images/products/papel-inst-blanco-metalico.png",
+    imagenesExtra: [
+      "https://yotsdpjfnsrejtoufkuu.supabase.co/storage/v1/object/public/product-images/products/papel-inst-blanco-metalico-2.png",
+      "https://yotsdpjfnsrejtoufkuu.supabase.co/storage/v1/object/public/product-images/products/papel-inst-blanco-metalico-3.png",
+      "https://yotsdpjfnsrejtoufkuu.supabase.co/storage/v1/object/public/product-images/products/papel-inst-metalico-cerca.jpg",
+    ],
     disponibilidad: "Entrega inmediata",
     descripcion: "Rollo institucional · Polipropileno · Alto tráfico",
+    variacionesColor: [
+      {
+        color: "#111111",
+        label: "Negro",
+        image: "https://yotsdpjfnsrejtoufkuu.supabase.co/storage/v1/object/public/product-images/products/papel-inst-negro-metalico.png",
+      },
+    ],
     especificacionesTecnicas: [
       { etiqueta: "Alto", valor: "28.5 cm" },
       { etiqueta: "Ancho", valor: "27 cm" },

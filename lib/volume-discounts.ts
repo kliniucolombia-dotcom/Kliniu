@@ -32,9 +32,12 @@ export const PRODUCT_VOLUME_PRICES: Record<
   "dispensador-de-papel-en-acero-inoxidable": { unit: 115899.18, tiers: [{ min: 100, unitPrice: 86156 }, { min: 48, unitPrice: 90866.416667 }, { min: 12, unitPrice: 97462 }] },
   "dispensador-de-papel-higienico-hogar": { unit: 49899.4, tiers: [{ min: 100, unitPrice: 24038 }, { min: 48, unitPrice: 28332.291667 }, { min: 12, unitPrice: 32131 }] },
   "dispensador-de-papel-higienico-institucional": { unit: 59898.97, tiers: [{ min: 100, unitPrice: 38913 }, { min: 48, unitPrice: 39716.25 }, { min: 12, unitPrice: 44091 }] },
+  "dispensador-papel-higienico-institucional--metalico": { unit: 69899.73, tiers: [{ min: 100, unitPrice: 52003 }, { min: 48, unitPrice: 52092.25 }, { min: 12, unitPrice: 55158 }] },
+  "dispensador-de-papel-higienico-institucional--metalico": { unit: 69899.73, tiers: [{ min: 100, unitPrice: 52003 }, { min: 48, unitPrice: 52092.25 }, { min: 12, unitPrice: 55158 }] },
   "dispensador-de-servilletas-napklin-blanco": { unit: 49899.4, tiers: [{ min: 100, unitPrice: 31178 }, { min: 48, unitPrice: 31773.4 }, { min: 12, unitPrice: 33797 }] },
   "dispensador-de-toalla-en-acero-inoxidable": { unit: 115899.18, tiers: [{ min: 100, unitPrice: 86056 }, { min: 48, unitPrice: 90808.083333 }, { min: 12, unitPrice: 97462 }] },
   "dispensador-de-toalla-institucional": { unit: 56898.98, tiers: [{ min: 100, unitPrice: 34272 }, { min: 48, unitPrice: 37812.25 }, { min: 12, unitPrice: 41711 }] },
+  "dispensador-de-toalla-institucional--metalico": { unit: 69899.73, tiers: [{ min: 100, unitPrice: 42602 }, { min: 48, unitPrice: 40192.25 }, { min: 12, unitPrice: 53611 }] },
   "dispensador-de-toallas-center-pull": { unit: 99900.82, tiers: [{ min: 100, unitPrice: 76279 }, { min: 48, unitPrice: 80691.916667 }, { min: 12, unitPrice: 85801.666667 }] },
   "dispensador-de-toallas-ecotowel": { unit: 97011.5, tiers: [{ min: 100, unitPrice: 74156 }, { min: 48, unitPrice: 76052.083333 }, { min: 12, unitPrice: 79612 }] },
   "dispensador-de-toallas-en-rollo-de-palanca": { unit: 202911, tiers: [{ min: 100, unitPrice: 182581 }, { min: 48, unitPrice: 178399.88 }, { min: 12, unitPrice: 187191 }] },
@@ -48,8 +51,14 @@ export const PRODUCT_VOLUME_PRICES: Record<
   "secador-de-manos-ak2618": { unit: 1089104, tiers: [{ min: 100, unitPrice: 1021650 }, { min: 48, unitPrice: 1048704 }, { min: 12, unitPrice: 1063031 }] },
 };
 
-const XPERT_IMG_FRASCO = "https://yotsdpjfnsrejtoufkuu.supabase.co/storage/v1/object/public/product-images/products/17816203903N-xpert-frasco-contenedor.jpeg";
-const XPERT_IMG_BOLSA  = "https://yotsdpjfnsrejtoufkuu.supabase.co/storage/v1/object/public/product-images/products/17816203903N-xpert-bolsa.jpeg";
+const BASE = "https://yotsdpjfnsrejtoufkuu.supabase.co/storage/v1/object/public/product-images/products";
+const XPERT_IMG_FRASCO = `${BASE}/17816203903N-xpert-frasco-contenedor.jpeg`;
+const XPERT_IMG_BOLSA  = `${BASE}/17816203903N-xpert-bolsa.jpeg`;
+
+const PAPEL_INST_BLANCO_METALICO = `${BASE}/papel-inst-blanco-metalico.png`;
+const PAPEL_INST_NEGRO_METALICO  = `${BASE}/papel-inst-negro-metalico.png`;
+const TOALLA_CZ_BLANCO_METALICO  = `${BASE}/toalla-cz-blanco-metalico.png`;
+const TOALLA_CZ_NEGRO_METALICO   = `${BASE}/toalla-cz-negro-metalico.png`;
 
 export const TIPO_VARIANTES: Record<string, { label: string; slugSuffix: string; image?: string }[]> = {
   "dispensador-xpert-professional-para-jabon-espuma": [
@@ -59,6 +68,18 @@ export const TIPO_VARIANTES: Record<string, { label: string; slugSuffix: string;
   "dispensador-xpert-professional-para-jabon-liquido": [
     { label: "Bolsa", slugSuffix: "", image: XPERT_IMG_BOLSA },
     { label: "Frasco", slugSuffix: "--frasco", image: XPERT_IMG_FRASCO },
+  ],
+  "dispensador-papel-higienico-institucional": [
+    { label: "Chapa Plástica", slugSuffix: "" },
+    { label: "Cierre Metálico", slugSuffix: "--metalico", image: PAPEL_INST_BLANCO_METALICO },
+  ],
+  "dispensador-de-papel-higienico-institucional": [
+    { label: "Chapa Plástica", slugSuffix: "" },
+    { label: "Cierre Metálico", slugSuffix: "--metalico", image: PAPEL_INST_BLANCO_METALICO },
+  ],
+  "dispensador-de-toalla-institucional": [
+    { label: "Chapa Plástica", slugSuffix: "" },
+    { label: "Cierre Metálico", slugSuffix: "--metalico", image: TOALLA_CZ_BLANCO_METALICO },
   ],
 };
 

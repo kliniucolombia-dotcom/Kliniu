@@ -349,10 +349,12 @@ export default function ProductoDetallePage() {
   const effectiveSlug = tiposVariantes
     ? `${slug}${tiposVariantes[tipoActivo].slugSuffix}`
     : slug;
+  const varianteSuffix = tiposVariantes?.[tipoActivo]?.slugSuffix ?? "";
+  const preciosBase = varianteSuffix === "" ? producto?.preciosPorCantidad : undefined;
 
   const handleAddToCart = () => {
     if (!producto || producto.puedeComprar === false) return;
-    const pricing = getVolumePricing(producto.precio, cantidad, effectiveSlug, producto.preciosPorCantidad);
+    const pricing = getVolumePricing(producto.precio, cantidad, effectiveSlug, preciosBase);
     const varianteActiva = allVariants[colorActivo];
     const imagenSeleccionada = varianteActiva?.image ?? producto.imagen;
     const colorLabel = allVariants.length > 0 ? varianteActiva?.label : undefined;
@@ -419,7 +421,7 @@ export default function ProductoDetallePage() {
   const relacionados = products
     .filter((p) => p.categoria === producto.categoria && p.slug !== producto.slug)
     .slice(0, 4);
-  const volumePricing = getVolumePricing(producto.precio, cantidad, effectiveSlug, producto.preciosPorCantidad);
+  const volumePricing = getVolumePricing(producto.precio, cantidad, effectiveSlug, preciosBase);
 
   const fichaTecnica: ProductoEspecificacion[] =
     producto.especificacionesTecnicas?.length
