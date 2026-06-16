@@ -867,7 +867,6 @@ body {
 }
 
 .nosotros-hero-photo {
-  animation: nosotrosHeroPhoto 8s ease-in-out infinite;
   transform-origin: center;
 }
 
@@ -884,7 +883,6 @@ body {
   z-index: -1;
   border-radius: 999px;
   pointer-events: none;
-  animation: nosotrosSectionGlow 5.5s ease-in-out infinite;
 }
 
 .nosotros-section-energy::before {
@@ -905,51 +903,20 @@ body {
 }
 
 .nosotros-title-pop {
-  animation: nosotrosTitlePulse 2.8s ease-in-out infinite;
   display: inline-block;
 }
 
 .nosotros-color-dots span {
-  animation: nosotrosDotDance 2.2s ease-in-out infinite;
-}
-
-.nosotros-color-dots span:nth-child(2) {
-  animation-delay: 180ms;
-}
-
-.nosotros-color-dots span:nth-child(3) {
-  animation-delay: 360ms;
-}
-
-.nosotros-color-dots span:nth-child(4) {
-  animation-delay: 540ms;
 }
 
 .nosotros-panel {
-  animation: nosotrosPanelGlow 3.4s ease-in-out infinite;
   position: relative;
 }
 
-.nosotros-panel:nth-child(2n) {
-  animation-delay: 700ms;
-}
-
-.nosotros-panel::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  width: 58%;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.42), transparent);
-  animation: nosotrosQualitySweep 2.8s ease-in-out infinite;
-}
-
 .nosotros-foca {
-  animation: nosotrosFocaPeek 4.2s ease-in-out infinite;
 }
 
 .nosotros-icon {
-  animation: nosotrosIconPulse 3.8s ease-in-out infinite;
 }
 
 .nosotros-values-grid:hover .motion-card {
