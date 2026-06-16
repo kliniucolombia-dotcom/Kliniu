@@ -116,14 +116,14 @@ export default function ContactoPage() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-white text-[#111]">
       {/* Hero */}
-      <section className="home-reveal hero-energy relative min-h-[250px] overflow-hidden bg-[#f4e6d6] md:min-h-[300px]">
+      <section className="home-reveal relative min-h-[250px] overflow-hidden bg-[#f4e6d6] md:min-h-[300px]">
         <Image
           src="/banner-contacto-kliniu.jpg"
           alt="Atención Kliniu"
           fill
           priority
           sizes="100vw"
-          className="hero-drift hidden object-cover object-center md:block"
+          className="hidden object-cover object-center md:block"
         />
         <Image
           src="/resp-banner-contacto.jpg"
@@ -131,12 +131,12 @@ export default function ContactoPage() {
           fill
           priority
           sizes="100vw"
-          className="hero-drift object-cover object-center md:hidden"
+          className="object-cover object-center md:hidden"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-[#f1dfcc]/95 via-[#f1dfcc]/45 to-transparent md:from-[#f1dfcc]/80 md:via-transparent" />
         <div className="relative mx-auto flex min-h-[250px] max-w-[1440px] items-center px-5 py-10 md:min-h-[300px] md:pl-[100px]">
           <div className="max-w-[460px]">
-            <h1 className="hero-pop text-[28px] font-black leading-[0.98] tracking-tight text-[#0C535B] md:text-[38px]">
+            <h1 className="text-[28px] font-black leading-[0.98] tracking-tight text-[#0C535B] md:text-[38px]">
               Estamos cerca de ti,
               <br />
               <span className="text-[#111]">en cada lugar</span>
@@ -153,16 +153,16 @@ export default function ContactoPage() {
       {/* Contact bar */}
       <section className="home-reveal border-y border-black/8 bg-white">
         <div className="mx-auto max-w-[1440px] px-5">
-          <div className="motion-list grid grid-cols-2 divide-x divide-black/8 md:grid-cols-4">
+          <div className="grid grid-cols-2 divide-x divide-black/8 md:grid-cols-4">
             {contactBar.map((item) => (
               <a
                 key={item.label}
                 href={item.href}
                 target={item.href.startsWith("http") ? "_blank" : undefined}
                 rel={item.href.startsWith("http") ? "noreferrer" : undefined}
-                className="motion-card interactive-lift flex flex-col items-center gap-2 px-4 py-5 text-center transition-colors hover:bg-[#f0f8f8]"
+                className="interactive-lift flex flex-col items-center gap-2 px-4 py-5 text-center transition-colors hover:bg-[#f0f8f8]"
               >
-                <span className="feature-icon-pop text-[#27B1B8]">{item.icon}</span>
+                <span className="text-[#27B1B8]">{item.icon}</span>
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6e7379]">
                   {item.label}
                 </span>
@@ -179,7 +179,7 @@ export default function ContactoPage() {
           <div className="grid gap-8 lg:grid-cols-[280px_1fr] lg:gap-10">
             {/* Left */}
             <div className="flex flex-col lg:min-h-[430px]">
-              <h2 className="animated-heading text-3xl font-black leading-[0.95] tracking-tight text-[#0C535B]">
+              <h2 className="text-3xl font-black leading-[0.95] tracking-tight text-[#0C535B]">
                 Países donde
                 <br />
                 <span className="text-[#27B1B8]">operamos</span>
@@ -193,23 +193,23 @@ export default function ContactoPage() {
                 alt="Foca Kliniu señalando"
                 width={300}
                 height={275}
-                className="float-soft hidden w-[220px] object-contain lg:mt-auto lg:block"
+                className="hidden w-[220px] object-contain lg:mt-auto lg:block"
               />
             </div>
 
             {/* Grid de países */}
-            <div className="motion-list grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {paises.map((p) => (
                 <div
                   key={p.nombre}
-                  className="motion-card interactive-lift flex min-h-[185px] flex-col rounded border border-black/10 bg-white px-5 py-5 shadow-sm transition-shadow hover:shadow-md"
+                  className="interactive-lift flex min-h-[185px] flex-col rounded border border-black/10 bg-white px-5 py-5 shadow-sm transition-shadow hover:shadow-md"
                 >
                   <Image
                     src={p.bandera}
                     alt={`Bandera ${p.nombre.replace(/\n/g, " ")}`}
                     width={46}
                     height={46}
-                    className="feature-icon-pop h-[46px] w-[46px] rounded-full object-cover"
+                    className="h-[46px] w-[46px] rounded-full object-cover"
                   />
                   <p className="mt-4 whitespace-pre-line text-[15px] font-black leading-[1.02] text-black">
                     {p.nombre}

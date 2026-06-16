@@ -112,11 +112,11 @@ export default function QuienesSomosPage() {
       <section className="nosotros-section-energy home-reveal mx-auto max-w-[1440px] px-4 py-10 sm:px-6 md:py-16">
         <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
           <div>
-            <h1 className="nosotros-title-pop hero-pop text-3xl font-extrabold leading-tight tracking-tight text-[#111] sm:text-4xl md:text-5xl">
+            <h1 className="nosotros-title-pop text-3xl font-extrabold leading-tight tracking-tight text-[#111] sm:text-4xl md:text-5xl">
               Acerca de{" "}
               <span className="text-[#27B1B8]">nosotros</span>
             </h1>
-            <div className="mt-3 h-1 w-12 rounded-full bg-[#27B1B8] animated-heading" />
+            <div className="mt-3 h-1 w-12 rounded-full bg-[#27B1B8]" />
             <div className="nosotros-color-dots mt-5 flex gap-2">
               <span className="h-3 w-12 rounded-full bg-[#27B1B8]" />
               <span className="h-3 w-12 rounded-full bg-[#F07826]" />
@@ -201,14 +201,14 @@ export default function QuienesSomosPage() {
       {/* Valores corporativos */}
       <section className="nosotros-section-energy bg-[#f8f8f7] py-10 md:py-16">
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6">
-          <h2 className="animated-heading mb-8 text-center text-2xl font-extrabold tracking-tight text-[#111] sm:text-3xl md:mb-10">
+          <h2 className="mb-8 text-center text-2xl font-extrabold tracking-tight text-[#111] sm:text-3xl md:mb-10">
             Valores corporativos
           </h2>
           <div className="nosotros-values-grid grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
             {valores.map((v) => (
               <div
                 key={v.titulo}
-                className="motion-card interactive-lift rounded-2xl border border-black/8 bg-white p-5 text-center shadow-sm"
+                className="interactive-lift rounded-2xl border border-black/8 bg-white p-5 text-center shadow-sm"
               >
                 <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#e8f5f5]">
                   <Image
