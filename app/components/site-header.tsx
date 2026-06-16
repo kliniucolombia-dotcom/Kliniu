@@ -15,6 +15,12 @@ type SiteHeaderProps = {
   } | null;
 };
 
+function getUserHref(role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING"): string {
+  if (role === "ADMIN") return "/admin";
+  if (role === "SELLER") return "/panel";
+  return "/mi-cuenta";
+}
+
 export default function SiteHeader({ currentUser }: SiteHeaderProps) {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -97,13 +103,23 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
     {
       label: "Productos",
       href: "/categorias",
-      active: pathname === "/categorias",
+      active: pathname === "/categorias" && !searchParams.get("tipo"),
       icon: (
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
           <rect x="3" y="3" width="7" height="7" rx="1" />
           <rect x="14" y="3" width="7" height="7" rx="1" />
           <rect x="3" y="14" width="7" height="7" rx="1" />
           <rect x="14" y="14" width="7" height="7" rx="1" />
+        </svg>
+      ),
+    },
+    {
+      label: "Insumos",
+      href: "/categorias?tipo=insumos",
+      active: pathname === "/categorias" && searchParams.get("tipo") === "insumos",
+      icon: (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
         </svg>
       ),
     },
@@ -130,13 +146,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
     },
     {
       label: currentUser ? currentUser.fullName.split(" ")[0] : "Cuenta",
-      href: currentUser
-        ? currentUser.role === "ADMIN"
-          ? "/admin"
-          : currentUser.role === "SELLER"
-          ? "/panel"
-          : "/mi-cuenta"
-        : "/login",
+      href: currentUser ? getUserHref(currentUser.role) : "/login",
       active: pathname === "/mi-cuenta" || pathname === "/login",
       icon: (
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -269,7 +279,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
             <div className="flex shrink-0 items-center gap-3 sm:gap-4">
               {currentUser ? (
                 <Link
-                  href={currentUser.role === "ADMIN" ? "/admin" : currentUser.role === "SELLER" ? "/panel" : "/mi-cuenta"}
+                  href={getUserHref(currentUser.role)}
                   className="flex flex-col items-center gap-0.5 text-[#0C535B] transition-colors hover:text-[#27B1B8]"
                 >
                   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -382,7 +392,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-0.5 rounded-xl px-3 py-2 transition-colors ${
+              className={`flex flex-col items-center gap-0.5 rounded-xl px-2 py-2 transition-colors ${
                 item.active
                   ? "text-[#27B1B8]"
                   : "text-[#0C535B]/60 hover:text-[#0C535B]"

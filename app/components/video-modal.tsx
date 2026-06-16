@@ -95,6 +95,7 @@ export default function VideoModal({ videos }: { videos: Video[] }) {
         ))}
       </div>
 
+      {/* Portal necesario: el header tiene transform:translateY que rompe fixed positioning */}
       {mounted && modal && createPortal(modal, document.body)}
     </>
   );
