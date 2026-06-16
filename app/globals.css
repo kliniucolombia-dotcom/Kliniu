@@ -886,6 +886,13 @@ body {
 
 .nosotros-panel {
   position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: default;
+}
+
+.nosotros-panel:hover {
+  transform: scale(1.025);
+  box-shadow: 0 12px 32px rgba(12, 83, 91, 0.18);
 }
 
 .nosotros-foca {
