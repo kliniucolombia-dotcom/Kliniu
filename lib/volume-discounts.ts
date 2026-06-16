@@ -48,14 +48,17 @@ export const PRODUCT_VOLUME_PRICES: Record<
   "secador-de-manos-ak2618": { unit: 1089104, tiers: [{ min: 100, unitPrice: 1021650 }, { min: 48, unitPrice: 1048704 }, { min: 12, unitPrice: 1063031 }] },
 };
 
-export const TIPO_VARIANTES: Record<string, { label: string; slugSuffix: string }[]> = {
+const XPERT_IMG_FRASCO = "https://yotsdpjfnsrejtoufkuu.supabase.co/storage/v1/object/public/product-images/products/17816203903N-xpert-frasco-contenedor.jpeg";
+const XPERT_IMG_BOLSA  = "https://yotsdpjfnsrejtoufkuu.supabase.co/storage/v1/object/public/product-images/products/17816203903N-xpert-bolsa.jpeg";
+
+export const TIPO_VARIANTES: Record<string, { label: string; slugSuffix: string; image?: string }[]> = {
   "dispensador-xpert-professional-para-jabon-espuma": [
-    { label: "Bolsa", slugSuffix: "" },
-    { label: "Frasco", slugSuffix: "--frasco" },
+    { label: "Bolsa", slugSuffix: "", image: XPERT_IMG_BOLSA },
+    { label: "Frasco", slugSuffix: "--frasco", image: XPERT_IMG_FRASCO },
   ],
   "dispensador-xpert-professional-para-jabon-liquido": [
-    { label: "Bolsa", slugSuffix: "" },
-    { label: "Frasco", slugSuffix: "--frasco" },
+    { label: "Bolsa", slugSuffix: "", image: XPERT_IMG_BOLSA },
+    { label: "Frasco", slugSuffix: "--frasco", image: XPERT_IMG_FRASCO },
   ],
 };
 

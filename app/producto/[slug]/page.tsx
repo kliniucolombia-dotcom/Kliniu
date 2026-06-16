@@ -387,14 +387,17 @@ export default function ProductoDetallePage() {
 
   const galleryImages = useMemo(() => {
     if (!producto) return [];
+    const tipoImage = tiposVariantes?.[tipoActivo]?.image;
     if (allVariants.length > 0) {
       const selected = allVariants[colorActivo]?.image ?? producto.imagen;
       const others = allVariants.filter((_, i) => i !== colorActivo).map((v) => v.image);
-      return [selected, ...others, ...(producto.imagenesExtra || [])].filter(Boolean);
+      const extras = (producto.imagenesExtra || []).filter((img) => img !== tipoImage);
+      return [tipoImage, selected, ...others, ...extras].filter((x): x is string => Boolean(x));
     }
-    return [producto.imagen, ...(producto.imagenesExtra || [])].filter(Boolean);
+    const extras = (producto.imagenesExtra || []).filter((img) => img !== tipoImage);
+    return [tipoImage, producto.imagen, ...extras].filter((x): x is string => Boolean(x));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [producto, colorActivo, allVariants]);
+  }, [producto, colorActivo, allVariants, tipoActivo, tiposVariantes]);
 
   if (!producto) {
     return (
@@ -471,7 +474,7 @@ export default function ProductoDetallePage() {
         <div className="grid gap-10 lg:grid-cols-[1fr_480px] xl:grid-cols-[1fr_520px]">
 
           {/* LEFT — image gallery */}
-          <ImageGallery key={colorActivo} nombre={producto.nombre} images={galleryImages} />
+          <ImageGallery key={`${colorActivo}-${tipoActivo}`} nombre={producto.nombre} images={galleryImages} />
 
           {/* RIGHT — product info */}
           <div className="space-y-4 lg:sticky lg:top-[72px] lg:self-start">
