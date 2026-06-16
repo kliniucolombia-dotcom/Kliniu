@@ -876,31 +876,6 @@ body {
   overflow: hidden;
 }
 
-.nosotros-section-energy::before,
-.nosotros-section-energy::after {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  border-radius: 999px;
-  pointer-events: none;
-}
-
-.nosotros-section-energy::before {
-  left: -90px;
-  top: 18px;
-  height: 210px;
-  width: 210px;
-  background: radial-gradient(circle, rgba(39, 177, 184, 0.24), transparent 68%);
-}
-
-.nosotros-section-energy::after {
-  right: -70px;
-  bottom: 12px;
-  height: 250px;
-  width: 250px;
-  background: radial-gradient(circle, rgba(240, 120, 38, 0.18), transparent 68%);
-  animation-delay: 1.2s;
-}
 
 .nosotros-title-pop {
   display: inline-block;
@@ -928,16 +903,6 @@ body {
   isolation: isolate;
 }
 
-.nosotros-quality-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  width: 38%;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(39, 177, 184, 0.16), transparent);
-  animation: nosotrosQualitySweep 5s ease-in-out infinite;
-}
 
 .nosotros-cert {
   animation: nosotrosCertFloat 4.4s ease-in-out infinite;

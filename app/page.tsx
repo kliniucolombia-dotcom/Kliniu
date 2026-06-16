@@ -88,7 +88,7 @@ export default async function Home() {
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10">
             <div className="flex items-baseline justify-between lg:block lg:w-56 lg:shrink-0 lg:pt-1">
-              <h2 className="animated-heading text-2xl font-extrabold leading-tight tracking-tight text-[#27B1B8] md:text-3xl">
+              <h2 className="text-2xl font-extrabold leading-tight tracking-tight text-[#27B1B8] md:text-3xl">
                 Productos destacados
               </h2>
               <p className="hidden text-sm leading-5 text-[#6e7379] lg:mt-2 lg:block">
@@ -106,7 +106,7 @@ export default async function Home() {
       <section className="home-reveal home-delay-1 bg-[#f0f8f8] py-10 md:py-16">
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6">
           <div className="mb-6 text-center md:mb-8">
-            <h2 className="animated-heading text-xl font-extrabold tracking-tight text-[#27B1B8] sm:text-2xl">
+            <h2 className="text-xl font-extrabold tracking-tight text-[#27B1B8] sm:text-2xl">
               Soluciones para cada necesidad
             </h2>
             <p className="mt-2 text-sm text-[#6e7379]">
@@ -127,7 +127,7 @@ export default async function Home() {
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10">
             <div className="flex items-baseline justify-between lg:block lg:w-56 lg:shrink-0 lg:pt-1">
-              <h2 className="animated-heading text-2xl font-extrabold leading-tight tracking-tight text-[#27B1B8] md:text-3xl">
+              <h2 className="text-2xl font-extrabold leading-tight tracking-tight text-[#27B1B8] md:text-3xl">
                 Combos recomendados
               </h2>
               <p className="hidden text-sm leading-5 text-[#6e7379] lg:mt-2 lg:block">
@@ -149,7 +149,7 @@ export default async function Home() {
               {features.map((f) => (
                 <div
                   key={f.titulo}
-                  className="float-soft flex min-w-0 flex-col items-center gap-2 text-center text-white"
+                  className="flex min-w-0 flex-col items-center gap-2 text-center text-white"
                 >
                   <img src={f.icon} alt={f.titulo} className="feature-icon-pop h-9 w-9 object-contain brightness-0 invert sm:h-10 sm:w-10" />
                   <div className="min-w-0">
@@ -159,7 +159,7 @@ export default async function Home() {
                 </div>
               ))}
             </div>
-            <div className="float-soft hidden w-44 shrink-0 md:block lg:w-56" style={{ marginTop: "-60px", marginBottom: "-60px" }}>
+            <div className="hidden w-44 shrink-0 md:block lg:w-56" style={{ marginTop: "-60px", marginBottom: "-60px" }}>
               <Image
                 src="/foca-ok-kliniu-original.png"
                 alt="Foca Kliniu"
