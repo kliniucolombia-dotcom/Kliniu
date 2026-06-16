@@ -185,8 +185,8 @@ export default function SupportChat() {
 
   return (
     <div
-      className="z-[100] flex flex-col items-end gap-3"
-      style={{ position: "fixed", right: "1.5rem", bottom: "1.5rem" }}
+      className="z-[100] flex flex-col items-end gap-3 bottom-20 sm:bottom-6"
+      style={{ position: "fixed", right: "1.5rem" }}
     >
       {isOpen && (
         <div className="w-[min(92vw,380px)] overflow-hidden rounded-[1.6rem] border border-black/10 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
