@@ -252,13 +252,13 @@ function LandingCategorias({ onSelect }: { onSelect: (cat: string) => void }) {
       {/* Category cards */}
       <section className="home-reveal px-6 py-12">
         <div className="mx-auto max-w-[1440px]">
-          <div className="motion-list grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {categoriasData.filter((cat) => cat.nombre !== "Outlet" && cat.nombre !== "Insumos/Repuesto").map((cat) => (
               <button
                 key={cat.nombre}
                 type="button"
                 onClick={() => onSelect(cat.nombre)}
-                className="motion-card interactive-lift group flex flex-col items-center gap-4 overflow-hidden rounded-2xl border border-black/8 bg-white p-6 text-center transition-all hover:-translate-y-0.5 hover:border-[#27B1B8]/40 hover:shadow-md"
+                className="interactive-lift group flex flex-col items-center gap-4 overflow-hidden rounded-2xl border border-black/8 bg-white p-6 text-center transition-all hover:-translate-y-0.5 hover:border-[#27B1B8]/40 hover:shadow-md"
               >
                 <div className="flex h-36 w-full items-center justify-center overflow-hidden rounded-xl bg-white px-4 py-3">
                   {cat.iconoImagen && (
@@ -278,7 +278,7 @@ function LandingCategorias({ onSelect }: { onSelect: (cat: string) => void }) {
             ))}
 
             {/* CTA card */}
-            <div className="motion-card interactive-lift flex flex-col items-center justify-center gap-4 rounded-2xl border border-[#27B1B8]/25 bg-[#e8f5f5] p-6 text-center">
+            <div className="interactive-lift flex flex-col items-center justify-center gap-4 rounded-2xl border border-[#27B1B8]/25 bg-[#e8f5f5] p-6 text-center">
               <Image
                 src="/kliniu-loader-logo.png"
                 alt="Kliniu"
@@ -499,7 +499,7 @@ function InsumosRepuestosPage({
             fill
             priority
             sizes="100vw"
-            className="hero-drift hidden object-cover object-center md:block"
+            className="hidden object-cover object-center md:block"
           />
           <Image
             src="/resp-banner-insumos.jpg"
@@ -507,12 +507,12 @@ function InsumosRepuestosPage({
             fill
             priority
             sizes="100vw"
-            className="hero-drift object-cover object-center md:hidden"
+            className="object-cover object-center md:hidden"
           />
           <div className="absolute inset-0 flex items-center">
             <div className="mx-auto flex h-full w-full max-w-[1440px] items-center px-6 sm:px-10 lg:px-14">
             <div className="flex w-[48%] flex-col justify-center">
-            <h1 className="hero-pop text-[clamp(1.8rem,3.5vw,4.2rem)] font-black leading-[0.98] tracking-tight text-[#073F43]">
+            <h1 className="text-[clamp(1.8rem,3.5vw,4.2rem)] font-black leading-[0.98] tracking-tight text-[#073F43]">
               Insumos
               <br />
               <span className="text-[#16A6AE]">y repuestos</span>
@@ -520,16 +520,16 @@ function InsumosRepuestosPage({
             <p className="mt-4 max-w-[320px] text-[11px] font-semibold leading-5 text-[#073F43] sm:text-sm">
               Todo lo que tu espacio necesita para operar de forma eficaz y continua.
             </p>
-            <div className="motion-list mt-6 hidden w-fit items-center gap-0 rounded-sm bg-white/92 px-3 py-2 shadow-[0_8px_18px_rgba(7,63,67,0.08)] md:flex">
+            <div className="mt-6 hidden w-fit items-center gap-0 rounded-sm bg-white/92 px-3 py-2 shadow-[0_8px_18px_rgba(7,63,67,0.08)] md:flex">
               {[
                 { label: "Calidad Kliniu", icon: "/iconos/garantia.png" },
                 { label: "Compatibilidad garantizada", icon: "/iconos/compatibilidad.png" },
                 { label: "Entrega rápida", icon: "/iconos/envio-rapido.png" },
               ].map((beneficio, index) => (
-                <div key={beneficio.label} className="motion-card flex items-center gap-2 px-3 text-[10px] font-bold leading-tight text-[#073F43]">
+                <div key={beneficio.label} className="flex items-center gap-2 px-3 text-[10px] font-bold leading-tight text-[#073F43]">
                   {index > 0 && <span className="-ml-3 mr-1 h-7 border-l border-[#073F43]/15" />}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={beneficio.icon} alt="" className="feature-icon-pop h-7 w-7 shrink-0 object-contain" />
+                  <img src={beneficio.icon} alt="" className="h-7 w-7 shrink-0 object-contain" />
                   <span className="max-w-[86px]">{beneficio.label}</span>
                 </div>
               ))}
@@ -541,7 +541,7 @@ function InsumosRepuestosPage({
       </section>
 
       <section className="home-reveal mx-auto max-w-[1440px] px-4 pb-12 pt-10 sm:px-6">
-        <h2 className="animated-heading mb-6 text-xl font-black text-[#16A6AE]">
+        <h2 className="mb-6 text-xl font-black text-[#16A6AE]">
           Encuentra tus insumos y repuestos ideales.
         </h2>
 
@@ -576,7 +576,7 @@ function InsumosRepuestosPage({
         </div>
 
         {productosPagina.length > 0 ? (
-          <div className="motion-list grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {productosPagina.map((producto) => (
               <TarjetaProducto key={producto.slug} producto={producto} />
             ))}
@@ -617,10 +617,10 @@ function InsumosRepuestosPage({
             alt="Reposición fácil Kliniu"
             fill
             sizes="100vw"
-            className="hero-drift object-cover object-center"
+            className="object-cover object-center"
           />
           <div className="absolute inset-y-0 left-0 flex w-[48%] flex-col justify-center px-7 sm:px-10 lg:px-14">
-            <p className="hero-pop text-[clamp(1.05rem,2.1vw,2rem)] font-black leading-none text-[#073F43]">
+            <p className="text-[clamp(1.05rem,2.1vw,2rem)] font-black leading-none text-[#073F43]">
               Reposición fácil,
               <br />
               <span className="text-[#16A6AE]">operación continua</span>
@@ -634,8 +634,8 @@ function InsumosRepuestosPage({
                 "Insumos de alto rendimiento y calidad",
                 "Pedidos ágiles y entregas confiables",
               ].map((item) => (
-                <li key={item} className="puntos-check-row flex items-center gap-2">
-                  <span className="pulse-ring flex h-4 w-4 items-center justify-center rounded-full bg-[#16A6AE] text-[9px] text-white">✓</span>
+                <li key={item} className="flex items-center gap-2">
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#16A6AE] text-[9px] text-white">✓</span>
                   {item}
                 </li>
               ))}
@@ -749,7 +749,7 @@ export default function CategoriasPage() {
   return (
     <main className="min-h-screen bg-white text-[#111]">
       {/* ── Hero banner ── */}
-      <section className={`home-reveal hero-energy relative overflow-hidden ${dark ? "bg-white" : "bg-[#0a0f14]"}`}>
+      <section className={`home-reveal relative overflow-hidden ${dark ? "bg-white" : "bg-[#0a0f14]"}`}>
         {/* Imagen desktop */}
         {(catMeta.heroBannerImagen ?? catMeta.bannerImagen) && (
           <Image
@@ -758,7 +758,7 @@ export default function CategoriasPage() {
             fill
             priority
             sizes="100vw"
-            className={`hero-drift object-cover object-center ${catMeta.heroBannerMovil ? "hidden md:block" : ""} ${dark ? "opacity-100" : "opacity-60"}`}
+            className={`object-cover object-center ${catMeta.heroBannerMovil ? "hidden md:block" : ""} ${dark ? "opacity-100" : "opacity-60"}`}
           />
         )}
         {/* Imagen móvil */}
@@ -769,11 +769,11 @@ export default function CategoriasPage() {
             fill
             priority
             sizes="100vw"
-            className={`hero-drift object-cover object-center md:hidden ${dark ? "opacity-100" : "opacity-60"}`}
+            className={`object-cover object-center md:hidden ${dark ? "opacity-100" : "opacity-60"}`}
           />
         )}
         <div className="relative mx-auto max-w-[1440px] px-4 py-6 sm:px-8 sm:py-8 md:py-10">
-          <h1 className={`hero-pop text-2xl font-extrabold leading-tight tracking-tight sm:text-4xl md:text-5xl ${dark ? "text-[#0a0f14]" : "text-white"}`}>
+          <h1 className={`text-2xl font-extrabold leading-tight tracking-tight sm:text-4xl md:text-5xl ${dark ? "text-[#0a0f14]" : "text-white"}`}>
             {tituloLinea1}
             <br />
             {tituloLinea2}<span className="text-[#27B1B8]">{tituloDestacado}</span>
@@ -782,11 +782,11 @@ export default function CategoriasPage() {
             {catMeta.bannerCopy}
           </p>
           {catMeta.beneficiosHero && (
-            <div className="motion-list mt-4 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap gap-2">
               {catMeta.beneficiosHero.map((b) => (
                 <div
                   key={b.texto}
-                  className={`motion-card interactive-lift flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold leading-tight sm:gap-2.5 sm:px-3 sm:py-2 sm:text-xs ${
+                  className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold leading-tight sm:gap-2.5 sm:px-3 sm:py-2 sm:text-xs ${
                     dark
                       ? "border-black/12 bg-white/80 text-[#1A1A1A]"
                       : "border-white/20 bg-white/10 text-white"
@@ -794,7 +794,7 @@ export default function CategoriasPage() {
                 >
                   {b.imagen ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={b.imagen} alt="" className="feature-icon-pop h-6 w-6 shrink-0 object-contain sm:h-7 sm:w-7" />
+                    <img src={b.imagen} alt="" className="h-6 w-6 shrink-0 object-contain sm:h-7 sm:w-7" />
                   ) : (
                     <span className="text-base leading-none sm:text-lg">{b.icono}</span>
                   )}
@@ -809,13 +809,13 @@ export default function CategoriasPage() {
       {/* ── Products ── */}
       <section className="home-reveal mx-auto max-w-[1440px] px-4 pb-12 pt-8 sm:px-6 sm:pb-16 sm:pt-10">
         {/* Section heading */}
-        <h2 className="animated-heading mb-6 text-xl font-bold text-[#27B1B8]">
+        <h2 className="mb-6 text-xl font-bold text-[#27B1B8]">
           {headingCategoria[categoriaActiva ?? ""] ?? `Explora ${categoriaActiva ?? "el catálogo"}`}
         </h2>
 
         {/* Filter bar */}
         <div className="mb-6 flex flex-wrap items-center gap-2">
-          <span className="pulse-ring inline-flex items-center gap-1.5 rounded-full border border-black/15 px-4 py-2 text-sm font-semibold text-[#111]">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-black/15 px-4 py-2 text-sm font-semibold text-[#111]">
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
             </svg>
@@ -845,7 +845,7 @@ export default function CategoriasPage() {
 
         {/* Product grid */}
         {productosPagina.length > 0 ? (
-          <div className="motion-list grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {productosPagina.map((producto) => (
               <TarjetaProducto key={producto.slug} producto={producto} />
             ))}
@@ -916,15 +916,15 @@ export default function CategoriasPage() {
                 </div>
 
                 {/* Benefit items — grid en móvil, fila en desktop */}
-                <div className="motion-list mt-4 grid grid-cols-2 gap-px border-t border-white/10 sm:grid-cols-4 lg:ml-[510px] lg:mt-0 lg:flex lg:border-t-0 lg:border-l">
+                <div className="mt-4 grid grid-cols-2 gap-px border-t border-white/10 sm:grid-cols-4 lg:ml-[510px] lg:mt-0 lg:flex lg:border-t-0 lg:border-l">
                   {catMeta.comoElegir.map((factor, i) => (
                     <div
                       key={factor.titulo}
-                      className={`motion-card flex flex-col justify-start px-4 py-5 sm:px-5 ${i > 0 ? "border-l border-white/10" : ""}`}
+                      className={`flex flex-col justify-start px-4 py-5 sm:px-5 ${i > 0 ? "border-l border-white/10" : ""}`}
                     >
                       {factor.imagen ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={factor.imagen} alt="" className="feature-icon-pop h-8 w-8 shrink-0 object-contain brightness-0 invert sm:h-9 sm:w-9" />
+                        <img src={factor.imagen} alt="" className="h-8 w-8 shrink-0 object-contain brightness-0 invert sm:h-9 sm:w-9" />
                       ) : (
                         <svg viewBox="0 0 24 24" className="h-8 w-8 shrink-0 text-[#27B1B8] sm:h-6 sm:w-6" fill="none" stroke="currentColor" strokeWidth="1.5">
                           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -967,12 +967,12 @@ export default function CategoriasPage() {
                 </div>
 
                 {/* Criterios — grid responsivo */}
-                <div className="motion-list mt-4 grid grid-cols-2 divide-x divide-y divide-black/8 sm:grid-cols-4 sm:divide-y-0" style={{ background: "rgba(255,255,255,0.7)" }}>
+                <div className="mt-4 grid grid-cols-2 divide-x divide-y divide-black/8 sm:grid-cols-4 sm:divide-y-0" style={{ background: "rgba(255,255,255,0.7)" }}>
                   {catMeta.comoElegir.map((factor) => (
-                    <div key={factor.titulo} className="motion-card flex flex-col p-4 sm:p-5">
+                    <div key={factor.titulo} className="flex flex-col p-4 sm:p-5">
                       {factor.imagen ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={factor.imagen} alt="" className="feature-icon-pop h-10 w-10 object-contain sm:h-14 sm:w-14" />
+                        <img src={factor.imagen} alt="" className="h-10 w-10 object-contain sm:h-14 sm:w-14" />
                       ) : (
                         <svg viewBox="0 0 24 24" className="h-10 w-10 text-[#27B1B8] sm:h-14 sm:w-14" fill="none" stroke="currentColor" strokeWidth="1.5">
                           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
