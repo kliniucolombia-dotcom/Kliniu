@@ -118,6 +118,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
 
   const tipoBadge = producto.descripcion?.split("·")[0]?.trim();
   const variaciones = producto.variacionesColor ?? [];
+  const inox = /inoxidable/i.test(producto.nombre) || /inoxidable/i.test(producto.categoria ?? "") || /inoxidable/i.test(producto.descripcion ?? "");
   const imagenActual = hoveredColor
     ? (variaciones.find((v) => v.color === hoveredColor)?.image ?? producto.imagen)
     : producto.imagen;
@@ -166,7 +167,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
       {/* Info */}
       <div className="flex flex-1 flex-col border-t border-black/5 p-4">
         <h3 className="line-clamp-3 h-[54px] text-sm font-semibold leading-snug text-[#111]">
-          {producto.nombre}
+          {producto.nombre}{inox && <span className="text-[#555]"> · Inox 304</span>}
         </h3>
 
         {/* Description */}
