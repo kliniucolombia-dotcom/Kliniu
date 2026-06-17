@@ -524,7 +524,7 @@ export default function ProductoDetallePage() {
               <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-[#111] md:text-[26px]">
                 {producto.nombre}
                 {esInox(producto.nombre, producto.categoria, producto.descripcion) && (
-                  <span className="ml-2 align-middle text-sm font-semibold text-[#555]">· Inox 304</span>
+                  <span className="text-[#555]"> · Inox 304</span>
                 )}
               </h1>
               {producto.sku && (
