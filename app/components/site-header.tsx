@@ -23,6 +23,7 @@ function getUserHref(role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING"): string 
 
 export default function SiteHeader({ currentUser }: SiteHeaderProps) {
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [masAbierto, setMasAbierto] = useState(false);
   const [hidden, setHidden] = useState(false);
   const lastScrollY = useRef(0);
   const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -89,6 +90,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
   };
 
   const bottomNavItems = [
+    // ── Principales (visibles) ──
     {
       label: "Inicio",
       href: "/",
@@ -101,7 +103,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
       ),
     },
     {
-      label: "Productos",
+      label: "Categorías",
       href: "/categorias",
       active: pathname === "/categorias" && !searchParams.get("tipo"),
       icon: (
@@ -113,6 +115,37 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
         </svg>
       ),
     },
+    {
+      label: "Carrito",
+      href: "/carrito",
+      active: pathname === "/carrito",
+      icon: (
+        <span className="relative">
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <path d="M16 10a4 4 0 0 1-8 0" />
+          </svg>
+          {totalProducts > 0 && (
+            <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#27B1B8] px-1 text-[9px] font-bold text-white">
+              {totalProducts}
+            </span>
+          )}
+        </span>
+      ),
+    },
+    {
+      label: currentUser ? currentUser.fullName.split(" ")[0] : "Cuenta",
+      href: currentUser ? getUserHref(currentUser.role) : "/login",
+      active: pathname === "/mi-cuenta" || pathname === "/login",
+      icon: (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path d="M20 21a8 8 0 0 0-16 0" />
+          <circle cx="12" cy="8" r="4" />
+        </svg>
+      ),
+    },
+    // ── En "Más" ──
     {
       label: "Insumos",
       href: "/categorias?tipo=insumos",
@@ -141,17 +174,6 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
       icon: (
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
           <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-        </svg>
-      ),
-    },
-    {
-      label: currentUser ? currentUser.fullName.split(" ")[0] : "Cuenta",
-      href: currentUser ? getUserHref(currentUser.role) : "/login",
-      active: pathname === "/mi-cuenta" || pathname === "/login",
-      icon: (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <path d="M20 21a8 8 0 0 0-16 0" />
-          <circle cx="12" cy="8" r="4" />
         </svg>
       ),
     },
@@ -387,11 +409,36 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
 
       {/* ── Bottom Navigation — mobile only ── */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-black/10 bg-white shadow-[0_-4px_20px_rgba(15,23,42,0.08)] lg:hidden">
+        {/* Panel Más */}
+        {masAbierto && (
+          <>
+            <div
+              className="fixed inset-0 z-40 bg-black/20"
+              onClick={() => setMasAbierto(false)}
+            />
+            <div className="absolute bottom-full left-0 right-0 z-50 rounded-t-2xl bg-white px-4 pb-4 pt-5 shadow-[0_-8px_32px_rgba(15,23,42,0.12)] animate-[slideUp_200ms_ease-out]">
+              <p className="mb-3 text-[11px] font-black uppercase tracking-widest text-[#0C535B]/50">Más opciones</p>
+              {bottomNavItems.slice(4).map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMasAbierto(false)}
+                  className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-[#0C535B] transition-colors hover:bg-[#f0fafa] hover:text-[#27B1B8]"
+                >
+                  {item.icon}
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </>
+        )}
+
         <div className="flex items-center justify-around px-1 pb-safe pt-1">
-          {bottomNavItems.map((item) => (
+          {bottomNavItems.slice(0, 4).map((item) => (
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => setMasAbierto(false)}
               className={`flex flex-col items-center gap-0.5 rounded-xl px-2 py-2 transition-colors ${
                 item.active
                   ? "text-[#27B1B8]"
@@ -402,6 +449,22 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
               <span className="text-[10px] font-semibold leading-none">{item.label}</span>
             </Link>
           ))}
+
+          {/* Botón Más */}
+          <button
+            type="button"
+            onClick={() => setMasAbierto((v) => !v)}
+            className={`flex flex-col items-center gap-0.5 rounded-xl px-2 py-2 transition-colors ${
+              masAbierto ? "text-[#27B1B8]" : "text-[#0C535B]/60 hover:text-[#0C535B]"
+            }`}
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+              <circle cx="5" cy="12" r="1.5" />
+              <circle cx="12" cy="12" r="1.5" />
+              <circle cx="19" cy="12" r="1.5" />
+            </svg>
+            <span className="text-[10px] font-semibold leading-none">Más</span>
+          </button>
         </div>
       </nav>
     </>
