@@ -582,6 +582,11 @@ export const productosCatalogo: ProductoCatalogo[] = [
     descripcion: "Rollo institucional · Polipropileno · Alto tráfico",
     variacionesColor: [
       {
+        color: "#f0f0f0",
+        label: "Blanco",
+        image: "https://yotsdpjfnsrejtoufkuu.supabase.co/storage/v1/object/public/product-images/products/papel-inst-blanco-metalico.png",
+      },
+      {
         color: "#111111",
         label: "Negro",
         image: "https://yotsdpjfnsrejtoufkuu.supabase.co/storage/v1/object/public/product-images/products/papel-inst-negro-metalico.png",
@@ -599,7 +604,7 @@ export const productosCatalogo: ProductoCatalogo[] = [
     slug: "dispensador-toallas-mano-acero-inoxidable",
     sku: "DTM-100",
     categoria: "Dispensadores de papel, toalla y servilletas",
-    nombre: "Dispensador de Toallas de Mano Acero Inoxidable",
+    nombre: "Dispensador de Toallas de Mano Inox 304",
     marca: "KlinOx",
     precio: "$115.899",
     precioAnterior: "$89.900",
@@ -629,7 +634,7 @@ export const productosCatalogo: ProductoCatalogo[] = [
     slug: "dispensador-papel-higienico-jumbo-acero-inoxidable",
     sku: "DTJINOX-120",
     categoria: "KlinOx Acero Inoxidable",
-    nombre: "Dispensador de Papel Higiénico Jumbo Acero Inoxidable",
+    nombre: "Dispensador de Papel Higiénico Jumbo Inox 304",
     marca: "KlinOx",
     precio: "$115.899",
     precioAnterior: "$99.900",

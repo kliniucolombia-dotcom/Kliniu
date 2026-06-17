@@ -12,10 +12,10 @@ const fmt = (n: number) =>
   n.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 
 const TIER_CONFIG = {
-  SILVER:   { gradientStyle: "linear-gradient(160deg, #c8c8d8 0%, #e8e8f0 50%, #f5f5f8 100%)", shadow: "0 16px 40px rgba(140,140,160,0.35)", ring: "#9A9AB0", label: "#5A5A72" },
+  SILVER:   { gradientStyle: "linear-gradient(160deg, #9a9ab0 0%, #b8b8cc 50%, #d0d0e0 100%)", shadow: "0 16px 40px rgba(100,100,130,0.40)", ring: "#7A7A96", label: "#3A3A52" },
   GOLD:     { gradientStyle: "linear-gradient(160deg, #D4A017 0%, #F0C040 40%, #FDE88A 100%)",  shadow: "0 16px 40px rgba(212,160,23,0.40)",  ring: "#D4A017", label: "#7A5800" },
-  PLATINUM: { gradientStyle: "linear-gradient(160deg, #1A8FA0 0%, #27B1C8 40%, #7DDDE8 100%)", shadow: "0 16px 40px rgba(27,177,200,0.38)", ring: "#27B1C8", label: "#0C535B" },
-  DIAMANTE: { gradientStyle: "linear-gradient(160deg, #5B1FA8 0%, #8B3FD8 40%, #C084FC 100%)", shadow: "0 16px 40px rgba(107,33,168,0.42)", ring: "#8B3FD8", label: "#3B0F6E" },
+  PLATINUM: { gradientStyle: "linear-gradient(160deg, #5B1FA8 0%, #8B3FD8 40%, #C084FC 100%)", shadow: "0 16px 40px rgba(107,33,168,0.42)", ring: "#8B3FD8", label: "#3B0F6E" },
+  DIAMANTE: { gradientStyle: "linear-gradient(160deg, #1A8FA0 0%, #27B1C8 40%, #7DDDE8 100%)", shadow: "0 16px 40px rgba(27,177,200,0.38)", ring: "#27B1C8", label: "#0C535B" },
 };
 
 const FOCA_IMAGES = [

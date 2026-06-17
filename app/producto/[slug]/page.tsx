@@ -13,6 +13,9 @@ import QuoteModal from "../../components/quote-modal";
 import { getVolumePricing, TIPO_VARIANTES } from "@/lib/volume-discounts";
 import type { ProductoEspecificacion } from "../../data/catalog";
 
+const esInox = (nombre: string, categoria: string, descripcion?: string) =>
+  /inoxidable/i.test(nombre) || /inoxidable/i.test(categoria) || /inoxidable/i.test(descripcion ?? "");
+
 const trustBadges = [
   {
     icon: (
@@ -333,12 +336,11 @@ export default function ProductoDetallePage() {
   const ajustarUnidad = (delta: number) => {
     const next = Math.max(1, cantidad + delta);
     setCantidad(next);
-    if (next >= 12) {
+    // Mostrar popup solo al cruzar el umbral subiendo
+    if (next >= 12 && cantidad < 12 && delta > 0) {
       setShowComboTip(true);
       if (comboTipTimeout.current) clearTimeout(comboTipTimeout.current);
-      comboTipTimeout.current = setTimeout(() => setShowComboTip(false), 8000);
-    } else {
-      setShowComboTip(false);
+      comboTipTimeout.current = setTimeout(() => setShowComboTip(false), 12000);
     }
   };
 
@@ -377,13 +379,13 @@ export default function ProductoDetallePage() {
 
   const variacionesColor = producto?.variacionesColor ?? [];
 
-  // Prepend the base product image as "Blanco" when there are other color variants
+  // Prepend the base product image as "Blanco" when there are other color variants and no explicit Blanco
   const allVariants = useMemo(() => {
     if (!producto || variacionesColor.length === 0) return [];
-    return [
-      { color: "#ffffff", label: "Blanco", image: producto.imagen },
-      ...variacionesColor,
-    ];
+    const hasBlanco = variacionesColor.some((v) => v.label.toLowerCase() === "blanco");
+    return hasBlanco
+      ? variacionesColor
+      : [{ color: "#ffffff", label: "Blanco", image: producto.imagen }, ...variacionesColor];
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [producto]);
 
@@ -444,17 +446,47 @@ export default function ProductoDetallePage() {
   return (
     <main className="min-h-screen bg-white text-[#111]">
 
-      {/* Toast flotante combo */}
-      <div className={`fixed bottom-8 left-1/2 z-[200] w-[min(92vw,480px)] -translate-x-1/2 transition-all duration-400 ${showComboTip ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0 pointer-events-none"}`}>
-        <div className="flex items-center gap-4 rounded-3xl bg-[#1a1a1a] px-7 py-5 shadow-[0_16px_48px_rgba(0,0,0,0.38)]">
-          <span className="text-4xl">🔥</span>
-          <div className="flex-1">
-            <p className="text-base font-black text-white">¡Te sale más barato en combo!</p>
-            <p className="mt-0.5 text-sm text-white/70">Selecciona <strong className="text-[#F07826]">× 12 und</strong> o más y ahorra hasta un <strong className="text-[#F07826]">10%</strong> en tu compra.</p>
+      {/* Modal popup combo */}
+      {showComboTip && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4" onClick={() => setShowComboTip(false)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div
+            className="relative w-[min(92vw,420px)] overflow-hidden rounded-3xl bg-white shadow-[0_24px_64px_rgba(0,0,0,0.28)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Foca */}
+            <div className="flex justify-center bg-[#f0fafa] pt-6 pb-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/foca-arma-tu-combo.png" alt="Foca Kliniu" className="h-36 w-auto object-contain" />
+            </div>
+
+            {/* Contenido */}
+            <div className="px-7 pb-7 pt-4 text-center">
+              <p className="text-xl font-black text-[#111]">¡Te sale más barato en combo!</p>
+              <p className="mt-2 text-sm text-[#6e7379]">
+                Selecciona <strong className="text-[#F07826]">× 12 und</strong> o más y ahorra hasta un{" "}
+                <strong className="text-[#F07826]">10%</strong> en tu compra.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowComboTip(false)}
+                className="mt-5 w-full rounded-full bg-[#27B1B8] py-3 text-sm font-bold text-white transition-colors hover:bg-[#1e9aa0]"
+              >
+                ¡Entendido!
+              </button>
+            </div>
+
+            {/* Cerrar */}
+            <button
+              type="button"
+              onClick={() => setShowComboTip(false)}
+              className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-black/10 text-[#111] hover:bg-black/20"
+            >
+              ✕
+            </button>
           </div>
-          <button type="button" onClick={() => setShowComboTip(false)} className="text-white/40 hover:text-white text-lg">✕</button>
         </div>
-      </div>
+      )}
 
       {/* Breadcrumb */}
       <div className="mx-auto max-w-[1440px] px-6 py-4">
@@ -491,6 +523,9 @@ export default function ProductoDetallePage() {
             <div>
               <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-[#111] md:text-[26px]">
                 {producto.nombre}
+                {esInox(producto.nombre, producto.categoria, producto.descripcion) && (
+                  <span className="ml-2 align-middle text-sm font-semibold text-[#555]">· Inox 304</span>
+                )}
               </h1>
               {producto.sku && (
                 <p className="mt-1.5 text-xs text-[#6e7379]">

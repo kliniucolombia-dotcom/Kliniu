@@ -341,10 +341,33 @@ export const getProducts = cache(async function getProducts() {
 
 export async function getFeaturedProducts() {
   const products = await getProducts();
-  const destacados = products.filter((product) => product.destacado);
-  const fallbackProducts = products.filter((product) => !product.destacado);
 
-  return [...destacados, ...fallbackProducts].slice(0, 5);
+  // Más vendidos de Odoo (últimos 90 días), sin bloquear si falla
+  let topOdooNames: string[] = [];
+  try {
+    const { getTopProducts } = await import("@/lib/odoo");
+    const end = new Date().toISOString().slice(0, 10);
+    const start = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const top = await getTopProducts(start, end, 10);
+    topOdooNames = top.map((p) => p.name.toLowerCase());
+  } catch {
+    // Odoo no disponible o no configurado
+  }
+
+  const normalize = (name: string) => name.toLowerCase();
+
+  const isBestseller = (product: StoreProduct) =>
+    topOdooNames.some(
+      (odooName) =>
+        odooName.includes(normalize(product.nombre)) ||
+        normalize(product.nombre).includes(odooName.split(" ").slice(0, 3).join(" ")),
+    );
+
+  const bestsellers = products.filter(isBestseller);
+  const onlyFeatured = products.filter((p) => p.destacado && !isBestseller(p));
+  const rest = products.filter((p) => !p.destacado && !isBestseller(p));
+
+  return [...bestsellers, ...onlyFeatured, ...rest].slice(0, 5);
 }
 
 export async function createProduct(input: ProductMutationInput) {
