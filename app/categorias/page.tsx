@@ -189,7 +189,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
                 className={`h-4 w-4 rounded-full border transition-transform duration-150 hover:scale-125 ${
                   hoveredColor === v.color ? "border-[#27B1B8] scale-125" : "border-black/30"
                 }`}
-                style={{ background: v.color, boxShadow: /^#?[ef][0-9a-f]{5}$/i.test(v.color) ? "inset 0 0 0 1px rgba(0,0,0,0.15)" : undefined }}
+                style={{ background: v.color, boxShadow: "inset 0 0 0 1.5px rgba(0,0,0,0.22)" }}
               />
             ))}
             {hoveredColor && (
