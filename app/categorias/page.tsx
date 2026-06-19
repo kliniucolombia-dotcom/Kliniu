@@ -241,7 +241,7 @@ function LandingCategorias({ onSelect }: { onSelect: (cat: string) => void }) {
       {/* Hero sub-banner */}
       <section className="home-reveal border-b border-black/8 bg-[#f8f8f7] px-6 py-10">
         <div className="mx-auto max-w-[1440px]">
-          <h1 className="animated-heading text-3xl font-extrabold tracking-tight text-[#0C535B]">
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#0C535B]">
             Encuentra tu dispensador ideal
           </h1>
           <p className="mt-2 text-sm text-[#6e7379]">
@@ -504,7 +504,7 @@ function InsumosRepuestosPage({
             className="hidden object-cover object-center md:block"
           />
           <Image
-            src="/banners-responsive/BANNER-FINALES-31.png"
+            src="/banners-responsive/BANNER FINALES-31.jpg"
             alt="Insumos y repuestos Kliniu"
             fill
             priority
@@ -596,7 +596,7 @@ function InsumosRepuestosPage({
             className="hidden object-cover object-center md:block"
           />
           <Image
-            src="/banners-responsive/BANNER-FINALES-31.png"
+            src="/banners-responsive/BANNER FINALES-31.jpg"
             alt="Reposición fácil Kliniu"
             fill
             unoptimized
@@ -711,7 +711,7 @@ export default function CategoriasPage() {
   return (
     <main className="min-h-screen bg-white text-[#111]">
       {/* ── Hero banner ── */}
-      <section className={`home-reveal relative overflow-hidden ${dark ? "bg-white" : "bg-[#0a0f14]"} ${catMeta.ocultarTextoHero ? "aspect-[4500/2083] md:aspect-[10000/2084]" : ""}`}>
+      <section className={`home-reveal relative overflow-hidden ${dark ? "bg-white" : "bg-[#0a0f14]"} ${catMeta.ocultarTextoHero ? "aspect-[4500/2083] md:aspect-[10000/2084]" : catMeta.heroBannerMovil ? "min-h-[46vw] md:min-h-0" : ""}`}>
         {/* Imagen desktop */}
         {(catMeta.heroBannerImagen ?? catMeta.bannerImagen) && (
           <Image
@@ -736,7 +736,7 @@ export default function CategoriasPage() {
             className={`object-cover object-center md:hidden ${dark ? "opacity-100" : "opacity-60"}`}
           />
         )}
-        <div className="relative mx-auto max-w-[1440px] px-4 py-6 sm:px-8 sm:py-8 md:py-10">
+        <div className={`relative mx-auto max-w-[1440px] px-4 py-6 sm:px-8 sm:py-8 md:py-10 ${catMeta.heroBannerMovil ? "hidden md:block" : ""}`}>
           {!catMeta.ocultarTextoHero && (
           <>
           <h1 className={`text-2xl font-extrabold leading-tight tracking-tight sm:text-4xl md:text-5xl ${dark ? "text-[#0a0f14]" : "text-white"}`}>

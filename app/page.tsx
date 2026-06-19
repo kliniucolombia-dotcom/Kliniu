@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import ComboCarousel from "./components/combo-carousel";
 import HeroCarousel from "./components/hero-carousel";
@@ -6,7 +5,6 @@ import ProductosCarousel from "./components/productos-carousel";
 import SiteFooter from "./components/site-footer";
 import VideoModal from "./components/video-modal";
 import { getFeaturedProducts } from "@/lib/products";
-import WhatsAppAsesor from "./components/whatsapp-asesor";
 
 const combos = [
   {
@@ -38,34 +36,6 @@ const combos = [
   },
 ];
 
-const features = [
-  {
-    titulo: "Diseñados para\nalto tráfico",
-    desc: "Resistentes, eficientes\ny de larga duración.",
-    icon: "/icono-alto-trafico.png",
-  },
-  {
-    titulo: "Higiene que\ngenera confianza",
-    desc: "Mejores experiencias\npara tus usuarios.",
-    icon: "/icono-higiene.png",
-  },
-  {
-    titulo: "Compatibilidad\ntotal",
-    desc: "Insumos y repuestos\ngarantizados.",
-    icon: "/icono-compatibilidad.png",
-  },
-  {
-    titulo: "Ahorro\ny eficiencia",
-    desc: "Sistemas que optimizan\nconsumo y mantenimiento",
-    icon: "/icono-ahorro.png",
-  },
-  {
-    titulo: "Garantía\nKLINIU",
-    desc: "Calidad respaldada\npor más de 40 años",
-    icon: "/icono-garantia.png",
-  },
-];
-
 const REEL_DEFAULT = "https://www.instagram.com/reel/DTQToikk3vI/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==";
 
 const videos = [
@@ -84,7 +54,7 @@ export default async function Home() {
       <HeroCarousel />
 
       {/* ── Productos destacados ── */}
-      <section className="home-reveal py-10 md:py-16">
+      <section className="home-reveal pb-10 pt-0 md:py-16">
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10">
             <div className="flex items-baseline justify-between lg:block lg:w-56 lg:shrink-0 lg:pt-1">
@@ -142,11 +112,11 @@ export default async function Home() {
       </section>
 
       {/* ── Features strip ── */}
-      <section className="home-reveal">
+      <section className="home-reveal hidden md:block">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/banners-web/BANNER-FINALES-12.png" alt="Kliniu" className="hidden w-full object-cover md:block" />
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/banners-responsive/BANNER-FINALES-34.png" alt="Kliniu" className="w-full object-cover md:hidden" />
+        <img src="/banners-responsive/BANNER-FINALES-34.png" alt="Kliniu" className="hidden" />
       </section>
 
       {/* ── Dos CTAs ── */}

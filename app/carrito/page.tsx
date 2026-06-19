@@ -286,7 +286,7 @@ export default function CarritoPage() {
       {/* Trust bar */}
       <section className="mx-auto max-w-[1440px] px-6 py-5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/banners-web/BANNER FINALES.png" alt="Kliniu" className="w-full object-cover" />
+        <img src="/banners-web/BANNER FINALES.png" alt="Kliniu" className="hidden sm:block w-full object-cover" />
       </section>
 
       {/* Productos recomendados */}
@@ -343,16 +343,6 @@ export default function CarritoPage() {
               Te recomendamos agregar insumos compatibles para evitar reposiciones frecuentes
               y mantener tu sistema siempre funcionando.
             </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {["Productos compatibles", "Más rendimiento del sistema", "Ahorro en tiempo y mantenimiento"].map((chip) => (
-              <span
-                key={chip}
-                className="rounded-full border border-[#27B1B8]/30 bg-white px-3 py-1.5 text-xs font-semibold text-[#0C535B]"
-              >
-                {chip}
-              </span>
-            ))}
           </div>
         </div>
       </section>

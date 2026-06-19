@@ -811,7 +811,7 @@ export default function ProductoDetallePage() {
         <img
           src="/banners-web/BANNER-FINALES-21.png"
           alt="Kliniu"
-          className="w-full object-cover"
+          className="hidden sm:block w-full object-cover"
         />
       </section>
 

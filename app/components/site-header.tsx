@@ -178,6 +178,16 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
       ),
     },
     {
+      label: "Contacto",
+      href: "/contacto",
+      active: pathname === "/contacto",
+      icon: (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.63 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.78a16 16 0 0 0 6.29 6.29l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+        </svg>
+      ),
+    },
+    {
       label: "Nosotros",
       href: "/quienes-somos",
       active: pathname === "/quienes-somos",
@@ -196,7 +206,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
     <>
       <header
         ref={menuRef}
-        className="fixed top-0 left-0 right-0 z-50 border-b border-black/8 bg-white shadow-[0_4px_20px_rgba(15,23,42,0.06)]"
+        className="fixed top-0 left-0 right-0 z-50 bg-white"
         style={{ transform: hidden ? "translateY(-100%)" : "translateY(0)", transition: "transform 300ms ease-in-out" }}
       >
         <div className="mx-auto max-w-[1440px] px-4 py-3 sm:px-5">

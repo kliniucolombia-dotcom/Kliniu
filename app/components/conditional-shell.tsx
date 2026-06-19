@@ -16,7 +16,7 @@ export default function ConditionalShell({ currentUser, children }: Props) {
   return (
     <>
       {!isPanelRoute && <SiteHeader currentUser={currentUser} />}
-      <div className={!isPanelRoute ? "pt-[72px] pb-16 lg:pb-0" : undefined}>
+      <div className={!isPanelRoute ? "pt-[62px] pb-16 lg:pt-[66px] lg:pb-0" : undefined}>
         {children}
       </div>
       {!isPanelRoute && <SupportChat />}

@@ -221,7 +221,7 @@ export default function SupportChat() {
           </div>
 
           <div className="bg-[#fbfbfa] px-4 py-4">
-            <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
+            <div className="max-h-[42vh] sm:max-h-[420px] space-y-3 overflow-y-auto pr-1">
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -345,7 +345,7 @@ export default function SupportChat() {
       <button
         type="button"
         onClick={() => setIsOpen((current) => !current)}
-        className="group relative flex items-center gap-3 rounded-full border border-white/12 bg-[#0C535B] px-3 py-3 sm:px-4 text-white shadow-[0_22px_50px_rgba(22,56,79,0.38)] ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#073D43]"
+        className={`group relative flex items-center gap-3 rounded-full border border-white/12 bg-[#0C535B] px-3 py-3 sm:px-4 text-white shadow-[0_22px_50px_rgba(22,56,79,0.38)] ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#073D43] ${isOpen ? "hidden sm:flex" : ""}`}
       >
         <span className="absolute -left-1 -top-1 h-3 w-3 rounded-full bg-[#43c172] shadow-[0_0_0_6px_rgba(67,193,114,0.18)]" />
         <span className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-white">
