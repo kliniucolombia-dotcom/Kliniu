@@ -238,7 +238,7 @@ function toStoreProduct(product: ProductRecord): StoreProduct {
     stock: product.stock,
     stockMinimo: product.minimumStock,
     estadoInventario,
-    puedeComprar: true,
+    puedeComprar: product.stock > 0,
     descuento: formatearDescuento(product.price, product.previousPrice),
     imagen: normalizeProductImage(product.image) || "/product-placeholder.png",
     imagenesExtra: normalizeGalleryImages(product.galleryImages || []),
@@ -286,7 +286,7 @@ function getFallbackProducts(): StoreProduct[] {
       producto.stock ?? 12,
       producto.stockMinimo ?? 3,
     ),
-    puedeComprar: true,
+    puedeComprar: (producto.stock ?? 12) > 0,
     descripcion:
       producto.descripcion ||
       descripcionProducto({
