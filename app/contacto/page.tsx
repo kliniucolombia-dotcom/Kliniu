@@ -116,38 +116,25 @@ export default function ContactoPage() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-white text-[#111]">
       {/* Hero */}
-      <section className="home-reveal relative min-h-[250px] overflow-hidden bg-[#f4e6d6] md:min-h-[300px]">
+      <section className="home-reveal relative aspect-[4500/2083] overflow-hidden md:aspect-[10000/2084]">
         <Image
-          src="/banner-contacto-kliniu.jpg"
+          src="/banners-web/BANNER-FINALES-09.png"
           alt="Atención Kliniu"
           fill
           priority
+          unoptimized
           sizes="100vw"
           className="hidden object-cover object-center md:block"
         />
         <Image
-          src="/resp-banner-contacto.jpg"
+          src="/banners-responsive/BANNER-FINALES-30.png"
           alt="Atención Kliniu"
           fill
           priority
+          unoptimized
           sizes="100vw"
           className="object-cover object-center md:hidden"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#f1dfcc]/95 via-[#f1dfcc]/45 to-transparent md:from-[#f1dfcc]/80 md:via-transparent" />
-        <div className="relative mx-auto flex min-h-[250px] max-w-[1440px] items-center px-5 py-10 md:min-h-[300px] md:pl-[100px]">
-          <div className="max-w-[460px]">
-            <h1 className="text-[28px] font-black leading-[0.98] tracking-tight text-[#0C535B] md:text-[38px]">
-              Estamos cerca de ti,
-              <br />
-              <span className="text-[#111]">en cada lugar</span>
-            </h1>
-            <p className="mt-4 max-w-[385px] text-[14px] font-semibold leading-[1.08] text-black md:text-[15px]">
-              En Kliniu pensamos en tu comodidad por eso hemos implementado un canal de whatsapp
-              para atender tus necesidades enfocado a realizar las cotizaciones de una manera más
-              ágil y asertiva.
-            </p>
-          </div>
-        </div>
       </section>
 
       {/* Contact bar */}
