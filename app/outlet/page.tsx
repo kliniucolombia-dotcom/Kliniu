@@ -234,12 +234,15 @@ export default function OutletPage() {
         <section className="outlet-sparkle-layer relative isolate overflow-hidden bg-[#0a0630]">
           {/* Imagen a ancho completo, proporciones naturales */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/banner-outlet.jpg"
-            alt=""
-            aria-hidden="true"
-            className="outlet-hero-bg block w-full"
-          />
+          <picture>
+            <source media="(max-width: 639px)" srcSet="/banners-responsive/oulet%20movil.jpg" />
+            <img
+              src="/banner-outlet.jpg"
+              alt=""
+              aria-hidden="true"
+              className="outlet-hero-bg block w-full"
+            />
+          </picture>
 
           {/* Carrusel encima en desktop */}
           {carouselProducts.length > 0 && (
@@ -337,6 +340,7 @@ export default function OutletPage() {
                 </div>
               </div>
             </aside>
+
           </div>
         </section>
       </main>
