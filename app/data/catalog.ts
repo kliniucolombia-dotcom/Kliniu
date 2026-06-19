@@ -11,6 +11,8 @@ export type CategoriaMeta = {
   heroTitulo2?: string;
   heroDestacado?: string;
   textoDark?: boolean;
+  ocultarTextoHero?: boolean;
+  heroBannerMovilPosition?: string;
   beneficiosInline?: boolean;
   beneficiosHero?: { icono: string; imagen?: string; texto: string }[];
   comoElegirFoca?: string;
@@ -18,6 +20,8 @@ export type CategoriaMeta = {
   comoElegirTituloCompleto?: string;
   comoElegirSubtitulo?: string;
   comoElegirDark?: boolean;
+  comoElegirBannerWeb?: string;
+  comoElegirBannerMovil?: string;
   comoElegir?: { icono: string; imagen?: string; titulo: string; descripcion: string }[];
 };
 
@@ -29,6 +33,8 @@ export const categoriasData: readonly CategoriaMeta[] = [
     bannerImagen: "/cat-liquidos.png",
     heroBannerImagen: "/category-banner-liquidos.jpg",
     heroBannerMovil: "/resp-banner-liquidos.jpg",
+    comoElegirBannerWeb: "/banners-web/BANNER-FINALES-15.png",
+    comoElegirBannerMovil: "/banners-responsive/BANNER-FINALES-35.png",
     iconoImagen: "/cat-liquidos.png",
     bannerCopy: "Soluciones de dispensación líquida para higiene eficiente en cualquier espacio.",
     heroTitulo1: "Dispensadores para",
@@ -57,6 +63,8 @@ export const categoriasData: readonly CategoriaMeta[] = [
     bannerImagen: "/cat-papel.png",
     heroBannerImagen: "/category-banner-papel.jpg",
     heroBannerMovil: "/resp-banner-papel.jpg",
+    comoElegirBannerWeb: "/banners-web/BANNER-FINALES-16.png",
+    comoElegirBannerMovil: "/banners-responsive/BANNER-FINALES-36.png",
     iconoImagen: "/cat-papel.png",
     bannerCopy: "Sistemas de dispensación de papel diseñados para crear higiene, ahorro y eficiencia en cada uso.",
     heroTitulo1: "Dispensadores de",
@@ -85,6 +93,8 @@ export const categoriasData: readonly CategoriaMeta[] = [
     bannerImagen: "/cat-klinox.png",
     heroBannerImagen: "/category-banner-klinox.jpg",
     heroBannerMovil: "/resp-banner-klinox.jpg",
+    comoElegirBannerWeb: "/banners-web/BANNER-FINALES-17.png",
+    comoElegirBannerMovil: "/banners-responsive/BANNER-FINALES-37.png",
     iconoImagen: "/cat-klinox.png",
     bannerCopy: "Dispensadores premium en acero inoxidable diseñados para máxima durabilidad.",
     heroTitulo1: "Dispensadores en",
@@ -114,6 +124,8 @@ export const categoriasData: readonly CategoriaMeta[] = [
     bannerImagen: "/cat-crema-dental.png",
     heroBannerImagen: "/category-banner-crema-dental.jpg",
     heroBannerMovil: "/resp-banner-crema-dental.jpg",
+    comoElegirBannerWeb: "/banners-web/BANNER-FINALES-19.png",
+    comoElegirBannerMovil: "/banners-responsive/BANNER-FINALES-38.png",
     iconoImagen: "/cat-crema-dental.png",
     bannerCopy: "Sistemas de dispensación higiénica de crema dental para instituciones, colegios y empresas.",
     heroTitulo1: "Dispensador de",
@@ -150,6 +162,8 @@ export const categoriasData: readonly CategoriaMeta[] = [
     textoDark: true,
     comoElegirFoca: "/foca-como-elegir-hoteles.png",
     comoElegirDark: true,
+    comoElegirBannerWeb: "/banners-web/BANNER-FINALES-18.png",
+    comoElegirBannerMovil: "/banners-responsive/BANNER-FINALES-34.png",
     comoElegirTituloCompleto: "¿Por qué elegir KLINIU para tu negocio?",
     comoElegirSubtitulo: "Soluciones pensadas para mejorar la experiencia de tus clientes y la eficiencia de tu operación.",
     beneficiosHero: [
@@ -170,8 +184,10 @@ export const categoriasData: readonly CategoriaMeta[] = [
     color: "#5a8a6a",
     icono: "◈",
     bannerImagen: "/cat-insumos.png",
-    heroBannerImagen: "/category-banner-insumos.jpg",
-    heroBannerMovil: "/resp-banner-insumos.jpg",
+    heroBannerImagen: "/banners-web/BANNER-FINALES-10.png",
+    heroBannerMovil: "/banners-responsive/BANNER-FINALES-31.png",
+    ocultarTextoHero: true,
+    heroBannerMovilPosition: "object-left",
     iconoImagen: "/cat-insumos.png",
     bannerCopy: "Insumos y repuestos originales para mantener tus dispensadores KLINIU siempre en óptimas condiciones.",
     heroTitulo1: "Insumos y",

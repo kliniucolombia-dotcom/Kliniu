@@ -493,51 +493,25 @@ function InsumosRepuestosPage({
   return (
     <main className="min-h-screen bg-white text-[#073F43]">
       <section className="home-reveal bg-white">
-        <div className="relative aspect-[2400/500] overflow-hidden bg-[#ead0bd] md:aspect-[2400/500] aspect-[4/3]">
+        <div className="relative aspect-[4500/2083] overflow-hidden bg-[#ead0bd] md:aspect-[10000/2084]">
           <Image
-            src="/insumos/banner-insumos-repuestos.jpg"
+            src="/banners-web/BANNER-FINALES-10.png"
             alt="Insumos y repuestos Kliniu"
             fill
             priority
+            unoptimized
             sizes="100vw"
             className="hidden object-cover object-center md:block"
           />
           <Image
-            src="/resp-banner-insumos.jpg"
+            src="/banners-responsive/BANNER-FINALES-31.png"
             alt="Insumos y repuestos Kliniu"
             fill
             priority
+            unoptimized
             sizes="100vw"
             className="object-cover object-center md:hidden"
           />
-          <div className="absolute inset-0 flex items-center">
-            <div className="mx-auto flex h-full w-full max-w-[1440px] items-center px-6 sm:px-10 lg:px-14">
-            <div className="flex w-[48%] flex-col justify-center">
-            <h1 className="text-[clamp(1.8rem,3.5vw,4.2rem)] font-black leading-[0.98] tracking-tight text-[#073F43]">
-              Insumos
-              <br />
-              <span className="text-[#16A6AE]">y repuestos</span>
-            </h1>
-            <p className="mt-4 max-w-[320px] text-[11px] font-semibold leading-5 text-[#073F43] sm:text-sm">
-              Todo lo que tu espacio necesita para operar de forma eficaz y continua.
-            </p>
-            <div className="mt-6 hidden w-fit items-center gap-0 rounded-sm bg-white/92 px-3 py-2 shadow-[0_8px_18px_rgba(7,63,67,0.08)] md:flex">
-              {[
-                { label: "Calidad Kliniu", icon: "/iconos/garantia.png" },
-                { label: "Compatibilidad garantizada", icon: "/iconos/compatibilidad.png" },
-                { label: "Entrega rápida", icon: "/iconos/envio-rapido.png" },
-              ].map((beneficio, index) => (
-                <div key={beneficio.label} className="flex items-center gap-2 px-3 text-[10px] font-bold leading-tight text-[#073F43]">
-                  {index > 0 && <span className="-ml-3 mr-1 h-7 border-l border-[#073F43]/15" />}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={beneficio.icon} alt="" className="h-7 w-7 shrink-0 object-contain" />
-                  <span className="max-w-[86px]">{beneficio.label}</span>
-                </div>
-              ))}
-            </div>
-            </div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -612,36 +586,23 @@ function InsumosRepuestosPage({
       </section>
 
       <section className="mx-auto max-w-[1440px] px-4 pb-10 sm:px-6">
-        <div className="home-reveal interactive-lift relative aspect-[1611/336] overflow-hidden rounded-2xl bg-[#ead0bd] shadow-[0_8px_24px_rgba(7,63,67,0.10)]">
+        <div className="home-reveal interactive-lift relative aspect-[4500/2083] overflow-hidden rounded-2xl bg-[#ead0bd] shadow-[0_8px_24px_rgba(7,63,67,0.10)] md:aspect-[10000/2084]">
           <Image
-            src="/insumos/banner-reposicion.png"
+            src="/banners-web/BANNER-FINALES-11.png"
             alt="Reposición fácil Kliniu"
             fill
+            unoptimized
             sizes="100vw"
-            className="object-cover object-center"
+            className="hidden object-cover object-center md:block"
           />
-          <div className="absolute inset-y-0 left-0 flex w-[48%] flex-col justify-center px-7 sm:px-10 lg:px-14">
-            <p className="text-[clamp(1.05rem,2.1vw,2rem)] font-black leading-none text-[#073F43]">
-              Reposición fácil,
-              <br />
-              <span className="text-[#16A6AE]">operación continua</span>
-            </p>
-            <p className="mt-3 max-w-[300px] text-[11px] font-semibold leading-4 text-[#073F43] sm:text-sm">
-              Mantén tus espacios siempre abastecidos con todo lo que necesitas.
-            </p>
-            <ul className="mt-3 hidden space-y-1.5 text-xs font-bold text-[#073F43] md:block">
-              {[
-                "Compatible con todos nuestros dispensadores",
-                "Insumos de alto rendimiento y calidad",
-                "Pedidos ágiles y entregas confiables",
-              ].map((item) => (
-                <li key={item} className="flex items-center gap-2">
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#16A6AE] text-[9px] text-white">✓</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
+          <Image
+            src="/banners-responsive/BANNER-FINALES-31.png"
+            alt="Reposición fácil Kliniu"
+            fill
+            unoptimized
+            sizes="100vw"
+            className="object-cover object-center md:hidden"
+          />
         </div>
       </section>
 
@@ -750,7 +711,7 @@ export default function CategoriasPage() {
   return (
     <main className="min-h-screen bg-white text-[#111]">
       {/* ── Hero banner ── */}
-      <section className={`home-reveal relative overflow-hidden ${dark ? "bg-white" : "bg-[#0a0f14]"}`}>
+      <section className={`home-reveal relative overflow-hidden ${dark ? "bg-white" : "bg-[#0a0f14]"} ${catMeta.ocultarTextoHero ? "aspect-[4500/2083] md:aspect-[10000/2084]" : ""}`}>
         {/* Imagen desktop */}
         {(catMeta.heroBannerImagen ?? catMeta.bannerImagen) && (
           <Image
@@ -758,6 +719,7 @@ export default function CategoriasPage() {
             alt={catMeta.nombre}
             fill
             priority
+            unoptimized
             sizes="100vw"
             className={`object-cover object-center ${catMeta.heroBannerMovil ? "hidden md:block" : ""} ${dark ? "opacity-100" : "opacity-60"}`}
           />
@@ -769,11 +731,14 @@ export default function CategoriasPage() {
             alt={catMeta.nombre}
             fill
             priority
+            unoptimized
             sizes="100vw"
             className={`object-cover object-center md:hidden ${dark ? "opacity-100" : "opacity-60"}`}
           />
         )}
         <div className="relative mx-auto max-w-[1440px] px-4 py-6 sm:px-8 sm:py-8 md:py-10">
+          {!catMeta.ocultarTextoHero && (
+          <>
           <h1 className={`text-2xl font-extrabold leading-tight tracking-tight sm:text-4xl md:text-5xl ${dark ? "text-[#0a0f14]" : "text-white"}`}>
             {tituloLinea1}
             <br />
@@ -782,7 +747,9 @@ export default function CategoriasPage() {
           <p className={`mt-2 max-w-md text-xs leading-5 sm:mt-3 sm:text-sm sm:leading-6 ${dark ? "text-[#3a4a4b]" : "text-white/70"}`}>
             {catMeta.bannerCopy}
           </p>
-          {catMeta.beneficiosHero && (
+          </>
+          )}
+          {catMeta.beneficiosHero && !catMeta.ocultarTextoHero && (
             <div className="mt-4 flex flex-wrap gap-2">
               {catMeta.beneficiosHero.map((b) => (
                 <div
@@ -884,6 +851,24 @@ export default function CategoriasPage() {
           /* Dark variant — Hoteles y Restaurantes */
           <section className="home-reveal bg-[#f8f8f7] px-4 py-8 sm:px-6 sm:py-12">
             <div className="mx-auto max-w-[1440px]">
+              {catMeta.comoElegirBannerWeb ? (
+                <div className="interactive-lift overflow-hidden rounded-2xl">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={catMeta.comoElegirBannerWeb}
+                    alt={catMeta.nombre}
+                    className={`w-full object-cover ${catMeta.comoElegirBannerMovil ? "hidden md:block" : ""}`}
+                  />
+                  {catMeta.comoElegirBannerMovil && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={catMeta.comoElegirBannerMovil}
+                      alt={catMeta.nombre}
+                      className="w-full object-cover md:hidden"
+                    />
+                  )}
+                </div>
+              ) : (
               <div
                 className="hero-energy interactive-lift relative overflow-hidden rounded-2xl"
                 style={{ background: "linear-gradient(to right, #051e22, #0C535B, #0f6e78)" }}
@@ -940,12 +925,31 @@ export default function CategoriasPage() {
                   ))}
                 </div>
               </div>
+              )}
             </div>
           </section>
         ) : (
           /* Light variant — all other categories */
           <section className="home-reveal bg-[#f8f8f7] px-4 py-8 sm:px-6 sm:py-12">
             <div className="mx-auto max-w-[1440px]">
+              {catMeta.comoElegirBannerWeb ? (
+                <div className="interactive-lift overflow-hidden rounded-2xl">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={catMeta.comoElegirBannerWeb}
+                    alt={catMeta.nombre}
+                    className={`w-full object-cover ${catMeta.comoElegirBannerMovil ? "hidden md:block" : ""}`}
+                  />
+                  {catMeta.comoElegirBannerMovil && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={catMeta.comoElegirBannerMovil}
+                      alt={catMeta.nombre}
+                      className="w-full object-cover md:hidden"
+                    />
+                  )}
+                </div>
+              ) : (
               <div className="interactive-lift overflow-hidden rounded-2xl" style={{ background: "#EAF8F7" }}>
 
                 {/* Header con título y foca */}
@@ -989,6 +993,7 @@ export default function CategoriasPage() {
                 </div>
 
               </div>
+              )}
             </div>
           </section>
         )

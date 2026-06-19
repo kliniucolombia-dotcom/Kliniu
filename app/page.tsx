@@ -142,100 +142,31 @@ export default async function Home() {
       </section>
 
       {/* ── Features strip ── */}
-      <section className="home-reveal relative overflow-visible bg-[#0C535B] py-6">
-        <div className="mx-auto max-w-[1440px] px-4 sm:px-6">
-          <div className="flex items-center gap-6">
-            <div className="grid flex-1 grid-cols-3 gap-4 sm:grid-cols-5">
-              {features.map((f) => (
-                <div
-                  key={f.titulo}
-                  className="flex min-w-0 flex-col items-center gap-2 text-center text-white"
-                >
-                  <img src={f.icon} alt={f.titulo} className="feature-icon-pop h-9 w-9 object-contain brightness-0 invert sm:h-10 sm:w-10" />
-                  <div className="min-w-0">
-                    <p className="whitespace-pre-line text-[10px] font-bold leading-tight sm:text-xs">{f.titulo}</p>
-                    <p className="mt-0.5 hidden whitespace-pre-line text-[10px] leading-4 text-white/65 sm:block">{f.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="hidden w-44 shrink-0 md:block lg:w-56" style={{ marginTop: "-60px", marginBottom: "-60px" }}>
-              <Image
-                src="/foca-ok-kliniu-original.png"
-                alt="Foca Kliniu"
-                width={224}
-                height={280}
-                className="h-auto w-full object-contain"
-                style={{ height: "auto" }}
-              />
-            </div>
-          </div>
-        </div>
+      <section className="home-reveal">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/banners-web/BANNER-FINALES-12.png" alt="Kliniu" className="hidden w-full object-cover md:block" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/banners-responsive/BANNER-FINALES-34.png" alt="Kliniu" className="w-full object-cover md:hidden" />
       </section>
 
       {/* ── Dos CTAs ── */}
       <section className="home-reveal bg-white px-4 py-10 sm:px-6 md:py-16">
         <div className="mx-auto grid max-w-[1440px] gap-4 md:grid-cols-2 md:gap-5">
-          {/* Asesoría */}
-          <div className="motion-card interactive-lift flex overflow-hidden rounded-2xl border border-black/8" style={{ background: "#EAF8F7" }}>
-            <div className="flex flex-1 flex-col justify-center p-6 sm:p-8 md:max-w-[52%]">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#27B1B8]">
-                Asesoría personalizada
-              </p>
-              <h3 className="mt-3 text-lg font-extrabold leading-snug tracking-tight text-[#0C535B] sm:text-xl">
-                Te ayudamos a elegir la mejor solución
-              </h3>
-              <p className="mt-2 text-sm leading-6 text-[#5a7a7c]">
-                Nuestro equipo experto te acompaña en cada paso.
-              </p>
-              <WhatsAppAsesor className="mt-5 inline-flex w-fit items-center gap-2 rounded-full bg-[#0C535B] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90">
-                Hablar con un asesor
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                  <path d="M12 0C5.373 0 0 5.373 0 12c0 2.073.528 4.024 1.455 5.726L.057 24l6.434-1.383C8.055 23.507 9.987 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.883 0-3.655-.506-5.183-1.393l-.372-.22-3.819.822.839-3.701-.243-.381A9.937 9.937 0 0 1 2 12c0-5.514 4.486-10 10-10s10 4.486 10 10-4.486 10-10 10z"/>
-                </svg>
-              </WhatsAppAsesor>
-            </div>
-            <div className="relative hidden min-h-[210px] flex-1 md:block">
-              <Image
-                src="/banner-asesoria-kliniu.png"
-                alt="Asesor Kliniu"
-                fill
-                sizes="(min-width: 768px) 420px, 0px"
-                className="image-lift object-cover object-center"
-              />
-            </div>
-          </div>
+          {/* Asesoría → WhatsApp */}
+          <a href="https://wa.me/573125860921" target="_blank" rel="noreferrer" className="interactive-lift block overflow-hidden rounded-2xl">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/banners-web/BANNER-FINALES-13.png" alt="Asesoría Kliniu" className="hidden w-full object-cover md:block" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/banners-responsive/BANNER-FINALES-32.png" alt="Asesoría Kliniu" className="w-full object-cover md:hidden" />
+          </a>
 
-          {/* Reposición */}
-          <div className="motion-card interactive-lift flex overflow-hidden rounded-2xl border border-black/8" style={{ background: "#EAF8F7" }}>
-            <div className="flex flex-1 flex-col justify-center p-6 sm:p-8 md:max-w-[52%]">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#27B1B8]">
-                Reposición fácil y rápida
-              </p>
-              <h3 className="mt-3 text-lg font-extrabold leading-snug tracking-tight text-[#111] sm:text-xl">
-                Insumos que tu espacio necesita, siempre a tiempo
-              </h3>
-              <p className="mt-2 text-sm leading-6 text-[#6e7379]">
-                Compra recurrente que facilita tu operación.
-              </p>
-              <Link
-                href="/categorias"
-                className="mt-5 inline-flex w-fit items-center gap-2 rounded-full bg-[#0C535B] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
-              >
-                Ver insumos y repuestos →
-              </Link>
-            </div>
-            <div className="relative hidden min-h-[210px] flex-1 md:block">
-              <Image
-                src="/bodegon-insumos.png"
-                alt="Insumos Kliniu"
-                fill
-                sizes="(min-width: 768px) 420px, 0px"
-                className="image-lift object-contain object-center p-2"
-              />
-            </div>
-          </div>
+          {/* Insumos → /categorias?tipo=insumos */}
+          <Link href="/categorias?tipo=insumos" className="interactive-lift block overflow-hidden rounded-2xl">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/banners-web/BANNER-FINALES-14.png" alt="Insumos Kliniu" className="hidden w-full object-cover md:block" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/banners-responsive/BANNER-FINALES-33.png" alt="Insumos Kliniu" className="w-full object-cover md:hidden" />
+          </Link>
         </div>
       </section>
 

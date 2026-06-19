@@ -806,17 +806,13 @@ export default function ProductoDetallePage() {
       </section>
 
       {/* ── Trust bar ── */}
-      <section className="border-y border-black/8 bg-[#f8fafa]">
-        <div className="mx-auto max-w-[1440px] px-6 py-5">
-          <div className="flex divide-x divide-black/8">
-            {trustBar.map((t) => (
-              <div key={t.label} className="flex flex-1 items-center gap-3 px-4 first:pl-0 last:pr-0">
-                <span className="shrink-0 text-[#27B1B8]">{t.icon}</span>
-                <span className="text-xs font-semibold leading-snug text-[#0C535B]">{t.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+      <section className="mx-auto max-w-[1440px] px-6 py-5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/banners-web/BANNER-FINALES-21.png"
+          alt="Kliniu"
+          className="w-full object-cover"
+        />
       </section>
 
       {/* ── Related products ── */}

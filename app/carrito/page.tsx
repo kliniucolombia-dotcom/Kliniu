@@ -284,19 +284,9 @@ export default function CarritoPage() {
       </section>
 
       {/* Trust bar */}
-      <section className="border-y border-black/6 bg-[#f8f8f7]">
-        <div className="mx-auto max-w-[1440px] px-6 py-5">
-          <div className="flex flex-wrap items-center justify-around gap-6">
-            {trustItems.map((t) => (
-              <div key={t.label} className="flex items-center gap-3">
-                <span className="text-2xl">{t.icon}</span>
-                <span className="whitespace-pre-line text-xs font-semibold leading-tight text-[#0C535B]">
-                  {t.label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+      <section className="mx-auto max-w-[1440px] px-6 py-5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/banners-web/BANNER FINALES.png" alt="Kliniu" className="w-full object-cover" />
       </section>
 
       {/* Productos recomendados */}
