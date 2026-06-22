@@ -100,7 +100,7 @@ export default function ContactForm() {
         <div className="interactive-lift mx-auto grid w-full max-w-[1180px] gap-6 rounded-lg bg-[#eaf2f2] px-5 py-6 md:grid-cols-[220px_minmax(0,520px)_240px] md:items-center md:justify-center md:gap-7 md:px-8 xl:px-12">
           {/* Intro */}
           <div className="flex flex-col md:min-h-[235px]">
-            <h2 className="animated-heading max-w-none text-[24px] font-black leading-[0.95] tracking-tight text-[#073F43] md:max-w-[220px]">
+            <h2 className="md:animated-heading max-w-none text-[24px] font-black leading-[0.95] tracking-tight text-[#073F43] md:max-w-[220px]">
               Cuéntanos cómo podemos ayudarte
             </h2>
             <p className="mt-4 hidden max-w-[300px] text-[13px] font-semibold leading-[1.15] text-black md:block">

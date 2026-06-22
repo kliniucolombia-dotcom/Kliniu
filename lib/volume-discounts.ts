@@ -65,11 +65,11 @@ const TOALLA_CZ_NEGRO_METALICO   = `${BASE}/toalla-cz-negro-metalico.png`;
 export const TIPO_VARIANTES: Record<string, { label: string; slugSuffix: string; image?: string }[]> = {
   "dispensador-xpert-professional-para-jabon-espuma": [
     { label: "Bolsa", slugSuffix: "", image: XPERT_IMG_BOLSA },
-    { label: "Frasco", slugSuffix: "--frasco", image: XPERT_IMG_FRASCO },
+    { label: "Contenedor", slugSuffix: "--frasco", image: XPERT_IMG_FRASCO },
   ],
   "dispensador-xpert-professional-para-jabon-liquido": [
     { label: "Bolsa", slugSuffix: "", image: XPERT_IMG_BOLSA },
-    { label: "Frasco", slugSuffix: "--frasco", image: XPERT_IMG_FRASCO },
+    { label: "Contenedor", slugSuffix: "--frasco", image: XPERT_IMG_FRASCO },
   ],
   "dispensador-papel-higienico-institucional": [
     { label: "Chapa Plástica", slugSuffix: "" },
