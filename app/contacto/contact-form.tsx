@@ -97,13 +97,13 @@ export default function ContactForm() {
   return (
     <section className="home-reveal overflow-hidden bg-white py-12">
       <div className="mx-auto w-full max-w-[1440px] overflow-hidden px-6">
-        <div className="interactive-lift mx-auto grid w-full max-w-[1180px] gap-8 rounded-lg bg-[#eaf2f2] px-8 py-6 md:grid-cols-[220px_minmax(0,520px)_240px] md:items-center md:justify-center md:gap-7 xl:px-12">
+        <div className="interactive-lift mx-auto grid w-full max-w-[1180px] gap-6 rounded-lg bg-[#eaf2f2] px-5 py-6 md:grid-cols-[220px_minmax(0,520px)_240px] md:items-center md:justify-center md:gap-7 md:px-8 xl:px-12">
           {/* Intro */}
-          <div className="flex min-h-[235px] flex-col">
-            <h2 className="animated-heading max-w-[220px] text-[24px] font-black leading-[0.95] tracking-tight text-[#073F43]">
+          <div className="flex flex-col md:min-h-[235px]">
+            <h2 className="animated-heading max-w-none text-[24px] font-black leading-[0.95] tracking-tight text-[#073F43] md:max-w-[220px]">
               Cuéntanos cómo podemos ayudarte
             </h2>
-            <p className="mt-4 max-w-[230px] text-[13px] font-semibold leading-[1.15] text-black">
+            <p className="mt-4 hidden max-w-[300px] text-[13px] font-semibold leading-[1.15] text-black md:block">
               Completa el formulario y te contactamos lo antes posible.
             </p>
             <Image
@@ -111,7 +111,7 @@ export default function ContactForm() {
               alt="Foca Kliniu pensativa"
               width={190}
               height={190}
-              className="float-soft mt-auto w-[190px] object-contain"
+              className="float-soft mt-auto hidden w-[190px] object-contain md:block"
             />
           </div>
 
@@ -189,7 +189,7 @@ export default function ContactForm() {
           </div>
 
           {/* Help options */}
-          <div className="min-w-0">
+          <div className="hidden min-w-0 md:block">
             <h3 className="text-[14px] font-black text-black">¿En que podemos ayudarte?</h3>
             <div className="motion-list mt-5 space-y-4">
               {helpOptions.map((opt) => (

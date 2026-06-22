@@ -127,7 +127,7 @@ export default function QuienesSomosPage() {
               segura e inteligente.
             </p>
           </div>
-          <div className="interactive-lift flex items-center justify-center overflow-hidden rounded-2xl bg-[#f8f8f7]">
+          <div className="interactive-lift hidden items-center justify-center overflow-hidden rounded-2xl bg-[#f8f8f7] md:flex">
             <Image
               src="/banner-foto-nosotros.png"
               alt="Productos Kliniu en ambiente de baño"
@@ -168,7 +168,7 @@ export default function QuienesSomosPage() {
                 <div className="mt-4 h-0.5 w-[70px] bg-white" />
               </div>
             </div>
-            <div className="nosotros-foca pointer-events-none absolute -bottom-[46px] left-1/2 w-[245px] -translate-x-1/2 sm:-bottom-[86px] sm:left-[58%] sm:w-[330px] lg:w-[360px]">
+            <div className="nosotros-foca pointer-events-none absolute -bottom-[22px] left-1/2 w-[340px] -translate-x-1/2 sm:-bottom-[70px] sm:left-[58%] sm:w-[330px] lg:w-[360px]">
               <Image
                 src="/foca-vision-cutout.png"
                 alt=""
@@ -205,7 +205,7 @@ export default function QuienesSomosPage() {
                 <div className="mt-4 h-0.5 w-[70px] bg-white" />
               </div>
             </div>
-            <div className="nosotros-foca pointer-events-none absolute -bottom-[64px] left-1/2 w-[205px] -translate-x-1/2 sm:-bottom-[86px] sm:left-auto sm:right-1 sm:w-[285px] sm:translate-x-0 lg:w-[310px]">
+            <div className="nosotros-foca pointer-events-none absolute -bottom-[36px] left-1/2 w-[265px] -translate-x-1/2 sm:-bottom-[70px] sm:left-auto sm:right-1 sm:w-[285px] sm:translate-x-0 lg:w-[310px]">
               <Image
                 src="/foca-mision-cutout.png"
                 alt=""
@@ -261,25 +261,18 @@ export default function QuienesSomosPage() {
             />
 
             <div className="relative z-10 grid min-h-[200px] bg-white md:min-h-[315px] md:grid-cols-[30%_1fr] md:bg-transparent lg:min-h-[330px]">
-              <div className="bg-[#0C535B] px-6 py-8 text-white md:bg-transparent md:pl-12 md:pr-8 lg:pl-14">
+              <div className="bg-[#0C535B] px-8 py-8 text-center text-white md:bg-transparent md:pl-12 md:pr-8 md:text-left lg:pl-14">
                 <h3 className="text-2xl font-extrabold tracking-tight sm:text-3xl md:text-4xl">
                   Calidad
                 </h3>
-                <div className="mt-3 h-0.5 w-16 bg-white" />
-                <p className="mt-4 max-w-[250px] text-sm font-semibold leading-5 md:text-[13px] md:leading-[1.25]">
+                <div className="mx-auto mt-3 h-0.5 w-16 bg-white md:mx-0" />
+                <p className="mx-auto mt-4 max-w-[270px] text-sm font-semibold leading-5 md:mx-0 md:text-[13px] md:leading-[1.25]">
                   Trabajamos bajo los más altos estándares de calidad para garantizar soluciones
                   confiables, seguras y duraderas.
                 </p>
               </div>
 
               <div className="relative flex flex-col justify-center gap-7 px-6 py-10 sm:px-10 md:pl-20 md:pr-8 lg:pl-24 lg:pr-12">
-                <Image
-                  src="/foca-calidad.png"
-                  alt=""
-                  width={260}
-                  height={203}
-                  className="pointer-events-none mx-auto -mb-3 mt-[-12px] block h-auto w-[150px] object-contain md:hidden"
-                />
                 <div className="grid grid-cols-2 items-end gap-x-7 gap-y-7 sm:grid-cols-3 lg:grid-cols-7">
                 {certificaciones.map((cert) => (
                   <figure

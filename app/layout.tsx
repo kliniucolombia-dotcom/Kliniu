@@ -44,7 +44,7 @@ export default async function RootLayout({
       className={`${figtree.variable} h-full antialiased`}
       data-scroll-behavior="smooth"
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col bg-[#050C14]">
         <ProductsProvider initialProducts={initialProducts}>
           <CartProvider
             key={cartProviderKey}

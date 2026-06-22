@@ -20,7 +20,7 @@ const colContacto = [
 
 export default function SiteFooter() {
   return (
-    <footer className="relative overflow-hidden" style={{ background: "#050C14", color: "#fff" }}>
+    <footer className="relative mb-[-4rem] mt-10 overflow-hidden pb-[4rem] md:mt-0 lg:mb-0 lg:pb-0" style={{ background: "#050C14", color: "#fff" }}>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_48%_18%,rgba(111,199,195,0.56)_0%,rgba(24,121,121,0.42)_28%,rgba(5,12,20,0)_66%)]" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(100deg,#020814_0%,#052c33_33%,#0d6e6d_53%,#062d35_73%,#020814_100%)] opacity-90" />
       <div className="relative z-10 mx-auto max-w-[1440px] px-8 py-14 sm:px-10 md:px-16 md:py-16 lg:px-24">

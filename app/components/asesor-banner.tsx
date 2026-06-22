@@ -44,7 +44,7 @@ const advisorFeatures = [
 
 export default function AsesorBanner() {
   return (
-    <section className="relative left-1/2 w-screen -translate-x-1/2 bg-[#f3f3f3] px-5 py-5 md:px-0 md:py-0">
+    <section className="relative left-1/2 w-screen -translate-x-1/2 bg-[#f3f3f3] px-5 pb-6 pt-8 md:px-0 md:py-0">
       <div className="mx-auto grid w-full max-w-[1296px] items-center gap-5 px-4 md:min-h-[136px] md:grid-cols-[230px_minmax(260px,1fr)_minmax(430px,1.35fr)_220px] md:gap-7 md:px-8">
         <div className="relative mx-auto -mb-5 -mt-10 h-[190px] w-[170px] self-end md:-mb-6 md:-mt-8 md:h-[180px] md:w-[190px]">
           <Image
@@ -61,12 +61,12 @@ export default function AsesorBanner() {
           <p className="text-2xl font-black leading-none text-[#0C535B] md:text-[24px]">
             ¿Necesitas ayuda para elegir?
           </p>
-          <p className="mt-3 text-[15px] font-semibold leading-[1.05] text-[#0C535B] md:max-w-[360px] md:text-[17px]">
+          <p className="mt-3 hidden text-[15px] font-semibold leading-[1.05] text-[#0C535B] md:block md:max-w-[360px] md:text-[17px]">
             Nuestro equipo de expertos está listo para asesorarte sin compromiso
           </p>
         </div>
 
-        <div className="grid gap-4 text-[#0C535B] sm:grid-cols-3 md:gap-5">
+        <div className="hidden gap-4 text-[#0C535B] md:grid md:grid-cols-3 md:gap-5">
           {advisorFeatures.map((feature) => (
             <div key={feature.title} className="flex items-center gap-3 md:justify-center">
               <span className="shrink-0">{feature.icon}</span>

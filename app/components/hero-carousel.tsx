@@ -156,8 +156,8 @@ export default function HeroCarousel() {
                         >
                           <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                           <span className="min-w-0">
-                            <span className="block whitespace-nowrap text-[8px] font-extrabold leading-tight">{btn.label}</span>
-                            {btn.sub && <span className="block text-[7px] font-semibold leading-tight text-white/80">{btn.sub}</span>}
+                            <span className="block whitespace-nowrap text-[11px] font-extrabold leading-tight">{btn.label}</span>
+                            {btn.sub && <span className="hidden text-[7px] font-semibold leading-tight text-white/80 sm:block">{btn.sub}</span>}
                           </span>
                         </Link>
                       ) : (
@@ -169,8 +169,8 @@ export default function HeroCarousel() {
                         >
                           <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                           <span className="min-w-0">
-                            <span className="block whitespace-nowrap text-[8px] font-extrabold leading-tight">{btn.label}</span>
-                            {btn.sub && <span className="block text-[7px] font-semibold leading-tight text-[#075f68]/70">{btn.sub}</span>}
+                            <span className="block whitespace-nowrap text-[11px] font-extrabold leading-tight">{btn.label}</span>
+                            {btn.sub && <span className="hidden text-[7px] font-semibold leading-tight text-[#075f68]/70 sm:block">{btn.sub}</span>}
                           </span>
                         </button>
                       )

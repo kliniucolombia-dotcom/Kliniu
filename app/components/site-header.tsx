@@ -410,9 +410,9 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
                   <Image
                     src="/foca-pensativa.png"
                     alt="Foca Kliniu"
-                    width={82}
-                    height={78}
-                    className="mb-4 h-[72px] w-[76px] object-contain"
+                    width={185}
+                    height={175}
+                    className="mb-4 h-[175px] w-auto object-contain"
                   />
                   <p className="max-w-[178px] text-[16px] font-extrabold leading-[1.25] text-[#064f59]">
                     ¿No sabes cuál necesitas?
@@ -431,7 +431,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
       </header>
 
       {/* ── Bottom Navigation — mobile only ── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-black/10 bg-white shadow-[0_-4px_20px_rgba(15,23,42,0.08)] lg:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white shadow-[0_-4px_20px_rgba(15,23,42,0.08)] lg:hidden">
         {/* Panel Más */}
         {masAbierto && (
           <>
@@ -446,7 +446,12 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
                   key={item.href}
                   href={item.href}
                   onClick={() => setMasAbierto(false)}
-                  className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-[#0C535B] transition-colors hover:bg-[#f0fafa] hover:text-[#27B1B8]"
+                  aria-current={item.active ? "page" : undefined}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${
+                    item.active
+                      ? "bg-[#e8f5f5] text-[#27B1B8] shadow-[inset_3px_0_0_#27B1B8]"
+                      : "text-[#0C535B] hover:bg-[#f0fafa] hover:text-[#27B1B8]"
+                  }`}
                 >
                   {item.icon}
                   {item.label}

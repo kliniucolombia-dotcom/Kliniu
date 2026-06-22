@@ -165,7 +165,7 @@ export default function ContactoPage() {
         <div className="mx-auto max-w-[1440px] px-5">
           <div className="grid gap-8 lg:grid-cols-[280px_1fr] lg:gap-10">
             {/* Left */}
-            <div className="flex flex-col lg:min-h-[430px]">
+            <div className="hidden flex-col lg:flex lg:min-h-[430px]">
               <h2 className="text-3xl font-black leading-[0.95] tracking-tight text-[#0C535B]">
                 Países donde
                 <br />

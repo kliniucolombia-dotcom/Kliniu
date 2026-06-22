@@ -40,6 +40,7 @@ function DropdownFiltro({
   onChange: (values: string[]) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [alignRight, setAlignRight] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -58,11 +59,19 @@ function DropdownFiltro({
     );
   };
 
+  const handleOpen = () => {
+    if (!open && ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      setAlignRight(rect.left + 220 > window.innerWidth - 8);
+    }
+    setOpen((p) => !p);
+  };
+
   return (
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((p) => !p)}
+        onClick={handleOpen}
         className="inline-flex items-center gap-1.5 rounded-full border border-black/12 bg-white px-4 py-2 text-sm font-medium text-[#111] transition-colors hover:border-[#27B1B8]/50"
       >
         {label}
@@ -76,7 +85,7 @@ function DropdownFiltro({
         </svg>
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-40 mt-1.5 min-w-[180px] rounded-2xl border border-black/8 bg-white p-2 shadow-[0_8px_28px_rgba(0,0,0,0.12)]">
+        <div className={`absolute top-full z-40 mt-1.5 w-max min-w-[180px] rounded-2xl border border-black/8 bg-white p-2 shadow-[0_8px_28px_rgba(0,0,0,0.12)] ${alignRight ? "right-0" : "left-0"}`}>
           {opciones.map((opt) => (
             <label
               key={opt}
@@ -244,7 +253,7 @@ function LandingCategorias({ onSelect }: { onSelect: (cat: string) => void }) {
           <h1 className="text-3xl font-extrabold tracking-tight text-[#0C535B]">
             Encuentra tu dispensador ideal
           </h1>
-          <p className="mt-2 text-sm text-[#6e7379]">
+          <p className="mt-2 hidden text-sm text-[#6e7379] md:block">
             Selecciona la categoría que necesitas
           </p>
         </div>
@@ -283,9 +292,9 @@ function LandingCategorias({ onSelect }: { onSelect: (cat: string) => void }) {
               <Image
                 src="/foca-pensativa.png"
                 alt="Kliniu"
-                width={96}
-                height={96}
-                className="image-lift object-contain"
+                width={210}
+                height={210}
+                className="image-lift h-[190px] w-auto object-contain md:h-[140px]"
               />
               <div>
                 <p className="text-sm font-bold leading-snug text-[#0C535B]">
@@ -504,7 +513,7 @@ function InsumosRepuestosPage({
             className="hidden object-cover object-center md:block"
           />
           <Image
-            src="/banners-responsive/BANNER FINALES-31.jpg"
+            src="/resp-banner-insumos.jpg"
             alt="Insumos y repuestos Kliniu"
             fill
             priority
@@ -512,6 +521,16 @@ function InsumosRepuestosPage({
             sizes="100vw"
             className="object-cover object-center md:hidden"
           />
+          <div className="absolute inset-0 flex items-center md:hidden">
+            <div className="px-7">
+              <p className="text-[clamp(28px,8vw,42px)] font-black leading-[1.05] text-[#073F43]">
+                Insumos
+              </p>
+              <p className="text-[clamp(28px,8vw,42px)] font-black leading-[1.05] text-[#27B1B8]">
+                y repuestos
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -521,13 +540,13 @@ function InsumosRepuestosPage({
         </h2>
 
         <div className="mb-7 flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-md border border-[#073F43] px-3 py-1.5 text-xs font-black text-[#073F43]">
+          <span className="inline-flex items-center gap-1.5 px-1 py-1.5 text-xs font-bold text-[#0C535B]">
             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="4" y1="6" x2="20" y2="6" />
               <line x1="8" y1="12" x2="16" y2="12" />
               <line x1="11" y1="18" x2="13" y2="18" />
             </svg>
-            Filtro
+            Filtros
           </span>
           <button
             type="button"
@@ -537,7 +556,7 @@ function InsumosRepuestosPage({
           >
             Borrar Filtros
           </button>
-          <div className="ml-auto flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
             {Object.entries(opcionesFiltros).filter(([, opts]) => opts.length > 0).map(([label, opciones]) => (
               <DropdownFiltro
                 key={label}
@@ -585,7 +604,7 @@ function InsumosRepuestosPage({
         )}
       </section>
 
-      <section className="mx-auto max-w-[1440px] px-4 pb-10 sm:px-6">
+      <section className="hidden md:block mx-auto max-w-[1440px] px-4 pb-10 sm:px-6">
         <div className="home-reveal interactive-lift relative aspect-[4500/2083] overflow-hidden rounded-2xl bg-[#ead0bd] shadow-[0_8px_24px_rgba(7,63,67,0.10)] md:aspect-[10000/2084]">
           <Image
             src="/banners-web/BANNER-FINALES-11.png"
@@ -606,7 +625,7 @@ function InsumosRepuestosPage({
         </div>
       </section>
 
-      <section className="home-reveal px-6" style={{ paddingTop: 160, paddingBottom: 140 }}>
+      <section className="home-reveal px-6 pt-16 md:py-[140px]">
         <div className="mx-auto max-w-[1440px]">
           <AsesorBanner />
         </div>
@@ -783,7 +802,7 @@ export default function CategoriasPage() {
 
         {/* Filter bar */}
         <div className="mb-6 flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-black/15 px-4 py-2 text-sm font-semibold text-[#111]">
+          <span className="inline-flex items-center gap-1.5 px-1 py-2 text-sm font-bold text-[#0C535B]">
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
             </svg>
@@ -798,7 +817,7 @@ export default function CategoriasPage() {
               Borrar Filtros
             </button>
           )}
-          <div className="ml-auto flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
             {Object.entries(opcionesFiltros).filter(([, opts]) => opts.length > 0).map(([label, opciones]) => (
               <DropdownFiltro
                 key={label}
@@ -1000,7 +1019,7 @@ export default function CategoriasPage() {
       )}
 
       {/* ── ¿Necesitas ayuda? ── */}
-      <section className="home-reveal px-6" style={{ paddingTop: 160, paddingBottom: 140 }}>
+      <section className="home-reveal px-6 pt-16 md:pb-[140px] md:pt-[160px]">
         <div className="mx-auto max-w-[1440px]">
           <AsesorBanner />
         </div>

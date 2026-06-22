@@ -88,6 +88,7 @@ function ImageGallery({ nombre, images }: { nombre: string; images: string[] }) 
   const [active, setActive] = useState(0);
   const [lightbox, setLightbox] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const mobileScrollRef = useRef<HTMLDivElement | null>(null);
 
   // Zoom state
   const [zoom, setZoom] = useState(1);
@@ -107,6 +108,20 @@ function ImageGallery({ nombre, images }: { nombre: string; images: string[] }) 
 
   const goPrev = () => { setLightboxIndex((i) => (i - 1 + images.length) % images.length); resetZoom(); };
   const goNext = () => { setLightboxIndex((i) => (i + 1) % images.length); resetZoom(); };
+
+  const selectMobileImage = (index: number) => {
+    setActive(index);
+    const scroller = mobileScrollRef.current;
+    if (!scroller) return;
+    scroller.scrollTo({ left: scroller.clientWidth * index, behavior: "smooth" });
+  };
+
+  const updateActiveFromScroll = () => {
+    const scroller = mobileScrollRef.current;
+    if (!scroller) return;
+    const nextIndex = Math.round(scroller.scrollLeft / Math.max(scroller.clientWidth, 1));
+    setActive(Math.min(Math.max(nextIndex, 0), images.length - 1));
+  };
 
   const onWheel = (e: React.WheelEvent) => {
     e.preventDefault();
@@ -149,7 +164,57 @@ function ImageGallery({ nombre, images }: { nombre: string; images: string[] }) 
   return (
     <>
       <div className="mx-auto w-full max-w-[360px] md:max-w-none">
-        <div className="flex gap-3">
+        <div className="md:hidden">
+          <div className="relative">
+            {images.length > 1 && (
+              <span className="absolute left-3 top-3 z-10 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-[#111] shadow-sm">
+                {active + 1}/{images.length}
+              </span>
+            )}
+            <div
+              ref={mobileScrollRef}
+              onScroll={updateActiveFromScroll}
+              className="flex aspect-square w-full snap-x snap-mandatory overflow-x-auto scroll-smooth rounded-none bg-white"
+              style={{ scrollbarWidth: "none" }}
+            >
+              {images.map((src, i) => (
+                <button
+                  key={`mobile-image-${i}`}
+                  type="button"
+                  onClick={() => openLightbox(i)}
+                  className="group relative flex min-w-full snap-center items-center justify-center p-4"
+                  aria-label={`Ver imagen ${i + 1} ampliada`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={src || "/product-placeholder.png"}
+                    alt={`${nombre} ${i + 1}`}
+                    className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.03]"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {images.length > 1 && (
+            <div className="mt-3 flex items-center justify-center gap-2">
+              {images.map((_, i) => (
+                <button
+                  key={`mobile-dot-${i}`}
+                  type="button"
+                  onClick={() => selectMobileImage(i)}
+                  className={`h-2.5 rounded-full transition-all ${
+                    active === i ? "w-2.5 bg-[#2E8BFF]" : "w-2.5 bg-black/12"
+                  }`}
+                  aria-label={`Imagen ${i + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="hidden gap-3 md:flex">
         {/* Thumbnail strip */}
         <div className="hidden flex-col gap-2 md:flex">
           {images.map((src, i) => (
@@ -200,21 +265,6 @@ function ImageGallery({ nombre, images }: { nombre: string; images: string[] }) 
         </button>
         </div>
 
-        {images.length > 1 && (
-          <div className="mt-3 flex items-center justify-center gap-2 md:hidden">
-            {images.map((_, i) => (
-              <button
-                key={`mobile-dot-${i}`}
-                type="button"
-                onClick={() => setActive(i)}
-                className={`h-2.5 rounded-full transition-all ${
-                  active === i ? "w-2.5 bg-[#2E8BFF]" : "w-2.5 bg-black/12"
-                }`}
-                aria-label={`Imagen ${i + 1}`}
-              />
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Lightbox */}
@@ -527,7 +577,7 @@ export default function ProductoDetallePage() {
       </div>
 
       {/* ── Main product section ── */}
-      <section className="mx-auto max-w-[1440px] px-3 pb-12 sm:px-6">
+      <section className="mx-auto max-w-[1440px] px-6 pb-12">
         <div className="grid gap-8 lg:grid-cols-[1fr_480px] lg:gap-10 xl:grid-cols-[1fr_520px]">
 
           {/* LEFT — image gallery */}
@@ -873,7 +923,7 @@ export default function ProductoDetallePage() {
       )}
 
       {/* ── ¿Necesitas ayuda? ── */}
-      <section className="px-6 pb-36 pt-16">
+      <section className="px-6 pt-10 md:pb-36 md:pt-16">
         <div className="mx-auto max-w-[1440px]">
           <AsesorBanner />
         </div>
