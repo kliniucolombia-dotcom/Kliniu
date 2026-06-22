@@ -114,9 +114,9 @@ const paises = [
 
 export default function ContactoPage() {
   return (
-    <main className="min-h-screen overflow-x-hidden bg-white text-[#111]">
+    <main className="min-h-screen bg-white text-[#111]">
       {/* Hero */}
-      <section className="home-reveal relative aspect-[4500/2083] overflow-hidden md:aspect-[10000/2084]">
+      <section className="home-reveal relative aspect-[4500/2083] md:aspect-[10000/2084]" style={{ overflow: "clip" }}>
         <Image
           src="/banners-web/BANNER-FINALES-09.png"
           alt="Atención Kliniu"

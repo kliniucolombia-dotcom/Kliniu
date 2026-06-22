@@ -107,7 +107,7 @@ const certificaciones = [
 
 export default function QuienesSomosPage() {
   return (
-    <main className="min-h-screen overflow-x-hidden bg-white text-[#111]">
+    <main className="min-h-screen bg-white text-[#111]">
       {/* Hero */}
       <section className="nosotros-section-energy home-reveal mx-auto max-w-[1440px] px-4 py-10 sm:px-6 md:py-16">
         <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
@@ -140,12 +140,12 @@ export default function QuienesSomosPage() {
       </section>
 
       {/* Misión / Visión */}
-      <section className="nosotros-section-energy mx-auto w-full max-w-[1480px] px-4 pb-10 pt-2 sm:px-5 md:pb-28">
+      <section className="nosotros-section-energy mx-auto w-full max-w-[1480px] px-4 pb-20 pt-2 sm:px-5 md:pb-28">
         <div className="mx-auto grid gap-8 md:grid-cols-2 md:gap-9">
           {/* Misión */}
           <div
-            className="nosotros-panel relative min-h-[430px] overflow-hidden rounded-[12px] text-white sm:min-h-[410px] md:overflow-visible"
-            style={{ background: "linear-gradient(150deg, #1D7378 0%, #00383B 100%)" }}
+            className="nosotros-panel relative min-h-[430px] rounded-[12px] pb-16 text-white sm:min-h-[410px] sm:pb-20"
+            style={{ background: "linear-gradient(150deg, #1D7378 0%, #00383B 100%)", overflowX: "clip", overflowY: "visible" }}
           >
             <div className="relative z-10 flex flex-col gap-4 px-7 pb-8 pt-9 sm:flex-row sm:gap-6 sm:px-12 sm:pt-14 md:gap-7 lg:px-16">
               <div className="flex h-[88px] w-[88px] shrink-0 items-center justify-center rounded-full border-2 border-white/90 sm:h-[108px] sm:w-[108px]">
@@ -168,12 +168,12 @@ export default function QuienesSomosPage() {
                 <div className="mt-4 h-0.5 w-[70px] bg-white" />
               </div>
             </div>
-            <div className="nosotros-foca pointer-events-none absolute -bottom-[22px] left-1/2 w-[340px] -translate-x-1/2 sm:-bottom-[70px] sm:left-[58%] sm:w-[330px] lg:w-[360px]">
+            <div className="nosotros-foca pointer-events-none absolute -bottom-[32px] right-4 w-[280px] sm:right-4 sm:w-[290px] lg:w-[310px]">
               <Image
                 src="/foca-vision-cutout.png"
                 alt=""
-                width={360}
-                height={228}
+                width={260}
+                height={165}
                 className="h-auto w-full object-contain object-bottom drop-shadow-[0_14px_18px_rgba(0,0,0,0.18)]"
               />
             </div>
@@ -181,8 +181,8 @@ export default function QuienesSomosPage() {
 
           {/* Visión */}
           <div
-            className="nosotros-panel relative min-h-[500px] overflow-hidden rounded-[12px] text-white sm:min-h-[430px] md:min-h-[406px] md:overflow-visible"
-            style={{ background: "linear-gradient(180deg, #43B9AA 0%, #78BFC0 100%)" }}
+            className="nosotros-panel relative min-h-[500px] rounded-[12px] pb-16 text-white sm:min-h-[430px] sm:pb-20 md:min-h-[406px]"
+            style={{ background: "linear-gradient(180deg, #43B9AA 0%, #78BFC0 100%)", overflowX: "clip", overflowY: "visible" }}
           >
             <div className="relative z-10 flex flex-col gap-4 px-7 pb-8 pt-9 sm:flex-row sm:gap-6 sm:px-12 sm:pt-14 md:gap-7 lg:px-16">
               <div className="flex h-[88px] w-[88px] shrink-0 items-center justify-center rounded-full border-2 border-white/90 sm:h-[108px] sm:w-[108px]">

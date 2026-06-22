@@ -12,6 +12,7 @@ const config: Config = {
       },
     },
   },
+  safelist: ["flex", "hidden", "rotate-180"],
   plugins: [],
 };
 

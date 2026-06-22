@@ -499,6 +499,7 @@ function InsumosRepuestosPage({
   hayFiltros: boolean;
   opcionesFiltros: Record<string, string[]>;
 }) {
+  const [filtrosVisibles, setFiltrosVisibles] = useState(false);
   return (
     <main className="min-h-screen bg-white text-[#073F43]">
       <section className="home-reveal bg-white">
@@ -539,24 +540,42 @@ function InsumosRepuestosPage({
           Encuentra tus insumos y repuestos ideales.
         </h2>
 
-        <div className="mb-7 flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-1 py-1.5 text-xs font-bold text-[#0C535B]">
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="4" y1="6" x2="20" y2="6" />
-              <line x1="8" y1="12" x2="16" y2="12" />
-              <line x1="11" y1="18" x2="13" y2="18" />
-            </svg>
-            Filtros
-          </span>
-          <button
-            type="button"
-            onClick={() => setFiltros({})}
-            disabled={!hayFiltros}
-            className="rounded-md px-2 py-1.5 text-xs font-bold text-[#073F43] transition-opacity disabled:cursor-default disabled:opacity-70"
-          >
-            Borrar Filtros
-          </button>
-          <div className="flex flex-wrap gap-2">
+        <div className="mb-7">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setFiltrosVisibles((v) => !v)}
+              className="inline-flex items-center gap-1.5 px-1 py-1.5 text-xs font-bold text-[#0C535B] transition-colors hover:text-[#27B1B8] md:cursor-default"
+            >
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="4" y1="6" x2="20" y2="6" />
+                <line x1="8" y1="12" x2="16" y2="12" />
+                <line x1="11" y1="18" x2="13" y2="18" />
+              </svg>
+              Filtros
+              {hayFiltros && (
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#27B1B8] text-[9px] font-bold text-white">
+                  {Object.values(filtros).flat().length}
+                </span>
+              )}
+              <svg
+                viewBox="0 0 12 12"
+                className={`h-3 w-3 opacity-40 transition-transform md:hidden ${filtrosVisibles ? "rotate-180" : ""}`}
+                fill="currentColor"
+              >
+                <path d="M6 8L1 3h10z" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltros({})}
+              disabled={!hayFiltros}
+              className="rounded-md px-2 py-1.5 text-xs font-bold text-[#073F43] transition-opacity disabled:cursor-default disabled:opacity-0"
+            >
+              Borrar
+            </button>
+          </div>
+          <div className={`filtros-panel mt-2 flex-wrap gap-2${filtrosVisibles ? " open" : ""}`}>
             {Object.entries(opcionesFiltros).filter(([, opts]) => opts.length > 0).map(([label, opciones]) => (
               <DropdownFiltro
                 key={label}
@@ -648,6 +667,7 @@ export default function CategoriasPage() {
   const queryActiva = searchParams.get("q")?.trim().toLowerCase() ?? "";
 
   const [filtros, setFiltros] = useState<FiltrosState>({});
+  const [filtrosVisibles, setFiltrosVisibles] = useState(false);
   const pageKey = `${tipoActivo ?? ""}|${categoriaActiva ?? ""}|${queryActiva}`;
   const [paginaState, setPaginaState] = useState({ key: pageKey, value: 1 });
   const pagina = paginaState.key === pageKey ? paginaState.value : 1;
@@ -661,21 +681,62 @@ export default function CategoriasPage() {
     setPaginaState({ key: pageKey, value: 1 });
   };
 
+  const SINONIMOS: Record<string, string[]> = {
+    servilleta: ["papel", "toalla", "servilleta", "tissue"],
+    toalla: ["papel", "toalla", "servilleta"],
+    jabon: ["jabón", "jabon", "líquido", "liquido", "dispensador"],
+    alcohol: ["alcohol", "gel", "antibacterial", "desinfectante"],
+    papel: ["papel", "toalla", "servilleta", "tissue", "rollo"],
+    crema: ["crema", "dental", "pasta"],
+    acero: ["acero", "inoxidable", "klinox"],
+    inoxidable: ["acero", "inoxidable", "klinox"],
+    dispensador: ["dispensador", "dispenser"],
+    automatico: ["automático", "automatico", "sensor", "sin contacto"],
+    sensor: ["automático", "automatico", "sensor"],
+    hotel: ["hotel", "restaurante", "hospitalidad"],
+    restaurante: ["hotel", "restaurante", "hospitalidad"],
+  };
+
+  function expandirQuery(q: string): string[] {
+    const terms = q.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").split(/\s+/).filter(Boolean);
+    const expanded = new Set<string>();
+    for (const t of terms) {
+      expanded.add(t);
+      for (const [key, syns] of Object.entries(SINONIMOS)) {
+        if (t.includes(key) || key.includes(t)) syns.forEach(s => expanded.add(s));
+      }
+    }
+    return [...expanded];
+  }
+
+  function scoreProducto(p: ProductoCatalogo, terms: string[]): number {
+    const texto = [p.nombre, p.marca, p.descripcion, p.categoria, p.aplicacion,
+      p.especificacionesTecnicas?.map(e => `${e.etiqueta} ${e.valor}`).join(" ")]
+      .filter(Boolean).join(" ").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+    let score = 0;
+    for (const t of terms) {
+      if (p.nombre.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").includes(t)) score += 3;
+      else if (texto.includes(t)) score += 1;
+    }
+    return score;
+  }
+
+  const queryTerms = queryActiva ? expandirQuery(queryActiva) : [];
+
   const productosPorCategoria = products.filter((p) => {
     const esInsumos = tipoActivo === "insumos";
     const coincideCategoria = esInsumos
       ? p.categoria === "Insumos/Repuesto"
       : !categoriaActiva || p.categoria === categoriaActiva;
-    const coincideBusqueda =
-      !queryActiva ||
-      p.nombre.toLowerCase().includes(queryActiva) ||
-      p.marca.toLowerCase().includes(queryActiva) ||
-      (p.descripcion ?? "").toLowerCase().includes(queryActiva);
+    const coincideBusqueda = !queryActiva || scoreProducto(p, queryTerms) > 0;
     return coincideCategoria && coincideBusqueda;
   });
 
   const opcionesFiltros = derivarOpcionesFiltros(productosPorCategoria);
-  const productosFiltrados = aplicarFiltros(productosPorCategoria, filtros);
+  const productosFiltradosBase = aplicarFiltros(productosPorCategoria, filtros);
+  const productosFiltrados = queryActiva
+    ? [...productosFiltradosBase].sort((a, b) => scoreProducto(b, queryTerms) - scoreProducto(a, queryTerms))
+    : productosFiltradosBase;
 
   const totalPaginas = Math.max(1, Math.ceil(productosFiltrados.length / ITEMS_PER_PAGE));
   const productosPagina = productosFiltrados.slice(
@@ -692,11 +753,21 @@ export default function CategoriasPage() {
     startTransition(() => router.replace(`${pathname}?${params.toString()}`));
   };
 
+  // Si hay búsqueda activa, usar la categoría dominante en resultados para el banner
+  const catMetaBanner = (() => {
+    if (!queryActiva || productosPorCategoria.length === 0) return catMeta;
+    const conteo: Record<string, number> = {};
+    for (const p of productosPorCategoria) conteo[p.categoria] = (conteo[p.categoria] ?? 0) + 1;
+    const catDominante = Object.entries(conteo).sort((a, b) => b[1] - a[1])[0][0];
+    const meta = categoriaMeta(catDominante);
+    return meta.bannerImagen ? meta : catMeta;
+  })();
+
   // Hero title
-  const tituloLinea1 = catMeta.heroTitulo1 ?? catMeta.nombre.split(" ").slice(0, 2).join(" ");
-  const tituloLinea2 = catMeta.heroTitulo2 ?? "";
-  const tituloDestacado = catMeta.heroDestacado ?? catMeta.nombre.split(" ").slice(2).join(" ");
-  const dark = catMeta.textoDark ?? false;
+  const tituloLinea1 = catMetaBanner.heroTitulo1 ?? catMetaBanner.nombre.split(" ").slice(0, 2).join(" ");
+  const tituloLinea2 = catMetaBanner.heroTitulo2 ?? "";
+  const tituloDestacado = catMetaBanner.heroDestacado ?? catMetaBanner.nombre.split(" ").slice(2).join(" ");
+  const dark = catMetaBanner.textoDark ?? false;
 
   // Heading for product grid
   const headingCategoria: Record<string, string> = {
@@ -730,24 +801,24 @@ export default function CategoriasPage() {
   return (
     <main className="min-h-screen bg-white text-[#111]">
       {/* ── Hero banner ── */}
-      <section className={`home-reveal relative overflow-hidden ${dark ? "bg-white" : "bg-[#0a0f14]"} ${catMeta.ocultarTextoHero ? "aspect-[4500/2083] md:aspect-[10000/2084]" : catMeta.heroBannerMovil ? "min-h-[46vw] md:min-h-0" : ""}`}>
+      <section className={`home-reveal relative overflow-hidden ${dark ? "bg-white" : "bg-[#0a0f14]"} ${catMetaBanner.ocultarTextoHero ? "aspect-[4500/2083] md:aspect-[10000/2084]" : catMetaBanner.heroBannerMovil ? "min-h-[46vw] md:min-h-0" : ""}`}>
         {/* Imagen desktop */}
-        {(catMeta.heroBannerImagen ?? catMeta.bannerImagen) && (
+        {(catMetaBanner.heroBannerImagen ?? catMetaBanner.bannerImagen) && (
           <Image
-            src={(catMeta.heroBannerImagen ?? catMeta.bannerImagen)!}
-            alt={catMeta.nombre}
+            src={(catMetaBanner.heroBannerImagen ?? catMetaBanner.bannerImagen)!}
+            alt={catMetaBanner.nombre}
             fill
             priority
             unoptimized
             sizes="100vw"
-            className={`object-cover object-center ${catMeta.heroBannerMovil ? "hidden md:block" : ""} ${dark ? "opacity-100" : "opacity-60"}`}
+            className={`object-cover object-center ${catMetaBanner.heroBannerMovil ? "hidden md:block" : ""} ${dark ? "opacity-100" : "opacity-60"}`}
           />
         )}
         {/* Imagen móvil */}
-        {catMeta.heroBannerMovil && (
+        {catMetaBanner.heroBannerMovil && (
           <Image
-            src={catMeta.heroBannerMovil}
-            alt={catMeta.nombre}
+            src={catMetaBanner.heroBannerMovil}
+            alt={catMetaBanner.nombre}
             fill
             priority
             unoptimized
@@ -755,8 +826,8 @@ export default function CategoriasPage() {
             className={`object-cover object-center md:hidden ${dark ? "opacity-100" : "opacity-60"}`}
           />
         )}
-        <div className={`relative mx-auto max-w-[1440px] px-4 py-6 sm:px-8 sm:py-8 md:py-10 ${catMeta.heroBannerMovil ? "hidden md:block" : ""}`}>
-          {!catMeta.ocultarTextoHero && (
+        <div className={`relative mx-auto max-w-[1440px] px-4 py-6 sm:px-8 sm:py-8 md:py-10 ${catMetaBanner.heroBannerMovil ? "hidden md:block" : ""}`}>
+          {!catMetaBanner.ocultarTextoHero && (
           <>
           <h1 className={`text-2xl font-extrabold leading-tight tracking-tight sm:text-4xl md:text-5xl ${dark ? "text-[#0a0f14]" : "text-white"}`}>
             {tituloLinea1}
@@ -768,9 +839,9 @@ export default function CategoriasPage() {
           </p>
           </>
           )}
-          {catMeta.beneficiosHero && !catMeta.ocultarTextoHero && (
+          {catMetaBanner.beneficiosHero && !catMetaBanner.ocultarTextoHero && (
             <div className="mt-4 flex flex-wrap gap-2">
-              {catMeta.beneficiosHero.map((b) => (
+              {catMetaBanner.beneficiosHero.map((b) => (
                 <div
                   key={b.texto}
                   className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold leading-tight sm:gap-2.5 sm:px-3 sm:py-2 sm:text-xs ${
@@ -801,23 +872,37 @@ export default function CategoriasPage() {
         </h2>
 
         {/* Filter bar */}
-        <div className="mb-6 flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-1 py-2 text-sm font-bold text-[#0C535B]">
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
-            </svg>
-            Filtros
-          </span>
-          {hayFiltros && (
+        <div className="mb-6">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => setFiltrosAndReset({})}
-              className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-500 transition-colors hover:bg-red-100"
+              onClick={() => setFiltrosVisibles((v) => !v)}
+              className="inline-flex items-center gap-1.5 px-1 py-2 text-sm font-bold text-[#0C535B] transition-colors hover:text-[#27B1B8]"
             >
-              Borrar Filtros
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+              </svg>
+              Filtros
+              {hayFiltros && (
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#27B1B8] text-[9px] font-bold text-white">
+                  {Object.values(filtros).flat().length}
+                </span>
+              )}
+              <svg viewBox="0 0 12 12" className="h-3 w-3 opacity-40 transition-transform md:hidden" style={{ transform: filtrosVisibles ? "rotate(180deg)" : "rotate(0deg)" }} fill="currentColor">
+                <path d="M6 8L1 3h10z" />
+              </svg>
             </button>
-          )}
-          <div className="flex flex-wrap gap-2">
+            {hayFiltros && (
+              <button
+                type="button"
+                onClick={() => setFiltrosAndReset({})}
+                className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-500 transition-colors hover:bg-red-100"
+              >
+                Borrar Filtros
+              </button>
+            )}
+          </div>
+          <div className={`filtros-panel mt-2 flex-wrap gap-2${filtrosVisibles ? " open" : ""}`}>
             {Object.entries(opcionesFiltros).filter(([, opts]) => opts.length > 0).map(([label, opciones]) => (
               <DropdownFiltro
                 key={label}

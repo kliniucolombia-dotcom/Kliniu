@@ -74,8 +74,8 @@ export default function ComboCarousel({ combos }: { combos: Combo[] }) {
         {/* CTA card */}
         <div className="motion-card interactive-lift relative flex w-[260px] min-w-[260px] shrink-0 flex-col items-center overflow-hidden rounded-[8px] bg-[#b9e5dc] px-8 pb-5 pt-7 text-center text-[#0C535B]">
           <div className="relative z-10">
-            <p className="text-[20px] font-extrabold leading-tight text-[#07131A]">Arma tu combo</p>
-            <p className="mx-auto mt-3 max-w-[13rem] text-[14px] font-bold leading-[1.15] text-[#07131A]">
+            <p className="text-[20px] font-extrabold leading-tight text-[#0A5560]">Arma tu combo</p>
+            <p className="mx-auto mt-3 max-w-[13rem] text-[14px] font-bold leading-[1.15] text-[#0A5560]">
               Te ayudamos a armar la solución perfecta para tus espacios.
             </p>
           </div>

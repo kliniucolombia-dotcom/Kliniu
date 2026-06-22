@@ -18,7 +18,7 @@ const slides: {
     image: "/hero-banner-home-3.jpg",
     imageMobile: "/banners-responsive/BANNER FINALES-22.jpg",
     buttons: [
-      { type: "primary", label: "Comprar Ahora", sub: "Compra productos individuales con envio a todo colombia", href: "/categorias" },
+      { type: "primary", label: "Comprar ahora", sub: "Compra productos individuales con envio a todo colombia", href: "/categorias" },
       { type: "advisor", label: "Cotiza ahora", sub: "Cotiza en volumen y obtén los mejores productos." },
     ],
   },
@@ -151,12 +151,15 @@ export default function HeroCarousel() {
                         <Link
                           key={i}
                           href={btn.href}
-                          className="shine-sweep inline-flex h-[52px] flex-1 items-center gap-1.5 rounded-[3px] px-2 text-white shadow-[0_6px_16px_rgba(15,23,42,0.15)] transition-colors hover:opacity-90"
+                          className="shine-sweep inline-flex h-[52px] flex-1 items-center justify-center gap-1.5 rounded-[3px] px-2 text-white shadow-[0_6px_16px_rgba(15,23,42,0.15)] transition-colors hover:opacity-90"
                           style={{ backgroundColor: "#075f68" }}
                         >
                           <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                          <span className="min-w-0">
-                            <span className="block whitespace-nowrap text-[11px] font-extrabold leading-tight">{btn.label}</span>
+                          <span className="min-w-0 text-center">
+                            <span className="block text-[11px] font-extrabold leading-tight">
+                              <span className="block">{btn.label.split(" ").slice(0, -1).join(" ")}</span>
+                              <span className="block">{btn.label.split(" ").at(-1)}</span>
+                            </span>
                             {btn.sub && <span className="hidden text-[7px] font-semibold leading-tight text-white/80 sm:block">{btn.sub}</span>}
                           </span>
                         </Link>
@@ -165,11 +168,14 @@ export default function HeroCarousel() {
                           key={i}
                           type="button"
                           onClick={() => window.dispatchEvent(new CustomEvent("kliniu:open-advisor"))}
-                          className="inline-flex h-[52px] flex-1 items-center gap-1.5 rounded-[3px] bg-white px-2 text-[#075f68] shadow-[0_6px_16px_rgba(15,23,42,0.1)] transition-colors hover:bg-[#f4fbfb]"
+                          className="inline-flex h-[52px] flex-1 items-center justify-center gap-1.5 rounded-[3px] bg-white px-2 text-[#075f68] shadow-[0_6px_16px_rgba(15,23,42,0.1)] transition-colors hover:bg-[#f4fbfb]"
                         >
                           <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                          <span className="min-w-0">
-                            <span className="block whitespace-nowrap text-[11px] font-extrabold leading-tight">{btn.label}</span>
+                          <span className="min-w-0 text-center">
+                            <span className="block text-[11px] font-extrabold leading-tight">
+                              <span className="block">{btn.label.split(" ").slice(0, -1).join(" ")}</span>
+                              <span className="block">{btn.label.split(" ").at(-1)}</span>
+                            </span>
                             {btn.sub && <span className="hidden text-[7px] font-semibold leading-tight text-[#075f68]/70 sm:block">{btn.sub}</span>}
                           </span>
                         </button>
@@ -182,10 +188,10 @@ export default function HeroCarousel() {
                     {slide.buttons[0].type === "primary" && (
                       <Link
                         href={slide.buttons[0].href}
-                        className="shine-sweep inline-flex h-[23px] w-[150px] items-center justify-center rounded-[3px] px-3 text-white shadow-[0_8px_20px_rgba(15,23,42,0.15)] transition-colors hover:opacity-90"
+                        className="shine-sweep inline-flex h-[34px] w-[170px] items-center justify-center rounded-[4px] px-4 text-white shadow-[0_8px_20px_rgba(15,23,42,0.15)] transition-colors hover:opacity-90"
                         style={{ backgroundColor: "#075f68" }}
                       >
-                        <span className="block text-[10px] font-extrabold leading-none">{slide.buttons[0].label}</span>
+                        <span className="block text-[12px] font-extrabold leading-none">{slide.buttons[0].label}</span>
                       </Link>
                     )}
                   </div>

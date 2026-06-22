@@ -45,7 +45,7 @@ export default function ProductosCarousel({
 
       <div
         ref={scrollRef}
-        className="motion-list scrollbar-hidden mx-11 flex gap-4 overflow-x-auto pb-2 2xl:gap-5"
+        className="motion-list scrollbar-hidden mx-11 flex gap-4 overflow-x-auto px-1 py-3 2xl:gap-5"
       >
         {products.map((p) => {
           const added = addedSlugs.has(p.slug);

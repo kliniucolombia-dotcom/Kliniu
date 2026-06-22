@@ -89,7 +89,7 @@ export default function CarritoPage() {
 
   return (
     <main className="min-h-screen bg-white text-[#111]">
-      <OfferRoulette />
+      {/* <OfferRoulette /> */}
       <section className="mx-auto max-w-[1440px] px-6 py-10">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
@@ -179,7 +179,7 @@ export default function CarritoPage() {
                       </div>
 
                       {/* Precio unitario */}
-                      <div className="text-center">
+                      <div className="pl-24 text-left md:pl-0 md:text-center">
                         <span className="block text-xs font-normal text-[#6e7379] md:hidden">Precio unitario</span>
                         {originalUnitario && (
                           <span className="block text-xs text-[#aaa] line-through">{formatPrecio(originalUnitario)}</span>
@@ -339,24 +339,28 @@ export default function CarritoPage() {
             {recommended.map((p) => (
               <div
                 key={p.slug}
-                className="w-[190px] min-w-[190px] shrink-0 overflow-hidden rounded-2xl border border-black/8 bg-white"
+                className="flex w-[190px] min-w-[190px] shrink-0 flex-col overflow-hidden rounded-2xl border border-black/8 bg-white"
               >
-                <div className="flex h-36 items-center justify-center bg-[#f8f8f7] p-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={p.imagen}
-                    alt={p.nombre}
-                    className="max-h-28 w-auto object-contain"
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
-                  />
-                </div>
-                <div className="p-3">
-                  <p className="text-xs font-semibold leading-snug text-[#111] line-clamp-2">{p.nombre}</p>
-                  <p className="mt-1 font-bold text-[#27B1B8]">{p.precio}</p>
+                <Link href={`/producto/${p.slug}`} className="block">
+                  <div className="flex h-36 items-center justify-center bg-[#f8f8f7] p-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={p.imagen}
+                      alt={p.nombre}
+                      className="max-h-28 w-auto object-contain"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
+                    />
+                  </div>
+                </Link>
+                <div className="flex flex-1 flex-col p-3">
+                  <Link href={`/producto/${p.slug}`} className="block">
+                    <p className="text-xs font-semibold leading-snug text-[#111] line-clamp-2">{p.nombre}</p>
+                    <p className="mt-1 font-bold text-[#27B1B8]">{p.precio}</p>
+                  </Link>
                   <button
                     type="button"
                     onClick={() => addItem({ id: p.slug, nombre: p.nombre, precio: p.precio, imagen: p.imagen, cantidad: 1 })}
-                    className="mt-2 flex w-full items-center justify-center gap-1 rounded-full bg-[#27B1B8] px-3 py-2 text-[11px] font-bold text-white hover:bg-[#1E969B] transition-colors"
+                    className="mt-auto pt-2 flex w-full items-center justify-center gap-1 rounded-full bg-[#27B1B8] px-3 py-2 text-[11px] font-bold text-white hover:bg-[#1E969B] transition-colors"
                   >
                     Agregar al carrito
                   </button>
@@ -368,7 +372,7 @@ export default function CarritoPage() {
       )}
 
       {/* Dato KLINIU banner */}
-      <section className="mx-auto max-w-[1440px] px-6 pb-12">
+      <section className="mx-auto hidden max-w-[1440px] px-6 pb-12 md:block">
         <div className="grid items-center gap-6 overflow-hidden rounded-2xl bg-[#f3f7f7] px-6 py-6 sm:px-10 lg:grid-cols-[240px_minmax(320px,1fr)_1.45fr] lg:gap-10">
           <Image
             src="/foca-ventana-dato.png"

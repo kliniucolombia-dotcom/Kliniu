@@ -216,9 +216,7 @@ export default async function PuntosPage() {
       <section id="categorias" className="bg-[#F5F0FF] px-6 py-16">
         <div className="mx-auto max-w-[1200px]">
           <div className="mb-2 flex items-center justify-center gap-3">
-            <span className="text-[#A78BFA]">✦</span>
-            <h2 className="animated-heading text-center text-3xl font-black text-[#1A1A1A]">Categorías y beneficios</h2>
-            <span className="text-[#A78BFA]">✦</span>
+            <h2 className="text-center text-3xl font-black text-[#1A1A1A]">Categorías y beneficios</h2>
           </div>
           <p className="mt-2 text-center text-sm text-[#666]">Tu categoría depende del total de compra acumulada en el mes.</p>
 
@@ -292,19 +290,14 @@ export default async function PuntosPage() {
 
       {/* ─── CÓMO FUNCIONA + REDIME ─── */}
       <section className="relative overflow-hidden px-6 py-20" style={{ background: "#F5F0FF" }}>
-        {/* Decoración de fondo */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -right-40 -top-40 h-[500px] w-[500px] rounded-full opacity-30" style={{ background: "radial-gradient(circle, #C084FC, transparent 70%)" }} />
-          <div className="absolute -bottom-32 -left-32 h-96 w-96 rounded-full opacity-20" style={{ background: "radial-gradient(circle, #7C3AED, transparent 70%)" }} />
-        </div>
 
         <div className="relative mx-auto max-w-[1200px]">
           {/* Encabezado centrado */}
           <div className="mb-12 text-center">
-            <div className="pulse-ring inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold uppercase tracking-widest text-[#7C3AED]" style={{ background: "rgba(124,58,237,0.10)" }}>
-              ✦ Así funciona el programa
+            <div className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold uppercase tracking-widest text-[#7C3AED]" style={{ background: "rgba(124,58,237,0.10)" }}>
+              Así funciona el programa
             </div>
-            <h2 className="animated-heading mt-4 text-4xl font-black text-[#1A1A1A]">Todo lo que necesitas saber</h2>
+            <h2 className="mt-4 text-4xl font-black text-[#1A1A1A]">Todo lo que necesitas saber</h2>
           </div>
 
           <div className="grid gap-8 lg:grid-cols-2">
@@ -363,8 +356,6 @@ export default async function PuntosPage() {
                 <div className="px-7 py-6">
                   {/* Timeline visual */}
                   <div className="relative flex items-start justify-between gap-2">
-                    {/* Línea de fondo */}
-                    <div className="absolute left-[36px] right-[36px] top-[28px] h-[3px] rounded-full" style={{ background: "linear-gradient(to right, #7C3AED, #A855F7, #7C3AED)" }} />
 
                     {[
                       { emoji: "🗓", label: "Mes 1", sub: "Acumulas compras", active: false },
@@ -373,7 +364,7 @@ export default async function PuntosPage() {
                     ].map((item) => (
                       <div key={item.label} className="relative z-10 flex flex-col items-center text-center">
                         <div
-                          className="puntos-timeline-step flex h-14 w-14 items-center justify-center rounded-2xl text-2xl shadow-md"
+                          className="flex h-14 w-14 items-center justify-center rounded-2xl text-2xl shadow-md"
                           style={{ background: item.active ? "linear-gradient(135deg, #7C3AED, #A855F7)" : "#EDE9FE" }}
                         >
                           {item.emoji}
@@ -390,7 +381,7 @@ export default async function PuntosPage() {
               <div className="interactive-lift overflow-hidden rounded-3xl bg-white shadow-lg" style={{ boxShadow: "0 8px 40px rgba(124,58,237,0.12)" }}>
                 <div className="divide-y divide-[#F0EBFF]">
                   {REDEEM_CHECKS.map((item, i) => (
-                    <div key={i} className="puntos-check-row flex items-start gap-4 px-6 py-4">
+                    <div key={i} className="flex items-start gap-4 border-t border-[#F0EBFF] px-6 py-4 first:border-0">
                       <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-white" style={{ background: "#7C3AED" }}>
                         <svg viewBox="0 0 20 20" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <path d="M4 10l4 4 8-8" strokeLinecap="round" strokeLinejoin="round"/>
@@ -420,8 +411,8 @@ export default async function PuntosPage() {
       <section className="px-6 py-8" style={{ background: "#1A0A3A" }}>
         <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white">
-              <span className="text-xl font-black" style={{ color: "#6B21A8" }}>K</span>
+            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-white p-1">
+              <Image src="/favicon.ico" alt="Kliniu" width={40} height={40} className="h-full w-full object-contain" />
             </div>
             <div>
               <p className="font-black text-white">KLINIU®</p>

@@ -95,8 +95,8 @@ export default function ContactForm() {
     setForm((c) => ({ ...c, [field]: e.target.value }));
 
   return (
-    <section className="home-reveal overflow-hidden bg-white py-12">
-      <div className="mx-auto w-full max-w-[1440px] overflow-hidden px-6">
+    <section className="home-reveal bg-white py-12" style={{ overflowX: "clip" }}>
+      <div className="mx-auto w-full max-w-[1440px] px-6" style={{ overflowX: "clip" }}>
         <div className="interactive-lift mx-auto grid w-full max-w-[1180px] gap-6 rounded-lg bg-[#eaf2f2] px-5 py-6 md:grid-cols-[220px_minmax(0,520px)_240px] md:items-center md:justify-center md:gap-7 md:px-8 xl:px-12">
           {/* Intro */}
           <div className="flex flex-col md:min-h-[235px]">

@@ -57,10 +57,12 @@ const BASE = "https://yotsdpjfnsrejtoufkuu.supabase.co/storage/v1/object/public/
 const XPERT_IMG_FRASCO = `${BASE}/17816203903N-xpert-frasco-contenedor.jpeg`;
 const XPERT_IMG_BOLSA  = `${BASE}/17816203903N-xpert-bolsa.jpeg`;
 
-const PAPEL_INST_BLANCO_METALICO = `${BASE}/papel-inst-blanco-metalico.png`;
-const PAPEL_INST_NEGRO_METALICO  = `${BASE}/papel-inst-negro-metalico.png`;
-const TOALLA_CZ_BLANCO_METALICO  = `${BASE}/toalla-cz-blanco-metalico.png`;
-const TOALLA_CZ_NEGRO_METALICO   = `${BASE}/toalla-cz-negro-metalico.png`;
+const PAPEL_INST_BLANCO_METALICO  = `${BASE}/papel-inst-blanco-metalico.png`;
+const PAPEL_INST_NEGRO_METALICO   = `${BASE}/papel-inst-negro-metalico.png`;
+const PAPEL_INST_BLANCO_PLASTICO  = `${BASE}/papel-inst-blanco-plastico.png`;
+const TOALLA_CZ_BLANCO_METALICO   = `${BASE}/toalla-cz-blanco-metalico.png`;
+const TOALLA_CZ_NEGRO_METALICO    = `${BASE}/toalla-cz-negro-metalico.png`;
+const TOALLA_CZ_BLANCO_PLASTICO   = `${BASE}/toalla-cz-blanco-plastico.png`;
 
 export const TIPO_VARIANTES: Record<string, { label: string; slugSuffix: string; image?: string }[]> = {
   "dispensador-xpert-professional-para-jabon-espuma": [
@@ -72,15 +74,15 @@ export const TIPO_VARIANTES: Record<string, { label: string; slugSuffix: string;
     { label: "Contenedor", slugSuffix: "--frasco", image: XPERT_IMG_FRASCO },
   ],
   "dispensador-papel-higienico-institucional": [
-    { label: "Chapa Plástica", slugSuffix: "" },
+    { label: "Cierre Plástico", slugSuffix: "", image: PAPEL_INST_BLANCO_PLASTICO },
     { label: "Cierre Metálico", slugSuffix: "--metalico", image: PAPEL_INST_BLANCO_METALICO },
   ],
   "dispensador-de-papel-higienico-institucional": [
-    { label: "Chapa Plástica", slugSuffix: "" },
+    { label: "Cierre Plástico", slugSuffix: "", image: PAPEL_INST_BLANCO_PLASTICO },
     { label: "Cierre Metálico", slugSuffix: "--metalico", image: PAPEL_INST_BLANCO_METALICO },
   ],
   "dispensador-de-toalla-institucional": [
-    { label: "Chapa Plástica", slugSuffix: "" },
+    { label: "Cierre Plástico", slugSuffix: "", image: TOALLA_CZ_BLANCO_PLASTICO },
     { label: "Cierre Metálico", slugSuffix: "--metalico", image: TOALLA_CZ_BLANCO_METALICO },
   ],
 };
