@@ -408,7 +408,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
                 {/* CTA card */}
                 <div className="flex h-[249px] w-[224px] shrink-0 flex-col items-center justify-center rounded-[14px] border border-[#9bdddf] bg-[#e9f7f8] px-7 py-7 text-center">
                   <Image
-                    src="/foca-ok-kliniu-original.png"
+                    src="/foca-pensativa.png"
                     alt="Foca Kliniu"
                     width={82}
                     height={78}
