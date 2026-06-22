@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useCart } from "./cart-provider";
 import type { StoreProduct } from "@/lib/products";
@@ -12,7 +12,27 @@ export default function ProductosCarousel({
 }) {
   const { addItem } = useCart();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScroll, setCanScroll] = useState(false);
   const [addedSlugs, setAddedSlugs] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const updateOverflow = () => {
+      setCanScroll(el.scrollWidth > el.clientWidth + 4);
+    };
+
+    updateOverflow();
+    const observer = new ResizeObserver(updateOverflow);
+    observer.observe(el);
+    window.addEventListener("resize", updateOverflow);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateOverflow);
+    };
+  }, [products.length]);
 
   const scroll = (dir: "left" | "right") => {
     const el = scrollRef.current;
@@ -45,19 +65,21 @@ export default function ProductosCarousel({
   };
 
   return (
-    <div className="relative min-w-0 flex-1">
-      <button
-        type="button"
-        aria-label="Anterior"
-        onClick={() => scroll("left")}
-        className="absolute left-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-xl shadow-md transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"
-      >
-        ‹
-      </button>
+    <div className={`relative min-w-0 max-w-full ${canScroll ? "w-full flex-1" : "w-fit"}`}>
+      {canScroll && (
+        <button
+          type="button"
+          aria-label="Anterior"
+          onClick={() => scroll("left")}
+          className="absolute left-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-xl shadow-md transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"
+        >
+          ‹
+        </button>
+      )}
 
       <div
         ref={scrollRef}
-        className="motion-list scrollbar-hidden mx-11 flex gap-4 overflow-x-auto px-1 py-3 2xl:gap-5"
+        className={`motion-list scrollbar-hidden flex gap-4 overflow-x-auto px-1 py-3 2xl:gap-5 ${canScroll ? "mx-11" : "mx-0"}`}
       >
         {products.map((p) => {
           const added = addedSlugs.has(p.slug);
@@ -106,14 +128,16 @@ export default function ProductosCarousel({
         })}
       </div>
 
-      <button
-        type="button"
-        aria-label="Siguiente"
-        onClick={() => scroll("right")}
-        className="absolute right-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-xl shadow-md transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"
-      >
-        ›
-      </button>
+      {canScroll && (
+        <button
+          type="button"
+          aria-label="Siguiente"
+          onClick={() => scroll("right")}
+          className="absolute right-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-xl shadow-md transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"
+        >
+          ›
+        </button>
+      )}
     </div>
   );
 }
