@@ -558,18 +558,20 @@ body {
   transition: border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
 }
 
-.interactive-lift:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 18px 38px rgba(12, 83, 91, 0.14);
+@media (hover: hover) {
+  .interactive-lift:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 18px 38px rgba(12, 83, 91, 0.14);
+  }
+
+  .interactive-lift:hover .image-lift,
+  .group:hover .image-lift {
+    transform: scale(1.06);
+  }
 }
 
 .image-lift {
   transition: transform 260ms ease;
-}
-
-.interactive-lift:hover .image-lift,
-.group:hover .image-lift {
-  transform: scale(1.06);
 }
 
 .shine-sweep {

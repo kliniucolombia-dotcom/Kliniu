@@ -17,7 +17,19 @@ export default function ProductosCarousel({
   const scroll = (dir: "left" | "right") => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollBy({ left: dir === "right" ? 220 : -220, behavior: "smooth" });
+    if (dir === "right") {
+      if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 4) {
+        el.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        el.scrollBy({ left: 220, behavior: "smooth" });
+      }
+    } else {
+      if (el.scrollLeft <= 4) {
+        el.scrollTo({ left: el.scrollWidth, behavior: "smooth" });
+      } else {
+        el.scrollBy({ left: -220, behavior: "smooth" });
+      }
+    }
   };
 
   const handleAdd = (p: StoreProduct) => {

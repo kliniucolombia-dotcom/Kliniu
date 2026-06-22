@@ -18,8 +18,21 @@ export default function ComboCarousel({ combos }: { combos: Combo[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (dir: "left" | "right") => {
-    if (!scrollRef.current) return;
-    scrollRef.current.scrollBy({ left: dir === "right" ? 240 : -240, behavior: "smooth" });
+    const el = scrollRef.current;
+    if (!el) return;
+    if (dir === "right") {
+      if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 4) {
+        el.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        el.scrollBy({ left: 240, behavior: "smooth" });
+      }
+    } else {
+      if (el.scrollLeft <= 4) {
+        el.scrollTo({ left: el.scrollWidth, behavior: "smooth" });
+      } else {
+        el.scrollBy({ left: -240, behavior: "smooth" });
+      }
+    }
   };
 
   return (

@@ -10,6 +10,7 @@ import { useCart } from "../../components/cart-provider";
 import { useProducts } from "../../components/products-provider";
 import SiteFooter from "../../components/site-footer";
 import QuoteModal from "../../components/quote-modal";
+import ProductosCarousel from "../../components/productos-carousel";
 import { getVolumePricing, TIPO_VARIANTES } from "@/lib/volume-discounts";
 import type { ProductoEspecificacion } from "../../data/catalog";
 
@@ -891,34 +892,10 @@ export default function ProductoDetallePage() {
       {/* ── Related products ── */}
       {relacionados.length > 0 && (
         <section className="mx-auto max-w-[1440px] px-6 py-14">
-          <h2 className="mb-6 text-2xl font-extrabold tracking-tight text-[#111]">
+          <h2 className="mb-6 text-2xl font-extrabold tracking-tight text-[#27B1B8]">
             Productos relacionados
           </h2>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {relacionados.map((p) => (
-              <Link
-                key={p.slug}
-                href={`/producto/${p.slug}`}
-                className="group overflow-hidden rounded-2xl border border-black/8 bg-white transition-shadow hover:shadow-md"
-              >
-                <div className="flex h-44 items-center justify-center bg-white p-4">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={p.imagen}
-                    alt={p.nombre}
-                    className="max-h-36 w-auto object-contain"
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
-                  />
-                </div>
-                <div className="p-4">
-                  <p className="text-sm font-semibold leading-snug text-[#111] group-hover:text-[#27B1B8]">
-                    {p.nombre}
-                  </p>
-                  <p className="mt-1.5 font-bold text-[#27B1B8]">{p.precio}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <ProductosCarousel products={relacionados} />
         </section>
       )}
 

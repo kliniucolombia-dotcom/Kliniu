@@ -144,10 +144,10 @@ export default function QuienesSomosPage() {
         <div className="mx-auto grid gap-8 md:grid-cols-2 md:gap-9">
           {/* Misión */}
           <div
-            className="nosotros-panel relative min-h-[430px] rounded-[12px] pb-16 text-white sm:min-h-[410px] sm:pb-20"
-            style={{ background: "linear-gradient(150deg, #1D7378 0%, #00383B 100%)", overflowX: "clip", overflowY: "visible" }}
+            className="nosotros-panel relative rounded-[12px] text-white"
+            style={{ background: "linear-gradient(150deg, #1D7378 0%, #00383B 100%)" }}
           >
-            <div className="relative z-10 flex flex-col gap-4 px-7 pb-8 pt-9 sm:flex-row sm:gap-6 sm:px-12 sm:pt-14 md:gap-7 lg:px-16">
+            <div className="flex flex-col gap-4 px-7 pb-10 pt-9 sm:flex-row sm:gap-6 sm:px-12 sm:pt-14 md:gap-7 lg:px-16">
               <div className="flex h-[88px] w-[88px] shrink-0 items-center justify-center rounded-full border-2 border-white/90 sm:h-[108px] sm:w-[108px]">
                 <Image
                   src="/nosotros-iconos/mision.png"
@@ -161,30 +161,21 @@ export default function QuienesSomosPage() {
                 <h2 className="text-[30px] font-black uppercase leading-none tracking-normal sm:text-[36px]">
                   MISIÓN
                 </h2>
-                <p className="mt-3 max-w-[390px] text-[18px] font-extrabold leading-[1.05] text-white sm:text-[24px] sm:leading-[0.97]">
+                <p className="mt-3 max-w-[390px] text-[14px] font-bold leading-[1.25] text-white sm:text-[16px]">
                   Nuestra misión es fabricar ideas en productos que ayuden a la limpieza y
                   desinfección.
                 </p>
                 <div className="mt-4 h-0.5 w-[70px] bg-white" />
               </div>
             </div>
-            <div className="nosotros-foca pointer-events-none absolute -bottom-[32px] right-4 w-[280px] sm:right-4 sm:w-[290px] lg:w-[310px]">
-              <Image
-                src="/foca-vision-cutout.png"
-                alt=""
-                width={260}
-                height={165}
-                className="h-auto w-full object-contain object-bottom drop-shadow-[0_14px_18px_rgba(0,0,0,0.18)]"
-              />
-            </div>
           </div>
 
           {/* Visión */}
           <div
-            className="nosotros-panel relative min-h-[500px] rounded-[12px] pb-16 text-white sm:min-h-[430px] sm:pb-20 md:min-h-[406px]"
-            style={{ background: "linear-gradient(180deg, #43B9AA 0%, #78BFC0 100%)", overflowX: "clip", overflowY: "visible" }}
+            className="nosotros-panel relative rounded-[12px] text-white"
+            style={{ background: "linear-gradient(180deg, #2A9D8F 0%, #4AADA8 100%)" }}
           >
-            <div className="relative z-10 flex flex-col gap-4 px-7 pb-8 pt-9 sm:flex-row sm:gap-6 sm:px-12 sm:pt-14 md:gap-7 lg:px-16">
+            <div className="flex flex-col gap-4 px-7 pb-10 pt-9 sm:flex-row sm:gap-6 sm:px-12 sm:pt-14 md:gap-7 lg:px-16">
               <div className="flex h-[88px] w-[88px] shrink-0 items-center justify-center rounded-full border-2 border-white/90 sm:h-[108px] sm:w-[108px]">
                 <Image
                   src="/nosotros-iconos/vision.png"
@@ -198,21 +189,12 @@ export default function QuienesSomosPage() {
                 <h2 className="text-[30px] font-black uppercase leading-none tracking-normal sm:text-[36px]">
                   VISIÓN
                 </h2>
-                <p className="mt-3 max-w-[440px] text-[18px] font-extrabold leading-[1.05] text-white sm:text-[24px] sm:leading-[0.97]">
+                <p className="mt-3 max-w-[440px] text-[14px] font-bold leading-[1.25] text-white sm:text-[16px]">
                   Nuestra visión es ser líderes en el 2.023 en la fabricación y comercialización en
                   Colombia, Centro América y El Caribe de dispensadores e insumos de aseo personal.
                 </p>
                 <div className="mt-4 h-0.5 w-[70px] bg-white" />
               </div>
-            </div>
-            <div className="nosotros-foca pointer-events-none absolute -bottom-[36px] left-1/2 w-[265px] -translate-x-1/2 sm:-bottom-[70px] sm:left-auto sm:right-1 sm:w-[285px] sm:translate-x-0 lg:w-[310px]">
-              <Image
-                src="/foca-mision-cutout.png"
-                alt=""
-                width={310}
-                height={232}
-                className="h-auto w-full object-contain object-bottom drop-shadow-[0_14px_18px_rgba(0,0,0,0.16)]"
-              />
             </div>
           </div>
         </div>

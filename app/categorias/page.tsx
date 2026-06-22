@@ -227,7 +227,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
             }}
             disabled={producto.puedeComprar === false}
             aria-label={`Agregar ${producto.nombre} al carrito`}
-            className={`pulse-ring flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
               agregado ? "bg-[#d4621a] text-white" : "bg-[#F07826] text-white hover:bg-[#d4621a]"
             }`}
           >
@@ -288,14 +288,16 @@ function LandingCategorias({ onSelect }: { onSelect: (cat: string) => void }) {
             ))}
 
             {/* CTA card */}
-            <div className="interactive-lift flex flex-col items-center justify-center gap-4 rounded-2xl border border-[#27B1B8]/25 bg-[#e8f5f5] p-6 text-center">
-              <Image
-                src="/foca-pensativa.png"
-                alt="Kliniu"
-                width={210}
-                height={210}
-                className="image-lift h-[190px] w-auto object-contain md:h-[140px]"
-              />
+            <div className="interactive-lift flex flex-col items-center gap-4 rounded-2xl border border-[#27B1B8]/25 bg-[#e8f5f5] p-6 text-center">
+              <div className="flex h-36 w-full items-center justify-center overflow-hidden rounded-xl px-4 py-3">
+                <Image
+                  src="/foca-pensativa.png"
+                  alt="Kliniu"
+                  width={210}
+                  height={210}
+                  className="image-lift max-h-[112px] w-auto object-contain"
+                />
+              </div>
               <div>
                 <p className="text-sm font-bold leading-snug text-[#0C535B]">
                   ¿No sabes cuál necesitas?

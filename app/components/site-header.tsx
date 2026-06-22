@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "./cart-provider";
+import { useProducts } from "./products-provider";
 import { categoriasData, slugCategoria } from "../data/catalog";
 import WhatsAppAsesor from "./whatsapp-asesor";
 
@@ -25,6 +26,9 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [masAbierto, setMasAbierto] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchRef = useRef<HTMLDivElement | null>(null);
   const lastScrollY = useRef(0);
   const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
@@ -32,6 +36,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
   const searchParams = useSearchParams();
   const menuRef = useRef<HTMLDivElement | null>(null);
   const { totalProducts } = useCart();
+  const { products } = useProducts();
 
   useEffect(() => {
     const onScroll = () => {
@@ -71,11 +76,11 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const query = String(formData.get("q") || "").trim();
+    const q = searchQuery.trim();
+    setSearchFocused(false);
     const params = new URLSearchParams(searchParams.toString());
-    if (query) {
-      params.set("q", query);
+    if (q) {
+      params.set("q", q);
     } else {
       params.delete("q");
     }
@@ -88,6 +93,17 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
     }
     router.push(targetUrl);
   };
+
+  const searchSuggestions = searchQuery.trim().length >= 2
+    ? products
+        .filter((p) =>
+          p.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (p.descripcion || "").toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .slice(0, 6)
+    : [];
+
+  const showSuggestions = searchFocused && searchSuggestions.length > 0;
 
   const bottomNavItems = [
     // ── Principales (visibles) ──
@@ -296,29 +312,62 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
             </nav>
 
             {/* Search */}
-            <form
-              onSubmit={handleSearch}
-              className="flex flex-1 items-center gap-2 rounded-full border border-black/10 bg-[#f8f8f7] px-3 py-2 transition-all focus-within:border-[#27B1B8]/40 focus-within:bg-white sm:px-4 sm:py-2.5"
-            >
-              <svg
-                className="h-4 w-4 shrink-0 text-[#0C535B]/50"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
+            <div ref={searchRef} className="relative flex-1">
+              <form
+                onSubmit={handleSearch}
+                className="flex items-center gap-2 rounded-full border border-black/10 bg-[#f8f8f7] px-3 py-2 transition-all focus-within:border-[#27B1B8]/40 focus-within:bg-white sm:px-4 sm:py-2.5"
               >
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.35-4.35" />
-              </svg>
-              <input
-                key={searchParams.get("q") || ""}
-                name="q"
-                type="search"
-                defaultValue={searchParams.get("q") || ""}
-                placeholder="Buscar productos..."
-                className="w-full bg-transparent text-sm text-[#0C535B] outline-none placeholder:text-[#0C535B]/40"
-              />
-            </form>
+                <svg
+                  className="h-4 w-4 shrink-0 text-[#0C535B]/50"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.35-4.35" />
+                </svg>
+                <input
+                  name="q"
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+                  placeholder="Buscar productos..."
+                  className="w-full bg-transparent text-sm text-[#0C535B] outline-none placeholder:text-[#0C535B]/40"
+                  autoComplete="off"
+                />
+              </form>
+              {showSuggestions && (
+                <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-black/8 bg-white shadow-[0_8px_28px_rgba(0,0,0,0.12)]">
+                  {searchSuggestions.map((p) => (
+                    <button
+                      key={p.slug}
+                      type="button"
+                      onMouseDown={() => {
+                        setSearchQuery("");
+                        setSearchFocused(false);
+                        router.push(`/producto/${p.slug}`);
+                      }}
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[#f0fbfc]"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={p.imagen}
+                        alt=""
+                        className="h-10 w-10 shrink-0 rounded-lg object-contain bg-[#f8f8f7] p-1"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-[#111]">{p.nombre}</p>
+                        <p className="text-xs font-bold text-[#0C535B]">{p.precio}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Account + Cart */}
             <div className="flex shrink-0 items-center gap-3 sm:gap-4">

@@ -151,12 +151,12 @@ export default function HeroCarousel() {
                         <Link
                           key={i}
                           href={btn.href}
-                          className="shine-sweep inline-flex h-[52px] flex-1 items-center justify-center gap-1.5 rounded-[3px] px-2 text-white shadow-[0_6px_16px_rgba(15,23,42,0.15)] transition-colors hover:opacity-90"
+                          className="shine-sweep inline-flex h-[60px] flex-1 items-center justify-center gap-2 rounded-[3px] px-2 text-white shadow-[0_6px_16px_rgba(15,23,42,0.15)] transition-colors hover:opacity-90"
                           style={{ backgroundColor: "#075f68" }}
                         >
-                          <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                          <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                           <span className="min-w-0 text-center">
-                            <span className="block text-[11px] font-extrabold leading-tight">
+                            <span className="block text-[13px] font-extrabold leading-tight">
                               <span className="block">{btn.label.split(" ").slice(0, -1).join(" ")}</span>
                               <span className="block">{btn.label.split(" ").at(-1)}</span>
                             </span>
@@ -168,11 +168,11 @@ export default function HeroCarousel() {
                           key={i}
                           type="button"
                           onClick={() => window.dispatchEvent(new CustomEvent("kliniu:open-advisor"))}
-                          className="inline-flex h-[52px] flex-1 items-center justify-center gap-1.5 rounded-[3px] bg-white px-2 text-[#075f68] shadow-[0_6px_16px_rgba(15,23,42,0.1)] transition-colors hover:bg-[#f4fbfb]"
+                          className="inline-flex h-[60px] flex-1 items-center justify-center gap-2 rounded-[3px] bg-white px-2 text-[#075f68] shadow-[0_6px_16px_rgba(15,23,42,0.1)] transition-colors hover:bg-[#f4fbfb]"
                         >
-                          <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                          <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                           <span className="min-w-0 text-center">
-                            <span className="block text-[11px] font-extrabold leading-tight">
+                            <span className="block text-[13px] font-extrabold leading-tight">
                               <span className="block">{btn.label.split(" ").slice(0, -1).join(" ")}</span>
                               <span className="block">{btn.label.split(" ").at(-1)}</span>
                             </span>
@@ -184,7 +184,7 @@ export default function HeroCarousel() {
                   </div>
                 ) : (
                   /* 1 botón: arriba de la línea de flechas para que no compitan visualmente */
-                  <div className={`absolute ${slide.id === 2 ? "left-[8.5%] top-[31%]" : "left-[10.5%] top-[32.5%]"}`}>
+                  <div className={`absolute ${slide.id === 2 ? "left-[8.5%] top-[31%]" : "left-[10.5%] top-[38%]"}`}>
                     {slide.buttons[0].type === "primary" && (
                       <Link
                         href={slide.buttons[0].href}
