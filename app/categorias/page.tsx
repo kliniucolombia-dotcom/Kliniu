@@ -281,10 +281,10 @@ function LandingCategorias({ onSelect }: { onSelect: (cat: string) => void }) {
             {/* CTA card */}
             <div className="interactive-lift flex flex-col items-center justify-center gap-4 rounded-2xl border border-[#27B1B8]/25 bg-[#e8f5f5] p-6 text-center">
               <Image
-                src="/kliniu-loader-logo.png"
+                src="/foca-pensativa.png"
                 alt="Kliniu"
-                width={64}
-                height={64}
+                width={96}
+                height={96}
                 className="image-lift object-contain"
               />
               <div>
