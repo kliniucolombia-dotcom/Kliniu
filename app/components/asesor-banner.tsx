@@ -44,31 +44,61 @@ const advisorFeatures = [
 
 export default function AsesorBanner() {
   return (
-    <section className="relative left-1/2 w-screen -translate-x-1/2 bg-[#f3f3f3] px-5 pb-6 pt-8 md:px-0 md:py-0">
-      <div className="mx-auto grid w-full max-w-[1296px] items-center gap-5 px-4 md:min-h-[136px] md:grid-cols-[230px_minmax(260px,1fr)_minmax(430px,1.35fr)_220px] md:gap-7 md:px-8">
-        <div className="relative mx-auto -mb-5 -mt-10 h-[190px] w-[170px] self-end md:-mb-6 md:-mt-8 md:h-[180px] md:w-[190px]">
+    <section className="relative left-1/2 w-screen -translate-x-1/2 bg-[#f0f0ee]">
+
+      {/* MÓVIL */}
+      <div className="flex items-center md:hidden">
+        <div className="relative mb-[-20px] h-[200px] w-[160px] shrink-0 self-center">
           <Image
             src="/foca-celular-ayuda.png"
             alt="Foca Kliniu"
             fill
             unoptimized
-            sizes="180px"
+            sizes="160px"
+            className="object-contain object-bottom"
+          />
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col items-start justify-center px-4 py-8">
+          <p className="text-[26px] font-extrabold leading-[1.0] text-[#0C535B]">
+            ¿Necesitas ayuda<br />para elegir?
+          </p>
+          <a
+            href="https://wa.me/573214198831"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#0C535B] px-5 py-2.5 text-sm font-extrabold text-white transition-opacity hover:opacity-90"
+          >
+            <span>Hablar con un asesor</span>
+            <Image src="/icono-whatsapp.png" alt="" width={16} height={16} className="h-4 w-4 brightness-0 invert" />
+          </a>
+        </div>
+      </div>
+
+      {/* DESKTOP */}
+      <div className="mx-auto hidden w-full max-w-[1296px] items-center gap-5 px-4 md:grid md:min-h-[136px] md:grid-cols-[230px_minmax(260px,1fr)_minmax(430px,1.35fr)_220px] md:gap-7 md:px-8">
+        <div className="relative mx-auto -mb-6 -mt-8 h-[180px] w-[190px] self-end">
+          <Image
+            src="/foca-celular-ayuda.png"
+            alt="Foca Kliniu"
+            fill
+            unoptimized
+            sizes="190px"
             className="object-contain"
           />
         </div>
 
-        <div className="text-center md:text-left">
-          <p className="text-2xl font-black leading-none text-[#0C535B] md:text-[24px]">
+        <div className="text-left">
+          <p className="text-[24px] font-black leading-none text-[#0C535B]">
             ¿Necesitas ayuda para elegir?
           </p>
-          <p className="mt-3 hidden text-[15px] font-semibold leading-[1.05] text-[#0C535B] md:block md:max-w-[360px] md:text-[17px]">
+          <p className="mt-3 max-w-[360px] text-[17px] font-semibold leading-[1.05] text-[#0C535B]">
             Nuestro equipo de expertos está listo para asesorarte sin compromiso
           </p>
         </div>
 
-        <div className="hidden gap-4 text-[#0C535B] md:grid md:grid-cols-3 md:gap-5">
+        <div className="grid grid-cols-3 gap-5 text-[#0C535B]">
           {advisorFeatures.map((feature) => (
-            <div key={feature.title} className="flex items-center gap-3 md:justify-center">
+            <div key={feature.title} className="flex items-center justify-center gap-3">
               <span className="shrink-0">{feature.icon}</span>
               <p className="text-[13px] font-semibold leading-[1.15] text-[#666]">
                 {feature.title}
@@ -83,18 +113,13 @@ export default function AsesorBanner() {
           href="https://wa.me/573214198831"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex min-h-8 items-center justify-center gap-2 rounded-lg bg-[#0C535B] px-7 text-sm font-extrabold text-white transition-opacity hover:opacity-90 md:min-h-[28px] md:px-8 md:text-[13px]"
+          className="inline-flex min-h-[28px] items-center justify-center gap-2 rounded-lg bg-[#0C535B] px-8 text-[13px] font-extrabold text-white transition-opacity hover:opacity-90"
         >
           <span>Hablar con un asesor</span>
-          <Image
-            src="/icono-whatsapp.png"
-            alt=""
-            width={15}
-            height={15}
-            className="h-4 w-4 brightness-0 invert"
-          />
+          <Image src="/icono-whatsapp.png" alt="" width={15} height={15} className="h-4 w-4 brightness-0 invert" />
         </a>
       </div>
+
     </section>
   );
 }
