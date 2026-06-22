@@ -246,7 +246,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
 /* ─────────────────────── Vista landing categorías ─────────────────────── */
 function LandingCategorias({ onSelect }: { onSelect: (cat: string) => void }) {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="bg-white">
       {/* Hero sub-banner */}
       <section className="home-reveal border-b border-black/8 bg-[#f8f8f7] px-6 py-10">
         <div className="mx-auto max-w-[1440px]">

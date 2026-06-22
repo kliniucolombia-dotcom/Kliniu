@@ -316,7 +316,7 @@ export default function OutletPage() {
                   className="outlet-hero-bg object-cover object-center"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent sm:bg-gradient-to-r sm:from-transparent sm:via-black/20 sm:to-black/85" />
-                <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 px-5 pb-5 sm:inset-y-0 sm:bottom-auto sm:left-[38%] sm:right-0 sm:justify-center sm:gap-3 sm:px-8 sm:pb-0">
+                <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 px-5 pb-5 sm:inset-y-0 sm:bottom-auto sm:left-[38%] sm:right-0 sm:justify-center sm:gap-3 sm:px-8 sm:pb-0 sm:pt-16">
                   <span className="inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white sm:text-xs" style={{ background: "rgba(192,64,255,0.35)", border: "1px solid rgba(192,64,255,0.5)" }}>
                     ⏳ Solo 15 días
                   </span>
