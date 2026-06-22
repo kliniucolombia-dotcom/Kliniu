@@ -185,38 +185,42 @@ export default function ContactoPage() {
             </div>
 
             {/* Grid de países */}
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="-mx-5 flex gap-4 overflow-x-auto px-5 pb-3 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 xl:grid-cols-4">
               {paises.map((p) => (
                 <div
                   key={p.nombre}
-                  className="interactive-lift flex min-h-[185px] flex-col rounded border border-black/10 bg-white px-5 py-5 shadow-sm transition-shadow hover:shadow-md"
+                  className="interactive-lift flex min-h-[188px] w-[232px] min-w-[232px] items-center gap-4 rounded-xl border border-black/10 bg-white px-5 py-5 shadow-sm transition-shadow hover:shadow-md sm:w-auto sm:min-w-0"
                 >
-                  <Image
-                    src={p.bandera}
-                    alt={`Bandera ${p.nombre.replace(/\n/g, " ")}`}
-                    width={46}
-                    height={46}
-                    className="h-[46px] w-[46px] rounded-full object-cover"
-                  />
-                  <p className="mt-4 whitespace-pre-line text-[15px] font-black leading-[1.02] text-black">
-                    {p.nombre}
-                  </p>
-                  <p className="mt-4 whitespace-pre-line text-[10px] font-bold leading-[1.15] text-black">
-                    {p.direccion}
-                  </p>
-                  <p className="mt-1 text-[10px] font-bold text-black">{p.telefono}</p>
-                  <a
-                    href={p.wa}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="shine-sweep mt-auto inline-flex items-center gap-1.5 pt-4 text-[11px] font-black text-[#0C535B] hover:underline"
-                  >
-                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-                      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.073.528 4.024 1.455 5.726L.057 24l6.434-1.383C8.055 23.507 9.987 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.883 0-3.655-.506-5.183-1.393l-.372-.22-3.819.822.839-3.701-.243-.381A9.937 9.937 0 012 12c0-5.514 4.486-10 10-10s10 4.486 10 10-4.486 10-10 10z" />
-                    </svg>
-                    WhatsApp
-                  </a>
+                  <div className="shrink-0">
+                    <Image
+                      src={p.bandera}
+                      alt={`Bandera ${p.nombre.replace(/\n/g, " ")}`}
+                      width={72}
+                      height={72}
+                      className="h-[72px] w-[72px] rounded-full object-cover shadow-sm"
+                    />
+                  </div>
+                  <div className="flex min-w-0 flex-col">
+                    <p className="whitespace-pre-line text-[15px] font-black leading-tight text-black">
+                      {p.nombre}
+                    </p>
+                    <p className="mt-1.5 whitespace-pre-line text-[11px] leading-[1.4] text-gray-600">
+                      {p.direccion}
+                    </p>
+                    <p className="mt-1.5 text-[11px] font-semibold text-gray-800">{p.telefono}</p>
+                    <a
+                      href={p.wa}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="shine-sweep mt-2 inline-flex items-center gap-1.5 text-[12px] font-black text-[#0C535B] hover:underline"
+                    >
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+                        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.073.528 4.024 1.455 5.726L.057 24l6.434-1.383C8.055 23.507 9.987 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.883 0-3.655-.506-5.183-1.393l-.372-.22-3.819.822.839-3.701-.243-.381A9.937 9.937 0 012 12c0-5.514 4.486-10 10-10s10 4.486 10 10-4.486 10-10 10z" />
+                      </svg>
+                      WhatsApp
+                    </a>
+                  </div>
                 </div>
               ))}
             </div>

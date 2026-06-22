@@ -23,6 +23,46 @@ const trustItems = [
   { icon: "🎧", label: "Asesoría\nexperta" },
 ];
 
+const datoKlinBenefits = [
+  {
+    label: "Productos\ncompatibles",
+    icon: (
+      <svg viewBox="0 0 64 64" className="h-14 w-14" fill="none" stroke="currentColor" strokeWidth="3">
+        <rect x="12" y="8" width="28" height="44" rx="5" />
+        <path d="M18 50v6h16v-6" />
+        <path d="M26 34v9" strokeLinecap="round" />
+        <path d="M44 25h10v27H44z" />
+        <path d="M44 31c3 2 7 2 10 0" />
+        <path d="M47 43h4" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    label: "Más rendimiento\ndel sistema",
+    icon: (
+      <svg viewBox="0 0 64 64" className="h-14 w-14" fill="none" stroke="currentColor" strokeWidth="3">
+        <path d="M10 52h44" strokeLinecap="round" />
+        <path d="M14 52V42h9v10" />
+        <path d="M28 52V34h9v18" />
+        <path d="M42 52V25h9v27" />
+        <path d="M12 34c18-3 30-13 39-28" strokeLinecap="round" />
+        <path d="M42 8h9v9" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    label: "Ahorro en tiempo\ny mantenimiento",
+    icon: (
+      <svg viewBox="0 0 64 64" className="h-14 w-14" fill="none" stroke="currentColor" strokeWidth="3">
+        <circle cx="32" cy="32" r="25" />
+        <path d="M31 48c-2-16 4-28 18-35" strokeLinecap="round" />
+        <path d="M28 45c-11-2-17-10-15-23 12 0 20 6 22 16" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M34 38c3-12 10-18 20-18 0 13-7 22-20 24" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+];
+
 export default function CarritoPage() {
   const [cotizarOpen, setCotizarOpen] = useState(false);
   const { items, incrementItem, decrementItem, removeItem, clearCart, addItem } = useCart();
@@ -329,20 +369,28 @@ export default function CarritoPage() {
 
       {/* Dato KLINIU banner */}
       <section className="mx-auto max-w-[1440px] px-6 pb-12">
-        <div className="flex flex-col items-center gap-6 overflow-hidden rounded-2xl border border-black/8 bg-[#f8fafa] p-8 sm:flex-row">
+        <div className="grid items-center gap-6 overflow-hidden rounded-2xl bg-[#f3f7f7] px-6 py-6 sm:px-10 lg:grid-cols-[240px_minmax(320px,1fr)_1.45fr] lg:gap-10">
           <Image
             src="/foca-ventana-dato.png"
             alt="Foca Kliniu"
-            width={260}
-            height={260}
-            className="shrink-0 object-contain"
+            width={230}
+            height={230}
+            className="mx-auto w-[180px] shrink-0 object-contain sm:w-[210px] lg:w-[230px]"
           />
-          <div className="flex-1">
-            <p className="text-sm font-extrabold text-[#0C535B]">Dato KLINIU</p>
-            <p className="mt-1 text-sm text-[#3a7a80]">
-              Te recomendamos agregar insumos compatibles para evitar reposiciones frecuentes
-              y mantener tu sistema siempre funcionando.
+          <div>
+            <p className="text-3xl font-black leading-tight text-[#0C535B]">Dato KLINIU</p>
+            <p className="mt-5 max-w-[520px] text-lg font-semibold leading-[1.28] text-[#0C535B]">
+              Te recomiendo agregar insumos compatibles para evitar reposiciones frecuentes y
+              mantener tu sistema siempre funcionando.
             </p>
+          </div>
+          <div className="grid gap-5 text-[#0C535B] sm:grid-cols-3 sm:divide-x sm:divide-[#0C535B]/50">
+            {datoKlinBenefits.map((item) => (
+              <div key={item.label} className="flex items-center gap-4 text-left sm:flex-col sm:justify-center sm:gap-3 sm:px-6 sm:text-center">
+                {item.icon}
+                <p className="whitespace-pre-line text-lg font-semibold leading-[1.05]">{item.label}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>

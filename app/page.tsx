@@ -54,7 +54,7 @@ export default async function Home() {
       <HeroCarousel />
 
       {/* ── Productos destacados ── */}
-      <section className="home-reveal pb-10 pt-0 md:py-16">
+      <section className="home-reveal pb-10 pt-10 md:py-16">
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10">
             <div className="flex items-baseline justify-between lg:block lg:w-56 lg:shrink-0 lg:pt-1">

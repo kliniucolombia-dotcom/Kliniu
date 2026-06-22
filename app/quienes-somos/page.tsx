@@ -140,53 +140,79 @@ export default function QuienesSomosPage() {
       </section>
 
       {/* Misión / Visión */}
-      <section className="nosotros-section-energy mx-auto w-full max-w-[1440px] px-4 pb-10 sm:px-6 md:pb-16">
-        <div className="mx-auto grid max-w-[1080px] gap-4 md:grid-cols-2 md:gap-5">
+      <section className="nosotros-section-energy mx-auto w-full max-w-[1480px] px-4 pb-10 pt-2 sm:px-5 md:pb-28">
+        <div className="mx-auto grid gap-8 md:grid-cols-2 md:gap-9">
           {/* Misión */}
           <div
-            className="nosotros-panel flex min-h-[200px] overflow-hidden rounded-2xl text-white sm:min-h-[260px]"
-            style={{ background: "linear-gradient(150deg, #145F64 0%, #003E42 100%)" }}
+            className="nosotros-panel relative min-h-[430px] overflow-hidden rounded-[12px] text-white sm:min-h-[410px] md:overflow-visible"
+            style={{ background: "linear-gradient(150deg, #1D7378 0%, #00383B 100%)" }}
           >
-            {/* Foca izquierda */}
-            <div className="w-[120px] shrink-0 self-end sm:w-[170px]">
-              <Image src="/foca-vision-cutout.png" alt="" width={320} height={205} className="nosotros-foca h-auto w-full object-contain object-bottom" />
-            </div>
-            {/* Info derecha */}
-            <div className="flex flex-1 flex-col justify-center py-6 pl-4 pr-5 sm:py-8 sm:pl-5 sm:pr-8">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-white/70 sm:h-[56px] sm:w-[56px]">
-                  <Image src="/nosotros-iconos/mision.png" alt="" width={30} height={30} className="nosotros-icon h-5 w-5 object-contain brightness-0 invert sm:h-7 sm:w-7" />
-                </div>
-                <h2 className="text-2xl font-black uppercase leading-none tracking-tight sm:text-[30px]">MISIÓN</h2>
+            <div className="relative z-10 flex flex-col gap-4 px-7 pb-8 pt-9 sm:flex-row sm:gap-6 sm:px-12 sm:pt-14 md:gap-7 lg:px-16">
+              <div className="flex h-[88px] w-[88px] shrink-0 items-center justify-center rounded-full border-2 border-white/90 sm:h-[108px] sm:w-[108px]">
+                <Image
+                  src="/nosotros-iconos/mision.png"
+                  alt=""
+                  width={64}
+                  height={64}
+                  className="nosotros-icon h-12 w-12 object-contain brightness-0 invert sm:h-16 sm:w-16"
+                />
               </div>
-              <p className="mt-3 text-sm font-semibold leading-snug text-white/90 sm:mt-4 sm:text-[16px]">
-                Nuestra misión es fabricar ideas en productos que ayuden a la limpieza y desinfección.
-              </p>
-              <div className="mt-3 h-0.5 w-10 bg-white/50" />
+              <div className="max-w-[440px] pt-0 sm:pt-3">
+                <h2 className="text-[30px] font-black uppercase leading-none tracking-normal sm:text-[36px]">
+                  MISIÓN
+                </h2>
+                <p className="mt-3 max-w-[390px] text-[18px] font-extrabold leading-[1.05] text-white sm:text-[24px] sm:leading-[0.97]">
+                  Nuestra misión es fabricar ideas en productos que ayuden a la limpieza y
+                  desinfección.
+                </p>
+                <div className="mt-4 h-0.5 w-[70px] bg-white" />
+              </div>
+            </div>
+            <div className="nosotros-foca pointer-events-none absolute -bottom-[46px] left-1/2 w-[245px] -translate-x-1/2 sm:-bottom-[86px] sm:left-[58%] sm:w-[330px] lg:w-[360px]">
+              <Image
+                src="/foca-vision-cutout.png"
+                alt=""
+                width={360}
+                height={228}
+                className="h-auto w-full object-contain object-bottom drop-shadow-[0_14px_18px_rgba(0,0,0,0.18)]"
+              />
             </div>
           </div>
 
           {/* Visión */}
           <div
-            className="nosotros-panel flex min-h-[200px] overflow-hidden rounded-2xl text-white sm:min-h-[260px]"
-            style={{ background: "linear-gradient(150deg, #45B9AD 0%, #7ABCB9 100%)" }}
+            className="nosotros-panel relative min-h-[500px] overflow-hidden rounded-[12px] text-white sm:min-h-[430px] md:min-h-[406px] md:overflow-visible"
+            style={{ background: "linear-gradient(180deg, #43B9AA 0%, #78BFC0 100%)" }}
           >
-            {/* Foca izquierda */}
-            <div className="w-[120px] shrink-0 self-end sm:w-[170px]">
-              <Image src="/foca-mision-cutout.png" alt="" width={330} height={245} className="nosotros-foca h-auto w-full object-contain object-bottom" />
-            </div>
-            {/* Info derecha */}
-            <div className="flex flex-1 flex-col justify-center py-6 pl-4 pr-5 sm:py-8 sm:pl-5 sm:pr-8">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-white/70 sm:h-[56px] sm:w-[56px]">
-                  <Image src="/nosotros-iconos/vision.png" alt="" width={30} height={30} className="nosotros-icon h-5 w-5 object-contain brightness-0 invert sm:h-7 sm:w-7" />
-                </div>
-                <h2 className="text-2xl font-black uppercase leading-none tracking-tight sm:text-[30px]">VISIÓN</h2>
+            <div className="relative z-10 flex flex-col gap-4 px-7 pb-8 pt-9 sm:flex-row sm:gap-6 sm:px-12 sm:pt-14 md:gap-7 lg:px-16">
+              <div className="flex h-[88px] w-[88px] shrink-0 items-center justify-center rounded-full border-2 border-white/90 sm:h-[108px] sm:w-[108px]">
+                <Image
+                  src="/nosotros-iconos/vision.png"
+                  alt=""
+                  width={64}
+                  height={64}
+                  className="nosotros-icon h-12 w-12 object-contain brightness-0 invert sm:h-16 sm:w-16"
+                />
               </div>
-              <p className="mt-3 text-sm font-semibold leading-snug text-white/90 sm:mt-4 sm:text-[16px]">
-                Nuestra visión es ser líderes en el 2.023 en la fabricación y comercialización en Colombia, Centro América y El Caribe de dispensadores e insumos de aseo personal.
-              </p>
-              <div className="mt-3 h-0.5 w-10 bg-white/50" />
+              <div className="max-w-[440px] pt-0 sm:pt-3">
+                <h2 className="text-[30px] font-black uppercase leading-none tracking-normal sm:text-[36px]">
+                  VISIÓN
+                </h2>
+                <p className="mt-3 max-w-[440px] text-[18px] font-extrabold leading-[1.05] text-white sm:text-[24px] sm:leading-[0.97]">
+                  Nuestra visión es ser líderes en el 2.023 en la fabricación y comercialización en
+                  Colombia, Centro América y El Caribe de dispensadores e insumos de aseo personal.
+                </p>
+                <div className="mt-4 h-0.5 w-[70px] bg-white" />
+              </div>
+            </div>
+            <div className="nosotros-foca pointer-events-none absolute -bottom-[64px] left-1/2 w-[205px] -translate-x-1/2 sm:-bottom-[86px] sm:left-auto sm:right-1 sm:w-[285px] sm:translate-x-0 lg:w-[310px]">
+              <Image
+                src="/foca-mision-cutout.png"
+                alt=""
+                width={310}
+                height={232}
+                className="h-auto w-full object-contain object-bottom drop-shadow-[0_14px_18px_rgba(0,0,0,0.16)]"
+              />
             </div>
           </div>
         </div>
@@ -246,7 +272,14 @@ export default function QuienesSomosPage() {
                 </p>
               </div>
 
-              <div className="flex flex-col justify-center gap-7 px-6 py-10 sm:px-10 md:pl-20 md:pr-8 lg:pl-24 lg:pr-12">
+              <div className="relative flex flex-col justify-center gap-7 px-6 py-10 sm:px-10 md:pl-20 md:pr-8 lg:pl-24 lg:pr-12">
+                <Image
+                  src="/foca-calidad.png"
+                  alt=""
+                  width={260}
+                  height={203}
+                  className="pointer-events-none mx-auto -mb-3 mt-[-12px] block h-auto w-[150px] object-contain md:hidden"
+                />
                 <div className="grid grid-cols-2 items-end gap-x-7 gap-y-7 sm:grid-cols-3 lg:grid-cols-7">
                 {certificaciones.map((cert) => (
                   <figure

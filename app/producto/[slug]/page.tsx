@@ -148,9 +148,10 @@ function ImageGallery({ nombre, images }: { nombre: string; images: string[] }) 
 
   return (
     <>
-      <div className="flex gap-3">
+      <div className="mx-auto w-full max-w-[360px] md:max-w-none">
+        <div className="flex gap-3">
         {/* Thumbnail strip */}
-        <div className="flex flex-col gap-2">
+        <div className="hidden flex-col gap-2 md:flex">
           {images.map((src, i) => (
             <button
               key={`thumb-${i}`}
@@ -175,9 +176,14 @@ function ImageGallery({ nombre, images }: { nombre: string; images: string[] }) 
         <button
           type="button"
           onClick={() => openLightbox(active)}
-          className="group relative aspect-square w-full overflow-hidden rounded-2xl border border-black/8 bg-white p-6 text-left"
+          className="group relative aspect-square w-full overflow-hidden rounded-none border-0 bg-white p-4 text-left md:rounded-2xl md:border md:border-black/8 md:p-6"
           aria-label="Ver imagen ampliada"
         >
+          {images.length > 1 && (
+            <span className="absolute left-3 top-3 z-10 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-[#111] shadow-sm md:hidden">
+              {active + 1}/{images.length}
+            </span>
+          )}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={images[active] || "/product-placeholder.png"}
@@ -192,6 +198,23 @@ function ImageGallery({ nombre, images }: { nombre: string; images: string[] }) 
             </svg>
           </span>
         </button>
+        </div>
+
+        {images.length > 1 && (
+          <div className="mt-3 flex items-center justify-center gap-2 md:hidden">
+            {images.map((_, i) => (
+              <button
+                key={`mobile-dot-${i}`}
+                type="button"
+                onClick={() => setActive(i)}
+                className={`h-2.5 rounded-full transition-all ${
+                  active === i ? "w-2.5 bg-[#2E8BFF]" : "w-2.5 bg-black/12"
+                }`}
+                aria-label={`Imagen ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Lightbox */}
@@ -504,8 +527,8 @@ export default function ProductoDetallePage() {
       </div>
 
       {/* ── Main product section ── */}
-      <section className="mx-auto max-w-[1440px] px-6 pb-12">
-        <div className="grid gap-10 lg:grid-cols-[1fr_480px] xl:grid-cols-[1fr_520px]">
+      <section className="mx-auto max-w-[1440px] px-3 pb-12 sm:px-6">
+        <div className="grid gap-8 lg:grid-cols-[1fr_480px] lg:gap-10 xl:grid-cols-[1fr_520px]">
 
           {/* LEFT — image gallery */}
           <ImageGallery key={`${colorActivo}-${tipoActivo}`} nombre={producto.nombre} images={galleryImages} />
@@ -668,12 +691,12 @@ export default function ProductoDetallePage() {
                 </div>
               )}
 
-              <div className="flex gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   disabled={producto.puedeComprar === false}
                   onClick={handleAddToCart}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition-colors"
+                  className="flex min-h-[50px] items-center justify-center gap-2 rounded-full px-4 py-2.5 text-center text-[13px] font-semibold leading-tight transition-colors sm:text-sm"
                   style={
                     producto.puedeComprar === false
                       ? { background: "#f2f2f1", color: "#6b7280", cursor: "not-allowed", border: "1px solid rgba(0,0,0,0.1)" }
@@ -699,7 +722,7 @@ export default function ProductoDetallePage() {
                 <button
                   type="button"
                   onClick={() => setQuoteOpen(true)}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
+                  className="flex min-h-[50px] items-center justify-center gap-2 rounded-full px-4 py-2.5 text-center text-[13px] font-bold leading-tight text-white transition-opacity hover:opacity-90 sm:text-sm"
                   style={{ background: "#1a1a2e" }}
                 >
                   Cotiza ahora
