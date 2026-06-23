@@ -93,6 +93,11 @@ export default function CheckoutForm({
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const cityOptions = useMemo(() => getCitiesForDepartment(form.department), [form.department]);
 
+  const step1Done = Boolean(form.customerName.trim() && form.customerEmail.trim() && form.customerPhone.trim());
+  const step2Done = Boolean(form.department.trim() && form.addressLine1.trim() && form.city.trim());
+  const step3Done = step1Done && step2Done; // método de pago siempre seleccionado por defecto
+  const currentStep = !step1Done ? 1 : !step2Done ? 2 : !step3Done ? 3 : 4;
+
   useEffect(() => {
     if (!toast) return;
     const id = window.setTimeout(() => setToast(null), 2800);
@@ -185,8 +190,8 @@ export default function CheckoutForm({
     <main className="min-h-screen bg-white text-[#111]">
       {/* Payment demo modal */}
       {pendingOrder && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#0f172a]/45 px-6 backdrop-blur-[2px]">
-          <div className="w-full max-w-lg rounded-2xl border border-black/8 bg-white p-7 shadow-[0_30px_80px_rgba(15,23,42,0.28)]">
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#0f172a]/45 px-4 backdrop-blur-[2px] sm:px-6">
+          <div className="w-full max-w-lg rounded-2xl border border-black/8 bg-white p-5 shadow-[0_30px_80px_rgba(15,23,42,0.28)] sm:p-7">
             <p className="text-sm font-bold uppercase tracking-wider text-[#27B1B8]">Pago demo</p>
             <h2 className="mt-2 text-2xl font-extrabold text-[#0C535B]">Simular pago del pedido</h2>
             <p className="mt-2 text-sm leading-6 text-[#555]">
@@ -240,7 +245,7 @@ export default function CheckoutForm({
         </div>
       )}
 
-      <div className="mx-auto max-w-[1100px] px-6 py-10">
+      <div className="mx-auto max-w-[1100px] px-4 py-8 sm:px-6 sm:py-10">
         {/* Back link */}
         <div className="mb-6 flex justify-end">
           <Link href="/carrito" className="text-sm text-[#27B1B8] hover:underline">
@@ -249,27 +254,31 @@ export default function CheckoutForm({
         </div>
 
         {/* Stepper */}
-        <div className="mb-10 flex items-center justify-center gap-0">
-          {steps.map((step, i) => (
-            <div key={step.n} className="flex items-center">
+        <div className="scrollbar-hidden -mx-4 mb-10 flex items-start justify-start gap-0 overflow-x-auto px-4 sm:-mx-6 sm:justify-center sm:px-6">
+          {steps.map((step, i) => {
+            const isDone = step.n < currentStep;
+            const isActive = step.n === currentStep;
+            return (
+            <div key={step.n} className="flex shrink-0 items-center">
               <div className="flex flex-col items-center">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
-                  step.n === 1 ? "bg-[#27B1B8] text-white" : "border-2 border-black/10 text-[#aaa]"
+                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold transition-colors ${
+                  isDone ? "bg-[#0C535B] text-white" : isActive ? "bg-[#27B1B8] text-white" : "border-2 border-black/10 text-[#aaa]"
                 }`}>
-                  {step.n}
+                  {isDone ? "✓" : step.n}
                 </div>
                 <div className="mt-1 text-center">
-                  <p className={`text-xs font-bold ${step.n === 1 ? "text-[#27B1B8]" : "text-[#aaa]"}`}>
+                  <p className={`text-[11px] font-bold sm:text-xs ${isDone ? "text-[#0C535B]" : isActive ? "text-[#27B1B8]" : "text-[#aaa]"}`}>
                     {step.label}
                   </p>
-                  <p className="text-[10px] text-[#aaa]">{step.sub}</p>
+                  <p className="hidden text-[10px] text-[#aaa] sm:block">{step.sub}</p>
                 </div>
               </div>
               {i < steps.length - 1 && (
-                <div className="mx-3 mb-5 h-px w-16 bg-black/10 sm:w-24" />
+                <div className={`mx-2 mb-5 h-px w-10 shrink-0 transition-colors sm:mx-3 sm:w-24 ${step.n < currentStep ? "bg-[#0C535B]" : "bg-black/10"}`} />
               )}
             </div>
-          ))}
+          );
+          })}
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1fr_300px]">

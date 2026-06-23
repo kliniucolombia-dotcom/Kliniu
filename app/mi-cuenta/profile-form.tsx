@@ -540,7 +540,7 @@ export default function AccountProfileForm({
 
 
       {/* Content area */}
-      <div className="flex-1 min-w-0 px-6 pt-8 pb-16 lg:px-12 lg:pt-12 lg:pb-24">
+      <div className="w-full flex-1 min-w-0 overflow-x-hidden px-6 pt-8 pb-16 lg:px-12 lg:pt-12 lg:pb-24">
 
         {/* — Inicio panel — */}
         {(activePanel === "summary") && (
