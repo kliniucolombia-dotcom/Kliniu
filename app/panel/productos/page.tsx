@@ -74,9 +74,17 @@ export default function ProductosPanel() {
 
   return (
     <div className="p-6 lg:p-8">
-      <div className="mb-6">
-        <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8]">Panel Comercial</p>
-        <h1 className="mt-1 text-2xl font-black text-[#1A1A1A]">Productos</h1>
+      <div className="mb-6 flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8]">Panel Comercial</p>
+          <h1 className="mt-1 text-2xl font-black text-[#1A1A1A]">Productos</h1>
+        </div>
+        <a
+          href="/admin?tab=edit"
+          className="shrink-0 rounded-xl bg-[#1A1A1A] px-4 py-2.5 text-xs font-bold text-white hover:opacity-80"
+        >
+          Edición completa
+        </a>
       </div>
 
       {/* Buscador */}

@@ -1,12 +1,12 @@
 import { adjustProductInventory } from "@/lib/products";
-import { requireAdminUser } from "@/lib/admin";
+import { requireAdminOrSeller } from "@/lib/admin";
 
 export async function PATCH(
   request: Request,
   context: { params: Promise<{ slug: string }> },
 ) {
   try {
-    await requireAdminUser();
+    await requireAdminOrSeller();
     const { slug } = await context.params;
     const body = (await request.json()) as {
       quantity?: number;

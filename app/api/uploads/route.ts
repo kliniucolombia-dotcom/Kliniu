@@ -1,7 +1,7 @@
 import sharp from "sharp";
 import { getStorageBucket, createSupabaseStorageClient } from "@/lib/supabase-storage";
 import { slugify } from "@/app/data/catalog";
-import { requireAdminUser } from "@/lib/admin";
+import { requireAdminOrSeller } from "@/lib/admin";
 
 const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB antes de comprimir
 const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -15,7 +15,7 @@ async function compressImage(buffer: Buffer): Promise<Buffer> {
 
 export async function POST(request: Request) {
   try {
-    await requireAdminUser();
+    await requireAdminOrSeller();
     const supabase = createSupabaseStorageClient();
 
     if (!supabase) {

@@ -1,5 +1,5 @@
 import { deleteProduct, updateProduct } from "@/lib/products";
-import { requireAdminUser } from "@/lib/admin";
+import { requireAdminOrSeller } from "@/lib/admin";
 
 function getProductErrorResponse(
   error: unknown,
@@ -44,7 +44,7 @@ export async function PATCH(
   context: { params: Promise<{ slug: string }> },
 ) {
   try {
-    await requireAdminUser();
+    await requireAdminOrSeller();
     const { slug } = await context.params;
     const body = await request.json();
     const product = await updateProduct(slug, body);
@@ -64,7 +64,7 @@ export async function DELETE(
   context: { params: Promise<{ slug: string }> },
 ) {
   try {
-    await requireAdminUser();
+    await requireAdminOrSeller();
     const { slug } = await context.params;
     await deleteProduct(slug);
 

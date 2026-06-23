@@ -1,9 +1,9 @@
 import { getRecentInventoryMovements } from "@/lib/products";
-import { requireAdminUser } from "@/lib/admin";
+import { requireAdminOrSeller } from "@/lib/admin";
 
 export async function GET() {
   try {
-    await requireAdminUser();
+    await requireAdminOrSeller();
     const movements = await getRecentInventoryMovements();
 
     return Response.json({ movements });

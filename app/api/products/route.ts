@@ -1,5 +1,5 @@
 import { createProduct, getProducts } from "@/lib/products";
-import { requireAdminUser } from "@/lib/admin";
+import { requireAdminOrSeller } from "@/lib/admin";
 
 function getProductErrorResponse(
   error: unknown,
@@ -41,7 +41,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    await requireAdminUser();
+    await requireAdminOrSeller();
     const body = await request.json();
     const product = await createProduct(body);
 

@@ -996,10 +996,10 @@ export default function AdminPage() {
       }
 
       const payload = (await response.json()) as {
-        user?: { fullName: string; role: "CUSTOMER" | "ADMIN" };
+        user?: { fullName: string; role: "CUSTOMER" | "ADMIN" | "SELLER" };
       };
 
-      if (payload.user?.role === "ADMIN") {
+      if (payload.user?.role === "ADMIN" || payload.user?.role === "SELLER") {
         setIsAuthenticated(true);
         setAdminName(payload.user.fullName);
       } else {

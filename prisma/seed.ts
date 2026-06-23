@@ -21,6 +21,7 @@ const prisma = new PrismaClient({
 async function main() {
   const adminPasswordHash = await hash("123456789", 10);
   const packingPasswordHash = await hash("empaque2024", 10);
+  const sellerPasswordHash = await hash("Kliniu2025", 10);
 
   await prisma.user.upsert({
     where: {
@@ -53,6 +54,23 @@ async function main() {
       email: "empaque@kliniu.co",
       passwordHash: packingPasswordHash,
       role: "PACKING",
+    },
+  });
+
+  await prisma.user.upsert({
+    where: {
+      email: "vendedor1@kliniu.com",
+    },
+    update: {
+      fullName: "Vendedor Uno",
+      role: "SELLER",
+      passwordHash: sellerPasswordHash,
+    },
+    create: {
+      fullName: "Vendedor Uno",
+      email: "vendedor1@kliniu.com",
+      passwordHash: sellerPasswordHash,
+      role: "SELLER",
     },
   });
 
