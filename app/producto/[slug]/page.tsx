@@ -85,8 +85,15 @@ const trustBar = [
 ];
 
 
-function ImageGallery({ nombre, images }: { nombre: string; images: string[] }) {
+function getYouTubeId(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
+  return m ? m[1] : null;
+}
+
+function ImageGallery({ nombre, images, videoUrl }: { nombre: string; images: string[]; videoUrl?: string }) {
+  const videoId = videoUrl ? getYouTubeId(videoUrl) : null;
   const [active, setActive] = useState(0);
+  const [videoActive, setVideoActive] = useState(false);
   const [lightbox, setLightbox] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const mobileScrollRef = useRef<HTMLDivElement | null>(null);
@@ -213,6 +220,17 @@ function ImageGallery({ nombre, images }: { nombre: string; images: string[] }) 
               ))}
             </div>
           )}
+          {videoId && (
+            <div className="mt-4 aspect-video w-full overflow-hidden rounded-xl bg-black">
+              <iframe
+                src={`https://www.youtube.com/embed/${videoId}`}
+                title="Video del producto"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="h-full w-full"
+              />
+            </div>
+          )}
         </div>
 
         <div className="hidden gap-3 md:flex">
@@ -222,9 +240,9 @@ function ImageGallery({ nombre, images }: { nombre: string; images: string[] }) 
             <button
               key={`thumb-${i}`}
               type="button"
-              onClick={() => setActive(i)}
+              onClick={() => { setActive(i); setVideoActive(false); }}
               className={`h-20 w-20 shrink-0 overflow-hidden rounded-xl border-2 bg-white p-1 transition-all ${
-                active === i ? "border-[#27B1B8]" : "border-black/8 hover:border-[#27B1B8]/40"
+                active === i && !videoActive ? "border-[#27B1B8]" : "border-black/8 hover:border-[#27B1B8]/40"
               }`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -236,9 +254,42 @@ function ImageGallery({ nombre, images }: { nombre: string; images: string[] }) 
               />
             </button>
           ))}
+          {videoId && (
+            <button
+              type="button"
+              onClick={() => setVideoActive(true)}
+              aria-label="Ver video del producto"
+              className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border-2 bg-black transition-all ${
+                videoActive ? "border-[#27B1B8]" : "border-black/8 hover:border-[#27B1B8]/40"
+              }`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`}
+                alt="Video del producto"
+                className="h-full w-full object-cover opacity-80"
+              />
+              <span className="absolute inset-0 flex items-center justify-center">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-[#111]">
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                </span>
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Main image — click to open lightbox */}
+        {videoActive && videoId ? (
+          <div className="aspect-square w-full overflow-hidden rounded-none bg-black md:rounded-2xl md:border md:border-black/8">
+            <iframe
+              src={`https://www.youtube.com/embed/${videoId}`}
+              title="Video del producto"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="h-full w-full"
+            />
+          </div>
+        ) : (
         <button
           type="button"
           onClick={() => openLightbox(active)}
@@ -264,6 +315,7 @@ function ImageGallery({ nombre, images }: { nombre: string; images: string[] }) 
             </svg>
           </span>
         </button>
+        )}
         </div>
 
       </div>
@@ -585,7 +637,7 @@ export default function ProductoDetallePage() {
         <div className="grid gap-8 lg:grid-cols-[1fr_480px] lg:gap-10 xl:grid-cols-[1fr_520px]">
 
           {/* LEFT — image gallery */}
-          <ImageGallery key={`${colorActivo}-${tipoActivo}`} nombre={producto.nombre} images={galleryImages} />
+          <ImageGallery key={`${colorActivo}-${tipoActivo}`} nombre={producto.nombre} images={galleryImages} videoUrl={producto.videoUrl} />
 
           {/* RIGHT — product info */}
           <div className="space-y-4 lg:sticky lg:top-[72px] lg:self-start">

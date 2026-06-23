@@ -34,6 +34,7 @@ export type AdminProductInput = {
   garantia?: string;
   especificacionesTecnicas?: ProductoEspecificacion[];
   variacionesColor?: VariacionColor[];
+  videoUrl?: string;
 };
 
 type ProductsContextValue = {

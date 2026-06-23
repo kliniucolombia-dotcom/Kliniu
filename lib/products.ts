@@ -37,6 +37,7 @@ type ProductRecord = {
   warranty?: string | null;
   technicalSpecs?: unknown;
   colorVariants?: unknown;
+  videoUrl?: string | null;
   featured: boolean;
   active: boolean;
   createdAt: string;
@@ -80,6 +81,7 @@ export type ProductMutationInput = {
   garantia?: string;
   especificacionesTecnicas?: ProductoEspecificacion[];
   variacionesColor?: VariacionColor[];
+  videoUrl?: string;
 };
 
 function createSkuFromName(name: string) {
@@ -265,6 +267,7 @@ function toStoreProduct(product: ProductRecord): StoreProduct {
         `Aplicación recomendada para la línea ${categoria}.`,
     }),
     variacionesColor: Array.isArray(product.colorVariants) ? (product.colorVariants as VariacionColor[]) : [],
+    videoUrl: product.videoUrl?.trim() || undefined,
     destacado: product.featured,
   };
 }
@@ -444,6 +447,7 @@ export async function createProduct(input: ProductMutationInput) {
       warranty: input.garantia?.trim() || "1 año de garantía del fabricante",
       technicalSpecs: normalizeTechnicalSpecs(input.especificacionesTecnicas),
       colorVariants: input.variacionesColor ?? [],
+      videoUrl: input.videoUrl?.trim() || null,
       featured: false,
       active: true,
     })
@@ -562,6 +566,7 @@ export async function updateProduct(slug: string, input: ProductMutationInput) {
       warranty: input.garantia?.trim() || "1 año de garantía del fabricante",
       technicalSpecs: normalizeTechnicalSpecs(input.especificacionesTecnicas),
       colorVariants: input.variacionesColor ?? [],
+      videoUrl: input.videoUrl?.trim() || null,
       updatedAt: new Date().toISOString(),
     })
     .eq("slug", slug)

@@ -270,6 +270,7 @@ export type ProductoCatalogo = {
   garantia?: string;
   especificacionesTecnicas?: ProductoEspecificacion[];
   variacionesColor?: VariacionColor[];
+  videoUrl?: string;
   destacado?: boolean;
   preciosPorCantidad?: { cantidad: number; precioUnitario: number }[];
 };

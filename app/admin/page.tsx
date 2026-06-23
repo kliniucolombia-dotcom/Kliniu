@@ -38,6 +38,7 @@ type FormState = {
   aplicacion: string;
   compatibilidad: string;
   garantia: string;
+  videoUrl: string;
 };
 
 type TechnicalSpecFormItem = {
@@ -62,6 +63,7 @@ const initialState: FormState = {
   aplicacion: "",
   compatibilidad: "",
   garantia: "1 año de garantía del fabricante",
+  videoUrl: "",
 };
 
 const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024; // 15 MB hard limit — se comprime antes de subir
@@ -517,6 +519,50 @@ function ProductImageSelector({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function getYouTubeId(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
+  return m ? m[1] : null;
+}
+
+function ProductVideoInput({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+}) {
+  const videoId = getYouTubeId(value);
+  return (
+    <div className="md:col-span-2 rounded-[1.5rem] border border-black/8 bg-[#fafaf9] p-4">
+      <p className="text-sm font-medium text-[#4f545a]">Video del producto</p>
+      <p className="mt-2 text-xs leading-6 text-[#6e7379]">
+        Pega el enlace de YouTube. Se mostrará de último en la galería del producto.
+      </p>
+      <input
+        type="url"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="https://www.youtube.com/watch?v=..."
+        className="mt-4 w-full rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm text-[#2c3036] outline-none focus:border-[#0C535B]"
+      />
+      {value && !videoId && (
+        <p className="mt-2 text-xs text-red-500">Enlace de YouTube no válido.</p>
+      )}
+      {videoId && (
+        <div className="mt-4 aspect-video w-full max-w-md overflow-hidden rounded-xl border border-black/8">
+          <iframe
+            src={`https://www.youtube.com/embed/${videoId}`}
+            title="Vista previa del video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="h-full w-full"
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -1203,6 +1249,7 @@ export default function AdminPage() {
         garantia: form.garantia,
         especificacionesTecnicas: normalizeTechnicalSpecFormItems(technicalSpecs),
         variacionesColor: colorVariants,
+        videoUrl: form.videoUrl,
       };
       const result = editingSlug
         ? await updateProduct(editingSlug, payload)
@@ -1272,6 +1319,7 @@ export default function AdminPage() {
       compatibilidad: product.compatibilidad?.join(", ") || "",
       garantia: product.garantia || initialState.garantia,
       descripcion: product.descripcion || "",
+      videoUrl: product.videoUrl || "",
     });
     setTechnicalSpecs(
       (product.especificacionesTecnicas || []).length > 0
@@ -1913,6 +1961,11 @@ export default function AdminPage() {
                   description="Puedes escoger cuál de las imágenes será la principal del producto."
                 />
 
+                <ProductVideoInput
+                  value={form.videoUrl}
+                  onChange={(url) => setForm((c) => ({ ...c, videoUrl: url }))}
+                />
+
                 <ColorVariantsEditor
                   variants={colorVariants}
                   onChange={setColorVariants}
@@ -2391,6 +2444,11 @@ export default function AdminPage() {
                       primaryImageIndex={primaryImageIndex}
                       onSelect={setPrimaryImageIndex}
                       description="La imagen marcada como principal será la que verá primero el cliente."
+                    />
+
+                    <ProductVideoInput
+                      value={form.videoUrl}
+                      onChange={(url) => setForm((c) => ({ ...c, videoUrl: url }))}
                     />
 
                     <ColorVariantsEditor
