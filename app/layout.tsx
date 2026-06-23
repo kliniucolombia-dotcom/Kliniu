@@ -30,8 +30,8 @@ export default async function RootLayout({
   ]);
   const [currentUser, initialCartItems] = session
     ? await Promise.all([
-        getUserById(session.userId),
-        getCartItemsForUser(session.userId),
+        getUserById(session.userId).catch(() => null),
+        getCartItemsForUser(session.userId).catch(() => []),
       ])
     : [null, []];
   const cartProviderKey = `${currentUser?.id ?? "guest"}:${initialCartItems
