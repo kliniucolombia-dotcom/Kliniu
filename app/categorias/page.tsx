@@ -112,6 +112,8 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
   const router = useRouter();
   const [agregado, setAgregado] = useState(false);
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const activeColor = hoveredColor ?? selectedColor;
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); }, []);
@@ -128,8 +130,8 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
   const tipoBadge = producto.descripcion?.split("·")[0]?.trim();
   const variaciones = producto.variacionesColor ?? [];
   const inox = /inoxidable/i.test(producto.nombre) || /inoxidable/i.test(producto.categoria ?? "") || /inoxidable/i.test(producto.descripcion ?? "");
-  const imagenActual = hoveredColor
-    ? (variaciones.find((v) => v.color === hoveredColor)?.image ?? producto.imagen)
+  const imagenActual = activeColor
+    ? (variaciones.find((v) => v.color === activeColor)?.image ?? producto.imagen)
     : producto.imagen;
 
   return (
@@ -192,18 +194,22 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
                 key={v.color}
                 type="button"
                 title={v.label}
-                onClick={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  event.preventDefault();
+                  setSelectedColor((prev) => (prev === v.color ? null : v.color));
+                }}
                 onMouseEnter={() => setHoveredColor(v.color)}
                 onMouseLeave={() => setHoveredColor(null)}
                 className={`h-5 w-5 rounded-full border transition-transform duration-150 hover:scale-125 ${
-                  hoveredColor === v.color ? "border-[#27B1B8] scale-125" : "border-black/30"
+                  activeColor === v.color ? "border-[#27B1B8] scale-125" : "border-black/30"
                 }`}
                 style={{ background: v.color, boxShadow: "inset 0 0 0 1.5px rgba(0,0,0,0.22)" }}
               />
             ))}
-            {hoveredColor && (
+            {activeColor && (
               <span className="ml-1 text-[10px] font-medium text-[#64748B]">
-                {variaciones.find((v) => v.color === hoveredColor)?.label}
+                {variaciones.find((v) => v.color === activeColor)?.label}
               </span>
             )}
           </div>
