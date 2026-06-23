@@ -12,8 +12,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "../components/cart-provider";
-import WhatsAppAsesor from "../components/whatsapp-asesor";
 import AsesorBanner from "../components/asesor-banner";
+import AdvisorCtaCard from "../components/advisor-cta-card";
 import { useProducts } from "../components/products-provider";
 import {
   categoriaDesdeSlug,
@@ -288,31 +288,7 @@ function LandingCategorias({ onSelect }: { onSelect: (cat: string) => void }) {
             ))}
 
             {/* CTA card */}
-            <div className="interactive-lift flex min-h-[370px] flex-col items-center justify-between gap-3 rounded-2xl border border-[#27B1B8]/25 bg-[#e8f5f5] p-5 text-center">
-              <div className="flex h-32 w-full items-center justify-center overflow-hidden rounded-xl px-4 py-2">
-                <Image
-                  src="/foca-pensativa.png"
-                  alt="Kliniu"
-                  width={210}
-                  height={210}
-                  className="image-lift max-h-28 w-auto object-contain"
-                />
-              </div>
-              <div className="min-h-[74px]">
-                <p className="text-sm font-bold leading-snug text-[#0C535B]">
-                  ¿No sabes cuál necesitas?
-                </p>
-                <p className="mt-1 text-xs text-[#3a7a80]">
-                  Te ayudamos a elegir la mejor solución para tu espacio.
-                </p>
-              </div>
-              <WhatsAppAsesor className="shine-sweep inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full bg-[#0C535B] px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90">
-                Te asesoramos
-                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/>
-                </svg>
-              </WhatsAppAsesor>
-            </div>
+            <AdvisorCtaCard className="interactive-lift min-h-[230px] rounded-2xl transition-all hover:-translate-y-0.5 hover:border-[#27B1B8]/40 hover:shadow-md sm:min-h-[244px]" />
           </div>
         </div>
       </section>

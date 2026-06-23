@@ -7,7 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "./cart-provider";
 import { useProducts } from "./products-provider";
 import { categoriasData, slugCategoria } from "../data/catalog";
-import WhatsAppAsesor from "./whatsapp-asesor";
+import AdvisorCtaCard from "./advisor-cta-card";
 
 type SiteHeaderProps = {
   currentUser: {
@@ -427,14 +427,14 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
             }}
           >
             <div className="mx-auto max-w-[1510px] px-5 py-5">
-              <div className="scrollbar-hidden flex items-start gap-5 overflow-x-auto">
+              <div className="scrollbar-hidden grid grid-cols-[repeat(6,minmax(170px,1fr))] gap-5 overflow-x-auto">
                 {categoriasData.filter((cat) => cat.nombre !== "Outlet" && cat.nombre !== "Insumos/Repuesto").map((cat) => {
                   return (
                     <button
                       key={cat.nombre}
                       type="button"
                       onClick={() => irACategoria(cat.nombre)}
-                      className="group flex h-[249px] w-[224px] shrink-0 flex-col items-center justify-between rounded-[14px] border border-[#e2e8e8] bg-white px-6 pb-7 pt-7 text-center transition-all duration-300 hover:-translate-y-1 hover:border-[#9bdddf] hover:shadow-[0_18px_36px_rgba(10,92,99,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8ed9dd]"
+                      className="group flex h-[249px] min-w-0 flex-col items-center justify-between rounded-[14px] border border-[#e2e8e8] bg-white px-6 pb-7 pt-7 text-center transition-all duration-300 hover:-translate-y-1 hover:border-[#9bdddf] hover:shadow-[0_18px_36px_rgba(10,92,99,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8ed9dd]"
                     >
                       <div className="relative flex h-[142px] w-full items-center justify-center">
                         {cat.bannerImagen && (
@@ -455,24 +455,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
                 })}
 
                 {/* CTA card */}
-                <div className="flex h-[249px] w-[224px] shrink-0 flex-col items-center justify-center rounded-[14px] border border-[#9bdddf] bg-[#e9f7f8] px-7 py-7 text-center">
-                  <Image
-                    src="/foca-pensativa.png"
-                    alt="Foca Kliniu"
-                    width={185}
-                    height={175}
-                    className="mb-4 h-[175px] w-auto object-contain"
-                  />
-                  <p className="max-w-[178px] text-[16px] font-extrabold leading-[1.25] text-[#064f59]">
-                    ¿No sabes cuál necesitas?
-                  </p>
-                  <p className="mt-2 max-w-[174px] text-[12px] font-medium leading-[1.35] text-[#3d8b93]">
-                    Te ayudamos a elegir la mejor solución para tu espacio.
-                  </p>
-                  <WhatsAppAsesor className="mt-4 inline-flex min-h-9 items-center justify-center rounded-full bg-[#075762] px-6 text-[12px] font-extrabold text-white shadow-[0_10px_20px_rgba(7,87,98,0.12)] transition-colors hover:bg-[#0C535B]">
-                    Te asesoramos ☎
-                  </WhatsAppAsesor>
-                </div>
+                <AdvisorCtaCard className="h-[249px] min-w-0" />
               </div>
             </div>
           </div>

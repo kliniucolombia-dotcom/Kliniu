@@ -5,40 +5,104 @@ import SiteFooter from "../../components/site-footer";
 
 const policies = {
   privacidad: {
-    title: "Políticas de privacidad",
+    title: "Política de Privacidad",
     summary:
-      "Conoce cómo Kliniu protege la información que compartes al navegar, cotizar o comprar en nuestros canales digitales.",
+      "En KLINIU SAS entendemos y valoramos la importancia de proteger su información personal. Estamos comprometidos con mantener la confidencialidad, seguridad y privacidad de los datos que nuestros usuarios, clientes y visitantes nos proporcionan.",
     sections: [
       {
-        heading: "Información que recopilamos",
-        body: "Podemos solicitar datos de contacto, información de entrega, datos de facturación y detalles necesarios para atender solicitudes comerciales, compras, garantías o soporte.",
+        heading: "Uso de la Información",
+        body: "La información personal que usted nos comparte será utilizada exclusivamente para fines de mercadeo y promociones de nuestros productos. KLINIU SAS se compromete a no vender, alquilar, compartir ni divulgar esta información a terceros bajo ninguna circunstancia, salvo que sea requerida por una autoridad judicial competente, en cumplimiento de la ley.",
       },
       {
-        heading: "Uso de la información",
-        body: "Usamos tus datos para gestionar pedidos, responder cotizaciones, prestar soporte, mejorar la experiencia de compra y enviarte comunicaciones relacionadas con productos o servicios de Kliniu.",
+        heading: "Derecho a la Eliminación de Datos",
+        body: "En cualquier momento, usted puede solicitar la eliminación de sus datos de nuestras bases, escribiendo al correo info@kliniu.com e incluyendo su nombre completo y el motivo de su solicitud. Procesaremos su solicitud en el menor tiempo posible.",
       },
       {
-        heading: "Protección y confidencialidad",
-        body: "Tratamos la información con medidas razonables de seguridad y acceso restringido. No vendemos tus datos personales a terceros.",
+        heading: "Protección Legal",
+        body: "Según nuestros Términos Legales, su información será tratada bajo estrictas normas de confidencialidad y sólo será divulgada por mandato legal o requerimiento judicial.",
+      },
+      {
+        heading: "Política de Garantías y Derecho de Retracto",
+        body: "En KLINIU SAS, nuestro principal compromiso es su total satisfacción. Todos nuestros productos cuentan con garantía, cambio o devolución, siempre que se cumplan las condiciones establecidas.",
+      },
+      {
+        heading: "Condiciones Generales",
+        body: "El cambio o devolución podrá realizarse dentro de los primeros 30 días desde la compra. El producto debe encontrarse en perfecto estado, sin señales de mal uso, con su empaque original, manuales y accesorios completos. No aplica para productos manipulados, deteriorados, usados o sin embalaje original.",
+      },
+      {
+        heading: "Trámites y Contacto",
+        body: "Para gestionar cualquier tipo de garantía, cambio o devolución, comuníquese con nuestro Centro de Atención al Cliente:\n\nColombia: +57(1) 3682434 / +57 3226556454 — Av. 28 No. 34-43, Barrio La Soledad, Bogotá.\nHonduras: +504 31852275\nRepública Dominicana: +1 (809) 8507005\nNicaragua: +505 82508359\n\nCorreo: info@kliniu.com",
+      },
+      {
+        heading: "1. Garantía por Defectos de Fabricación",
+        body: "Aplica para productos con fallas o defectos no atribuibles al uso. Requiere presentación de factura original dentro de los 5 días hábiles desde la compra.",
+      },
+      {
+        heading: "2. Cambio por el Mismo Producto",
+        body: "Válido una sola vez por compra. El producto debe presentarse nuevo, con factura, y dentro del plazo estipulado.",
+      },
+      {
+        heading: "3. Cambio por Otro Producto",
+        body: "Puede cambiarse por un producto de igual o mayor valor, pagando la diferencia si aplica. No se aceptan cambios por productos usados o abiertos (especialmente productos de uso personal como cápsulas, cremas, geles, etc.).",
+      },
+      {
+        heading: "4. Devolución de Dinero",
+        body: "Se puede solicitar dentro de los 5 días hábiles por insatisfacción. El reembolso se realizará en la misma forma de pago original: tarjeta de crédito hasta 20 días hábiles; efectivo o cheque 10 días hábiles; consignación requiere carta con cuenta y banco receptor.",
+      },
+      {
+        heading: "5. Mantenimiento y Repuestos",
+        body: "Para mantenimientos fuera de garantía (por mal uso o desgaste), el costo será asumido por el cliente. Incluye 30 días de garantía sobre el mantenimiento realizado.",
+      },
+      {
+        heading: "Política de Reversión – Pagos Wompi",
+        body: "Usted reconoce que las ventas no presenciales pueden estar sujetas a reversión de pagos por parte del titular del medio de pago, conforme a la normativa local vigente. Este proceso será gestionado exclusivamente entre el titular, la entidad emisora y la entidad adquirente. En caso de reversión exitosa, KLINIU SAS podrá descontar el valor correspondiente o emitir una factura por el monto, compensándolo con futuros ingresos o generando intereses por mora si no se realiza el pago.",
+      },
+      {
+        heading: "Acerca de Nosotros",
+        body: "KLINIU SAS, con el respaldo de GC International, es una empresa colombiana con presencia en México, Nicaragua, Honduras, Guatemala y República Dominicana. Desde 1984 nos dedicamos al diseño, fabricación y comercialización de productos plásticos para el hogar e industria metalmecánica. Contamos con certificaciones ISO 9001 e ISO 14001, y nuestras materias primas están aprobadas por la FDA.",
       },
     ],
   },
   garantia: {
     title: "Garantía de Productos",
     summary:
-      "Nuestros productos cuentan con respaldo comercial y acompañamiento para revisar novedades de fabricación o funcionamiento.",
+      "Manual de Garantía de Productos KLINIU S.A.S. — vigente desde julio 2025. Expedido conforme a la Ley 1480 de 2011 (Estatuto del Consumidor) y demás normas concordantes.",
     sections: [
       {
-        heading: "Cobertura",
-        body: "La garantía aplica sobre fallas atribuibles a defectos de fabricación, de acuerdo con el tipo de producto, condiciones de uso y diagnóstico del equipo comercial o técnico.",
+        heading: "1. Marco Legal",
+        body: "Este manual se expide conforme a la Ley 1480 de 2011 (Estatuto del Consumidor) y demás normas concordantes. Las garantías ofrecidas por KLINIU S.A.S. respetan los derechos mínimos del consumidor, incluyendo protección al consumidor, derecho a la información, garantía mínima legal y derecho de retracto cuando aplique. También son aplicables a relaciones B2B salvo disposiciones en contrario.",
       },
       {
-        heading: "Condiciones",
-        body: "Para gestionar una garantía se debe presentar soporte de compra, evidencia del producto y una descripción clara de la novedad. Daños por mal uso, golpes, instalaciones incorrectas o manipulación no autorizada pueden quedar por fuera de cobertura.",
+        heading: "2. Productos Cubiertos",
+        body: "Este manual aplica a todos los productos comercializados por KLINIU S.A.S., incluyendo: dispensadores de higiene (incluidos los que contienen componentes electrónicos) y productos plásticos para el hogar y la industria fabricados o importados.",
       },
       {
-        heading: "Proceso",
-        body: "Nuestro equipo revisará el caso y te indicará si corresponde reparación, cambio, reposición de parte o recomendación de mantenimiento.",
+        heading: "3. Términos de la Garantía",
+        body: "Duración: mínima de 3 meses, salvo indicación expresa de mayor plazo. Inicio: fecha de entrega según factura o guía de despacho. Cobertura: defectos de fabricación o materiales, fisuras estructurales no atribuibles al mal uso, fallos en ruedas, tapas, ensamblajes o componentes electrónicos bajo condiciones normales. Responsabilidad: en caso de validarse la garantía, se procederá a reparación, cambio del producto, emisión de nota crédito o cambio total, sin costo adicional.",
+      },
+      {
+        heading: "4. Exclusiones de Garantía",
+        body: "Esta garantía no cubre: daños por uso inadecuado, abuso o negligencia; golpes, caídas o arrastre en superficies irregulares; exposición a sustancias químicas corrosivas no compatibles; exposición a climas o ambientes fuertes que deterioren el producto; almacenamiento inadecuado o condiciones extremas (sol intenso, fuego directo, etc.); intervenciones o modificaciones no autorizadas; instalación incorrecta o no realizada por personal calificado.",
+      },
+      {
+        heading: "5. Procedimiento para Hacer Efectiva la Garantía",
+        body: "1. Notificar el defecto por correo a ventas@kliniu.com dentro del período de garantía.\n2. Adjuntar: evidencia del daño (fotos/videos), copia de la factura y breve descripción del caso.\n3. Evaluación en máximo 10 días hábiles.\n4. En caso de aprobación, se notificará si el producto será reparado, sustituido o cubierto con nota crédito.\n\nLas reclamaciones deberán hacerse únicamente a través de los canales indicados.",
+      },
+      {
+        heading: "6. Derecho de Retracto (Art. 47 Ley 1480 de 2011)",
+        body: "Aplica solo para ventas no presenciales (internet, teléfono, catálogo). Término: 5 días hábiles siguientes a la entrega. Condiciones: producto nuevo, sin uso, con todos sus empaques, etiquetas y accesorios originales. El costo de transporte por devolución será asumido por el consumidor. No aplica para productos personalizados, sanitarios o fabricados a medida. Una vez recibido y verificado el producto, se realizará el reembolso dentro de los 30 días calendario.",
+      },
+      {
+        heading: "7. Canales de Atención",
+        body: "Correo: ventas@kliniu.com\nTeléfono: 601 3682434 / 312 5860921\nHorario: lunes a viernes, 8:00 a.m. – 5:00 p.m.",
+      },
+      {
+        heading: "8. Tabla de Garantías por Producto",
+        body: "Dispensadores plásticos: 6 meses — uso institucional con instalación adecuada.\nDispensadores con sensor o electrónicos: 3 meses — evitar humedad excesiva y uso continuo severo. Uso en interiores o pavimento uniforme.",
+      },
+      {
+        heading: "9. Consideraciones Finales",
+        body: "Este manual hace parte integral de la relación comercial entre KLINIU S.A.S. y sus compradores. Las condiciones pueden ser actualizadas; prevalecerá la versión vigente al momento de la compra. En caso de controversias, las partes podrán acudir a la Superintendencia de Industria y Comercio (SIC). KLINIU S.A.S. garantiza procesos transparentes, confiables y sin letra pequeña. Consulte nuestros planes de instalación o mantenimiento preventivo.",
       },
     ],
   },
