@@ -186,7 +186,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
 
         {/* Color swatches */}
         {variaciones.length > 0 ? (
-          <div className="flex min-h-[20px] items-center gap-1.5">
+          <div className="flex min-h-[24px] items-center gap-2">
             {variaciones.map((v) => (
               <button
                 key={v.color}
@@ -195,7 +195,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
                 onClick={(event) => event.stopPropagation()}
                 onMouseEnter={() => setHoveredColor(v.color)}
                 onMouseLeave={() => setHoveredColor(null)}
-                className={`h-4 w-4 rounded-full border transition-transform duration-150 hover:scale-125 ${
+                className={`h-5 w-5 rounded-full border transition-transform duration-150 hover:scale-125 ${
                   hoveredColor === v.color ? "border-[#27B1B8] scale-125" : "border-black/30"
                 }`}
                 style={{ background: v.color, boxShadow: "inset 0 0 0 1.5px rgba(0,0,0,0.22)" }}
@@ -207,7 +207,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
               </span>
             )}
           </div>
-        ) : <div className="min-h-[20px]" />}
+        ) : <div className="min-h-[24px]" />}
 
         <p className="mt-auto pt-2 text-lg font-bold text-[#111]">{producto.precio}</p>
 

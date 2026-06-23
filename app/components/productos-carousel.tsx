@@ -14,6 +14,7 @@ export default function ProductosCarousel({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScroll, setCanScroll] = useState(false);
   const [addedSlugs, setAddedSlugs] = useState<Set<string>>(new Set());
+  const [activeDot, setActiveDot] = useState(0);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -23,16 +24,30 @@ export default function ProductosCarousel({
       setCanScroll(el.scrollWidth > el.clientWidth + 4);
     };
 
+    const updateDot = () => {
+      const cardWidth = 216; // 200px card + 16px gap
+      const index = Math.round(el.scrollLeft / cardWidth);
+      setActiveDot(Math.min(index, products.length - 1));
+    };
+
     updateOverflow();
+    el.addEventListener("scroll", updateDot, { passive: true });
     const observer = new ResizeObserver(updateOverflow);
     observer.observe(el);
     window.addEventListener("resize", updateOverflow);
 
     return () => {
       observer.disconnect();
+      el.removeEventListener("scroll", updateDot);
       window.removeEventListener("resize", updateOverflow);
     };
   }, [products.length]);
+
+  const scrollToIndex = (index: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ left: index * 216, behavior: "smooth" });
+  };
 
   const scroll = (dir: "left" | "right") => {
     const el = scrollRef.current;
@@ -137,6 +152,24 @@ export default function ProductosCarousel({
         >
           ›
         </button>
+      )}
+
+      {canScroll && (
+        <div className="mt-3 flex items-center justify-center gap-1.5">
+          {products.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              aria-label={`Ir al producto ${i + 1}`}
+              onClick={() => scrollToIndex(i)}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                i === activeDot
+                  ? "w-5 bg-[#0C535B]"
+                  : "w-2 bg-[#0C535B]/25 hover:bg-[#0C535B]/50"
+              }`}
+            />
+          ))}
+        </div>
       )}
     </div>
   );

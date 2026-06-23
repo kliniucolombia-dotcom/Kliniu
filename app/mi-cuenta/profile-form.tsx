@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import WhatsAppAsesor from "../components/whatsapp-asesor";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { departamentosColombia, getCitiesForDepartment } from "@/lib/colombia-locations";
+import { categoriasData, slugCategoria } from "@/app/data/catalog";
 
 type AccountUser = {
   id: string;
@@ -234,7 +236,11 @@ export default function AccountProfileForm({
   orders: AccountOrder[];
 }) {
   const router = useRouter();
-  const [activePanel, setActivePanel] = useState<AccountPanel>("summary");
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab");
+  const [activePanel, setActivePanel] = useState<AccountPanel>(
+    initialTab === "orders" ? "orders" : initialTab === "facturas" ? "facturas" : "summary"
+  );
   const [showFullOrderHistory, setShowFullOrderHistory] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>({
@@ -257,6 +263,7 @@ export default function AccountProfileForm({
   const [prize, setPrize] = useState<StoredPrize | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -513,7 +520,8 @@ export default function AccountProfileForm({
           </button>
         </nav>
 
-        {/* Help CTA */}
+        {/* Help CTA — oculto en Inicio (ya hay uno en el contenido) */}
+        {activePanel !== "summary" && (
         <div className="mt-auto pt-8">
           <WhatsAppAsesor className="flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90">
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
@@ -522,260 +530,233 @@ export default function AccountProfileForm({
             WhatsApp
           </WhatsAppAsesor>
         </div>
+        )}
       </aside>
 
-      {/* Mobile top nav */}
-      <div className="lg:hidden fixed top-[88px] left-0 right-0 z-30 flex border-b border-black/8 bg-white px-4">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setActivePanel(item.id)}
-            className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-semibold transition-colors duration-200 ${
-              sidebarIsActive(item.id)
-                ? "border-[#0C535B] text-[#0C535B]"
-                : "border-transparent text-[#6e7379] hover:text-[#0C535B]"
-            }`}
-          >
-            {item.icon}
-            {item.label}
-          </button>
-        ))}
-      </div>
 
       {/* Content area */}
-      <div className="flex-1 min-w-0 px-5 pt-20 pb-16 lg:px-10 lg:pt-10 lg:pb-16">
+      <div className="flex-1 min-w-0 px-6 pt-8 pb-16 lg:px-12 lg:pt-12 lg:pb-24">
 
         {/* — Inicio panel — */}
         {(activePanel === "summary") && (
-          <div className="space-y-6 max-w-4xl">
+          <div className="space-y-8">
+            {/* Header */}
             <div>
               <h1 className="text-2xl font-extrabold tracking-tight text-[#111] lg:text-3xl">
                 Mi <span className="text-[#27B1B8]">cuenta</span>
               </h1>
-              <p className="mt-1 text-sm text-[#6e7379]">
+              <p className="mt-2 text-sm text-[#6e7379]">
                 Revisa y gestiona tu información personal y de envío.
               </p>
             </div>
 
-            {/* Bono digital */}
-            {(() => {
-              const cardStyle: React.CSSProperties = {
-                borderRadius: 20,
-                background: "linear-gradient(135deg, #073F43 0%, #0C535B 60%, #1B9CA1 100%)",
-                boxShadow: "0 20px 50px rgba(7,63,67,0.4)",
-                overflow: "hidden",
-              };
+            {/* FILA 1 — Banner + Resumen/Stats */}
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch">
 
-              if (!prize || timeLeft <= 0) return (
-                <div style={cardStyle}>
-                  <div style={{ padding: "24px 28px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: 16 }}>
-                    <div style={{ width: 56, height: 56, borderRadius: 14, background: "linear-gradient(135deg,#FFD000,#FF6B00)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0, boxShadow: "0 8px 20px rgba(255,107,0,0.4)" }}>🎟️</div>
-                    <div style={{ flex: 1, minWidth: 160 }}>
-                      <p style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.26em", color: "#27B1B8", textTransform: "uppercase", margin: 0 }}>Bono de bienvenida</p>
-                      <p style={{ fontSize: 18, fontWeight: 900, color: "#fff", margin: "4px 0 2px" }}>¡Gira la ruleta y gana un descuento!</p>
-                      <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", margin: 0 }}>Tu premio aparecerá aquí con una cuenta regresiva de 12 horas.</p>
+              {/* LEFT — Banner */}
+              <div className="w-full lg:w-[38%] lg:shrink-0">
+                {(() => {
+                  if (!prize || timeLeft <= 0) return (
+                    <div className="overflow-hidden rounded-2xl">
+                      <img src="/banners-web/TARJETA DE REGALO-43.png" alt="Tarjeta de regalo" className="block w-full" />
                     </div>
-                    <Link
-                      href="/"
-                      style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 8, borderRadius: 999, background: "linear-gradient(90deg,#FF6B00,#FFD000)", padding: "10px 22px", fontSize: 13, fontWeight: 900, color: "#fff", textDecoration: "none", boxShadow: "0 8px 20px rgba(255,107,0,0.35)" }}
-                    >
-                      Ir a la ruleta
-                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                    </Link>
-                  </div>
-                </div>
-              );
-
-              const hh = String(Math.floor(timeLeft / 3600)).padStart(2, "0");
-              const mm = String(Math.floor((timeLeft % 3600) / 60)).padStart(2, "0");
-              const ss = String(timeLeft % 60).padStart(2, "0");
-              const isShipping = prize.detail === "gratis";
-              return (
-                <div style={{ borderRadius: 20, overflow: "hidden", boxShadow: "0 24px 60px rgba(7,63,67,0.3)", position: "relative", maxWidth: 520 }}>
-                  {/* Imagen de fondo */}
-                  <div style={{ position: "relative" }}>
-                    <img src="/tarjeta-bono.jpg" alt="" style={{ width: "100%", display: "block" }} />
-
-                    {/* Overlay con descuento real (tapa el 15% del jpg) */}
-                    <div style={{ position: "absolute", left: "6%", bottom: "4%", background: "rgba(7,63,67,0.82)", borderRadius: 18, padding: "10px 20px", backdropFilter: "blur(6px)", textAlign: "center", minWidth: 90 }}>
-                      <p style={{ fontSize: isShipping ? 28 : 44, fontWeight: 900, color: "#fff", lineHeight: 1, margin: 0 }}>
-                        {isShipping ? "🚚" : prize.label}
-                      </p>
-                      <p style={{ fontSize: 12, fontWeight: 700, color: "#BFEFF0", margin: "3px 0 0" }}>
-                        {isShipping ? "envío gratis" : prize.detail}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Franja inferior con código + timer + CTA */}
-                  <div style={{ background: "#073F43", padding: "16px 24px" }}>
-                    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12 }}>
-                      {/* Código */}
-                      <div style={{ display: "flex", flex: 1, minWidth: 200, gap: 8, alignItems: "center" }}>
-                        <div style={{ flex: 1, border: "1.5px dashed rgba(39,177,184,0.5)", borderRadius: 10, padding: "8px 12px", fontFamily: "monospace", fontSize: 14, fontWeight: 800, letterSpacing: "0.1em", color: "#27B1B8", background: "rgba(255,255,255,0.05)" }}>
-                          {prize.code}
+                  );
+                  const hh = String(Math.floor(timeLeft / 3600)).padStart(2, "0");
+                  const mm = String(Math.floor((timeLeft % 3600) / 60)).padStart(2, "0");
+                  const ss = String(timeLeft % 60).padStart(2, "0");
+                  const isShipping = prize.detail === "gratis";
+                  return (
+                    <div style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 24px 60px rgba(7,63,67,0.3)", position: "relative" }}>
+                      <div style={{ position: "relative" }}>
+                        <img src="/tarjeta-bono.jpg" alt="" style={{ width: "100%", display: "block" }} />
+                        <div style={{ position: "absolute", left: "6%", bottom: "4%", background: "rgba(7,63,67,0.82)", borderRadius: 18, padding: "10px 20px", backdropFilter: "blur(6px)", textAlign: "center", minWidth: 90 }}>
+                          <p style={{ fontSize: isShipping ? 28 : 44, fontWeight: 900, color: "#fff", lineHeight: 1, margin: 0 }}>{isShipping ? "🚚" : prize.label}</p>
+                          <p style={{ fontSize: 12, fontWeight: 700, color: "#BFEFF0", margin: "3px 0 0" }}>{isShipping ? "envío gratis" : prize.detail}</p>
                         </div>
-                        <button type="button"
-                          onClick={() => { navigator.clipboard.writeText(prize.code); setCodeCopied(true); setTimeout(() => setCodeCopied(false), 2000); }}
-                          style={{ background: "#27B1B8", color: "#fff", border: "none", borderRadius: 10, padding: "9px 16px", fontSize: 12, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}>
-                          {codeCopied ? "✓ Copiado" : "Copiar"}
+                      </div>
+                      <div style={{ background: "#073F43", padding: "16px 20px" }}>
+                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
+                          <div style={{ display: "flex", flex: 1, minWidth: 160, gap: 8, alignItems: "center" }}>
+                            <div style={{ flex: 1, border: "1.5px dashed rgba(39,177,184,0.5)", borderRadius: 10, padding: "7px 10px", fontFamily: "monospace", fontSize: 13, fontWeight: 800, letterSpacing: "0.1em", color: "#27B1B8", background: "rgba(255,255,255,0.05)" }}>{prize.code}</div>
+                            <button type="button" onClick={() => { navigator.clipboard.writeText(prize.code); setCodeCopied(true); setTimeout(() => setCodeCopied(false), 2000); }} style={{ background: "#27B1B8", color: "#fff", border: "none", borderRadius: 10, padding: "8px 14px", fontSize: 11, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}>{codeCopied ? "✓ Copiado" : "Copiar"}</button>
+                          </div>
+                          <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
+                            {[hh, mm, ss].map((unit, i) => (
+                              <span key={i} style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                                <span style={{ background: "rgba(255,255,255,0.12)", borderRadius: 7, padding: "3px 7px", fontSize: 16, fontWeight: 900, color: "#fff", fontVariantNumeric: "tabular-nums" }}>{unit}</span>
+                                {i < 2 && <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 900 }}>:</span>}
+                              </span>
+                            ))}
+                          </div>
+                          <Link href="/categorias" style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 999, background: "linear-gradient(90deg,#FF6B00,#FFD000)", padding: "9px 16px", fontSize: 12, fontWeight: 900, color: "#fff", textDecoration: "none", whiteSpace: "nowrap" }}>Usar bono →</Link>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* RIGHT — Resumen + Stats/Actividad */}
+              <div className="flex w-full min-w-0 flex-col gap-4 lg:flex-1">
+
+                {/* Resumen de cuenta */}
+                <div className="rounded-2xl border border-black/8 bg-white p-6 shadow-[0_4px_16px_rgba(15,23,42,0.05)]">
+                  <p className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-[#27B1B8]">Resumen de cuenta</p>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    {/* Info personal */}
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#EAF8F6]">
+                        <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#0C535B]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-[#8b8d91]">Cuenta</p>
+                        <p className="truncate text-sm font-semibold text-[#111]">{user.fullName}</p>
+                        <p className="truncate text-xs text-[#6e7379]">{user.email}</p>
+                      </div>
+                    </div>
+                    {/* Dirección */}
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#EAF8F6]">
+                        <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#0C535B]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-[#8b8d91]">Dirección</p>
+                        {user.addressLine1 ? (
+                          <>
+                            <p className="truncate text-sm font-semibold text-[#111]">{user.addressLine1}</p>
+                            <p className="truncate text-xs text-[#6e7379]">{[user.city, user.department].filter(Boolean).join(", ")}</p>
+                          </>
+                        ) : (
+                          <p className="text-sm text-[#8b8d91]">Sin registrar</p>
+                        )}
+                      </div>
+                    </div>
+                    {/* Pago */}
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#EAF8F6]">
+                        <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#0C535B]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-[#8b8d91]">Métodos de pago</p>
+                        <p className="text-sm text-[#8b8d91]">Próximamente</p>
+                      </div>
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => setActivePanel("details")} className="mt-4 w-full rounded-xl border border-[#0C535B]/20 py-2 text-xs font-bold text-[#0C535B] transition-colors hover:bg-[#0C535B] hover:text-white">
+                    Editar información
+                  </button>
+                </div>
+
+                {/* Stats + Actividad reciente — fila */}
+                <div className="grid flex-1 gap-4 sm:grid-cols-2">
+                  {/* Estadísticas */}
+                  <div className="rounded-2xl border border-black/8 bg-white p-6 shadow-[0_4px_16px_rgba(15,23,42,0.05)]">
+                    <p className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-[#27B1B8]">Estadísticas</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="rounded-xl bg-[#f6fdfd] px-2 py-3 text-center">
+                        <p className="text-xl font-black text-[#0C535B]">{orders.length}</p>
+                        <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#8b8d91]">Pedidos</p>
+                      </div>
+                      <div className="rounded-xl bg-[#f6fdfd] px-2 py-3 text-center">
+                        <p className="text-xl font-black text-[#0C535B]">{activeShipments}</p>
+                        <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#8b8d91]">En proceso</p>
+                      </div>
+                      <div className="rounded-xl bg-[#f6fdfd] px-2 py-3 text-center">
+                        <p className="text-xl font-black text-[#0C535B]">{deliveredOrders}</p>
+                        <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#8b8d91]">Entregados</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actividad reciente */}
+                  <div className="rounded-2xl border border-black/8 bg-white p-6 shadow-[0_4px_16px_rgba(15,23,42,0.05)]">
+                    <p className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-[#27B1B8]">Actividad reciente</p>
+                    {orders.length > 0 ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2 rounded-xl bg-[#f6fdfd] px-3 py-2.5">
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-[#111]">Último pedido</p>
+                            <p className="truncate text-[11px] text-[#6e7379]">{orders[0].items[0]?.name || "Pedido"}</p>
+                          </div>
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${orders[0].status === "PAID" ? "bg-green-50 text-green-700" : orders[0].status === "CANCELLED" ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-700"}`}>
+                            {getOrderStatusLabel(orders[0].status)}
+                          </span>
+                        </div>
+                        <button type="button" onClick={() => setActivePanel("orders")} className="w-full rounded-xl border border-[#0C535B]/20 py-2 text-xs font-bold text-[#0C535B] transition-colors hover:bg-[#0C535B] hover:text-white">
+                          Ver mis pedidos
                         </button>
                       </div>
-
-                      {/* Timer */}
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <p style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.15em", margin: 0 }}>Vence en</p>
-                        <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
-                          {[hh, mm, ss].map((unit, i) => (
-                            <span key={i} style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                              <span style={{ background: "rgba(255,255,255,0.12)", borderRadius: 7, padding: "3px 8px", fontSize: 18, fontWeight: 900, color: "#fff", fontVariantNumeric: "tabular-nums" }}>{unit}</span>
-                              {i < 2 && <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 900 }}>:</span>}
-                            </span>
-                          ))}
+                    ) : (
+                      <div className="flex flex-col items-center justify-center gap-2 py-4 text-center">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f0f0f0]">
+                          <svg viewBox="0 0 24 24" className="h-5 w-5 text-[#bbb]" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
                         </div>
+                        <p className="text-xs text-[#8b8d91]">Sin pedidos aún</p>
+                        <Link href="/categorias" className="text-xs font-bold text-[#0C535B] hover:underline">Explorar productos →</Link>
                       </div>
+                    )}
+                  </div>
+                </div>
 
-                      {/* CTA */}
-                      <Link href="/categorias"
-                        style={{ display: "inline-flex", alignItems: "center", gap: 7, borderRadius: 999, background: "linear-gradient(90deg,#FF6B00,#FFD000)", padding: "10px 20px", fontSize: 13, fontWeight: 900, color: "#fff", textDecoration: "none", boxShadow: "0 6px 18px rgba(255,107,0,0.4)", whiteSpace: "nowrap" }}>
-                        Usar bono ahora →
+              </div>
+            </div>
+
+            {/* FILA 2 — Ayuda + Catálogo (alineados) */}
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch">
+
+              {/* LEFT — Ayuda */}
+              <div className="w-full lg:w-[38%] lg:shrink-0">
+                <div className="flex h-full flex-col rounded-2xl bg-[#0C535B] p-6">
+                  <p className="text-2xl font-bold text-white">¿Necesitas ayuda?</p>
+                  <p className="mt-3 text-lg leading-relaxed text-white/70">Nuestro equipo está listo para asistirte en todo lo que necesites.</p>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {["Asesoría gratuita", "Respuesta rápida", "Cotizaciones"].map((chip) => (
+                      <span key={chip} className="rounded-full border border-white/20 px-3.5 py-2 text-sm font-semibold text-white/80">{chip}</span>
+                    ))}
+                  </div>
+                  <WhatsAppAsesor className="mt-6 lg:mt-auto flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-4 text-sm font-semibold text-white transition-opacity hover:opacity-90">
+                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    Escribir por WhatsApp
+                  </WhatsAppAsesor>
+                </div>
+              </div>
+
+              {/* RIGHT — Catálogo */}
+              <div className="w-full min-w-0 lg:flex-1">
+                <div className="h-full rounded-2xl border border-[#27B1B8]/20 bg-[#f0fbfb] p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <p className="text-base font-bold text-[#0C535B]">Explora nuestro catálogo</p>
+                    <Link href="/categorias" className="shrink-0 rounded-full bg-[#0C535B] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90">
+                      Ver productos
+                    </Link>
+                  </div>
+                  <p className="mt-2 text-xs text-[#3a7a80]">Dispensadores, insumos y más para tu negocio.</p>
+                  <div className="mt-6 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-5 sm:overflow-visible sm:pb-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {categoriasData.filter((cat) => cat.nombre !== "Outlet" && cat.nombre !== "Insumos/Repuesto").map((cat) => (
+                      <Link
+                        key={cat.nombre}
+                        href={`/categorias?cat=${slugCategoria(cat.nombre)}`}
+                        className="group flex w-[44%] shrink-0 snap-start flex-col items-center rounded-xl bg-white p-3 transition-shadow hover:shadow-md sm:w-auto"
+                      >
+                        <div className="flex h-20 w-full items-center justify-center">
+                          {cat.iconoImagen && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={cat.iconoImagen}
+                              alt={cat.nombre}
+                              className="max-h-20 w-auto max-w-full object-contain transition-transform duration-200 group-hover:scale-105"
+                            />
+                          )}
+                        </div>
+                        <span className="mt-2 line-clamp-2 h-8 w-full text-center text-[11px] font-semibold leading-tight text-[#0C535B] sm:text-[9px]">{cat.nombre}</span>
                       </Link>
-                    </div>
+                    ))}
                   </div>
                 </div>
-              );
-            })()}
-            {/* 3 info cards */}
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {/* Información de cuenta */}
-              <div className="flex flex-col rounded-2xl border border-black/8 bg-white p-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)]">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EAF8F6]">
-                    <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#0C535B]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
-                  </div>
-                  <p className="font-semibold text-[#0C535B]">Información de cuenta</p>
-                </div>
-                <div className="mt-4 flex-1 space-y-1.5">
-                  <p className="text-sm font-semibold text-[#111]">{user.fullName}</p>
-                  <p className="text-sm text-[#6e7379]">{user.email}</p>
-                  <p className="text-sm text-[#6e7379]">{user.phone || "Sin teléfono registrado"}</p>
-                  {user.company && (
-                    <p className="text-sm text-[#6e7379]">{user.company}</p>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setActivePanel("details")}
-                  className="mt-5 w-full rounded-xl border border-[#0C535B]/20 py-2.5 text-sm font-semibold text-[#0C535B] transition-colors duration-200 hover:bg-[#0C535B] hover:text-white"
-                >
-                  Editar información
-                </button>
               </div>
 
-              {/* Dirección principal */}
-              <div className="flex flex-col rounded-2xl border border-black/8 bg-white p-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)]">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EAF8F6]">
-                    <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#0C535B]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
-                      <circle cx="12" cy="10" r="3" />
-                    </svg>
-                  </div>
-                  <p className="font-semibold text-[#0C535B]">Dirección principal</p>
-                </div>
-                <div className="mt-4 flex-1 space-y-1.5">
-                  {user.addressLine1 ? (
-                    <>
-                      <p className="text-sm font-semibold text-[#111]">{user.addressLine1}</p>
-                      {user.addressLine2 && (
-                        <p className="text-sm text-[#6e7379]">{user.addressLine2}</p>
-                      )}
-                      <p className="text-sm text-[#6e7379]">
-                        {[user.city, user.department].filter(Boolean).join(", ")}
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-sm text-[#8b8d91]">Sin dirección registrada</p>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setActivePanel("details")}
-                  className="mt-5 w-full rounded-xl border border-[#0C535B]/20 py-2.5 text-sm font-semibold text-[#0C535B] transition-colors duration-200 hover:bg-[#0C535B] hover:text-white"
-                >
-                  Editar información
-                </button>
-              </div>
-
-              {/* Métodos de pago */}
-              <div className="flex flex-col rounded-2xl border border-black/8 bg-white p-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)]">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EAF8F6]">
-                    <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#0C535B]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-                      <line x1="1" y1="10" x2="23" y2="10" />
-                    </svg>
-                  </div>
-                  <p className="font-semibold text-[#0C535B]">Métodos de pago</p>
-                </div>
-                <div className="mt-4 flex-1">
-                  <p className="text-sm text-[#8b8d91]">Sin métodos de pago registrados.</p>
-                </div>
-                <button
-                  type="button"
-                  disabled
-                  className="mt-5 w-full cursor-not-allowed rounded-xl border border-black/10 py-2.5 text-sm font-semibold text-[#8b8d91]"
-                >
-                  Próximamente
-                </button>
-              </div>
             </div>
 
-            {/* Resumen de pedidos quick-stats */}
-            {orders.length > 0 && (
-              <div className="grid grid-cols-3 gap-4">
-                <div className="rounded-xl border border-black/8 bg-white px-4 py-4 text-center">
-                  <p className="text-2xl font-bold text-[#27B1B8]">{orders.length}</p>
-                  <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Pedidos</p>
-                </div>
-                <div className="rounded-xl border border-black/8 bg-white px-4 py-4 text-center">
-                  <p className="text-2xl font-bold text-[#27B1B8]">{activeShipments}</p>
-                  <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">En proceso</p>
-                </div>
-                <div className="rounded-xl border border-black/8 bg-white px-4 py-4 text-center">
-                  <p className="text-2xl font-bold text-[#27B1B8]">{deliveredOrders}</p>
-                  <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Entregados</p>
-                </div>
-              </div>
-            )}
-
-            {/* ¿Necesitas ayuda? */}
-            <div className="rounded-2xl bg-[#0C535B] p-6 md:p-8">
-              <p className="text-xl font-bold text-white">¿Necesitas ayuda?</p>
-              <p className="mt-1 text-sm text-white/70">
-                Nuestro equipo está listo para asistirte en todo lo que necesites.
-              </p>
-              <WhatsAppAsesor className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90">
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                </svg>
-                Escribir por WhatsApp
-              </WhatsAppAsesor>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {["Asesoría gratuita", "Respuesta rápida", "Cotizaciones"].map((chip) => (
-                  <span
-                    key={chip}
-                    className="rounded-full border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80"
-                  >
-                    {chip}
-                  </span>
-                ))}
-              </div>
-            </div>
           </div>
         )}
 

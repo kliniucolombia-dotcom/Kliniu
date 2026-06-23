@@ -223,7 +223,7 @@ function ImageGallery({ nombre, images }: { nombre: string; images: string[] }) 
               key={`thumb-${i}`}
               type="button"
               onClick={() => setActive(i)}
-              className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 bg-white p-1 transition-all ${
+              className={`h-20 w-20 shrink-0 overflow-hidden rounded-xl border-2 bg-white p-1 transition-all ${
                 active === i ? "border-[#27B1B8]" : "border-black/8 hover:border-[#27B1B8]/40"
               }`}
             >
@@ -470,7 +470,10 @@ export default function ProductoDetallePage() {
       const selected = allVariants[colorActivo]?.image ?? producto.imagen;
       const others = allVariants.filter((_, i) => i !== colorActivo).map((v) => v.image);
       const extras = (producto.imagenesExtra || []).filter((img) => img !== tipoImage);
-      return [tipoImage, selected, ...others, ...extras].filter((x): x is string => Boolean(x));
+      // La imagen del color seleccionado va primero para que tocar una variante cambie la imagen principal
+      return [selected, tipoImage, ...others, ...extras]
+        .filter((x): x is string => Boolean(x))
+        .filter((x, i, arr) => arr.indexOf(x) === i);
     }
     const extras = (producto.imagenesExtra || []).filter((img) => img !== tipoImage);
     return [tipoImage, producto.imagen, ...extras].filter((x): x is string => Boolean(x));
@@ -628,26 +631,31 @@ export default function ProductoDetallePage() {
                 <p className="mb-2 text-sm font-semibold text-[#333]">
                   Colores disponibles: <span className="font-normal text-[#555]">{allVariants[colorActivo]?.label}</span>
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1">
                   {allVariants.map((v, i) => (
                     <button
                       key={v.color}
                       type="button"
                       onClick={() => setColorActivo(i)}
                       aria-label={v.label}
+                      aria-pressed={colorActivo === i}
                       title={v.label}
-                      className={`h-7 w-7 rounded-full border-2 shadow-sm transition-all ${
-                        colorActivo === i
-                          ? "ring-2 ring-[#27B1B8] ring-offset-2"
-                          : "hover:ring-1 hover:ring-[#27B1B8]/50 hover:ring-offset-1"
+                      className={`flex h-12 w-12 items-center justify-center rounded-full transition-colors ${
+                        colorActivo === i ? "bg-[#27B1B8]/10" : "hover:bg-black/5"
                       }`}
-                      style={{
-                        background: v.color,
-                        borderColor: v.color === "#ffffff" || v.color === "#fff" || v.color.toLowerCase() === "white"
-                          ? "rgba(0,0,0,0.15)"
-                          : "rgba(0,0,0,0.08)",
-                      }}
-                    />
+                    >
+                      <span
+                        className={`block h-9 w-9 rounded-full border-2 shadow-sm transition-all ${
+                          colorActivo === i ? "ring-2 ring-[#27B1B8] ring-offset-2" : ""
+                        }`}
+                        style={{
+                          background: v.color,
+                          borderColor: v.color === "#ffffff" || v.color === "#fff" || v.color.toLowerCase() === "white"
+                            ? "rgba(0,0,0,0.15)"
+                            : "rgba(0,0,0,0.08)",
+                        }}
+                      />
+                    </button>
                   ))}
                 </div>
               </div>
