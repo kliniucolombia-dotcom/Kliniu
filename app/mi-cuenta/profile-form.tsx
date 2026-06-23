@@ -241,6 +241,11 @@ export default function AccountProfileForm({
   const [activePanel, setActivePanel] = useState<AccountPanel>(
     initialTab === "orders" ? "orders" : initialTab === "facturas" ? "facturas" : "summary"
   );
+  useEffect(() => {
+    if (initialTab === "orders") setActivePanel("orders");
+    else if (initialTab === "facturas") setActivePanel("facturas");
+    else if (initialTab === "summary") setActivePanel("summary");
+  }, [initialTab]);
   const [showFullOrderHistory, setShowFullOrderHistory] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>({
@@ -735,7 +740,7 @@ export default function AccountProfileForm({
                     {categoriasData.filter((cat) => cat.nombre !== "Outlet" && cat.nombre !== "Insumos/Repuesto").map((cat) => (
                       <Link
                         key={cat.nombre}
-                        href={`/categorias?cat=${slugCategoria(cat.nombre)}`}
+                        href={`/categorias?categoria=${slugCategoria(cat.nombre)}`}
                         className="group flex w-[44%] shrink-0 snap-start flex-col items-center rounded-xl bg-white p-3 transition-shadow hover:shadow-md sm:w-auto"
                       >
                         <div className="flex h-20 w-full items-center justify-center">
@@ -1184,7 +1189,7 @@ export default function AccountProfileForm({
 
         {/* — Facturas panel — */}
         {activePanel === "facturas" && (
-          <div className="flex max-w-lg flex-col items-center py-16 text-center">
+          <div className="mx-auto flex max-w-lg flex-col items-center py-16 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#EAF8F6]">
               <svg viewBox="0 0 24 24" className="h-7 w-7 text-[#0C535B]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />

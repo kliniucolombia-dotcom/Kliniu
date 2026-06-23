@@ -80,11 +80,6 @@ export default async function MisPuntosPage() {
               style={{ background: tierData ? `linear-gradient(135deg, ${tierData.color}dd, ${tierData.color}88)` : "linear-gradient(135deg, #0C6060, #27B1B8)" }}
             >
               <div className="relative px-6 py-6">
-                {/* Foca decorativa */}
-                <div className="pointer-events-none absolute bottom-0 right-4 h-32 w-32 opacity-20">
-                  <Image src="/foca-ok-kliniu-original.png" alt="" fill className="object-contain object-bottom" />
-                </div>
-
                 <div className="relative">
                   <div className="flex items-start justify-between">
                     <div>
