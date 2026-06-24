@@ -54,8 +54,8 @@ export const PRODUCT_VOLUME_PRICES: Record<
 };
 
 const BASE = "https://yotsdpjfnsrejtoufkuu.supabase.co/storage/v1/object/public/product-images/products";
-const XPERT_IMG_FRASCO = `${BASE}/17816203903N-xpert-frasco-contenedor.jpeg`;
-const XPERT_IMG_BOLSA  = `${BASE}/17816203903N-xpert-bolsa.jpeg`;
+const XPERT_IMG_FRASCO = `${BASE}/1782315480220-xpert-frasco-contenedor.webp`;
+const XPERT_IMG_BOLSA  = `${BASE}/1782315480220-xpert-bolsa.webp`;
 
 const PAPEL_INST_BLANCO_METALICO  = `${BASE}/papel-inst-blanco-metalico.png`;
 const PAPEL_INST_NEGRO_METALICO   = `${BASE}/papel-inst-negro-metalico.png`;
