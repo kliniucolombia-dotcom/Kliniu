@@ -436,14 +436,14 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
                       onClick={() => irACategoria(cat.nombre)}
                       className="group flex h-[249px] min-w-0 flex-col items-center justify-between rounded-[14px] border border-[#e2e8e8] bg-white px-6 pb-7 pt-7 text-center transition-all duration-300 hover:-translate-y-1 hover:border-[#9bdddf] hover:shadow-[0_18px_36px_rgba(10,92,99,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8ed9dd]"
                     >
-                      <div className="relative flex h-[142px] w-full items-center justify-center">
+                      <div className={`relative flex h-[142px] w-full items-center justify-center ${cat.flipImagen ? "-scale-x-100" : ""}`}>
                         {cat.bannerImagen && (
                           <Image
                             src={cat.bannerImagen}
                             alt={cat.nombre}
                             width={150}
                             height={140}
-                            className="h-[118px] w-auto max-w-[132px] object-contain transition-transform duration-300 group-hover:scale-[1.04]"
+                            className="h-[118px] w-auto max-w-[132px] object-contain"
                           />
                         )}
                       </div>

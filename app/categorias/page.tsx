@@ -276,14 +276,14 @@ function LandingCategorias({ onSelect }: { onSelect: (cat: string) => void }) {
                 onClick={() => onSelect(cat.nombre)}
                 className="interactive-lift group flex flex-col items-center gap-4 overflow-hidden rounded-2xl border border-black/8 bg-white p-6 text-center transition-all hover:-translate-y-0.5 hover:border-[#27B1B8]/40 hover:shadow-md"
               >
-                <div className="flex h-36 w-full items-center justify-center overflow-hidden rounded-xl bg-white px-4 py-3">
+                <div className={`flex h-36 w-full items-center justify-center overflow-hidden rounded-xl bg-white px-4 py-3 ${cat.flipImagen ? "-scale-x-100" : ""}`}>
                   {cat.iconoImagen && (
                     <Image
                       src={cat.iconoImagen}
                       alt={cat.nombre}
                       width={190}
                       height={120}
-                      className="image-lift max-h-[112px] w-auto max-w-full object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+                      className="image-lift max-h-[112px] w-auto max-w-full object-contain"
                     />
                   )}
                 </div>

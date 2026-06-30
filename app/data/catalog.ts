@@ -3,6 +3,7 @@ export type CategoriaMeta = {
   color: string;
   icono: string;
   iconoImagen?: string;
+  flipImagen?: boolean;
   bannerImagen?: string;
   heroBannerImagen?: string;
   heroBannerMovil?: string;
@@ -36,6 +37,7 @@ export const categoriasData: readonly CategoriaMeta[] = [
     comoElegirBannerWeb: "/banners-web/BANNER-FINALES-15.png",
     comoElegirBannerMovil: "/banners-responsive/BANNER-FINALES-35.png",
     iconoImagen: "/cat-liquidos.png",
+    flipImagen: true,
     bannerCopy: "Soluciones de dispensación líquida para higiene eficiente en cualquier espacio.",
     heroTitulo1: "Dispensadores para",
     heroTitulo2: "",
@@ -66,6 +68,7 @@ export const categoriasData: readonly CategoriaMeta[] = [
     comoElegirBannerWeb: "/banners-web/BANNER-FINALES-16.png",
     comoElegirBannerMovil: "/banners-responsive/BANNER-FINALES-36.png",
     iconoImagen: "/cat-papel.png",
+    flipImagen: true,
     bannerCopy: "Sistemas de dispensación de papel diseñados para crear higiene, ahorro y eficiencia en cada uso.",
     heroTitulo1: "Dispensadores de",
     heroTitulo2: "",
@@ -96,6 +99,7 @@ export const categoriasData: readonly CategoriaMeta[] = [
     comoElegirBannerWeb: "/banners-web/BANNER-FINALES-17.png",
     comoElegirBannerMovil: "/banners-responsive/BANNER-FINALES-37.png",
     iconoImagen: "/cat-klinox.png",
+    flipImagen: false,
     bannerCopy: "Dispensadores premium en acero inoxidable diseñados para máxima durabilidad.",
     heroTitulo1: "Dispensadores en",
     heroTitulo2: "",
@@ -127,6 +131,7 @@ export const categoriasData: readonly CategoriaMeta[] = [
     comoElegirBannerWeb: "/banners-web/BANNER-FINALES-19.png",
     comoElegirBannerMovil: "/banners-responsive/BANNER-FINALES-38.png",
     iconoImagen: "/cat-crema-dental.png",
+    flipImagen: true,
     bannerCopy: "Sistemas de dispensación higiénica de crema dental para instituciones, colegios y empresas.",
     heroTitulo1: "Dispensador de",
     heroTitulo2: "",
@@ -155,6 +160,7 @@ export const categoriasData: readonly CategoriaMeta[] = [
     heroBannerImagen: "/category-banner-hoteles.jpg",
     heroBannerMovil: "/banners-responsive/BANNER FINALES-28.jpg",
     iconoImagen: "/cat-hoteles.png",
+    flipImagen: false,
     bannerCopy: "Sistemas de dispensación de papel diseñados para crear higiene, ahorro y eficiencia en cada uso.",
     heroTitulo1: "Dispensadores para",
     heroTitulo2: "Hoteles/",
