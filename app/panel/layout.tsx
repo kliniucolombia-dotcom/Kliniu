@@ -8,24 +8,26 @@ type NavItem = {
   href: string;
   label: string;
   icon: React.ReactNode;
+  module: string;
   children?: Array<{ href: string; label: string }>;
 };
 
 const NAV: NavItem[] = [
-  { href: "/panel",           label: "Dashboard", icon: <MdDashboard size={18} /> },
-  { href: "/panel/pedidos",   label: "Pedidos",   icon: <MdInventory2 size={18} /> },
-  { href: "/panel/productos", label: "Productos", icon: <MdCategory size={18} /> },
-  { href: "/panel/metricas",  label: "Métricas",  icon: <MdBarChart size={18} /> },
-  { href: "/panel/campanas",  label: "Campañas",  icon: <MdCampaign size={18} /> },
-  { href: "/panel/costos",    label: "Costos",    icon: <MdAttachMoney size={18} /> },
-  { href: "/panel/calculadora-precio", label: "Precio de Venta", icon: <MdCalculate size={18} /> },
-  { href: "/panel/cotizaciones", label: "Cotizaciones", icon: <MdDescription size={18} /> },
-  { href: "/panel/produccion", label: "Producción", icon: <MdPrecisionManufacturing size={18} /> },
-  { href: "/panel/produccion/ordenes", label: "Órdenes de Producción", icon: <MdAssignment size={18} /> },
+  { href: "/panel",           label: "Dashboard", icon: <MdDashboard size={18} />, module: "MODULE_DASHBOARD" },
+  { href: "/panel/pedidos",   label: "Pedidos",   icon: <MdInventory2 size={18} />, module: "MODULE_PEDIDOS" },
+  { href: "/panel/productos", label: "Productos", icon: <MdCategory size={18} />, module: "MODULE_PRODUCTOS" },
+  { href: "/panel/metricas",  label: "Métricas",  icon: <MdBarChart size={18} />, module: "MODULE_METRICAS" },
+  { href: "/panel/campanas",  label: "Campañas",  icon: <MdCampaign size={18} />, module: "MODULE_CAMPANAS" },
+  { href: "/panel/costos",    label: "Costos",    icon: <MdAttachMoney size={18} />, module: "MODULE_COSTOS" },
+  { href: "/panel/calculadora-precio", label: "Precio de Venta", icon: <MdCalculate size={18} />, module: "MODULE_CALCULADORA_PRECIO" },
+  { href: "/panel/cotizaciones", label: "Cotizaciones", icon: <MdDescription size={18} />, module: "MODULE_COTIZACIONES" },
+  { href: "/panel/produccion", label: "Producción", icon: <MdPrecisionManufacturing size={18} />, module: "MODULE_PRODUCCION" },
+  { href: "/panel/produccion/ordenes", label: "Órdenes de Producción", icon: <MdAssignment size={18} />, module: "MODULE_PRODUCCION" },
   {
     href: "/panel/odoo",
     label: "Odoo",
     icon: <MdSettings size={18} />,
+    module: "MODULE_ODOO",
     children: [
       { href: "/panel/odoo", label: "Resumen" },
       { href: "/panel/odoo/aplicaciones", label: "Aplicaciones" },
@@ -35,6 +37,7 @@ const NAV: NavItem[] = [
       { href: "/panel/odoo/inventario", label: "Inventario" },
     ],
   },
+  { href: "/panel/usuarios", label: "Usuarios", icon: <MdSettings size={18} />, module: "MODULE_USUARIOS" },
 ];
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
@@ -43,9 +46,21 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<{ fullName?: string; email?: string; role?: string } | null>(null);
+  const [visibleModules, setVisibleModules] = useState<Set<string> | null>(null);
 
   useEffect(() => {
     fetch("/api/account").then((r) => r.json()).then((d) => setUser(d)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/panel/permissions")
+      .then((r) => r.json())
+      .then((d) => {
+        const perms = d.permissions as Record<string, { canView: boolean }> | undefined;
+        if (!perms) return;
+        setVisibleModules(new Set(Object.entries(perms).filter(([, p]) => p.canView).map(([m]) => m)));
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -115,8 +130,9 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         <nav className="flex-1 overflow-y-auto px-2 py-3">
           {(() => {
             const matches = (href: string) => pathname === href || (href !== "/panel" && pathname.startsWith(`${href}/`));
-            const activeHref = NAV.filter((n) => matches(n.href)).sort((a, b) => b.href.length - a.href.length)[0]?.href;
-            return NAV.map((item) => {
+            const items = visibleModules ? NAV.filter((n) => visibleModules.has(n.module)) : NAV;
+            const activeHref = items.filter((n) => matches(n.href)).sort((a, b) => b.href.length - a.href.length)[0]?.href;
+            return items.map((item) => {
               const active = item.href === activeHref;
             return (
               <div key={item.href} className="mb-1">
