@@ -8,65 +8,78 @@ datasource db {
 }
 
 model Product {
-  id                    String              @id @default(cuid())
-  slug                  String              @unique
-  sku                   String?             @unique
+  id                    String                @id @default(cuid())
+  slug                  String                @unique
+  sku                   String?               @unique
   oemReference          String?
-  alternativeReferences String[]            @default([])
+  alternativeReferences String[]              @default([])
   category              String
   name                  String
   brand                 String
   price                 Int
   previousPrice         Int
-  stock                 Int                 @default(12)
-  minimumStock          Int                 @default(3)
+  stock                 Int                   @default(12)
+  minimumStock          Int                   @default(3)
   image                 String
-  galleryImages         String[]            @default([])
+  galleryImages         String[]              @default([])
   availability          String
   description           String
   application           String?
-  compatibility         String[]            @default([])
+  compatibility         String[]              @default([])
   warranty              String?
   technicalSpecs        Json?
-  featured              Boolean             @default(false)
-  active                Boolean             @default(true)
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
-  colorVariants         Json?               @default("[]")
+  featured              Boolean               @default(false)
+  active                Boolean               @default(true)
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  colorVariants         Json?                 @default("[]")
   videoUrl              String?
   campaigns             Campaign[]
   inventoryMovements    InventoryMovement[]
   priceHistory          PriceHistory[]
+  saleCalculatorItems   SaleCalculatorItem[]
+  quotationItems        QuotationItem[]
+  productionRuns        ProductionRun[]
+  productionOrderItems  ProductionOrderItem[]
 }
 
 model User {
-  id                String             @id @default(cuid())
-  fullName          String
-  company           String?
-  email             String             @unique
-  phone             String?
-  department        String?
-  city              String?
-  addressLine1      String?
-  addressLine2      String?
-  passwordHash      String
-  role              UserRole           @default(CUSTOMER)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  level             CustomerLevel      @default(AQUA)
-  points            Int                @default(0)
-  bonusBalance      Int                @default(0)
-  bonusExpiry       DateTime?
-  kTier             String             @default("NONE")
-  monthlyPeriod     String             @default("")
-  whatsappPhone     String?
-  campaigns         Campaign[]         @relation("CampaignSeller")
-  cartItems         CartItem[]
-  assignedOrders    Order[]            @relation("AssignedOrders")
-  orders            Order[]
-  pointTransactions PointTransaction[]
-  priceChanges      PriceHistory[]     @relation("PriceChangedBy")
-  rewardRedemptions RewardRedemption[]
+  id                       String             @id @default(cuid())
+  fullName                 String
+  company                  String?
+  email                    String             @unique
+  phone                    String?
+  department               String?
+  city                     String?
+  addressLine1             String?
+  addressLine2             String?
+  passwordHash             String
+  role                     UserRole           @default(CUSTOMER)
+  status                   UserStatus         @default(ACTIVE)
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  level                    CustomerLevel      @default(AQUA)
+  points                   Int                @default(0)
+  bonusBalance             Int                @default(0)
+  bonusExpiry              DateTime?
+  kTier                    String             @default("NONE")
+  monthlyPeriod            String             @default("")
+  whatsappPhone            String?
+  campaigns                Campaign[]         @relation("CampaignSeller")
+  cartItems                CartItem[]
+  assignedOrders           Order[]            @relation("AssignedOrders")
+  orders                   Order[]
+  pointTransactions        PointTransaction[]
+  priceChanges             PriceHistory[]     @relation("PriceChangedBy")
+  rewardRedemptions        RewardRedemption[]
+  costConfig               SellerCostConfig?
+  saleCalculators          SaleCalculator[]
+  quotationsAsSeller       Quotation[]        @relation("QuotationSeller")
+  permissions              UserPermission[]
+  quotationsAsClient       Quotation[]        @relation("QuotationClient")
+  productionRuns           ProductionRun[]    @relation("ProductionOperator")
+  productionOrdersCreated  ProductionOrder[]  @relation("ProductionOrderCreatedBy")
+  productionOrdersApproved ProductionOrder[]  @relation("ProductionOrderApprovedBy")
 }
 
 model CartItem {
@@ -113,6 +126,7 @@ model Order {
   assignedSeller   User?          @relation("AssignedOrders", fields: [assignedSellerId], references: [id])
   user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   items            OrderItem[]
+  quotation        Quotation?
 }
 
 model OrderItem {
@@ -188,23 +202,141 @@ model PriceHistory {
 }
 
 model Campaign {
-  id             String    @id @default(cuid())
+  id             String          @id @default(cuid())
   name           String
   sellerId       String
   productId      String?
-  investment     Float     @default(0)
-  sales          Float     @default(0)
-  targetMultiple Float     @default(10)
-  status         String    @default("ACTIVE")
-  platform       String    @default("Meta Ads")
-  startDate      DateTime  @default(now())
+  investment     Float           @default(0)
+  sales          Float           @default(0)
+  targetMultiple Float           @default(10)
+  status         String          @default("ACTIVE")
+  platform       String          @default("Meta Ads")
+  startDate      DateTime        @default(now())
   endDate        DateTime?
   notes          String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  leads          Int       @default(0)
-  product        Product?  @relation(fields: [productId], references: [id])
-  seller         User      @relation("CampaignSeller", fields: [sellerId], references: [id])
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  leads          Int             @default(0)
+  product        Product?        @relation(fields: [productId], references: [id])
+  seller         User            @relation("CampaignSeller", fields: [sellerId], references: [id])
+  dailyEntries   CampaignDaily[]
+}
+
+model CampaignDaily {
+  id                    String   @id @default(cuid())
+  campaignId            String
+  fecha                 DateTime
+  mensajes              Int      @default(0)
+  transacciones         Int      @default(0)
+  presupuestoPublicidad Float    @default(0)
+  ventaDelDia           Float    @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  campaign              Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, fecha])
+  @@index([campaignId])
+}
+
+model SellerCostConfig {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  costoProd       Float    @default(0)
+  publicidad      Float    @default(0)
+  transporte      Float    @default(0)
+  packing         Float    @default(0)
+  recaudo         Float    @default(0)
+  imprevistos     Float    @default(5)
+  gastosFijos     Float    @default(0)
+  devolucionesPct Float    @default(0)
+  updatedAt       DateTime @updatedAt
+}
+
+model SaleCalculator {
+  id          String               @id @default(cuid())
+  userId      String
+  name        String               @default("Nuevo combo")
+  envio       Float                @default(0)
+  picking     Float                @default(0)
+  comisionPct Float                @default(2.5)
+  margenPct   Float                @default(25)
+  campanaPct  Float                @default(10)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  user        User                 @relation(fields: [userId], references: [id])
+  items       SaleCalculatorItem[]
+
+  @@index([userId])
+}
+
+model SaleCalculatorItem {
+  id             String         @id @default(cuid())
+  calculatorId   String
+  productId      String?
+  nombreProducto String
+  cantidad       Int            @default(1)
+  costoUnitario  Float          @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  calculator     SaleCalculator @relation(fields: [calculatorId], references: [id], onDelete: Cascade)
+  product        Product?       @relation(fields: [productId], references: [id])
+
+  @@index([calculatorId])
+}
+
+model Machine {
+  id        String          @id @default(cuid())
+  code      Int             @unique
+  name      String
+  brand     String
+  model     String?
+  location  String?
+  isActive  Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  runs      ProductionRun[]
+
+  @@index([isActive])
+}
+
+model ProductionRun {
+  id             String   @id @default(cuid())
+  machineId      String
+  machine        Machine  @relation(fields: [machineId], references: [id])
+  operatorId     String
+  operator       User     @relation("ProductionOperator", fields: [operatorId], references: [id])
+  productId      String?
+  product        Product? @relation(fields: [productId], references: [id])
+  orderNumber    String
+  productionDate DateTime
+  startTime      DateTime
+  endTime        DateTime
+
+  productionOrderId String?
+  productionOrder   ProductionOrder? @relation(fields: [productionOrderId], references: [id])
+
+  material        String
+  pigment         String?
+  injectionWeight Float
+  pieceWeight     Float
+  cycle           Float
+  temperature     Float
+
+  produced      Int
+  damaged       Int @default(0)
+  nonConforming Int @default(0)
+
+  couplingTest String?
+  observations String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([machineId])
+  @@index([operatorId])
+  @@index([productionDate])
+  @@index([productionOrderId])
 }
 
 enum UserRole {
@@ -212,6 +344,27 @@ enum UserRole {
   ADMIN
   SELLER
   PACKING
+  SUPERADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum PanelModule {
+  MODULE_DASHBOARD
+  MODULE_PEDIDOS
+  MODULE_PRODUCTOS
+  MODULE_METRICAS
+  MODULE_CAMPANAS
+  MODULE_COSTOS
+  MODULE_CALCULADORA_PRECIO
+  MODULE_COTIZACIONES
+  MODULE_PRODUCCION
+  MODULE_ODOO
+  MODULE_USUARIOS
 }
 
 enum OrderStatus {
@@ -253,4 +406,158 @@ enum PointTransactionType {
   EXPIRED
   ADJUSTED
   BONUS
+}
+
+model KommoToken {
+  id           String   @id @default(cuid())
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model KommoSyncLog {
+  id          String          @id @default(cuid())
+  entityType  String
+  entityId    String
+  kommoId     Int?
+  status      KommoSyncStatus @default(PENDING)
+  operation   String
+  error       String?
+  retries     Int             @default(0)
+  lastAttempt DateTime?
+  syncedAt    DateTime?
+  payload     Json?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([entityType, entityId])
+  @@index([status])
+}
+
+enum KommoSyncStatus {
+  PENDING
+  IN_PROGRESS
+  SUCCESS
+  FAILED
+  ABANDONED
+}
+
+model Quotation {
+  id               String          @id @default(cuid())
+  number           String          @unique
+  sellerId         String
+  seller           User            @relation("QuotationSeller", fields: [sellerId], references: [id])
+  clientId         String
+  client           User            @relation("QuotationClient", fields: [clientId], references: [id])
+  status           QuotationStatus @default(DRAFT)
+  paymentTerms     String?
+  notes            String?
+  validUntil       DateTime?
+  convertedOrderId String?         @unique
+  convertedOrder   Order?          @relation(fields: [convertedOrderId], references: [id])
+  sentAt           DateTime?
+  approvedAt       DateTime?
+  rejectedAt       DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  items            QuotationItem[]
+
+  @@index([sellerId])
+  @@index([clientId])
+}
+
+model QuotationItem {
+  id             String    @id @default(cuid())
+  quotationId    String
+  quotation      Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  productId      String?
+  product        Product?  @relation(fields: [productId], references: [id])
+  name           String
+  reference      String?
+  manualImageUrl String?
+  quantity       Int       @default(1)
+  unitPrice      Int       @default(0)
+  order          Int       @default(0)
+
+  @@index([quotationId])
+}
+
+model QuotationTaxConfig {
+  id            String   @id @default(cuid())
+  reteIcaPct    Float    @default(1.104)
+  reteFuentePct Float    @default(2.5)
+  ivaPct        Float    @default(19)
+  isActive      Boolean  @default(true)
+  updatedAt     DateTime @updatedAt
+}
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+model ProductionOrder {
+  id             String                @id @default(cuid())
+  number         String                @unique
+  productionDate DateTime
+  status         ProductionOrderStatus @default(DRAFT)
+  notes          String?
+  createdById    String
+  createdBy      User                  @relation("ProductionOrderCreatedBy", fields: [createdById], references: [id])
+  approvedById   String?
+  approvedBy     User?                 @relation("ProductionOrderApprovedBy", fields: [approvedById], references: [id])
+  approvedAt     DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  items          ProductionOrderItem[]
+  runs           ProductionRun[]
+
+  @@index([createdById])
+  @@index([status])
+}
+
+model ProductionOrderItem {
+  id                String          @id @default(cuid())
+  productionOrderId String
+  productionOrder   ProductionOrder @relation(fields: [productionOrderId], references: [id], onDelete: Cascade)
+  productId         String
+  product           Product         @relation(fields: [productId], references: [id])
+  quantity          Int
+  destination       String?
+  notes             String?
+  order             Int             @default(0)
+
+  @@index([productionOrderId])
+  @@index([productId])
+}
+
+enum ProductionOrderStatus {
+  DRAFT
+  APPROVED
+  IN_PRODUCTION
+  COMPLETED
+  CANCELLED
+}
+
+model UserPermission {
+  id        String      @id @default(cuid())
+  userId    String
+  module    PanelModule
+  canView   Boolean     @default(false)
+  canCreate Boolean     @default(false)
+  canEdit   Boolean     @default(false)
+  canDelete Boolean     @default(false)
+  updatedBy String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, module])
+  @@index([userId])
 }
