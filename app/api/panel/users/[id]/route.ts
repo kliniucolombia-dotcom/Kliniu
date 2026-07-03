@@ -1,5 +1,5 @@
 import { requireSuperAdmin } from "@/lib/permissions";
-import { updateUserByAdmin } from "@/lib/users";
+import { deleteUserByAdmin, updateUserByAdmin } from "@/lib/users";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requireSuperAdmin();
@@ -20,6 +20,23 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     if (e instanceof Error && e.message === "EMAIL_ALREADY_EXISTS") {
       return Response.json({ error: "Ese correo ya está registrado" }, { status: 409 });
     }
+    return Response.json({ error: "Error interno" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const access = await requireSuperAdmin();
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
+
+  const { id } = await params;
+  if (id === access.user.id) {
+    return Response.json({ error: "No puedes eliminar tu propio usuario" }, { status: 400 });
+  }
+
+  try {
+    await deleteUserByAdmin(id);
+    return Response.json({ ok: true });
+  } catch {
     return Response.json({ error: "Error interno" }, { status: 500 });
   }
 }

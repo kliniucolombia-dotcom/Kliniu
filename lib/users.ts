@@ -312,6 +312,13 @@ export type UpdateUserByAdminInput = {
   newPassword?: string;
 };
 
+export async function deleteUserByAdmin(userId: string): Promise<void> {
+  if (!prisma) {
+    throw new Error("DATABASE_NOT_CONFIGURED");
+  }
+  await prisma.user.delete({ where: { id: userId } });
+}
+
 export async function updateUserByAdmin(userId: string, input: UpdateUserByAdminInput): Promise<PublicUser> {
   if (!prisma) {
     throw new Error("DATABASE_NOT_CONFIGURED");

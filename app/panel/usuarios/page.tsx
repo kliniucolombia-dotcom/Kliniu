@@ -46,6 +46,8 @@ export default function UsuariosPage() {
   const [form, setForm] = useState({ fullName: "", email: "", password: "", role: "SELLER" as Role });
   const [permUserId, setPermUserId] = useState<string | null>(null);
   const [perms, setPerms] = useState<ModulePermission[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadUsers = async () => {
     setLoading(true);
@@ -85,6 +87,21 @@ export default function UsuariosPage() {
       body: JSON.stringify(patch),
     });
     if (res.ok) loadUsers();
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const res = await fetch(`/api/panel/users/${deleteTarget.id}`, { method: "DELETE" });
+    if (res.ok) {
+      setDeleteTarget(null);
+      loadUsers();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Error al eliminar usuario");
+      setDeleteTarget(null);
+    }
+    setDeleting(false);
   };
 
   const openPermissions = async (id: string) => {
@@ -159,6 +176,7 @@ export default function UsuariosPage() {
             <th className="p-3">Rol</th>
             <th className="p-3">Estado</th>
             <th className="p-3">Permisos</th>
+            <th className="p-3">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -181,6 +199,11 @@ export default function UsuariosPage() {
               <td className="p-3">
                 <button onClick={() => openPermissions(u.id)} className="text-xs font-bold text-[#27B1B8]">
                   Editar permisos
+                </button>
+              </td>
+              <td className="p-3">
+                <button onClick={() => setDeleteTarget(u)} className="text-xs font-bold text-red-500">
+                  Eliminar
                 </button>
               </td>
             </tr>
@@ -224,6 +247,34 @@ export default function UsuariosPage() {
               </button>
               <button onClick={savePermissions} className="rounded-lg bg-[#27B1B8] px-3 py-2 text-xs font-bold text-white">
                 Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white p-5">
+            <h2 className="mb-2 text-sm font-black text-[#1A1A1A]">Eliminar usuario</h2>
+            <p className="text-sm text-[#64748B]">
+              ¿Eliminar a <span className="font-bold text-[#1A1A1A]">{deleteTarget.fullName}</span> ({deleteTarget.email})?
+              Esta acción no se puede deshacer.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-xs font-bold disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDeleteUser}
+                disabled={deleting}
+                className="rounded-lg bg-red-500 px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
+              >
+                {deleting ? "Eliminando…" : "Eliminar"}
               </button>
             </div>
           </div>
