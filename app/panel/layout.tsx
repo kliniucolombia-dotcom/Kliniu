@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { MdDashboard, MdInventory2, MdCategory, MdBarChart, MdCampaign, MdAttachMoney, MdSettings, MdCalculate, MdDescription, MdPrecisionManufacturing, MdAssignment } from "react-icons/md";
+import { MdDashboard, MdInventory2, MdCategory, MdBarChart, MdCampaign, MdAttachMoney, MdSettings, MdCalculate, MdDescription, MdPrecisionManufacturing, MdAssignment, MdPeople } from "react-icons/md";
 
 type NavItem = {
   href: string;
@@ -37,7 +37,7 @@ const NAV: NavItem[] = [
       { href: "/panel/odoo/inventario", label: "Inventario" },
     ],
   },
-  { href: "/panel/usuarios", label: "Usuarios", icon: <MdSettings size={18} />, module: "MODULE_USUARIOS" },
+  { href: "/panel/usuarios", label: "Usuarios", icon: <MdPeople size={18} />, module: "MODULE_USUARIOS" },
 ];
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
