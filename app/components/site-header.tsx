@@ -12,13 +12,13 @@ import AdvisorCtaCard from "./advisor-cta-card";
 type SiteHeaderProps = {
   currentUser: {
     fullName: string;
-    role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING";
+    role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN";
   } | null;
 };
 
-function getUserHref(role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING"): string {
+function getUserHref(role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN"): string {
   if (role === "ADMIN") return "/admin";
-  if (role === "SELLER") return "/panel";
+  if (role === "SELLER" || role === "SUPERADMIN") return "/panel";
   return "/mi-cuenta";
 }
 

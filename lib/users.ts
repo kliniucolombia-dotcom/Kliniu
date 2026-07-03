@@ -23,7 +23,8 @@ export type PublicUser = {
   city: string | null;
   addressLine1: string | null;
   addressLine2: string | null;
-  role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING";
+  role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN";
+  status: "ACTIVE" | "INACTIVE" | "SUSPENDED";
   createdAt: Date;
 };
 
@@ -93,6 +94,10 @@ export async function authenticateUser(email: string, password: string) {
     throw new Error("INVALID_CREDENTIALS");
   }
 
+  if (user.status !== "ACTIVE") {
+    throw new Error("USER_NOT_ACTIVE");
+  }
+
   return {
     id: user.id,
     fullName: user.fullName,
@@ -104,6 +109,7 @@ export async function authenticateUser(email: string, password: string) {
     addressLine1: user.addressLine1,
     addressLine2: user.addressLine2,
     role: user.role,
+    status: user.status,
   };
 }
 
@@ -125,6 +131,7 @@ export async function getUserById(userId: string) {
       addressLine1: true,
       addressLine2: true,
       role: true,
+      status: true,
       createdAt: true,
     },
   });
@@ -207,6 +214,7 @@ export async function updateUserProfile(
       addressLine1: true,
       addressLine2: true,
       role: true,
+      status: true,
       createdAt: true,
     },
   });
@@ -232,7 +240,116 @@ export async function getUserByEmail(email: string) {
       addressLine1: true,
       addressLine2: true,
       role: true,
+      status: true,
       createdAt: true,
     },
   });
+}
+
+export type CreateUserByAdminInput = {
+  fullName: string;
+  email: string;
+  password: string;
+  role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN";
+};
+
+export async function createUserByAdmin(input: CreateUserByAdminInput): Promise<PublicUser> {
+  if (!prisma) {
+    throw new Error("DATABASE_NOT_CONFIGURED");
+  }
+
+  const fullName = input.fullName.trim();
+  const email = input.email.trim().toLowerCase();
+
+  if (!fullName || !email || !input.password) {
+    throw new Error("MISSING_FIELDS");
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    throw new Error("EMAIL_ALREADY_EXISTS");
+  }
+
+  const passwordHash = await hash(input.password, 10);
+
+  const user = await prisma.user.create({
+    data: {
+      fullName,
+      email,
+      passwordHash,
+      role: input.role,
+    },
+    select: {
+      id: true, fullName: true, company: true, email: true, phone: true,
+      department: true, city: true, addressLine1: true, addressLine2: true,
+      role: true, status: true, createdAt: true,
+    },
+  });
+
+  return user;
+}
+
+export async function listUsers(): Promise<PublicUser[]> {
+  if (!prisma) {
+    throw new Error("DATABASE_NOT_CONFIGURED");
+  }
+
+  return await prisma.user.findMany({
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true, fullName: true, company: true, email: true, phone: true,
+      department: true, city: true, addressLine1: true, addressLine2: true,
+      role: true, status: true, createdAt: true,
+    },
+  });
+}
+
+export type UpdateUserByAdminInput = {
+  fullName?: string;
+  email?: string;
+  role?: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN";
+  status?: "ACTIVE" | "INACTIVE" | "SUSPENDED";
+  newPassword?: string;
+};
+
+export async function updateUserByAdmin(userId: string, input: UpdateUserByAdminInput): Promise<PublicUser> {
+  if (!prisma) {
+    throw new Error("DATABASE_NOT_CONFIGURED");
+  }
+
+  const data: {
+    fullName?: string; email?: string;
+    role?: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN";
+    status?: "ACTIVE" | "INACTIVE" | "SUSPENDED";
+    passwordHash?: string;
+  } = {};
+
+  if (input.fullName?.trim()) data.fullName = input.fullName.trim();
+  if (input.role) data.role = input.role;
+  if (input.status) data.status = input.status;
+
+  if (input.email?.trim()) {
+    const email = input.email.trim().toLowerCase();
+    const existingWithEmail = await prisma.user.findFirst({ where: { email, NOT: { id: userId } } });
+    if (existingWithEmail) {
+      throw new Error("EMAIL_ALREADY_EXISTS");
+    }
+    data.email = email;
+  }
+
+  if (input.newPassword?.trim()) {
+    data.passwordHash = await hash(input.newPassword.trim(), 10);
+  }
+
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data,
+    select: {
+      id: true, fullName: true, company: true, email: true, phone: true,
+      department: true, city: true, addressLine1: true, addressLine2: true,
+      role: true, status: true, createdAt: true,
+    },
+  });
+
+  return user;
 }

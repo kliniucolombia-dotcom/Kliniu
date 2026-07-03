@@ -51,9 +51,10 @@ export async function POST(request: Request) {
     });
 
     const redirectTo =
-      user.role === "ADMIN"   ? "/admin"   :
-      user.role === "SELLER"  ? "/panel"   :
-      user.role === "PACKING" ? "/empaque" :
+      user.role === "ADMIN"      ? "/admin"   :
+      user.role === "SUPERADMIN" ? "/panel"   :
+      user.role === "SELLER"     ? "/panel"   :
+      user.role === "PACKING"    ? "/empaque" :
       "/mi-cuenta";
 
     return Response.json({
@@ -64,6 +65,10 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof Error && error.message === "INVALID_CREDENTIALS") {
       return Response.json({ error: "Correo o contraseña incorrectos." }, { status: 401 });
+    }
+
+    if (error instanceof Error && error.message === "USER_NOT_ACTIVE") {
+      return Response.json({ error: "Esta cuenta está inactiva o suspendida." }, { status: 403 });
     }
 
     const message =
