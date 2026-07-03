@@ -1,0 +1,85 @@
+import type { PanelModule, UserRole } from "@/generated/prisma/client";
+
+export type Permission = {
+  canView: boolean;
+  canCreate: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+};
+
+const FULL: Permission = { canView: true, canCreate: true, canEdit: true, canDelete: true };
+const NONE: Permission = { canView: false, canCreate: false, canEdit: false, canDelete: false };
+const VIEW_ONLY: Permission = { canView: true, canCreate: false, canEdit: false, canDelete: false };
+const VIEW_EDIT: Permission = { canView: true, canCreate: false, canEdit: true, canDelete: false };
+const VIEW_CREATE_EDIT: Permission = { canView: true, canCreate: true, canEdit: true, canDelete: false };
+
+type RoleWithDefaults = Exclude<UserRole, "SUPERADMIN">;
+
+export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, Permission>> = {
+  ADMIN: {
+    MODULE_DASHBOARD: FULL,
+    MODULE_PEDIDOS: FULL,
+    MODULE_PRODUCTOS: FULL,
+    MODULE_METRICAS: FULL,
+    MODULE_CAMPANAS: FULL,
+    MODULE_COSTOS: FULL,
+    MODULE_CALCULADORA_PRECIO: FULL,
+    MODULE_COTIZACIONES: FULL,
+    MODULE_PRODUCCION: FULL,
+    MODULE_ODOO: FULL,
+    MODULE_USUARIOS: NONE,
+  },
+  SELLER: {
+    MODULE_DASHBOARD: VIEW_ONLY,
+    MODULE_PEDIDOS: VIEW_EDIT,
+    MODULE_PRODUCTOS: VIEW_EDIT,
+    MODULE_METRICAS: VIEW_ONLY,
+    MODULE_CAMPANAS: FULL,
+    MODULE_COSTOS: VIEW_CREATE_EDIT,
+    MODULE_CALCULADORA_PRECIO: FULL,
+    MODULE_COTIZACIONES: FULL,
+    MODULE_PRODUCCION: FULL,
+    MODULE_ODOO: VIEW_ONLY,
+    MODULE_USUARIOS: NONE,
+  },
+  PACKING: {
+    MODULE_DASHBOARD: NONE,
+    MODULE_PEDIDOS: VIEW_EDIT,
+    MODULE_PRODUCTOS: NONE,
+    MODULE_METRICAS: NONE,
+    MODULE_CAMPANAS: NONE,
+    MODULE_COSTOS: NONE,
+    MODULE_CALCULADORA_PRECIO: NONE,
+    MODULE_COTIZACIONES: NONE,
+    MODULE_PRODUCCION: FULL,
+    MODULE_ODOO: NONE,
+    MODULE_USUARIOS: NONE,
+  },
+  CUSTOMER: {
+    MODULE_DASHBOARD: NONE,
+    MODULE_PEDIDOS: NONE,
+    MODULE_PRODUCTOS: NONE,
+    MODULE_METRICAS: NONE,
+    MODULE_CAMPANAS: NONE,
+    MODULE_COSTOS: NONE,
+    MODULE_CALCULADORA_PRECIO: NONE,
+    MODULE_COTIZACIONES: NONE,
+    MODULE_PRODUCCION: NONE,
+    MODULE_ODOO: NONE,
+    MODULE_USUARIOS: NONE,
+  },
+};
+
+export const ALL_MODULES: PanelModule[] = [
+  "MODULE_DASHBOARD",
+  "MODULE_PEDIDOS",
+  "MODULE_PRODUCTOS",
+  "MODULE_METRICAS",
+  "MODULE_CAMPANAS",
+  "MODULE_COSTOS",
+  "MODULE_CALCULADORA_PRECIO",
+  "MODULE_COTIZACIONES",
+  "MODULE_PRODUCCION",
+  "MODULE_ODOO",
+  "MODULE_USUARIOS",
+];
