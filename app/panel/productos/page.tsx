@@ -103,13 +103,14 @@ export default function ProductosPanel() {
       {loading ? (
         <div className="flex h-40 items-center justify-center text-sm text-[#94A3B8]">Cargando productos…</div>
       ) : (
-        <div className="rounded-2xl border border-[#E2E8F0] bg-white overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-2xl border border-[#E2E8F0] bg-white overflow-x-auto">
+          <table className="w-full min-w-[720px] text-sm">
             <thead className="border-b border-[#E2E8F0] bg-[#F8FAFC]">
               <tr>
-                {["Producto","Categoría","Precio actual","Precio ant.","Stock","Estado","Últ. cambio",""].map((h) => (
+                {["Producto","Categoría","Precio actual","Precio ant.","Stock","Estado","Últ. cambio"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">{h}</th>
                 ))}
+                <th className="sticky right-0 border-l border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F1F5F9]">
@@ -153,7 +154,7 @@ export default function ProductosPanel() {
                         ? `${new Date(p.priceHistory[0].createdAt).toLocaleDateString("es-CO")} · ${p.priceHistory[0].user.fullName}`
                         : "—"}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="sticky right-0 border-l border-[#E2E8F0] bg-white px-4 py-3">
                       <button
                         onClick={() => openEdit(p)}
                         className="rounded-lg bg-[#27B1B8] px-3 py-1.5 text-xs font-bold text-white hover:opacity-80"

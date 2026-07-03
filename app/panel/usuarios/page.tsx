@@ -12,6 +12,18 @@ type UserRow = {
   status: Status;
 };
 
+type DeletionImpact = {
+  orders: number;
+  quotations: number;
+  campaigns: number;
+  productionRuns: number;
+  productionOrders: number;
+  priceHistory: number;
+  sellerConfig: number;
+  ordersUnassigned: number;
+  productionOrdersUnapproved: number;
+};
+
 type ModulePermission = {
   module: string;
   isOverride: boolean;
@@ -48,6 +60,7 @@ export default function UsuariosPage() {
   const [perms, setPerms] = useState<ModulePermission[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deleteImpact, setDeleteImpact] = useState<DeletionImpact | null>(null);
 
   const loadUsers = async () => {
     setLoading(true);
@@ -89,17 +102,28 @@ export default function UsuariosPage() {
     if (res.ok) loadUsers();
   };
 
-  const confirmDeleteUser = async () => {
+  const confirmDeleteUser = async (force = false) => {
     if (!deleteTarget) return;
     setDeleting(true);
-    const res = await fetch(`/api/panel/users/${deleteTarget.id}`, { method: "DELETE" });
+    const res = await fetch(`/api/panel/users/${deleteTarget.id}${force ? "?force=true" : ""}`, { method: "DELETE" });
     if (res.ok) {
       setDeleteTarget(null);
+      setDeleteImpact(null);
       loadUsers();
+    } else if (res.status === 409) {
+      const data = await res.json().catch(() => ({}));
+      if (data.requiresConfirmation && data.impact) {
+        setDeleteImpact(data.impact);
+      } else {
+        setError(data.error ?? "Error al eliminar usuario");
+        setDeleteTarget(null);
+        setDeleteImpact(null);
+      }
     } else {
       const data = await res.json().catch(() => ({}));
       setError(data.error ?? "Error al eliminar usuario");
       setDeleteTarget(null);
+      setDeleteImpact(null);
     }
     setDeleting(false);
   };
@@ -168,15 +192,15 @@ export default function UsuariosPage() {
         </div>
       )}
 
-      <table className="w-full rounded-xl border border-[#E2E8F0] bg-white text-sm">
+      <div className="overflow-x-auto rounded-xl border border-[#E2E8F0] bg-white">
+      <table className="w-full min-w-[720px] text-sm">
         <thead>
           <tr className="border-b border-[#E2E8F0] text-left text-xs font-bold text-[#64748B]">
             <th className="p-3">Nombre</th>
             <th className="p-3">Correo</th>
             <th className="p-3">Rol</th>
             <th className="p-3">Estado</th>
-            <th className="p-3">Permisos</th>
-            <th className="p-3">Acciones</th>
+            <th className="sticky right-0 border-l border-[#E2E8F0] bg-[#F8FAFC] p-3">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -196,20 +220,21 @@ export default function UsuariosPage() {
                   {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </td>
-              <td className="p-3">
-                <button onClick={() => openPermissions(u.id)} className="text-xs font-bold text-[#27B1B8]">
-                  Editar permisos
-                </button>
-              </td>
-              <td className="p-3">
-                <button onClick={() => setDeleteTarget(u)} className="text-xs font-bold text-red-500">
-                  Eliminar
-                </button>
+              <td className="sticky right-0 border-l border-[#E2E8F0] bg-white p-3">
+                <div className="flex flex-col gap-1">
+                  <button onClick={() => openPermissions(u.id)} className="text-xs font-bold text-[#27B1B8]">
+                    Editar permisos
+                  </button>
+                  <button onClick={() => { setDeleteTarget(u); setDeleteImpact(null); }} className="text-xs font-bold text-red-500">
+                    Eliminar
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      </div>
 
       {permUserId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -253,7 +278,7 @@ export default function UsuariosPage() {
         </div>
       )}
 
-      {deleteTarget && (
+      {deleteTarget && !deleteImpact && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-sm rounded-xl bg-white p-5">
             <h2 className="mb-2 text-sm font-black text-[#1A1A1A]">Eliminar usuario</h2>
@@ -270,11 +295,50 @@ export default function UsuariosPage() {
                 Cancelar
               </button>
               <button
-                onClick={confirmDeleteUser}
+                onClick={() => confirmDeleteUser(false)}
                 disabled={deleting}
                 className="rounded-lg bg-red-500 px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
               >
                 {deleting ? "Eliminando…" : "Eliminar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && deleteImpact && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white p-5">
+            <h2 className="mb-2 text-sm font-black text-[#DC2626]">Este usuario tiene historial</h2>
+            <p className="mb-2 text-sm text-[#64748B]">
+              <span className="font-bold text-[#1A1A1A]">{deleteTarget.fullName}</span> ({deleteTarget.email}) tiene registros asociados que también se eliminarán o desvincularán:
+            </p>
+            <ul className="mb-3 space-y-1 text-xs text-[#64748B]">
+              {deleteImpact.orders > 0 && <li>• {deleteImpact.orders} pedido(s)</li>}
+              {deleteImpact.quotations > 0 && <li>• {deleteImpact.quotations} cotización(es)</li>}
+              {deleteImpact.campaigns > 0 && <li>• {deleteImpact.campaigns} campaña(s)</li>}
+              {deleteImpact.productionRuns > 0 && <li>• {deleteImpact.productionRuns} corrida(s) de producción</li>}
+              {deleteImpact.productionOrders > 0 && <li>• {deleteImpact.productionOrders} orden(es) de producción</li>}
+              {deleteImpact.priceHistory > 0 && <li>• {deleteImpact.priceHistory} cambio(s) de precio registrados</li>}
+              {deleteImpact.sellerConfig > 0 && <li>• configuración de costos/calculadora de vendedor</li>}
+              {deleteImpact.ordersUnassigned > 0 && <li>• {deleteImpact.ordersUnassigned} pedido(s) donde queda como vendedor asignado (se desvinculará)</li>}
+              {deleteImpact.productionOrdersUnapproved > 0 && <li>• {deleteImpact.productionOrdersUnapproved} orden(es) de producción que aprobó (se desvinculará)</li>}
+            </ul>
+            <p className="mb-3 text-xs font-bold text-[#DC2626]">Esta acción es irreversible.</p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => { setDeleteTarget(null); setDeleteImpact(null); }}
+                disabled={deleting}
+                className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-xs font-bold disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => confirmDeleteUser(true)}
+                disabled={deleting}
+                className="rounded-lg bg-red-500 px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
+              >
+                {deleting ? "Eliminando…" : "Sí, eliminar todo"}
               </button>
             </div>
           </div>

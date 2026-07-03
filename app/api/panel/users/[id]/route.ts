@@ -1,5 +1,5 @@
 import { requireSuperAdmin } from "@/lib/permissions";
-import { deleteUserByAdmin, updateUserByAdmin } from "@/lib/users";
+import { deleteUserByAdmin, getUserDeletionImpact, hasDeletionImpact, updateUserByAdmin } from "@/lib/users";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requireSuperAdmin();
@@ -33,10 +33,26 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     return Response.json({ error: "No puedes eliminar tu propio usuario" }, { status: 400 });
   }
 
+  const { searchParams } = new URL(request.url);
+  const force = searchParams.get("force") === "true";
+
+  if (!force) {
+    const impact = await getUserDeletionImpact(id);
+    if (hasDeletionImpact(impact)) {
+      return Response.json({ requiresConfirmation: true, impact }, { status: 409 });
+    }
+  }
+
   try {
-    await deleteUserByAdmin(id);
+    await deleteUserByAdmin(id, { force });
     return Response.json({ ok: true });
-  } catch {
+  } catch (e) {
+    if (e && typeof e === "object" && "code" in e && e.code === "P2003") {
+      return Response.json(
+        { error: "No se puede eliminar: el usuario tiene registros asociados que no se pudieron desvincular" },
+        { status: 409 },
+      );
+    }
     return Response.json({ error: "Error interno" }, { status: 500 });
   }
 }

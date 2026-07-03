@@ -312,11 +312,80 @@ export type UpdateUserByAdminInput = {
   newPassword?: string;
 };
 
-export async function deleteUserByAdmin(userId: string): Promise<void> {
+export type UserDeletionImpact = {
+  orders: number;
+  quotations: number;
+  campaigns: number;
+  productionRuns: number;
+  productionOrders: number;
+  priceHistory: number;
+  sellerConfig: number;
+  ordersUnassigned: number;
+  productionOrdersUnapproved: number;
+};
+
+export function hasDeletionImpact(impact: UserDeletionImpact): boolean {
+  return (
+    impact.orders > 0 || impact.quotations > 0 || impact.campaigns > 0 ||
+    impact.productionRuns > 0 || impact.productionOrders > 0 || impact.priceHistory > 0 ||
+    impact.sellerConfig > 0 || impact.ordersUnassigned > 0 || impact.productionOrdersUnapproved > 0
+  );
+}
+
+export async function getUserDeletionImpact(userId: string): Promise<UserDeletionImpact> {
   if (!prisma) {
     throw new Error("DATABASE_NOT_CONFIGURED");
   }
-  await prisma.user.delete({ where: { id: userId } });
+  const [
+    orders, quotations, campaigns, productionRuns, productionOrders,
+    priceHistory, sellerCostConfig, saleCalculators, ordersUnassigned, productionOrdersUnapproved,
+  ] = await Promise.all([
+    prisma.order.count({ where: { userId } }),
+    prisma.quotation.count({ where: { OR: [{ sellerId: userId }, { clientId: userId }] } }),
+    prisma.campaign.count({ where: { sellerId: userId } }),
+    prisma.productionRun.count({ where: { operatorId: userId } }),
+    prisma.productionOrder.count({ where: { createdById: userId } }),
+    prisma.priceHistory.count({ where: { changedBy: userId } }),
+    prisma.sellerCostConfig.count({ where: { userId } }),
+    prisma.saleCalculator.count({ where: { userId } }),
+    prisma.order.count({ where: { assignedSellerId: userId } }),
+    prisma.productionOrder.count({ where: { approvedById: userId } }),
+  ]);
+  return {
+    orders, quotations, campaigns, productionRuns, productionOrders,
+    priceHistory, sellerConfig: sellerCostConfig + saleCalculators,
+    ordersUnassigned, productionOrdersUnapproved,
+  };
+}
+
+export async function deleteUserByAdmin(userId: string, options?: { force?: boolean }): Promise<void> {
+  if (!prisma) {
+    throw new Error("DATABASE_NOT_CONFIGURED");
+  }
+
+  if (!options?.force) {
+    await prisma.user.delete({ where: { id: userId } });
+    return;
+  }
+
+  await prisma.$transaction([
+    // Desvincular referencias opcionales antes de borrar registros dependientes.
+    prisma.productionRun.updateMany({
+      where: { productionOrder: { createdById: userId } },
+      data: { productionOrderId: null },
+    }),
+    prisma.order.updateMany({ where: { assignedSellerId: userId }, data: { assignedSellerId: null } }),
+    prisma.productionOrder.updateMany({ where: { approvedById: userId }, data: { approvedById: null } }),
+    // Borrar registros dependientes con FK requerida hacia el usuario.
+    prisma.productionOrder.deleteMany({ where: { createdById: userId } }),
+    prisma.productionRun.deleteMany({ where: { operatorId: userId } }),
+    prisma.quotation.deleteMany({ where: { OR: [{ sellerId: userId }, { clientId: userId }] } }),
+    prisma.campaign.deleteMany({ where: { sellerId: userId } }),
+    prisma.priceHistory.deleteMany({ where: { changedBy: userId } }),
+    prisma.sellerCostConfig.deleteMany({ where: { userId } }),
+    prisma.saleCalculator.deleteMany({ where: { userId } }),
+    prisma.user.delete({ where: { id: userId } }),
+  ]);
 }
 
 export async function updateUserByAdmin(userId: string, input: UpdateUserByAdminInput): Promise<PublicUser> {

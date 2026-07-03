@@ -112,9 +112,10 @@ export default function CotizacionesListPage() {
           <table className="w-full border-collapse text-sm">
             <thead className="bg-[#F8FAFC]">
               <tr>
-                {["Número", "Cliente", "Estado", "Total", "Fecha", ""].map((h) => (
+                {["Número", "Cliente", "Estado", "Total", "Fecha"].map((h) => (
                   <th key={h} className="border-b border-[#E2E8F0] px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">{h}</th>
                 ))}
+                <th className="sticky right-0 border-b border-l border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]"></th>
               </tr>
             </thead>
             <tbody>
@@ -135,7 +136,7 @@ export default function CotizacionesListPage() {
                     </td>
                     <td className="border-b border-[#F1F5F9] px-4 py-3 font-bold text-[#1A1A1A]">{fmt(q.summary.total)}</td>
                     <td className="border-b border-[#F1F5F9] px-4 py-3 text-[#64748B]">{new Date(q.createdAt).toLocaleDateString("es-CO")}</td>
-                    <td className="border-b border-[#F1F5F9] px-4 py-3 text-right">
+                    <td className="sticky right-0 border-b border-l border-[#E2E8F0] bg-white px-4 py-3 text-right">
                       {q.status === "DRAFT" && (
                         <button onClick={() => setPendingDeleteId(q.id)} className="text-xs font-bold text-[#DC2626] hover:opacity-70">Eliminar</button>
                       )}

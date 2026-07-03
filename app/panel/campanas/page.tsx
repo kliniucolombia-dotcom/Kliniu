@@ -114,7 +114,7 @@ export default function CampanasPanel() {
                 <TH>Leads</TH>
                 <TH>CPL</TH>
                 <TH>Estado</TH>
-                <TH></TH>
+                <th className="sticky right-0 border-l border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F1F5F9]">
@@ -141,8 +141,8 @@ export default function CampanasPanel() {
                         {meta.label}
                       </span>
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="flex gap-2">
+                    <td className="sticky right-0 border-l border-[#E2E8F0] bg-white px-4 py-4">
+                      <div className="flex flex-col gap-1.5">
                         <button onClick={() => openEdit(c)} className="rounded-lg border border-[#E2E8F0] px-3 py-1.5 text-xs font-semibold text-[#64748B] hover:border-[#27B1B8] hover:text-[#27B1B8] transition-colors">
                           Editar
                         </button>
