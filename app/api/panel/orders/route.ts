@@ -1,12 +1,11 @@
-import { getSessionFromCookies } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import type { ShippingStatus } from "@/generated/prisma/client";
 
 export async function GET() {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER" && session.role !== "PACKING")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_PEDIDOS", "view");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
+  const { session } = access;
   if (!prisma) return Response.json([]);
 
   const where = session.role === "SELLER"
@@ -26,10 +25,9 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER" && session.role !== "PACKING")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_PEDIDOS", "edit");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
+  const { session } = access;
   if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
 
   const body = await request.json() as { id: string; shippingStatus?: string; carrier?: string; trackingNumber?: string; adminNotes?: string };
