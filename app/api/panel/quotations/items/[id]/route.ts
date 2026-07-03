@@ -1,4 +1,4 @@
-import { getSessionFromCookies } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { deleteQuotationItem, updateQuotationItem } from "@/lib/panel";
 
@@ -13,13 +13,12 @@ async function checkAccess(itemId: string, session: { role: string; userId: stri
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_COTIZACIONES", "edit");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
+  const { session } = access;
   const { id } = await params;
-  const access = await checkAccess(id, session);
-  if ("error" in access) return Response.json({ error: access.error }, { status: access.status });
+  const scoped = await checkAccess(id, session);
+  if ("error" in scoped) return Response.json({ error: scoped.error }, { status: scoped.status });
 
   const body = await request.json() as {
     productId?: string | null; name?: string; reference?: string | null; manualImageUrl?: string | null; quantity?: number; unitPrice?: number;
@@ -40,13 +39,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_COTIZACIONES", "delete");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
+  const { session } = access;
   const { id } = await params;
-  const access = await checkAccess(id, session);
-  if ("error" in access) return Response.json({ error: access.error }, { status: access.status });
+  const scoped = await checkAccess(id, session);
+  if ("error" in scoped) return Response.json({ error: scoped.error }, { status: scoped.status });
 
   try {
     await deleteQuotationItem(id);

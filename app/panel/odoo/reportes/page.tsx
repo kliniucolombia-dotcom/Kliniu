@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getSessionFromCookies } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 import { getOdooSalesReport, type OdooReportPeriod } from "@/lib/odoo";
 import { getOdooErrorMessage } from "../odoo-error-panel";
 
@@ -68,8 +68,8 @@ export default async function OdooReportsPage({
 }: {
   searchParams?: Promise<{ period?: string }>;
 }) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
+  const access = await requirePermission("MODULE_ODOO", "view");
+  if (!access.ok) {
     redirect("/login");
   }
 

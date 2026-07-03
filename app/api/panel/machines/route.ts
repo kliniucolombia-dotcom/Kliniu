@@ -1,21 +1,17 @@
-import { getSessionFromCookies } from "@/lib/auth";
+import { requirePermission, requireAdmin } from "@/lib/permissions";
 import { createMachine, getMachines } from "@/lib/panel";
 
 export async function GET(request: Request) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER" && session.role !== "PACKING")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_PRODUCCION", "view");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const includeInactive = new URL(request.url).searchParams.get("includeInactive") === "true";
   const machines = await getMachines(includeInactive);
   return Response.json({ machines });
 }
 
 export async function POST(request: Request) {
-  const session = await getSessionFromCookies();
-  if (!session || session.role !== "ADMIN") {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requireAdmin();
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   const body = await request.json().catch(() => ({})) as {
     code?: number; name?: string; brand?: string; model?: string; location?: string;

@@ -1,4 +1,4 @@
-import { getSessionFromCookies } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { deleteSaleCalculator, getSaleCalculatorWithItems, updateSaleCalculator } from "@/lib/panel";
 
@@ -11,26 +11,24 @@ async function loadWithAccess(id: string, session: { role: string; userId: strin
 }
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_CALCULADORA_PRECIO", "view");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
+  const { session } = access;
   const { id } = await params;
-  const access = await loadWithAccess(id, session);
-  if ("error" in access) return Response.json({ error: access.error }, { status: access.status });
+  const scoped = await loadWithAccess(id, session);
+  if ("error" in scoped) return Response.json({ error: scoped.error }, { status: scoped.status });
 
   const detail = await getSaleCalculatorWithItems(id);
   return Response.json(detail);
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_CALCULADORA_PRECIO", "edit");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
+  const { session } = access;
   const { id } = await params;
-  const access = await loadWithAccess(id, session);
-  if ("error" in access) return Response.json({ error: access.error }, { status: access.status });
+  const scoped = await loadWithAccess(id, session);
+  if ("error" in scoped) return Response.json({ error: scoped.error }, { status: scoped.status });
 
   const body = await request.json() as {
     name?: string; envio?: number; picking?: number; comisionPct?: number; margenPct?: number; campanaPct?: number;
@@ -45,13 +43,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_CALCULADORA_PRECIO", "delete");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
+  const { session } = access;
   const { id } = await params;
-  const access = await loadWithAccess(id, session);
-  if ("error" in access) return Response.json({ error: access.error }, { status: access.status });
+  const scoped = await loadWithAccess(id, session);
+  if ("error" in scoped) return Response.json({ error: scoped.error }, { status: scoped.status });
 
   await deleteSaleCalculator(id);
   return Response.json({ ok: true });

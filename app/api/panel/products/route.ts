@@ -1,12 +1,10 @@
-import { getSessionFromCookies } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 import { getProductsForPanel, updateProductPrice } from "@/lib/panel";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: Request) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_PRODUCTOS", "view");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { searchParams } = new URL(request.url);
   const minimal = searchParams.get("minimal") === "1";
   if (minimal) {
@@ -19,10 +17,9 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_PRODUCTOS", "edit");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
+  const { session } = access;
   const body = await request.json() as { productId: string; newPrice: number; note?: string };
   if (!body.productId || !body.newPrice) {
     return Response.json({ error: "Faltan datos" }, { status: 400 });

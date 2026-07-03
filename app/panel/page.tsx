@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSessionFromCookies } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 import { getDashboardStats, getSellerStats, calcROAS, getCampaignStatus, STATUS_META } from "@/lib/panel";
 
 export const dynamic = "force-dynamic";
@@ -12,10 +12,11 @@ const fmtUSD = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 export default async function PanelDashboard() {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
+  const access = await requirePermission("MODULE_DASHBOARD", "view");
+  if (!access.ok) {
     redirect("/login");
   }
+  const { session } = access;
 
   const isAdmin = session.role === "ADMIN";
   const [stats, sellers] = await Promise.all([

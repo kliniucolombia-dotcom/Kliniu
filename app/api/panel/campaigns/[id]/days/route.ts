@@ -1,4 +1,4 @@
-import { getSessionFromCookies } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { createCampaignDailyEntry, getCampaignDailyEntries } from "@/lib/panel";
 import { buildCampaignDailyRows, calcCampaignDailyTotals } from "@/lib/panel-utils";
@@ -14,10 +14,9 @@ async function assertAccess(campaignId: string, session: { role: string; userId:
 }
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_CAMPANAS", "view");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
+  const { session } = access;
   if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
 
   const { id } = await params;
@@ -32,10 +31,9 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_CAMPANAS", "create");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
+  const { session } = access;
   if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
 
   const { id } = await params;

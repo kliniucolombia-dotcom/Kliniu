@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSessionFromCookies } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 import { getMetrics, getDashboardStats } from "@/lib/panel";
 
 export const dynamic = "force-dynamic";
@@ -11,8 +11,9 @@ const fmtUSD = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 export default async function MetricasPanel() {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) redirect("/login");
+  const access = await requirePermission("MODULE_METRICAS", "view");
+  if (!access.ok) redirect("/login");
+  const { session } = access;
 
   const [metrics, stats] = await Promise.all([
     getMetrics(session.role === "SELLER" ? session.userId : undefined),

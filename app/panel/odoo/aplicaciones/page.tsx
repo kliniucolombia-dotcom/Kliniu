@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSessionFromCookies } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 import { getOdooApps } from "@/lib/odoo";
 import { getOdooErrorMessage, OdooErrorPanel } from "../odoo-error-panel";
 
@@ -9,8 +9,8 @@ export const metadata = { title: "Aplicaciones Odoo — Panel Comercial Kliniu" 
 const fallbackIcons = ["◒", "31", "▥", "▣", "◆", "▦", "▤", "◈", "⬢", "▰", "◉", "⌕"];
 
 export default async function OdooApplicationsPage() {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
+  const access = await requirePermission("MODULE_ODOO", "view");
+  if (!access.ok) {
     redirect("/login");
   }
 

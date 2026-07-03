@@ -1,11 +1,9 @@
-import { getSessionFromCookies } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 import { createProductionRun, getProductionRuns } from "@/lib/panel";
 
 export async function GET(request: Request) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER" && session.role !== "PACKING")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_PRODUCCION", "view");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const params = new URL(request.url).searchParams;
   const machineId = params.get("machineId") ?? undefined;
   const operatorId = params.get("operatorId") ?? undefined;
@@ -17,10 +15,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER" && session.role !== "PACKING")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_PRODUCCION", "create");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   const body = await request.json().catch(() => ({})) as {
     machineId?: string; operatorId?: string; productId?: string | null; productionOrderId?: string | null; orderNumber?: string;

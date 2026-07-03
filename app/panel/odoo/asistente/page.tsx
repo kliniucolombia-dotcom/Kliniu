@@ -1,13 +1,13 @@
 import { redirect } from "next/navigation";
-import { getSessionFromCookies } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 import { OdooSalesChat } from "./odoo-sales-chat";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Asistente Odoo — Panel Comercial Kliniu" };
 
 export default async function OdooAssistantPage() {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
+  const access = await requirePermission("MODULE_ODOO", "view");
+  if (!access.ok) {
     redirect("/login");
   }
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getSessionFromCookies } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 import { getOdooProducts } from "@/lib/odoo";
 import { getOdooErrorMessage, OdooErrorPanel } from "../odoo-error-panel";
 
@@ -19,8 +19,8 @@ function getOdooCategoryName(category: [number, string] | false | undefined) {
 }
 
 export default async function OdooProductsPage() {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
+  const access = await requirePermission("MODULE_ODOO", "view");
+  if (!access.ok) {
     redirect("/login");
   }
 

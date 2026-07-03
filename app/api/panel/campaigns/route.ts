@@ -1,22 +1,20 @@
-import { getSessionFromCookies } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 import { getCampaignsForPanel } from "@/lib/panel";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_CAMPANAS", "view");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
+  const { session } = access;
   const sellerId = session.role === "SELLER" ? session.userId : undefined;
   const campaigns = await getCampaignsForPanel(sellerId);
   return Response.json(campaigns);
 }
 
 export async function POST(request: Request) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_CAMPANAS", "create");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
+  const { session } = access;
   if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
 
   const body = await request.json() as {

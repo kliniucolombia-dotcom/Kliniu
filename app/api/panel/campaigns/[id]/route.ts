@@ -1,11 +1,10 @@
-import { getSessionFromCookies } from "@/lib/auth";
+import { requirePermission, requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_CAMPANAS", "edit");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
+  const { session } = access;
   if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
 
   const { id } = await params;
@@ -36,10 +35,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSessionFromCookies();
-  if (!session || session.role !== "ADMIN") {
-    return Response.json({ error: "Solo ADMIN puede eliminar" }, { status: 403 });
-  }
+  const access = await requireAdmin();
+  if (!access.ok) return Response.json({ error: "Solo ADMIN puede eliminar" }, { status: access.status });
   if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
   const { id } = await params;
   await prisma.campaign.delete({ where: { id } });

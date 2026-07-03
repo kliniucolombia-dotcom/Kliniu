@@ -1,11 +1,9 @@
-import { getSessionFromCookies } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 import { deleteProductionOrder, getProductionOrderWithItems, updateProductionOrder } from "@/lib/panel";
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER" && session.role !== "PACKING")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_PRODUCCION", "view");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { id } = await params;
   const detail = await getProductionOrderWithItems(id);
   if (!detail) return Response.json({ error: "Orden no encontrada" }, { status: 404 });
@@ -13,10 +11,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER" && session.role !== "PACKING")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_PRODUCCION", "edit");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { id } = await params;
   const body = await request.json() as { productionDate?: string; notes?: string | null };
 
@@ -38,10 +34,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER" && session.role !== "PACKING")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_PRODUCCION", "delete");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { id } = await params;
 
   try {

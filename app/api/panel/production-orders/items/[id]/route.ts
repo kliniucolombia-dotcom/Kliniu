@@ -1,11 +1,9 @@
-import { getSessionFromCookies } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 import { deleteProductionOrderItem, updateProductionOrderItem } from "@/lib/panel";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER" && session.role !== "PACKING")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_PRODUCCION", "edit");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { id } = await params;
   const body = await request.json() as {
     productId?: string; quantity?: number; destination?: string | null; notes?: string | null;
@@ -29,10 +27,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSessionFromCookies();
-  if (!session || (session.role !== "ADMIN" && session.role !== "SELLER" && session.role !== "PACKING")) {
-    return Response.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await requirePermission("MODULE_PRODUCCION", "delete");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { id } = await params;
 
   try {
