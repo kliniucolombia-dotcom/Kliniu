@@ -88,14 +88,14 @@ export default function ProductosPanel() {
       </div>
 
       {/* Buscador */}
-      <div className="mb-5 flex gap-3">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row">
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar por nombre, marca o categoría…"
           className="flex-1 rounded-xl border border-[#E2E8F0] bg-white px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]"
         />
-        <div className="flex items-center rounded-xl border border-[#E2E8F0] bg-white px-4 text-sm text-[#94A3B8]">
+        <div className="flex shrink-0 items-center rounded-xl border border-[#E2E8F0] bg-white px-4 text-sm text-[#94A3B8]">
           {filtered.length} productos
         </div>
       </div>

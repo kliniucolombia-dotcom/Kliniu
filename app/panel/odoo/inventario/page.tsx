@@ -74,8 +74,8 @@ export default async function OdooInventoryPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-2xl border border-[#E2E8F0] bg-white">
+        <table className="w-full min-w-[640px] text-sm">
           <thead className="border-b border-[#E2E8F0] bg-[#F8FAFC]">
             <tr>
               {["Producto", "SKU", "Disponible", "Pronosticado", "Estado"].map((heading) => (

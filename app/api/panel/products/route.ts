@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   const minimal = searchParams.get("minimal") === "1";
   if (minimal) {
     if (!prisma) return Response.json([]);
-    const products = await prisma.product.findMany({ where: { active: true }, select: { id: true, name: true }, orderBy: { name: "asc" } });
+    const products = await prisma.product.findMany({ where: { active: true }, select: { id: true, name: true, price: true, image: true, sku: true }, orderBy: { name: "asc" } });
     return Response.json(products);
   }
   const products = await getProductsForPanel();

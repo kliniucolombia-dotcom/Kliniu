@@ -11,7 +11,7 @@ type Props = {
 
 export default function ConditionalShell({ currentUser, children }: Props) {
   const pathname = usePathname();
-  const isPanelRoute = pathname.startsWith("/panel") || pathname.startsWith("/empaque");
+  const isPanelRoute = pathname.startsWith("/panel") || pathname.startsWith("/empaque") || pathname.startsWith("/imprimir-cotizacion");
 
   return (
     <>

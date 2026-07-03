@@ -305,7 +305,8 @@ export default async function OdooReportsPage({
               Desde {report.startDate} hasta {report.endDate}
             </p>
           </div>
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[520px] text-sm">
             <thead className="bg-[#F8FAFC]">
               <tr>
                 {["Orden", "Cliente", "Estado", "Total"].map((heading) => (
@@ -333,6 +334,7 @@ export default async function OdooReportsPage({
               ))}
             </tbody>
           </table>
+          </div>
         </section>
 
         <section className="rounded-2xl border border-[#E2E8F0] bg-white p-5">

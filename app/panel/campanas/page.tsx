@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { calcROAS, getCampaignStatus, STATUS_META } from "@/lib/panel-utils";
+import DailyMatrix from "./DailyMatrix";
 
 type Campaign = {
   id: string; name: string; platform: string; investment: number; sales: number;
@@ -27,6 +28,7 @@ export default function CampanasPanel() {
   const [products, setProducts]     = useState<{ id: string; name: string }[]>([]);
   const [saving, setSaving]         = useState(false);
   const [alert, setAlert]           = useState<{ type: "ok" | "err"; msg: string } | null>(null);
+  const [dailyCampaign, setDailyCampaign] = useState<Campaign | null>(null);
 
   const [form, setForm] = useState({
     name: "", sellerId: "", productId: "", investment: "", sales: "", leads: "",
@@ -40,9 +42,10 @@ export default function CampanasPanel() {
       fetch("/api/panel/sellers"),
       fetch("/api/panel/products?minimal=1"),
     ]);
-    setCampaigns(await rc.json());
-    setSellers(await rs.json());
-    setProducts(await rp.json());
+    const [dc, ds, dp] = await Promise.all([rc.json(), rs.json(), rp.json()]);
+    setCampaigns(Array.isArray(dc) ? dc : []);
+    setSellers(Array.isArray(ds) ? ds : []);
+    setProducts(Array.isArray(dp) ? dp : []);
     setLoading(false);
   }, []);
 
@@ -100,8 +103,8 @@ export default function CampanasPanel() {
           <button onClick={openNew} className="rounded-xl bg-[#27B1B8] px-4 py-2 text-xs font-bold text-white">Crear primera campaña</button>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white">
-          <table className="w-full">
+        <div className="overflow-x-auto rounded-2xl border border-[#E2E8F0] bg-white">
+          <table className="w-full min-w-[720px]">
             <thead className="border-b border-[#E2E8F0] bg-[#F8FAFC]">
               <tr>
                 <TH>Campaña</TH>
@@ -139,9 +142,14 @@ export default function CampanasPanel() {
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      <button onClick={() => openEdit(c)} className="rounded-lg border border-[#E2E8F0] px-3 py-1.5 text-xs font-semibold text-[#64748B] hover:border-[#27B1B8] hover:text-[#27B1B8] transition-colors">
-                        Editar
-                      </button>
+                      <div className="flex gap-2">
+                        <button onClick={() => openEdit(c)} className="rounded-lg border border-[#E2E8F0] px-3 py-1.5 text-xs font-semibold text-[#64748B] hover:border-[#27B1B8] hover:text-[#27B1B8] transition-colors">
+                          Editar
+                        </button>
+                        <button onClick={() => setDailyCampaign(c)} className="rounded-lg border border-[#E2E8F0] px-3 py-1.5 text-xs font-semibold text-[#64748B] hover:border-[#27B1B8] hover:text-[#27B1B8] transition-colors">
+                          Matriz diaria
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -184,22 +192,22 @@ export default function CampanasPanel() {
 
               <div>
                 <label className="mb-1 block text-xs font-bold text-[#64748B]">Inversión (USD)</label>
-                <input type="number" value={form.investment} onChange={(e) => setForm({ ...form, investment: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" placeholder="0" />
+                <input type="number" value={form.investment} onChange={(e) => setForm({ ...form, investment: e.target.value })} className="no-spinner w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" placeholder="0" />
               </div>
 
               <div>
                 <label className="mb-1 block text-xs font-bold text-[#64748B]">Ventas generadas (USD)</label>
-                <input type="number" value={form.sales} onChange={(e) => setForm({ ...form, sales: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" placeholder="0" />
+                <input type="number" value={form.sales} onChange={(e) => setForm({ ...form, sales: e.target.value })} className="no-spinner w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" placeholder="0" />
               </div>
 
               <div>
                 <label className="mb-1 block text-xs font-bold text-[#64748B]">Leads</label>
-                <input type="number" value={form.leads} onChange={(e) => setForm({ ...form, leads: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" placeholder="0" />
+                <input type="number" value={form.leads} onChange={(e) => setForm({ ...form, leads: e.target.value })} className="no-spinner w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" placeholder="0" />
               </div>
 
               <div>
                 <label className="mb-1 block text-xs font-bold text-[#64748B]">Meta (×)</label>
-                <input type="number" value={form.targetMultiple} onChange={(e) => setForm({ ...form, targetMultiple: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" />
+                <input type="number" value={form.targetMultiple} onChange={(e) => setForm({ ...form, targetMultiple: e.target.value })} className="no-spinner w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" />
               </div>
 
               <div>
@@ -254,6 +262,14 @@ export default function CampanasPanel() {
             </div>
           </div>
         </div>
+      )}
+
+      {dailyCampaign && (
+        <DailyMatrix
+          campaignId={dailyCampaign.id}
+          campaignName={dailyCampaign.name}
+          onClose={() => setDailyCampaign(null)}
+        />
       )}
     </div>
   );

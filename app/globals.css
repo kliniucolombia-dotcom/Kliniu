@@ -15,6 +15,12 @@ body {
   font-family: var(--font-figtree), "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
+@media print {
+  body {
+    background: #fff;
+  }
+}
+
 @keyframes klinFadeUp {
   from {
     opacity: 0;
@@ -1051,6 +1057,16 @@ body {
 
 .scrollbar-hidden::-webkit-scrollbar {
   display: none;
+}
+
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.no-spinner {
+  -moz-appearance: textfield;
 }
 
 .offer-roulette-overlay {

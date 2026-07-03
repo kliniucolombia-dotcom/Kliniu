@@ -103,12 +103,12 @@ function OrderProgress({ order }: { order: Order }) {
 
   return (
     <div className="rounded-[1.4rem] border border-black/8 bg-[#fafaf9] px-5 py-5">
-      <div className="flex items-center justify-between gap-3">
-        <div>
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8d91]">Flujo del pedido</p>
           <p className="mt-2 text-sm leading-7 text-[#6e7379]">Muestra el mismo progreso que verá el cliente en su cuenta.</p>
         </div>
-        <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#0C535B] shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
+        <span className="shrink-0 rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#0C535B] shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
           {getShippingStatusLabel(order.shippingStatus)}
         </span>
       </div>
@@ -455,7 +455,7 @@ export default function PedidosPage() {
                 onClick={() => openOrder(order)}
                 className="block w-full rounded-[1.5rem] border border-black/8 bg-white px-5 py-5 text-left shadow-[0_14px_28px_rgba(15,23,42,0.05)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#0C535B]/18"
               >
-                <div className="flex items-start gap-4">
+                <div className="flex flex-col-reverse items-stretch gap-4 sm:flex-row sm:items-start">
                   {/* Text info */}
                   <div className="min-w-0 flex-1">
                     <p className="text-[13px] font-semibold uppercase tracking-[0.22em] text-[#8b8d91]">Pedido</p>
@@ -486,28 +486,28 @@ export default function PedidosPage() {
                   </div>
 
                   {/* Image + arrow */}
-                  <div className="flex shrink-0 flex-col items-end gap-3">
+                  <div className="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end">
                     {previewImages.length > 0 ? (
                       <div className="flex gap-2">
                         {previewImages.map((item, index) => (
-                          <div key={`${order.id}-img-${index}`} className="h-[88px] w-[88px] overflow-hidden rounded-[0.95rem] border border-black/8 bg-white shadow-[0_10px_20px_rgba(15,23,42,0.10)]">
+                          <div key={`${order.id}-img-${index}`} className="h-14 w-14 shrink-0 overflow-hidden rounded-[0.95rem] border border-black/8 bg-white shadow-[0_10px_20px_rgba(15,23,42,0.10)] sm:h-[88px] sm:w-[88px]">
                             <Image
                               src={item.image}
                               alt={`Producto ${index + 1}`}
                               width={88}
                               height={88}
-                              sizes="88px"
+                              sizes="(max-width: 640px) 56px, 88px"
                               className="h-full w-full object-cover"
                             />
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="flex h-[88px] w-[88px] items-center justify-center rounded-[0.95rem] border border-black/8 bg-[#0C535B] text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-white shadow-[0_10px_20px_rgba(15,23,42,0.10)]">
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[0.95rem] border border-black/8 bg-[#0C535B] text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-white shadow-[0_10px_20px_rgba(15,23,42,0.10)] sm:h-[88px] sm:w-[88px]">
                         {order.items[0]?.name?.slice(0, 2) || "UP"}
                       </div>
                     )}
-                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#27B1B8]">
+                    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#27B1B8]">
                       <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
                         <path d="m8 5 8 7-8 7z" />
                       </svg>

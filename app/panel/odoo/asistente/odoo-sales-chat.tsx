@@ -115,7 +115,7 @@ export function OdooSalesChat() {
         </div>
 
         <form onSubmit={onSubmit} className="border-t border-[#E2E8F0] bg-white p-4">
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
@@ -125,7 +125,7 @@ export function OdooSalesChat() {
             <button
               type="submit"
               disabled={disabled}
-              className="rounded-xl bg-[#27B1B8] px-5 py-3 text-sm font-black text-white transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-45"
+              className="shrink-0 rounded-xl bg-[#27B1B8] px-5 py-3 text-sm font-black text-white transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-45"
             >
               Enviar
             </button>

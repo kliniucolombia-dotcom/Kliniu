@@ -44,8 +44,8 @@ export default async function OdooProductsPage() {
       {"error" in productsResult ? (
         <OdooErrorPanel message={productsResult.error} />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-2xl border border-[#E2E8F0] bg-white">
+          <table className="w-full min-w-[720px] text-sm">
             <thead className="border-b border-[#E2E8F0] bg-[#F8FAFC]">
               <tr>
                 {["Producto", "SKU", "Categoría", "Precio", "Stock", "Pronóstico"].map((heading) => (

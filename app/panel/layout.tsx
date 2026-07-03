@@ -2,24 +2,30 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { MdDashboard, MdInventory2, MdCategory, MdBarChart, MdCampaign, MdAttachMoney, MdSettings, MdCalculate, MdDescription, MdPrecisionManufacturing, MdAssignment } from "react-icons/md";
 
 type NavItem = {
   href: string;
   label: string;
-  icon: string;
+  icon: React.ReactNode;
   children?: Array<{ href: string; label: string }>;
 };
 
 const NAV: NavItem[] = [
-  { href: "/panel", label: "Dashboard", icon: "▦" },
-  { href: "/panel/pedidos", label: "Pedidos", icon: "📦" },
-  { href: "/panel/productos", label: "Productos", icon: "◻" },
-  { href: "/panel/metricas", label: "Métricas", icon: "◈" },
-  { href: "/panel/campanas", label: "Campañas", icon: "◉" },
+  { href: "/panel",           label: "Dashboard", icon: <MdDashboard size={18} /> },
+  { href: "/panel/pedidos",   label: "Pedidos",   icon: <MdInventory2 size={18} /> },
+  { href: "/panel/productos", label: "Productos", icon: <MdCategory size={18} /> },
+  { href: "/panel/metricas",  label: "Métricas",  icon: <MdBarChart size={18} /> },
+  { href: "/panel/campanas",  label: "Campañas",  icon: <MdCampaign size={18} /> },
+  { href: "/panel/costos",    label: "Costos",    icon: <MdAttachMoney size={18} /> },
+  { href: "/panel/calculadora-precio", label: "Precio de Venta", icon: <MdCalculate size={18} /> },
+  { href: "/panel/cotizaciones", label: "Cotizaciones", icon: <MdDescription size={18} /> },
+  { href: "/panel/produccion", label: "Producción", icon: <MdPrecisionManufacturing size={18} /> },
+  { href: "/panel/produccion/ordenes", label: "Órdenes de Producción", icon: <MdAssignment size={18} /> },
   {
     href: "/panel/odoo",
     label: "Odoo",
-    icon: "◎",
+    icon: <MdSettings size={18} />,
     children: [
       { href: "/panel/odoo", label: "Resumen" },
       { href: "/panel/odoo/aplicaciones", label: "Aplicaciones" },
@@ -35,11 +41,16 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router   = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<{ fullName?: string; email?: string; role?: string } | null>(null);
 
   useEffect(() => {
     fetch("/api/account").then((r) => r.json()).then((d) => setUser(d)).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -48,13 +59,47 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex min-h-screen bg-[#F4F6F8] font-sans">
+      {/* ── Topbar móvil ── */}
+      <div className="fixed inset-x-0 top-0 z-[60] flex items-center justify-between border-b border-[#E2E8F0] bg-white px-4 py-3 md:hidden">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#27B1B8] text-sm font-black text-white">
+            K
+          </div>
+          <div>
+            <p className="text-xs font-black leading-none text-[#1A1A1A]">Panel</p>
+            <p className="text-[10px] font-semibold text-[#27B1B8]">Comercial Kliniu</p>
+          </div>
+        </div>
+        <button
+          onClick={() => setMobileOpen((o) => !o)}
+          aria-label="Abrir menú"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#1A1A1A]"
+        >
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+            {mobileOpen ? (
+              <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+            ) : (
+              <path d="M3 6h18M3 12h18M3 18h18" strokeLinecap="round" />
+            )}
+          </svg>
+        </button>
+      </div>
+
+      {/* ── Overlay móvil ── */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
       {/* ── Sidebar ── */}
       <aside
-        className={`flex flex-col border-r border-[#E2E8F0] bg-white transition-all duration-200 ${collapsed ? "w-16" : "w-56"}`}
-        style={{ minHeight: "100vh", position: "sticky", top: 0, height: "100vh" }}
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-[#E2E8F0] bg-white transition-all duration-200 md:sticky md:top-0 md:z-auto md:translate-x-0 ${collapsed ? "md:w-16" : "md:w-56"} w-64 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
+        style={{ minHeight: "100vh", height: "100vh" }}
       >
         {/* Logo */}
-        <div className={`flex items-center gap-2 border-b border-[#E2E8F0] px-4 py-4 ${collapsed ? "justify-center" : ""}`}>
+        <div className={`flex items-center gap-2 border-b border-[#E2E8F0] px-4 py-4 ${collapsed ? "md:justify-center" : ""}`}>
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#27B1B8] text-sm font-black text-white">
             K
           </div>
@@ -68,8 +113,11 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-2 py-3">
-          {NAV.map((item) => {
-            const active = pathname === item.href || (item.href !== "/panel" && pathname.startsWith(item.href));
+          {(() => {
+            const matches = (href: string) => pathname === href || (href !== "/panel" && pathname.startsWith(`${href}/`));
+            const activeHref = NAV.filter((n) => matches(n.href)).sort((a, b) => b.href.length - a.href.length)[0]?.href;
+            return NAV.map((item) => {
+              const active = item.href === activeHref;
             return (
               <div key={item.href} className="mb-1">
                 <Link
@@ -81,7 +129,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                   } ${collapsed ? "justify-center" : ""}`}
                   title={collapsed ? item.label : undefined}
                 >
-                  <span className="text-base">{item.icon}</span>
+                  <span className="flex shrink-0 items-center justify-center">{item.icon}</span>
                   {!collapsed && (
                     <>
                       <span className="flex-1">{item.label}</span>
@@ -113,8 +161,9 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                   </div>
                 )}
               </div>
-            );
-          })}
+              );
+            });
+          })()}
         </nav>
 
         {/* User + logout + collapse */}
@@ -140,10 +189,10 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
             {!collapsed && <span>Cerrar sesión</span>}
           </button>
 
-          {/* Collapse toggle */}
+          {/* Collapse toggle (solo escritorio) */}
           <button
             onClick={() => setCollapsed((c) => !c)}
-            className="flex w-full h-7 items-center justify-center rounded-lg border border-[#E2E8F0] text-xs text-[#94A3B8] hover:border-[#27B1B8] hover:text-[#27B1B8] transition-colors"
+            className="hidden w-full h-7 items-center justify-center rounded-lg border border-[#E2E8F0] text-xs text-[#94A3B8] hover:border-[#27B1B8] hover:text-[#27B1B8] transition-colors md:flex"
             title={collapsed ? "Expandir menú" : "Colapsar menú"}
           >
             {collapsed ? "→" : "←"}
@@ -152,7 +201,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* ── Content ── */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-x-hidden overflow-y-auto pt-14 md:pt-0">
         {children}
       </div>
     </div>
