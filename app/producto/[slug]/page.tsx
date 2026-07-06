@@ -452,6 +452,8 @@ export default function ProductoDetallePage() {
   const [cantidad, setCantidad] = useState(1);
   const [esUnidad, setEsUnidad] = useState(true);
   const [showComboTip, setShowComboTip] = useState(false);
+  const [showSelloTip, setShowSelloTip] = useState(false);
+  const [sinSello, setSinSello] = useState(true);
   const [colorActivo, setColorActivo] = useState(0);
   const [tipoActivo, setTipoActivo] = useState(0);
   const [quoteOpen, setQuoteOpen] = useState(false);
@@ -467,11 +469,14 @@ export default function ProductoDetallePage() {
       setShowComboTip(true);
       if (comboTipTimeout.current) clearTimeout(comboTipTimeout.current);
       comboTipTimeout.current = setTimeout(() => setShowComboTip(false), 12000);
+      if (codigoConSello) setShowSelloTip(true);
     }
   };
 
   const slug = params.slug;
   const producto = products.find((p) => p.slug === slug);
+  const codigoConSello = producto?.referenciasAlternas?.[0];
+  const codigoMostrado = sinSello || !codigoConSello ? producto?.sku : codigoConSello;
 
   const tiposVariantes = producto ? TIPO_VARIANTES[producto.slug] : undefined;
   const effectiveSlug = tiposVariantes
@@ -617,6 +622,53 @@ export default function ProductoDetallePage() {
         </div>
       )}
 
+      {/* Modal popup sin sello / con sello (tampografía) */}
+      {showSelloTip && codigoConSello && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4" onClick={() => setShowSelloTip(false)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div
+            className="relative w-[min(92vw,420px)] overflow-hidden rounded-3xl bg-white shadow-[0_24px_64px_rgba(0,0,0,0.28)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-7 pb-7 pt-8 text-center">
+              <p className="text-xl font-black text-[#111]">¿Quieres los productos sin sello (tampografía)?</p>
+              <p className="mt-2 text-sm text-[#6e7379]">
+                A partir de 12 unidades puedes elegir la presentación de tu pedido.
+              </p>
+              <div className="mt-5 flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSinSello(true);
+                    setShowSelloTip(false);
+                  }}
+                  className="w-full rounded-full bg-[#27B1B8] py-3 text-sm font-bold text-white transition-colors hover:bg-[#1e9aa0]"
+                >
+                  Sí, sin sello
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSinSello(false);
+                    setShowSelloTip(false);
+                  }}
+                  className="w-full rounded-full border border-[#27B1B8]/40 bg-[#EAF8F7] py-3 text-sm font-bold text-[#0C535B] transition-colors hover:bg-[#27B1B8] hover:text-white"
+                >
+                  No, con sello
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSelloTip(false)}
+              className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-black/10 text-[#111] hover:bg-black/20"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Breadcrumb */}
       <div className="mx-auto max-w-[1440px] px-6 py-4">
         <nav className="flex items-center gap-2 text-sm text-[#6e7379]">
@@ -656,9 +708,14 @@ export default function ProductoDetallePage() {
                   <span className="text-[#555]"> · Inox 304</span>
                 )}
               </h1>
-              {producto.sku && (
+              {codigoMostrado && (
                 <p className="mt-1.5 text-xs text-[#6e7379]">
-                  Código: <span className="font-medium text-[#444]">{producto.sku}</span>
+                  Código: <span className="font-medium text-[#444]">{codigoMostrado}</span>
+                  {codigoConSello && (
+                    <span className="ml-1 text-[#9aa0a6]">
+                      ({sinSello ? "sin sello" : "con sello"})
+                    </span>
+                  )}
                 </p>
               )}
             </div>
