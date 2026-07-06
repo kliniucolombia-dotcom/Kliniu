@@ -100,7 +100,7 @@ export default function ContactForm() {
         <div className="interactive-lift mx-auto grid w-full max-w-[1180px] gap-6 rounded-lg bg-[#eaf2f2] px-5 py-6 md:grid-cols-[220px_minmax(0,520px)_240px] md:items-center md:justify-center md:gap-7 md:px-8 xl:px-12">
           {/* Intro */}
           <div className="flex flex-col md:min-h-[235px]">
-            <h2 className="md:animated-heading max-w-none text-[24px] font-black leading-[0.95] tracking-tight text-[#073F43] md:max-w-[220px]">
+            <h2 className="max-w-none text-[24px] font-black leading-[0.95] tracking-tight text-[#073F43] md:max-w-[220px]">
               Cuéntanos cómo podemos ayudarte
             </h2>
             <p className="mt-4 hidden max-w-[300px] text-[13px] font-semibold leading-[1.15] text-black md:block">
@@ -111,12 +111,12 @@ export default function ContactForm() {
               alt="Foca Kliniu pensativa"
               width={190}
               height={190}
-              className="float-soft mt-auto hidden w-[190px] object-contain md:block"
+              className="mt-auto hidden w-[190px] object-contain md:block"
             />
           </div>
 
           {/* Form */}
-          <div className="motion-card interactive-lift min-w-0 rounded-md bg-white px-5 py-5 shadow-sm">
+          <div className="interactive-lift min-w-0 rounded-md bg-white px-5 py-5 shadow-sm">
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
@@ -181,7 +181,7 @@ export default function ContactForm() {
 
               <button
                 type="submit"
-                className="shine-sweep hero-pop inline-flex items-center gap-2 rounded bg-[#073F43] px-5 py-2 text-[12px] font-black text-white transition-colors hover:bg-[#0C535B]"
+                className="shine-sweep inline-flex items-center gap-2 rounded bg-[#073F43] px-5 py-2 text-[12px] font-black text-white transition-colors hover:bg-[#0C535B]"
               >
                 Enviar mensaje →
               </button>
@@ -191,10 +191,10 @@ export default function ContactForm() {
           {/* Help options */}
           <div className="hidden min-w-0 md:block">
             <h3 className="text-[14px] font-black text-black">¿En que podemos ayudarte?</h3>
-            <div className="motion-list mt-5 space-y-4">
+            <div className="mt-5 space-y-4">
               {helpOptions.map((opt) => (
-                <div key={opt.titulo} className="motion-card flex items-start gap-3">
-                  <span className="feature-icon-pop flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#0C535B]/30 bg-[#d7e6e6] text-[#0C535B]">
+                <div key={opt.titulo} className="flex items-start gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#0C535B]/30 bg-[#d7e6e6] text-[#0C535B]">
                     {opt.icon}
                   </span>
                   <div>
