@@ -919,18 +919,6 @@ body {
 }
 
 
-.nosotros-cert {
-  animation: nosotrosCertFloat 4.4s ease-in-out infinite;
-}
-
-.nosotros-cert:nth-child(2n) {
-  animation-delay: 350ms;
-}
-
-.nosotros-cert:nth-child(3n) {
-  animation-delay: 700ms;
-}
-
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto !important;
