@@ -1,5 +1,6 @@
 import {
   addCartItemForUser,
+  addComboItemForUser,
   clearCartForUser,
   getCartItemsForUser,
 } from "@/lib/cart";
@@ -41,17 +42,26 @@ export async function POST(request: Request) {
       imagen: string;
       cantidad?: number;
       sku?: string;
+      comboId?: string;
     };
 
-    const items = await addCartItemForUser(session.userId, body);
+    const items = body.comboId
+      ? await addComboItemForUser(session.userId, body.comboId, body.cantidad)
+      : await addCartItemForUser(session.userId, body);
     return Response.json({ items });
   } catch (error) {
     const status =
-      error instanceof Error && error.message === "UNAUTHORIZED" ? 401 : 500;
+      error instanceof Error && error.message === "UNAUTHORIZED"
+        ? 401
+        : error instanceof Error && error.message === "COMBO_NOT_AVAILABLE"
+          ? 409
+          : 500;
     const message =
       error instanceof Error && error.message === "UNAUTHORIZED"
         ? "No autorizado."
-        : "No fue posible actualizar el carrito.";
+        : error instanceof Error && error.message === "COMBO_NOT_AVAILABLE"
+          ? "Este combo ya no está disponible."
+          : "No fue posible actualizar el carrito.";
 
     return Response.json({ error: message }, { status });
   }

@@ -73,6 +73,7 @@ export async function getDashboardStats() {
     select: { productId: true, name: true, quantity: true },
   });
   for (const item of monthOrderItems) {
+    if (!item.productId) continue;
     if (!itemCounts[item.productId]) itemCounts[item.productId] = { name: item.name, qty: 0 };
     itemCounts[item.productId].qty += item.quantity;
   }

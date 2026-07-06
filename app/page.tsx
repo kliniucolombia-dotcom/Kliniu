@@ -5,36 +5,9 @@ import ProductosCarousel from "./components/productos-carousel";
 import SiteFooter from "./components/site-footer";
 import VideoModal from "./components/video-modal";
 import { getFeaturedProducts } from "@/lib/products";
-
-const combos = [
-  {
-    id: "kit-alto-trafico",
-    nombre: "Kit alto tráfico",
-    imagen: "/combo-productos-kliniu.png",
-    destacado: true,
-    items: ["Dispensador de toalla", "Dispensador de jabón", "Servilletas"],
-    precio: "$149.900",
-    href: "/categorias",
-  },
-  {
-    id: "kit-banos-publicos",
-    nombre: "Kit baños públicos",
-    imagen: "/combo-productos-kliniu.png",
-    destacado: false,
-    items: ["Dispensador papel", "Dispensador jabón", "Dispensador alcohol"],
-    precio: "$189.900",
-    href: "/categorias",
-  },
-  {
-    id: "kit-hotel-premium",
-    nombre: "Kit hotel premium",
-    imagen: "/combo-productos-kliniu.png",
-    destacado: false,
-    items: ["Dispensador triple", "Toallero inox", "Soporte pared"],
-    precio: "$249.900",
-    href: "/categorias",
-  },
-];
+import { getActiveCombos } from "@/lib/combos";
+import { getBannersByKeys } from "@/lib/banners";
+import { formatearMoneda } from "./data/catalog";
 
 const REEL_DEFAULT = "https://www.instagram.com/reel/DTQToikk3vI/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==";
 
@@ -48,6 +21,23 @@ const videos = [
 
 export default async function Home() {
   const productos = await getFeaturedProducts();
+  const combosDb = await getActiveCombos();
+  const banners = await getBannersByKeys(["home_banner_features", "home_banner_asesoria", "home_banner_insumos"]);
+
+  const combos = combosDb.map((combo) => ({
+    id: combo.id,
+    nombre: combo.name,
+    imagen: combo.image ?? "/combo-productos-kliniu.png",
+    destacado: false,
+    items: combo.items.map((i) => `${i.quantity}× ${i.product.name}`),
+    precio: formatearMoneda(combo.price),
+    precioNumero: combo.price,
+    sku: combo.sku,
+  }));
+
+  const bannerFeatures = banners.get("home_banner_features");
+  const bannerAsesoria = banners.get("home_banner_asesoria");
+  const bannerInsumos = banners.get("home_banner_insumos");
 
   return (
     <main className="min-h-screen bg-white text-[#111]">
@@ -114,28 +104,28 @@ export default async function Home() {
       {/* ── Features strip ── */}
       <section className="home-reveal hidden md:block">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/banners-web/BANNER-FINALES-12.png" alt="Kliniu" className="hidden w-full object-cover md:block" />
+        <img src={bannerFeatures?.desktopImage ?? "/banners-web/BANNER-FINALES-12.png"} alt="Kliniu" className="hidden w-full object-cover md:block" />
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/banners-responsive/BANNER-FINALES-34.png" alt="Kliniu" className="hidden" />
+        <img src={bannerFeatures?.mobileImage ?? "/banners-responsive/BANNER-FINALES-34.png"} alt="Kliniu" className="hidden" />
       </section>
 
       {/* ── Dos CTAs ── */}
       <section className="home-reveal bg-white px-4 py-10 sm:px-6 md:py-16">
         <div className="mx-auto grid max-w-[1440px] gap-4 md:grid-cols-2 md:gap-5">
           {/* Asesoría → WhatsApp */}
-          <a href="https://wa.me/573125860921" target="_blank" rel="noreferrer" className="interactive-lift block overflow-hidden rounded-2xl">
+          <a href={bannerAsesoria?.link ?? "https://wa.me/573125860921"} target="_blank" rel="noreferrer" className="interactive-lift block overflow-hidden rounded-2xl">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/banners-web/BANNER-FINALES-13.png" alt="Asesoría Kliniu" className="hidden w-full object-cover md:block" />
+            <img src={bannerAsesoria?.desktopImage ?? "/banners-web/BANNER-FINALES-13.png"} alt="Asesoría Kliniu" className="hidden w-full object-cover md:block" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/banners-responsive/BANNER-FINALES-32.png" alt="Asesoría Kliniu" className="w-full object-cover md:hidden" />
+            <img src={bannerAsesoria?.mobileImage ?? "/banners-responsive/BANNER-FINALES-32.png"} alt="Asesoría Kliniu" className="w-full object-cover md:hidden" />
           </a>
 
           {/* Insumos → /categorias?tipo=insumos */}
-          <Link href="/categorias?tipo=insumos" className="interactive-lift block overflow-hidden rounded-2xl">
+          <Link href={bannerInsumos?.link ?? "/categorias?tipo=insumos"} className="interactive-lift block overflow-hidden rounded-2xl">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/banners-web/BANNER-FINALES-14.png" alt="Insumos Kliniu" className="hidden w-full object-cover md:block" />
+            <img src={bannerInsumos?.desktopImage ?? "/banners-web/BANNER-FINALES-14.png"} alt="Insumos Kliniu" className="hidden w-full object-cover md:block" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/banners-responsive/BANNER-FINALES-33.png" alt="Insumos Kliniu" className="w-full object-cover md:hidden" />
+            <img src={bannerInsumos?.mobileImage ?? "/banners-responsive/BANNER-FINALES-33.png"} alt="Insumos Kliniu" className="w-full object-cover md:hidden" />
           </Link>
         </div>
       </section>

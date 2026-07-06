@@ -41,6 +41,7 @@ model Product {
   quotationItems        QuotationItem[]
   productionRuns        ProductionRun[]
   productionOrderItems  ProductionOrderItem[]
+  comboItems            ComboItem[]
 }
 
 model User {
@@ -85,7 +86,8 @@ model User {
 model CartItem {
   id            String   @id @default(cuid())
   userId        String
-  productId     String
+  productId     String?
+  comboId       String?
   name          String
   price         String
   image         String
@@ -95,8 +97,10 @@ model CartItem {
   originalPrice String?
   sku           String?
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  combo         Combo?   @relation(fields: [comboId], references: [id])
 
   @@unique([userId, productId])
+  @@unique([userId, comboId])
 }
 
 model Order {
@@ -142,17 +146,19 @@ enum OdooSyncStatus {
 }
 
 model OrderItem {
-  id        String   @id @default(cuid())
-  orderId   String
-  productId String
-  name      String
-  image     String
-  unitPrice Int
-  quantity  Int
-  lineTotal Int
-  sku       String?
-  createdAt DateTime @default(now())
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  orderId       String
+  productId     String?
+  comboId       String?
+  comboSnapshot Json?
+  name          String
+  image         String
+  unitPrice     Int
+  quantity      Int
+  lineTotal     Int
+  sku           String?
+  createdAt     DateTime @default(now())
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
 model InventoryMovement {
@@ -378,6 +384,55 @@ enum PanelModule {
   MODULE_PRODUCCION
   MODULE_ODOO
   MODULE_USUARIOS
+  MODULE_BANNERS
+  MODULE_COMBOS
+}
+
+enum BannerType {
+  CATEGORY
+  SITE
+}
+
+model Banner {
+  id           String     @id @default(cuid())
+  key          String     @unique
+  type         BannerType
+  title1       String?
+  title2       String?
+  desktopImage String?
+  mobileImage  String?
+  link         String?
+  metadata     Json?
+  active       Boolean    @default(true)
+  order        Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Combo {
+  id          String      @id @default(cuid())
+  slug        String      @unique
+  sku         String      @unique
+  name        String
+  description String?
+  image       String?
+  price       Int
+  active      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  items       ComboItem[]
+  cartItems   CartItem[]
+}
+
+model ComboItem {
+  id        String  @id @default(cuid())
+  comboId   String
+  combo     Combo   @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int     @default(1)
+
+  @@index([comboId])
 }
 
 enum OrderStatus {

@@ -19,6 +19,9 @@ export type CartItem = {
   colorLabel?: string;
   tipoLabel?: string;
   sku?: string;
+  isCombo?: boolean;
+  comboId?: string;
+  comboItems?: { nombre: string; cantidad: number }[];
 };
 
 function normalizeCartId(id: string) {
@@ -56,6 +59,9 @@ function mergeCartItem(
             precio: item.precio,
             precioOriginal: item.precioOriginal,
             sku: item.sku,
+            isCombo: item.isCombo,
+            comboId: item.comboId,
+            comboItems: item.comboItems,
             cantidad: entry.cantidad + quantityToAdd,
           }
         : entry,

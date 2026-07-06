@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRef } from "react";
+import { useCart } from "./cart-provider";
 
 type Combo = {
   id: string;
@@ -11,11 +12,13 @@ type Combo = {
   destacado: boolean;
   items: string[];
   precio: string;
-  href: string;
+  precioNumero: number;
+  sku: string;
 };
 
 export default function ComboCarousel({ combos }: { combos: Combo[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { addItem } = useCart();
 
   const scroll = (dir: "left" | "right") => {
     const el = scrollRef.current;
@@ -73,12 +76,23 @@ export default function ComboCarousel({ combos }: { combos: Combo[] }) {
               </ul>
               <div className="flex items-center justify-between pt-1">
                 <p className="font-bold text-[#111]">{combo.precio}</p>
-                <Link
-                  href={combo.href}
+                <button
+                  type="button"
+                  onClick={() =>
+                    addItem({
+                      id: combo.id,
+                      nombre: combo.nombre,
+                      precio: combo.precio,
+                      imagen: combo.imagen,
+                      sku: combo.sku,
+                      isCombo: true,
+                      comboId: combo.id,
+                    })
+                  }
                   className="rounded-full border border-[#27B1B8] px-3 py-1 text-xs font-bold text-[#27B1B8] transition-colors hover:bg-[#27B1B8] hover:text-white"
                 >
-                  Ver combo
-                </Link>
+                  Agregar al carrito
+                </button>
               </div>
             </div>
           </div>

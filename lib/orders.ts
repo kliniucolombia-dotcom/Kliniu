@@ -67,7 +67,10 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
   const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0);
 
   const order = await prisma.$transaction(async (tx) => {
-    const productSlugs = cartItems.map((item) => item.productId);
+    const productCartItems = cartItems.filter((item) => item.productId);
+    const comboCartItems = cartItems.filter((item) => item.comboId);
+
+    const productSlugs = productCartItems.map((item) => item.productId as string);
     const products = await tx.product.findMany({
       where: {
         slug: {
@@ -82,7 +85,7 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
       },
     });
 
-    for (const item of cartItems) {
+    for (const item of productCartItems) {
       const product = products.find((entry) => entry.slug === item.productId);
 
       if (!product) {
@@ -91,6 +94,53 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
 
       if (product.stock > 0 && product.stock < item.quantity) {
         throw new Error("INSUFFICIENT_STOCK");
+      }
+    }
+
+    const comboIds = comboCartItems.map((item) => item.comboId as string);
+    const combos = await tx.combo.findMany({
+      where: { id: { in: comboIds } },
+      include: { items: { include: { product: true } } },
+    });
+
+    const stockDeductions = new Map<
+      string,
+      { id: string; stock: number; minimumStock: number; needed: number }
+    >();
+
+    for (const item of productCartItems) {
+      const product = products.find((entry) => entry.slug === item.productId);
+      if (!product) continue;
+      const tracked = stockDeductions.get(product.id) ?? {
+        id: product.id,
+        stock: product.stock,
+        minimumStock: product.minimumStock,
+        needed: 0,
+      };
+      tracked.needed += item.quantity;
+      stockDeductions.set(product.id, tracked);
+    }
+
+    for (const cartCombo of comboCartItems) {
+      const combo = combos.find((c) => c.id === cartCombo.comboId);
+      if (!combo || !combo.active) {
+        throw new Error("INSUFFICIENT_STOCK");
+      }
+
+      for (const comboItem of combo.items) {
+        const neededQuantity = comboItem.quantity * cartCombo.quantity;
+        const tracked = stockDeductions.get(comboItem.productId) ?? {
+          id: comboItem.productId,
+          stock: comboItem.product.stock,
+          minimumStock: comboItem.product.minimumStock,
+          needed: 0,
+        };
+        tracked.needed += neededQuantity;
+        stockDeductions.set(comboItem.productId, tracked);
+
+        if (comboItem.product.stock > 0 && comboItem.product.stock < tracked.needed) {
+          throw new Error("INSUFFICIENT_STOCK");
+        }
       }
     }
 
@@ -122,9 +172,23 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
         items: {
           create: cartItems.map((item) => {
             const unitPrice = parsePriceValue(item.price);
+            const combo = item.comboId ? combos.find((c) => c.id === item.comboId) : null;
 
             return {
               productId: item.productId,
+              comboId: item.comboId,
+              comboSnapshot: combo
+                ? {
+                    name: combo.name,
+                    sku: combo.sku,
+                    price: combo.price,
+                    items: combo.items.map((ci) => ({
+                      productId: ci.productId,
+                      name: ci.product.name,
+                      quantity: ci.quantity,
+                    })),
+                  }
+                : undefined,
               name: item.name,
               image: item.image,
               unitPrice,
@@ -142,22 +206,16 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
       },
     });
 
-    for (const item of cartItems) {
-      const product = products.find((entry) => entry.slug === item.productId);
-
-      if (!product) {
-        continue;
-      }
-
-      const deductedQuantity = Math.min(product.stock, item.quantity);
-      const nextStock = Math.max(product.stock - item.quantity, 0);
+    for (const tracked of stockDeductions.values()) {
+      const deductedQuantity = Math.min(tracked.stock, tracked.needed);
+      const nextStock = Math.max(tracked.stock - tracked.needed, 0);
 
       await tx.product.update({
-        where: { id: product.id },
+        where: { id: tracked.id },
         data: {
           stock: nextStock,
           availability:
-            nextStock <= product.minimumStock
+            nextStock <= tracked.minimumStock
                 ? "Disponible por pedido"
                 : "Entrega inmediata",
           ...(deductedQuantity > 0

@@ -12,6 +12,8 @@ type CheckoutItem = {
   imagen: string;
   cantidad: number;
   sku?: string;
+  isCombo?: boolean;
+  comboItems?: { nombre: string; cantidad: number }[];
 };
 
 type CheckoutUser = {
@@ -473,9 +475,21 @@ export default function CheckoutForm({
                         onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }} />
                     </div>
                     <span className="flex-1 min-w-0">
-                      <span className="block truncate text-[#111]">{item.nombre}</span>
+                      <span className="block truncate text-[#111]">
+                        {item.nombre}
+                        {item.isCombo && (
+                          <span className="ml-1.5 rounded-full bg-[#DCFCE7] px-1.5 py-0.5 text-[9px] font-bold uppercase text-[#16A34A]">
+                            Combo
+                          </span>
+                        )}
+                      </span>
                       {item.sku && (
                         <span className="block truncate text-xs text-[#999]">Cód: {item.sku}</span>
+                      )}
+                      {item.isCombo && item.comboItems && item.comboItems.length > 0 && (
+                        <span className="block truncate text-[10px] text-[#aaa]">
+                          Incluye: {item.comboItems.map((ci) => `${ci.cantidad}× ${ci.nombre}`).join(", ")}
+                        </span>
                       )}
                     </span>
                     <span className="shrink-0 font-semibold text-[#27B1B8]">{item.precio}</span>
