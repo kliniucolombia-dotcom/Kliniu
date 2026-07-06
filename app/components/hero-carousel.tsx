@@ -7,7 +7,7 @@ type SlideButton =
   | { type: "primary"; label: string; sub?: string; href: string }
   | { type: "advisor"; label: string; sub?: string };
 
-const slides: {
+const DEFAULT_SLIDES: {
   id: number;
   image: string;
   imageMobile: string;
@@ -40,6 +40,12 @@ const slides: {
   },
 ];
 
+export type HeroSlideBanner = {
+  desktopImage: string | null;
+  mobileImage: string | null;
+  link: string | null;
+};
+
 const AUTO_PLAY_MS = 18000;
 
 function Dots({
@@ -53,7 +59,7 @@ function Dots({
 }) {
   return (
     <div className="flex items-center gap-2">
-      {slides.map((slide, index) => (
+      {DEFAULT_SLIDES.map((slide, index) => (
         <button
           key={slide.id}
           type="button"
@@ -90,7 +96,20 @@ function AdvisorIcon({ className }: { className: string }) {
   );
 }
 
-export default function HeroCarousel() {
+export default function HeroCarousel({ banners = [] }: { banners?: (HeroSlideBanner | undefined)[] }) {
+  const slides = DEFAULT_SLIDES.map((slide, i) => {
+    const b = banners[i];
+    if (!b) return slide;
+    const overriddenButtons = slide.buttons.map((btn) =>
+      btn.type === "primary" ? { ...btn, href: b.link ?? btn.href } : btn,
+    );
+    return {
+      ...slide,
+      image: b.desktopImage ?? slide.image,
+      imageMobile: b.mobileImage ?? slide.imageMobile,
+      buttons: overriddenButtons,
+    };
+  });
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const advanceSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
@@ -99,7 +118,7 @@ export default function HeroCarousel() {
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
+      setCurrentSlide((prev) => (prev + 1) % DEFAULT_SLIDES.length);
     }, AUTO_PLAY_MS);
     return () => window.clearInterval(intervalId);
   }, []);

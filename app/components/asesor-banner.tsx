@@ -1,6 +1,15 @@
 import Image from "next/image";
 
-export default function AsesorBanner() {
+export type AsesorBannerData = {
+  desktopImage: string | null;
+  mobileImage: string | null;
+  link: string | null;
+};
+
+export default function AsesorBanner({ banner }: { banner?: AsesorBannerData }) {
+  const link = banner?.link ?? "https://wa.me/573214198831";
+  const desktopImage = banner?.desktopImage ?? "/banners-web/BANNER-FINALES-20.png";
+
   return (
     <section className="relative left-1/2 w-screen -translate-x-1/2 bg-[#f0f0ee]">
 
@@ -21,7 +30,7 @@ export default function AsesorBanner() {
             ¿Necesitas ayuda<br />para elegir?
           </p>
           <a
-            href="https://wa.me/573214198831"
+            href={link}
             target="_blank"
             rel="noreferrer"
             className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#0C535B] px-5 py-2.5 text-sm font-extrabold text-white transition-opacity hover:opacity-90"
@@ -34,10 +43,10 @@ export default function AsesorBanner() {
 
       {/* DESKTOP */}
       <div className="mx-auto hidden w-full max-w-[1440px] px-4 md:block md:px-2">
-        <a href="https://wa.me/573214198831" target="_blank" rel="noreferrer" className="block w-full">
+        <a href={link} target="_blank" rel="noreferrer" className="block w-full">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/banners-web/BANNER-FINALES-20.png"
+            src={desktopImage}
             alt="¿Necesitas ayuda para elegir? Habla con un asesor"
             className="h-auto w-full"
             style={{ aspectRatio: "10000 / 1137", objectFit: "cover" }}

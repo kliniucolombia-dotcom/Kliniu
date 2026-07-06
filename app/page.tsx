@@ -22,7 +22,18 @@ const videos = [
 export default async function Home() {
   const productos = await getFeaturedProducts();
   const combosDb = await getActiveCombos();
-  const banners = await getBannersByKeys(["home_banner_features", "home_banner_asesoria", "home_banner_insumos"]);
+  const banners = await getBannersByKeys([
+    "home_banner_features",
+    "home_banner_asesoria",
+    "home_banner_insumos",
+    "home_hero_slide_1",
+    "home_hero_slide_2",
+    "home_hero_slide_3",
+  ]);
+  const heroSlides = [1, 2, 3].map((i) => {
+    const b = banners.get(`home_hero_slide_${i}`);
+    return b ? { desktopImage: b.desktopImage, mobileImage: b.mobileImage, link: b.link } : undefined;
+  });
 
   const combos = combosDb.map((combo) => ({
     id: combo.id,
@@ -41,7 +52,7 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-white text-[#111]">
-      <HeroCarousel />
+      <HeroCarousel banners={heroSlides} />
 
       {/* ── Productos destacados ── */}
       <section className="home-reveal pb-10 pt-10 md:py-16">

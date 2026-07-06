@@ -227,7 +227,7 @@ export default function CombosPanel() {
       )}
 
       {(selected || creating) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
           <div className="my-8 w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl">
             <div className="mb-4 flex items-start justify-between">
               <h3 className="font-black text-[#1A1A1A]">{creating ? "Nuevo combo" : `Editar: ${selected?.name}`}</h3>

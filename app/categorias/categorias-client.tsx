@@ -481,6 +481,7 @@ function InsumosRepuestosPage({
   setFiltros,
   hayFiltros,
   opcionesFiltros,
+  asesorBanner,
 }: {
   productosPagina: ProductoCatalogo[];
   totalPaginas: number;
@@ -490,6 +491,7 @@ function InsumosRepuestosPage({
   setFiltros: Dispatch<SetStateAction<FiltrosState>>;
   hayFiltros: boolean;
   opcionesFiltros: Record<string, string[]>;
+  asesorBanner?: { desktopImage: string | null; mobileImage: string | null; link: string | null };
 }) {
   const [filtrosVisibles, setFiltrosVisibles] = useState(false);
   return (
@@ -638,7 +640,7 @@ function InsumosRepuestosPage({
 
       <section className="home-reveal px-6 pt-16 md:py-[140px]">
         <div className="mx-auto max-w-[1440px]">
-          <AsesorBanner />
+          <AsesorBanner banner={asesorBanner} />
         </div>
       </section>
 
@@ -649,8 +651,10 @@ function InsumosRepuestosPage({
 
 export default function CategoriasPage({
   categoryBanners = {},
+  asesorBanner,
 }: {
   categoryBanners?: Record<string, CategoryBannerData>;
+  asesorBanner?: { desktopImage: string | null; mobileImage: string | null; link: string | null };
 }) {
   const { products } = useProducts();
   const router = useRouter();
@@ -798,6 +802,7 @@ export default function CategoriasPage({
         setPagina={setPagina}
         filtros={filtros}
         setFiltros={setFiltrosAndReset}
+        asesorBanner={asesorBanner}
         hayFiltros={hayFiltros}
         opcionesFiltros={opcionesFiltros}
       />
@@ -1117,7 +1122,7 @@ export default function CategoriasPage({
       {/* ── ¿Necesitas ayuda? ── */}
       <section className="home-reveal px-6 pt-16 md:pb-[140px] md:pt-[160px]">
         <div className="mx-auto max-w-[1440px]">
-          <AsesorBanner />
+          <AsesorBanner banner={asesorBanner} />
         </div>
       </section>
 

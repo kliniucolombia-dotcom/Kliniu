@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { categoriasData } from "../../data/catalog";
 
 type Banner = {
   id: string;
@@ -30,6 +31,34 @@ type FormState = {
   order: string;
 };
 
+const FIXED_LOCATIONS: { key: string; type: "CATEGORY" | "SITE"; label: string }[] = [
+  { key: "home_hero_slide_1", type: "SITE", label: "Inicio → Carrusel principal → slide 1 de 3" },
+  { key: "home_hero_slide_2", type: "SITE", label: "Inicio → Carrusel principal → slide 2 de 3" },
+  { key: "home_hero_slide_3", type: "SITE", label: "Inicio → Carrusel principal → slide 3 de 3" },
+  { key: "home_banner_features", type: "SITE", label: "Inicio → franja de beneficios/características" },
+  { key: "home_banner_asesoria", type: "SITE", label: "Inicio → banner \"Habla con un asesor\"" },
+  { key: "home_banner_insumos", type: "SITE", label: "Inicio → banner de Insumos/Repuestos" },
+  { key: "asesor_banner", type: "SITE", label: "Categorías → sección \"¿Necesitas ayuda para elegir?\"" },
+];
+
+const KNOWN_LOCATIONS: { key: string; type: "CATEGORY" | "SITE"; label: string }[] = [
+  ...FIXED_LOCATIONS,
+  ...categoriasData.map((c) => ({
+    key: `categoria_${c.nombre}`,
+    type: "CATEGORY" as const,
+    label: `Categorías → banner grande de "${c.nombre}"`,
+  })),
+];
+
+function getBannerLocation(key: string): string {
+  const known = KNOWN_LOCATIONS.find((l) => l.key === key);
+  if (known) return known.label;
+  if (key.startsWith("categoria_")) {
+    return `Categorías → banner grande de la categoría "${key.replace("categoria_", "")}"`;
+  }
+  return "Ubicación personalizada (key no reconocida automáticamente)";
+}
+
 const EMPTY_FORM: FormState = {
   key: "",
   type: "SITE",
@@ -52,6 +81,7 @@ export default function BannersPanel() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<"desktop" | "mobile" | null>(null);
   const [alert, setAlert] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
+  const [keyMode, setKeyMode] = useState<"known" | "custom">("known");
   const router = useRouter();
   const desktopInputRef = useRef<HTMLInputElement>(null);
   const mobileInputRef = useRef<HTMLInputElement>(null);
@@ -85,10 +115,15 @@ export default function BannersPanel() {
     setAlert(null);
   };
 
+  const availableLocations = KNOWN_LOCATIONS.filter(
+    (loc) => !banners.some((b) => b.key === loc.key),
+  );
+
   const openCreate = () => {
     setSelected(null);
     setCreating(true);
     setForm(EMPTY_FORM);
+    setKeyMode(availableLocations.length > 0 ? "known" : "custom");
     setAlert(null);
   };
 
@@ -183,7 +218,7 @@ export default function BannersPanel() {
           <table className="w-full min-w-[720px] text-sm">
             <thead className="border-b border-[#E2E8F0] bg-[#F8FAFC]">
               <tr>
-                {["Key", "Tipo", "Preview", "Título", "Estado", "Orden"].map((h) => (
+                {["Dónde aparece", "Preview", "Título", "Estado", "Orden"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">{h}</th>
                 ))}
                 <th className="sticky right-0 border-l border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3"></th>
@@ -192,8 +227,10 @@ export default function BannersPanel() {
             <tbody className="divide-y divide-[#F1F5F9]">
               {banners.map((b) => (
                 <tr key={b.id} className="hover:bg-[#F8FAFC] transition-colors">
-                  <td className="px-4 py-3 font-mono text-xs text-[#1A1A1A]">{b.key}</td>
-                  <td className="px-4 py-3 text-xs text-[#64748B]">{b.type}</td>
+                  <td className="px-4 py-3">
+                    <p className="max-w-[260px] text-xs font-semibold text-[#1A1A1A]">{getBannerLocation(b.key)}</p>
+                    <p className="mt-0.5 font-mono text-[10px] text-[#94A3B8]">{b.key}</p>
+                  </td>
                   <td className="px-4 py-3">
                     {b.desktopImage ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -227,30 +264,77 @@ export default function BannersPanel() {
       )}
 
       {(selected || creating) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
           <div className="my-8 w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
             <div className="mb-4 flex items-start justify-between">
               <h3 className="font-black text-[#1A1A1A]">{creating ? "Nuevo banner" : `Editar: ${selected?.key}`}</h3>
               <button onClick={closeModal} className="text-[#94A3B8] hover:text-[#1A1A1A]">✕</button>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-xs font-bold text-[#64748B]">Key (identificador único)</label>
-                <input
-                  value={form.key}
-                  disabled={!creating}
-                  onChange={(e) => setForm((f) => ({ ...f, key: e.target.value }))}
-                  placeholder="ej: home_banner_1, categoria_champus"
-                  className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8] disabled:bg-[#F8FAFC] disabled:text-[#94A3B8]"
-                />
+            {!creating && selected && (
+              <div className="mb-4 rounded-xl bg-[#EFFAFB] px-3 py-2 text-xs font-semibold text-[#0C535B]">
+                📍 Dónde aparece: {getBannerLocation(selected.key)}
               </div>
+            )}
+            {creating && keyMode === "custom" && (
+              <div className="mb-4 rounded-xl bg-[#FFF7ED] px-3 py-2 text-xs font-semibold text-[#9A3412]">
+                ⚠️ La &quot;key&quot; define dónde se muestra. Si no coincide con una key usada en el código, el banner se guarda pero no aparece en ningún lado del sitio.
+              </div>
+            )}
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {creating && keyMode === "known" ? (
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-xs font-bold text-[#64748B]">¿Dónde va este banner?</label>
+                  <select
+                    value={form.key}
+                    onChange={(e) => {
+                      const loc = availableLocations.find((l) => l.key === e.target.value);
+                      setForm((f) => ({ ...f, key: e.target.value, type: loc?.type ?? f.type }));
+                    }}
+                    className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]"
+                  >
+                    <option value="">Elegir ubicación…</option>
+                    {availableLocations.map((loc) => (
+                      <option key={loc.key} value={loc.key}>{loc.label}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => { setKeyMode("custom"); setForm((f) => ({ ...f, key: "" })); }}
+                    className="mt-1.5 text-[11px] font-semibold text-[#27B1B8] hover:underline"
+                  >
+                    Usar key personalizada en vez de la lista
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-[#64748B]">Key (identificador único)</label>
+                  <input
+                    value={form.key}
+                    disabled={!creating}
+                    onChange={(e) => setForm((f) => ({ ...f, key: e.target.value }))}
+                    placeholder="ej: home_banner_1, categoria_champus"
+                    className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8] disabled:bg-[#F8FAFC] disabled:text-[#94A3B8]"
+                  />
+                  {creating && availableLocations.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setKeyMode("known")}
+                      className="mt-1.5 text-[11px] font-semibold text-[#27B1B8] hover:underline"
+                    >
+                      Elegir de la lista de ubicaciones conocidas
+                    </button>
+                  )}
+                </div>
+              )}
               <div>
                 <label className="mb-1 block text-xs font-bold text-[#64748B]">Tipo</label>
                 <select
                   value={form.type}
+                  disabled={creating && keyMode === "known"}
                   onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as "CATEGORY" | "SITE" }))}
-                  className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]"
+                  className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8] disabled:bg-[#F8FAFC] disabled:text-[#94A3B8]"
                 >
                   <option value="SITE">SITE</option>
                   <option value="CATEGORY">CATEGORY</option>

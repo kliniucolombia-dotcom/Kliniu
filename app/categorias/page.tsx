@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { categoriasData } from "../data/catalog";
+import { getBannerByKey } from "@/lib/banners";
 import CategoriasClient, { type CategoryBannerData } from "./categorias-client";
 
 async function getCategoryBanners(): Promise<Record<string, CategoryBannerData>> {
@@ -29,10 +30,14 @@ async function getCategoryBanners(): Promise<Record<string, CategoryBannerData>>
 
 export default async function CategoriasPage() {
   const categoryBanners = await getCategoryBanners();
+  const asesorBannerRow = await getBannerByKey("asesor_banner");
+  const asesorBanner = asesorBannerRow
+    ? { desktopImage: asesorBannerRow.desktopImage, mobileImage: asesorBannerRow.mobileImage, link: asesorBannerRow.link }
+    : undefined;
 
   return (
     <Suspense fallback={null}>
-      <CategoriasClient categoryBanners={categoryBanners} />
+      <CategoriasClient categoryBanners={categoryBanners} asesorBanner={asesorBanner} />
     </Suspense>
   );
 }
