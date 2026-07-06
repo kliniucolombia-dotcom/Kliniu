@@ -15,7 +15,7 @@ const slides: {
 }[] = [
   {
     id: 1,
-    image: "/hero-banner-home-3.jpg",
+    image: "/banners-web/BANNER FINALES-03.png",
     imageMobile: "/banners-responsive/BANNER FINALES-22.jpg",
     buttons: [
       { type: "primary", label: "Comprar ahora", sub: "Compra productos individuales con envio a todo colombia", href: "/categorias" },
@@ -24,7 +24,7 @@ const slides: {
   },
   {
     id: 2,
-    image: "/hero-banner-c.jpg",
+    image: "/banners-web/BANNER FINALES-02.png",
     imageMobile: "/banners-responsive/BANNER FINALES-23.jpg",
     buttons: [
       { type: "primary", label: "Comprar ahora", href: "/categorias" },
@@ -32,7 +32,7 @@ const slides: {
   },
   {
     id: 3,
-    image: "/hero-banner-b.jpg",
+    image: "/banners-web/BANNER FINALES-01.png",
     imageMobile: "/banners-responsive/BANNER FINALES-24.jpg",
     buttons: [
       { type: "primary", label: "Explorar productos", href: "/categorias" },
@@ -201,8 +201,8 @@ export default function HeroCarousel() {
 
             {/* ── DESKTOP ── */}
             <div
-              className="relative hidden md:block"
-              style={{ height: "clamp(380px, 32vw, 460px)" }}
+              className="relative hidden w-full md:block"
+              style={{ aspectRatio: "10000 / 2084" }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -211,27 +211,6 @@ export default function HeroCarousel() {
                 className="h-full w-full"
                 style={{ objectFit: "cover", objectPosition: "center center" }}
               />
-              {slide.id === 1 && (
-                <h2 className="absolute left-[7.2%] top-[14%] z-10 max-w-[46rem] text-[clamp(38px,3.4vw,58px)] font-black leading-[0.98] tracking-normal text-[#333]">
-                  Todo lo que tu espacio
-                  <br />
-                  necesita, <span className="text-[#075f68]">en un solo lugar</span>
-                </h2>
-              )}
-              {slide.id === 2 && (
-                <h2 className="absolute left-[12.2%] top-[18%] z-10 max-w-[35rem] text-[clamp(36px,3vw,54px)] font-black leading-[0.98] tracking-normal text-[#333]">
-                  Lo que tu espacio
-                  <br />
-                  necesita <span className="text-[#075f68]">esta aqui</span>
-                </h2>
-              )}
-              {slide.id === 3 && (
-                <h2 className="absolute left-[12.2%] top-[15%] z-10 max-w-[55rem] text-[clamp(36px,3vw,54px)] font-black leading-[0.98] tracking-normal text-[#333]">
-                  Más que productos,
-                  <br />
-                  <span className="text-[#075f68]">soluciones para cada espacio</span>
-                </h2>
-              )}
               {slide.buttons[0].type === "primary" && (
                 <Link
                   href={slide.buttons[0].href}
@@ -241,10 +220,8 @@ export default function HeroCarousel() {
                   aria-label={slide.buttons[0].label}
                   style={
                     slide.id === 1
-                      ? { left: "7.2%", top: "52%", width: "clamp(220px, 24vw, 244px)", height: "27%" }
-                      : slide.id === 2
-                      ? { left: "12.2%", top: "58%", width: "min(26vw, 390px)", height: "15%" }
-                      : { left: "12.2%", top: "58%", width: "min(26vw, 390px)", height: "15%" }
+                      ? { left: "13.25%", top: "53%", width: "clamp(220px, 24vw, 244px)", height: "clamp(52px, 9vw, 90px)" }
+                      : { left: "13.25%", top: "58%", width: "min(26vw, 390px)", height: "clamp(44px, 6.5vw, 64px)" }
                   }
                 >
                   {slide.id === 1 && <CartIcon className="h-[clamp(24px,2.4vw,42px)] w-[clamp(24px,2.4vw,42px)] shrink-0" />}
@@ -266,7 +243,7 @@ export default function HeroCarousel() {
                   aria-label="Cotiza ahora"
                   onClick={() => window.dispatchEvent(new CustomEvent("kliniu:open-advisor"))}
                   className="absolute z-10 inline-flex cursor-pointer items-center justify-center gap-4 rounded-[8px] bg-white px-6 text-left text-[#075f68] shadow-[0_12px_28px_rgba(15,23,42,0.13)] transition-transform duration-200 hover:scale-[1.045] hover:bg-[#f4fbfb] hover:shadow-[0_18px_36px_rgba(15,23,42,0.18)] focus-visible:scale-[1.045] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#27B1B8]"
-                  style={{ left: "calc(7.2% + clamp(220px, 24vw, 244px) + 48px)", top: "52%", width: "clamp(220px, 24vw, 244px)", height: "27%" }}
+                  style={{ left: "calc(13.25% + clamp(220px, 24vw, 244px) + 48px)", top: "53%", width: "clamp(220px, 24vw, 244px)", height: "clamp(52px, 9vw, 90px)" }}
                 >
                   <AdvisorIcon className="h-[clamp(24px,2.4vw,42px)] w-[clamp(24px,2.4vw,42px)] shrink-0" />
                   <span className="min-w-0">

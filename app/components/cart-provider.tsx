@@ -18,6 +18,7 @@ export type CartItem = {
   cantidad: number;
   colorLabel?: string;
   tipoLabel?: string;
+  sku?: string;
 };
 
 function normalizeCartId(id: string) {
@@ -54,6 +55,7 @@ function mergeCartItem(
             ...entry,
             precio: item.precio,
             precioOriginal: item.precioOriginal,
+            sku: item.sku,
             cantidad: entry.cantidad + quantityToAdd,
           }
         : entry,

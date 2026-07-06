@@ -11,6 +11,7 @@ type CheckoutItem = {
   precio: string;
   imagen: string;
   cantidad: number;
+  sku?: string;
 };
 
 type CheckoutUser = {
@@ -471,7 +472,12 @@ export default function CheckoutForm({
                         className="h-full w-full object-contain p-0.5"
                         onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }} />
                     </div>
-                    <span className="flex-1 truncate text-[#111]">{item.nombre}</span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block truncate text-[#111]">{item.nombre}</span>
+                      {item.sku && (
+                        <span className="block truncate text-xs text-[#999]">Cód: {item.sku}</span>
+                      )}
+                    </span>
                     <span className="shrink-0 font-semibold text-[#27B1B8]">{item.precio}</span>
                   </div>
                 ))}

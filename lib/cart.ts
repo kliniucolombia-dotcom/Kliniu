@@ -7,6 +7,7 @@ export type PersistedCartItem = {
   precioOriginal?: string;
   imagen: string;
   cantidad: number;
+  sku?: string;
 };
 
 export async function getCartItemsForUser(userId: string) {
@@ -26,6 +27,7 @@ export async function getCartItemsForUser(userId: string) {
     precioOriginal: item.originalPrice ?? undefined,
     imagen: item.image,
     cantidad: item.quantity,
+    sku: item.sku ?? undefined,
   }));
 }
 
@@ -51,6 +53,7 @@ export async function addCartItemForUser(
       price: item.precio,
       originalPrice: item.precioOriginal ?? null,
       image: item.imagen,
+      sku: item.sku ?? null,
       quantity: {
         increment: quantityToAdd,
       },
@@ -62,6 +65,7 @@ export async function addCartItemForUser(
       price: item.precio,
       originalPrice: item.precioOriginal ?? null,
       image: item.imagen,
+      sku: item.sku ?? null,
       quantity: quantityToAdd,
     },
   });
@@ -167,6 +171,7 @@ export async function syncCartItemsForUser(
         price: item.precio,
         originalPrice: item.precioOriginal ?? null,
         image: item.imagen,
+        sku: item.sku ?? null,
         quantity: {
           increment: item.cantidad,
         },
@@ -178,6 +183,7 @@ export async function syncCartItemsForUser(
         price: item.precio,
         originalPrice: item.precioOriginal ?? null,
         image: item.imagen,
+        sku: item.sku ?? null,
         quantity: item.cantidad,
       },
     });
