@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { pushOrderToOdoo } from "@/lib/odoo";
 
 export type CheckoutInput = {
   customerName: string;
@@ -129,6 +130,7 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
               unitPrice,
               quantity: item.quantity,
               lineTotal: unitPrice * item.quantity,
+              sku: item.sku,
             };
           }),
         },
@@ -182,6 +184,67 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
   });
 
   return order;
+}
+
+export async function syncOrderToOdoo(orderId: string) {
+  if (!prisma) {
+    throw new Error("DATABASE_NOT_CONFIGURED");
+  }
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { items: true },
+  });
+
+  if (!order) {
+    throw new Error("ORDER_NOT_FOUND");
+  }
+
+  if (order.odooOrderId) {
+    return order;
+  }
+
+  try {
+    const result = await pushOrderToOdoo({
+      orderId: order.id,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      customerPhone: order.customerPhone,
+      company: order.company,
+      addressLine1: order.addressLine1,
+      addressLine2: order.addressLine2,
+      city: order.city,
+      department: order.department,
+      notes: order.notes,
+      items: order.items.map((item) => ({
+        name: item.name,
+        sku: item.sku,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+      })),
+    });
+
+    return await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        odooOrderId: result.odooOrderId,
+        odooOrderName: result.odooOrderName,
+        odooSyncStatus: "SYNCED",
+        odooSyncError: null,
+        odooSyncedAt: new Date(),
+      },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "ODOO_SYNC_ERROR";
+
+    return await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        odooSyncStatus: "FAILED",
+        odooSyncError: message,
+      },
+    });
+  }
 }
 
 export async function getOrdersForUser(userId: string) {
@@ -280,7 +343,7 @@ export async function updateOrderShipping(
       : null;
   const deliveredAt = shippingStatus === "DELIVERED" ? new Date() : null;
 
-  return await prisma.order.update({
+  const updated = await prisma.order.update({
     where: { id: orderId },
     data: {
       shippingStatus,
@@ -305,6 +368,12 @@ export async function updateOrderShipping(
       },
     },
   });
+
+  if (nextPaymentStatus === "PAID" && currentOrder.paymentStatus !== "PAID") {
+    await syncOrderToOdoo(orderId);
+  }
+
+  return updated;
 }
 
 export async function confirmSimulatedOrderPayment(
@@ -339,7 +408,7 @@ export async function confirmSimulatedOrderPayment(
     throw new Error("ORDER_NOT_FOUND");
   }
 
-  return await prisma.order.update({
+  const paidOrder = await prisma.order.update({
     where: { id: orderId },
     data: {
       paymentStatus: "PAID",
@@ -356,4 +425,6 @@ export async function confirmSimulatedOrderPayment(
       },
     },
   });
+
+  return await syncOrderToOdoo(orderId);
 }

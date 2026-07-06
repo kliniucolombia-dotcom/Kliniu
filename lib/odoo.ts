@@ -745,3 +745,133 @@ export async function getOdooSalesReport(periodInput?: string | null) {
     },
   } satisfies OdooSalesReport;
 }
+
+export type OdooOrderPushItem = {
+  name: string;
+  sku?: string | null;
+  quantity: number;
+  unitPrice: number;
+};
+
+export type OdooOrderPushInput = {
+  orderId: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  company?: string | null;
+  addressLine1: string;
+  addressLine2?: string | null;
+  city: string;
+  department: string;
+  notes?: string | null;
+  items: OdooOrderPushItem[];
+};
+
+export type OdooOrderPushResult = {
+  odooOrderId: number;
+  odooOrderName: string;
+};
+
+async function findOrCreateOdooPartner(input: OdooOrderPushInput): Promise<number> {
+  const existing = await executeOdooKw<number[]>(
+    "res.partner",
+    "search",
+    [[["email", "=", input.customerEmail]]],
+    { limit: 1 },
+  );
+
+  if (existing.length > 0) return existing[0];
+
+  return executeOdooKw<number>("res.partner", "create", [
+    {
+      name: input.company?.trim() || input.customerName,
+      email: input.customerEmail,
+      phone: input.customerPhone,
+      street: input.addressLine1,
+      street2: input.addressLine2 || undefined,
+      city: input.city,
+    },
+  ]);
+}
+
+function normalizeCode(code: string): string {
+  return code.toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+async function findOdooProductId(sku: string | null | undefined, fallbackName: string): Promise<number | null> {
+  if (sku) {
+    const exact = await executeOdooKw<number[]>(
+      "product.product",
+      "search",
+      [[["default_code", "=", sku]]],
+      { limit: 1 },
+    );
+    if (exact.length > 0) return exact[0];
+
+    // Los códigos en la web a veces llevan guiones/espacios distintos a Odoo
+    // (ej. en-dash "–" en vez de " - "). Se compara por código normalizado.
+    const numericSuffix = sku.match(/(\d+)\D*$/)?.[1];
+    if (numericSuffix) {
+      const candidates = await executeOdooKw<{ id: number; default_code: string | false }[]>(
+        "product.product",
+        "search_read",
+        [[["default_code", "like", numericSuffix]]],
+        { fields: ["id", "default_code"], limit: 20 },
+      );
+
+      const target = normalizeCode(sku);
+      const match = candidates.find(
+        (c) => typeof c.default_code === "string" && normalizeCode(c.default_code) === target,
+      );
+      if (match) return match.id;
+    }
+  }
+
+  const byName = await executeOdooKw<number[]>(
+    "product.product",
+    "search",
+    [[["name", "=", fallbackName]]],
+    { limit: 1 },
+  );
+
+  return byName.length > 0 ? byName[0] : null;
+}
+
+export async function pushOrderToOdoo(input: OdooOrderPushInput): Promise<OdooOrderPushResult> {
+  const partnerId = await findOrCreateOdooPartner(input);
+
+  const orderLines: unknown[] = [];
+  for (const item of input.items) {
+    const productId = await findOdooProductId(item.sku, item.name);
+
+    if (!productId) {
+      throw new Error(`ODOO_PRODUCT_NOT_FOUND:${item.sku || item.name}`);
+    }
+
+    orderLines.push([
+      0,
+      0,
+      {
+        product_id: productId,
+        product_uom_qty: item.quantity,
+        price_unit: item.unitPrice,
+      },
+    ]);
+  }
+
+  const odooOrderId = await executeOdooKw<number>("sale.order", "create", [
+    {
+      partner_id: partnerId,
+      client_order_ref: input.orderId,
+      note: input.notes || undefined,
+      order_line: orderLines,
+    },
+  ]);
+
+  const [created] = await executeOdooKw<{ id: number; name: string }[]>("sale.order", "read", [
+    [odooOrderId],
+    ["id", "name"],
+  ]);
+
+  return { odooOrderId, odooOrderName: created?.name || `SO${odooOrderId}` };
+}

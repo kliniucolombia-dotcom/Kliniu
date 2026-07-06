@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 
 type OrderItem = {
-  id: string; name: string; image?: string | null; quantity: number; unitPrice: number; lineTotal: number;
+  id: string; name: string; image?: string | null; quantity: number; unitPrice: number; lineTotal: number; sku?: string | null;
 };
 
 type Order = {
@@ -28,6 +28,10 @@ type Order = {
   totalItems: number;
   items: OrderItem[];
   assignedSeller?: { fullName: string } | null;
+  odooOrderId?: number | null;
+  odooOrderName?: string | null;
+  odooSyncStatus?: string;
+  odooSyncError?: string | null;
 };
 
 type OrderForm = { shippingStatus: string; carrier: string; trackingNumber: string; adminNotes: string };
@@ -153,6 +157,7 @@ export default function PedidosPage() {
   const [search, setSearch] = useState("");
   const [shippingFilter, setShippingFilter] = useState<"all" | string>("all");
   const [form, setForm] = useState<OrderForm>({ shippingStatus: "", carrier: "", trackingNumber: "", adminNotes: "" });
+  const [isRetryingOdoo, setIsRetryingOdoo] = useState(false);
 
   useEffect(() => {
     fetch("/api/panel/orders")
@@ -195,6 +200,26 @@ export default function PedidosPage() {
       setOrders((prev) => prev.map((o) => (o.id === updated.id ? { ...o, ...updated } : o)));
     }
     setSaving(false);
+  };
+
+  const onRetryOdoo = async (orderId: string) => {
+    setIsRetryingOdoo(true);
+    const res = await fetch(`/api/orders/${orderId}/sync-odoo`, { method: "POST" });
+    const data = await res.json().catch(() => ({}));
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === orderId
+          ? {
+              ...o,
+              odooOrderId: data.odooOrderId ?? o.odooOrderId,
+              odooOrderName: data.odooOrderName ?? o.odooOrderName,
+              odooSyncStatus: data.odooSyncStatus ?? o.odooSyncStatus,
+              odooSyncError: res.ok ? null : data.error ?? o.odooSyncError,
+            }
+          : o,
+      ),
+    );
+    setIsRetryingOdoo(false);
   };
 
   const waLink = (phone: string, name: string, orderId: string) => {
@@ -259,6 +284,22 @@ export default function PedidosPage() {
               <span className="rounded-full border border-[#1f8b45]/18 bg-[#effaf2] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#1f6b39]">
                 {getShippingStatusLabel(selectedOrder.shippingStatus)}
               </span>
+              {selectedOrder.odooSyncStatus === "SYNCED" && (
+                <span className="rounded-full border border-black/10 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#333]" title={selectedOrder.odooOrderName ?? undefined}>
+                  Odoo: {selectedOrder.odooOrderName}
+                </span>
+              )}
+              {selectedOrder.odooSyncStatus === "FAILED" && (
+                <button
+                  type="button"
+                  onClick={() => onRetryOdoo(selectedOrder.id)}
+                  disabled={isRetryingOdoo}
+                  className="rounded-full border border-[#c0392b]/30 bg-[#FDECEA] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#c0392b] hover:bg-[#c0392b] hover:text-white disabled:opacity-60"
+                  title={selectedOrder.odooSyncError ?? undefined}
+                >
+                  {isRetryingOdoo ? "Sincronizando..." : "Reintentar Odoo"}
+                </button>
+              )}
             </div>
           </div>
 
@@ -280,6 +321,9 @@ export default function PedidosPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-[#1f2328]">{item.name}</p>
+                        {item.sku && (
+                          <p className="mt-0.5 text-xs text-[#8b8d91]">Código: <span className="font-medium text-[#5d6167]">{item.sku}</span></p>
+                        )}
                         <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[#8b8d91]">Cantidad</p>
                         <p className="mt-1 text-sm font-medium text-[#5d6167]">{item.quantity}</p>
                       </div>

@@ -93,6 +93,7 @@ model CartItem {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   originalPrice String?
+  sku           String?
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
@@ -123,10 +124,21 @@ model Order {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   assignedSellerId String?
+  odooOrderId      Int?
+  odooOrderName    String?
+  odooSyncStatus   OdooSyncStatus @default(NOT_SYNCED)
+  odooSyncError    String?
+  odooSyncedAt     DateTime?
   assignedSeller   User?          @relation("AssignedOrders", fields: [assignedSellerId], references: [id])
   user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   items            OrderItem[]
   quotation        Quotation?
+}
+
+enum OdooSyncStatus {
+  NOT_SYNCED
+  SYNCED
+  FAILED
 }
 
 model OrderItem {
@@ -138,6 +150,7 @@ model OrderItem {
   unitPrice Int
   quantity  Int
   lineTotal Int
+  sku       String?
   createdAt DateTime @default(now())
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }

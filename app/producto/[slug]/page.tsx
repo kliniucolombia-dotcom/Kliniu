@@ -452,8 +452,7 @@ export default function ProductoDetallePage() {
   const [cantidad, setCantidad] = useState(1);
   const [esUnidad, setEsUnidad] = useState(true);
   const [showComboTip, setShowComboTip] = useState(false);
-  const [showSelloTip, setShowSelloTip] = useState(false);
-  const [sinSello, setSinSello] = useState(true);
+  const [sinSello, setSinSello] = useState(false);
   const [colorActivo, setColorActivo] = useState(0);
   const [tipoActivo, setTipoActivo] = useState(0);
   const [quoteOpen, setQuoteOpen] = useState(false);
@@ -466,11 +465,14 @@ export default function ProductoDetallePage() {
     setCantidad(next);
     // Mostrar popup solo al cruzar el umbral subiendo
     if (next >= 12 && cantidad < 12 && delta > 0) {
-      setShowComboTip(true);
-      if (comboTipTimeout.current) clearTimeout(comboTipTimeout.current);
-      comboTipTimeout.current = setTimeout(() => setShowComboTip(false), 12000);
-      if (codigoConSello) setShowSelloTip(true);
+      mostrarTipsCombo();
     }
+  };
+
+  const mostrarTipsCombo = () => {
+    setShowComboTip(true);
+    if (comboTipTimeout.current) clearTimeout(comboTipTimeout.current);
+    comboTipTimeout.current = setTimeout(() => setShowComboTip(false), 12000);
   };
 
   const slug = params.slug;
@@ -502,6 +504,7 @@ export default function ProductoDetallePage() {
       cantidad,
       colorLabel,
       tipoLabel,
+      sku: codigoMostrado,
     });
     setAgregado(true);
     if (agregadoTimeout.current) clearTimeout(agregadoTimeout.current);
@@ -622,52 +625,6 @@ export default function ProductoDetallePage() {
         </div>
       )}
 
-      {/* Modal popup sin sello / con sello (tampografía) */}
-      {showSelloTip && codigoConSello && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4" onClick={() => setShowSelloTip(false)}>
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-          <div
-            className="relative w-[min(92vw,420px)] overflow-hidden rounded-3xl bg-white shadow-[0_24px_64px_rgba(0,0,0,0.28)]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="px-7 pb-7 pt-8 text-center">
-              <p className="text-xl font-black text-[#111]">¿Quieres los productos sin sello (tampografía)?</p>
-              <p className="mt-2 text-sm text-[#6e7379]">
-                A partir de 12 unidades puedes elegir la presentación de tu pedido.
-              </p>
-              <div className="mt-5 flex flex-col gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSinSello(true);
-                    setShowSelloTip(false);
-                  }}
-                  className="w-full rounded-full bg-[#27B1B8] py-3 text-sm font-bold text-white transition-colors hover:bg-[#1e9aa0]"
-                >
-                  Sí, sin sello
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSinSello(false);
-                    setShowSelloTip(false);
-                  }}
-                  className="w-full rounded-full border border-[#27B1B8]/40 bg-[#EAF8F7] py-3 text-sm font-bold text-[#0C535B] transition-colors hover:bg-[#27B1B8] hover:text-white"
-                >
-                  No, con sello
-                </button>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowSelloTip(false)}
-              className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-black/10 text-[#111] hover:bg-black/20"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Breadcrumb */}
       <div className="mx-auto max-w-[1440px] px-6 py-4">
@@ -825,7 +782,11 @@ export default function ProductoDetallePage() {
                     <button
                       key={pack.qty}
                       type="button"
-                      onClick={() => { setEsUnidad(false); setCantidad(pack.qty); setShowComboTip(false); }}
+                      onClick={() => {
+                        setEsUnidad(false);
+                        setCantidad(pack.qty);
+                        setShowComboTip(false);
+                      }}
                       className={`relative rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-150 ${
                         isActive
                           ? "border-[#F07826] bg-[#F07826] text-white shadow-sm"
@@ -849,6 +810,17 @@ export default function ProductoDetallePage() {
                 </div>
               )}
 
+
+              {/* Toggle sin tampografía (predeterminado: con tampografía) */}
+              {codigoConSello && (
+                <button
+                  type="button"
+                  onClick={() => setSinSello(!sinSello)}
+                  className="w-fit text-sm font-semibold text-[#333] hover:text-[#27B1B8]"
+                >
+                  {sinSello ? "Volver a con tampografía" : "Sin tampografía"}
+                </button>
+              )}
 
               {/* Resumen de precio */}
               {volumePricing.hasDiscount && (
@@ -896,6 +868,15 @@ export default function ProductoDetallePage() {
                   Cotiza ahora
                 </button>
               </div>
+              {producto.categoria === "Hoteles y Restaurantes" && (
+                <WhatsAppAsesor
+                  message={`Hola, quiero personalizar mi compra de "${producto.nombre}" (tampografía / logo de mi empresa)`}
+                  className="flex min-h-[50px] w-full items-center justify-center gap-2 rounded-full border border-[#25D366] px-4 py-2.5 text-center text-[13px] font-bold leading-tight text-[#128C7E] transition-colors hover:bg-[#25D366]/10 sm:text-sm"
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><path d="M20.5 3.5A11.8 11.8 0 0 0 12 0C5.4 0 0 5.4 0 12c0 2.1.5 4.1 1.6 5.9L0 24l6.3-1.6c1.7.9 3.7 1.4 5.7 1.4 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.5zM12 21.8c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A9.7 9.7 0 0 1 2.2 12c0-5.4 4.4-9.8 9.8-9.8 2.6 0 5.1 1 6.9 2.9a9.7 9.7 0 0 1 2.9 6.9c0 5.4-4.4 9.8-9.8 9.8zm5.4-7.3c-.3-.1-1.7-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.5-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5 0-.1-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1.1 2.8 1.2 3c.1.2 2.2 3.4 5.4 4.7.7.3 1.3.5 1.8.7.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3z"/></svg>
+                  Personaliza tu compra
+                </WhatsAppAsesor>
+              )}
             </div>
 
             {/* Trust badges — horizontal row */}
