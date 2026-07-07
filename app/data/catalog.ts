@@ -253,7 +253,6 @@ export type VariacionColor = {
   color: string;
   label: string;
   image: string;
-  images?: string[];
 };
 
 export type ProductoCatalogo = {

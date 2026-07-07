@@ -491,7 +491,7 @@ export default function ProductoDetallePage() {
     if (!producto || producto.puedeComprar === false) return;
     const pricing = getVolumePricing(producto.precio, cantidad, effectiveSlug, preciosBase);
     const varianteActiva = allVariants[colorActivo];
-    const imagenSeleccionada = varianteActiva?.images?.[0] ?? varianteActiva?.image ?? producto.imagen;
+    const imagenSeleccionada = varianteActiva?.image ?? producto.imagen;
     const colorLabel = allVariants.length > 0 ? varianteActiva?.label : undefined;
     const tipoLabel = tiposVariantes ? tiposVariantes[tipoActivo].label : undefined;
     const itemId = [producto.slug, varianteActiva?.color, tipoLabel].filter(Boolean).join("--");
@@ -519,7 +519,7 @@ export default function ProductoDetallePage() {
     const hasBlanco = variacionesColor.some((v) => v.label.toLowerCase() === "blanco");
     return hasBlanco
       ? variacionesColor
-      : [{ color: "#ffffff", label: "Blanco", image: producto.imagen, images: [producto.imagen] }, ...variacionesColor];
+      : [{ color: "#ffffff", label: "Blanco", image: producto.imagen }, ...variacionesColor];
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [producto]);
 
@@ -527,14 +527,11 @@ export default function ProductoDetallePage() {
     if (!producto) return [];
     const tipoImage = tiposVariantes?.[tipoActivo]?.image;
     if (allVariants.length > 0) {
-      const varianteSeleccionada = allVariants[colorActivo];
-      const selectedImages = varianteSeleccionada?.images?.length
-        ? varianteSeleccionada.images
-        : [varianteSeleccionada?.image ?? producto.imagen];
+      const selected = allVariants[colorActivo]?.image ?? producto.imagen;
       const others = allVariants.filter((_, i) => i !== colorActivo).map((v) => v.image);
       const extras = (producto.imagenesExtra || []).filter((img) => img !== tipoImage);
-      // Las fotos del color seleccionado van primero para que al tocar una variante cambien las fotos mostradas
-      return [...selectedImages, tipoImage, ...others, ...extras]
+      // La imagen del color seleccionado va primero para que tocar una variante cambie la imagen principal
+      return [selected, tipoImage, ...others, ...extras]
         .filter((x): x is string => Boolean(x))
         .filter((x, i, arr) => arr.indexOf(x) === i);
     }
