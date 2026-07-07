@@ -531,10 +531,8 @@ export default function ProductoDetallePage() {
       const selectedImages = varianteSeleccionada?.images?.length
         ? varianteSeleccionada.images
         : [varianteSeleccionada?.image ?? producto.imagen];
-      const others = allVariants.filter((_, i) => i !== colorActivo).map((v) => v.image);
-      const extras = (producto.imagenesExtra || []).filter((img) => img !== tipoImage);
-      // Las fotos del color seleccionado van primero para que al tocar una variante cambien las fotos mostradas
-      return [...selectedImages, tipoImage, ...others, ...extras]
+      // Solo se muestran las fotos del color elegido, sin mezclar las de otros colores ni extras
+      return [...selectedImages, tipoImage]
         .filter((x): x is string => Boolean(x))
         .filter((x, i, arr) => arr.indexOf(x) === i);
     }
