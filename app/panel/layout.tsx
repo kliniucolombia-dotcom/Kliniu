@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { MdDashboard, MdInventory2, MdCategory, MdBarChart, MdCampaign, MdAttachMoney, MdSettings, MdCalculate, MdDescription, MdPrecisionManufacturing, MdAssignment, MdPeople, MdImage, MdCardGiftcard } from "react-icons/md";
+import { MdDashboard, MdInventory2, MdCategory, MdBarChart, MdCampaign, MdAttachMoney, MdSettings, MdCalculate, MdDescription, MdPrecisionManufacturing, MdAssignment, MdPeople, MdImage, MdCardGiftcard, MdLocalOffer } from "react-icons/md";
 
 type NavItem = {
   href: string;
@@ -16,6 +16,7 @@ const NAV: NavItem[] = [
   { href: "/panel",           label: "Dashboard", icon: <MdDashboard size={18} />, module: "MODULE_DASHBOARD" },
   { href: "/panel/pedidos",   label: "Pedidos",   icon: <MdInventory2 size={18} />, module: "MODULE_PEDIDOS" },
   { href: "/panel/productos", label: "Productos", icon: <MdCategory size={18} />, module: "MODULE_PRODUCTOS" },
+  { href: "/panel/outlet", label: "Outlet", icon: <MdLocalOffer size={18} />, module: "MODULE_PRODUCTOS" },
   { href: "/panel/banners",   label: "Banners",   icon: <MdImage size={18} />, module: "MODULE_BANNERS" },
   { href: "/panel/combos",    label: "Combos",    icon: <MdCardGiftcard size={18} />, module: "MODULE_COMBOS" },
   { href: "/panel/metricas",  label: "Métricas",  icon: <MdBarChart size={18} />, module: "MODULE_METRICAS" },

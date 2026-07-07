@@ -1102,6 +1102,7 @@ export default function AdminPage() {
     else if (tab === "edit") openEditView();
     else if (tab === "inventory") openInventoryView();
     else if (tab === "orders") openOrdersView();
+    else if (tab === "outlet") openCreateOutletView();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
