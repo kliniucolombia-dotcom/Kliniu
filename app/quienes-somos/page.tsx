@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import SiteFooter from "../components/site-footer";
+import { getBannerByKey } from "@/lib/banners";
 
 export const metadata: Metadata = {
   title: "Quiénes somos | Kliniu",
@@ -105,7 +106,9 @@ const certificaciones = [
   },
 ];
 
-export default function QuienesSomosPage() {
+export default async function QuienesSomosPage() {
+  const heroBanner = await getBannerByKey("nosotros_hero");
+  const heroImage = heroBanner?.desktopImage ?? "/banner-foto-nosotros.png";
   return (
     <main className="min-h-screen bg-white text-[#111]">
       {/* Hero */}
@@ -129,7 +132,7 @@ export default function QuienesSomosPage() {
           </div>
           <div className="interactive-lift hidden items-center justify-center overflow-hidden rounded-2xl bg-[#f8f8f7] md:flex">
             <Image
-              src="/banner-foto-nosotros.png"
+              src={heroImage}
               alt="Productos Kliniu en ambiente de baño"
               width={600}
               height={420}

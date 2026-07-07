@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { categoriasData } from "../../data/catalog";
 
@@ -18,73 +18,67 @@ type Banner = {
   updatedAt: string;
 };
 
-type FormState = {
+type Slot = {
   key: string;
   type: "CATEGORY" | "SITE";
-  title1: string;
-  title2: string;
-  desktopImage: string;
-  mobileImage: string;
-  link: string;
-  metadataText: string;
-  active: boolean;
-  order: string;
+  tab: "home" | "categorias" | "outlet" | "otras";
+  group: string;
+  label: string;
+  preview: "hero" | "wide" | "card";
+  fallbackDesktop?: string;
+  fallbackMobile?: string;
+  mobileFixed?: boolean;
 };
 
-const FIXED_LOCATIONS: { key: string; type: "CATEGORY" | "SITE"; label: string }[] = [
-  { key: "home_hero_slide_1", type: "SITE", label: "Inicio → Carrusel principal → slide 1 de 3" },
-  { key: "home_hero_slide_2", type: "SITE", label: "Inicio → Carrusel principal → slide 2 de 3" },
-  { key: "home_hero_slide_3", type: "SITE", label: "Inicio → Carrusel principal → slide 3 de 3" },
-  { key: "home_banner_features", type: "SITE", label: "Inicio → franja de beneficios/características" },
-  { key: "home_banner_asesoria", type: "SITE", label: "Inicio → banner \"Habla con un asesor\"" },
-  { key: "home_banner_insumos", type: "SITE", label: "Inicio → banner de Insumos/Repuestos" },
-  { key: "asesor_banner", type: "SITE", label: "Categorías → sección \"¿Necesitas ayuda para elegir?\"" },
+const FIXED_SLOTS: Slot[] = [
+  { key: "home_hero_slide_1", type: "SITE", tab: "home", group: "Carrusel principal", label: "Hero Banner 1", preview: "hero" },
+  { key: "home_hero_slide_2", type: "SITE", tab: "home", group: "Carrusel principal", label: "Hero Banner 2", preview: "hero" },
+  { key: "home_hero_slide_3", type: "SITE", tab: "home", group: "Carrusel principal", label: "Hero Banner 3", preview: "hero" },
+  { key: "home_banner_features", type: "SITE", tab: "home", group: "Banners estáticos", label: "Franja beneficios", preview: "wide", fallbackDesktop: "/banners-web/BANNER-FINALES-12.png", fallbackMobile: "/banners-responsive/BANNER-FINALES-34.png" },
+  { key: "home_banner_asesoria", type: "SITE", tab: "home", group: "Banners estáticos", label: "Habla con un asesor", preview: "wide", fallbackDesktop: "/banners-web/BANNER-FINALES-13.png", fallbackMobile: "/banners-responsive/BANNER-FINALES-32.png" },
+  { key: "home_banner_insumos", type: "SITE", tab: "home", group: "Banners estáticos", label: "Insumos/Repuestos", preview: "wide", fallbackDesktop: "/banners-web/BANNER-FINALES-14.png", fallbackMobile: "/banners-responsive/BANNER-FINALES-33.png" },
+  { key: "asesor_banner", type: "SITE", tab: "categorias", group: "Banners estáticos", label: "¿Necesitas ayuda para elegir?", preview: "wide", fallbackDesktop: "/banners-web/BANNER-FINALES-20.png", mobileFixed: true },
+  { key: "outlet_hero", type: "SITE", tab: "outlet", group: "Banners estáticos", label: "Hero tienda Outlet", preview: "wide", fallbackDesktop: "/banner-outlet.jpg", fallbackMobile: "/banners-responsive/oulet%20movil.jpg" },
+  { key: "outlet_super_ofertas", type: "SITE", tab: "outlet", group: "Banners estáticos", label: "Banner Super Ofertas", preview: "wide", fallbackDesktop: "/outlet/banner-super-ofertas.jpg" },
+  { key: "nosotros_hero", type: "SITE", tab: "otras", group: "Otras páginas", label: "Nosotros", preview: "wide", fallbackDesktop: "/banner-foto-nosotros.png", mobileFixed: true },
+  { key: "contacto_hero", type: "SITE", tab: "otras", group: "Otras páginas", label: "Contacto", preview: "wide", fallbackDesktop: "/banners-web/BANNER-FINALES-09.png", fallbackMobile: "/banners-responsive/BANNER-FINALES-30.png" },
+  { key: "puntos_hero", type: "SITE", tab: "otras", group: "Otras páginas", label: "Puntos K", preview: "wide", fallbackDesktop: "/puntos-k-banner.jpg" },
 ];
 
-const KNOWN_LOCATIONS: { key: string; type: "CATEGORY" | "SITE"; label: string }[] = [
-  ...FIXED_LOCATIONS,
-  ...categoriasData.map((c) => ({
+const CATEGORY_SLOTS: Slot[] = categoriasData
+  .filter((c) => c.nombre !== "Outlet")
+  .map((c) => ({
     key: `categoria_${c.nombre}`,
     type: "CATEGORY" as const,
-    label: `Categorías → banner grande de "${c.nombre}"`,
-  })),
-];
+    tab: "categorias" as const,
+    group: "Categorías",
+    label: c.nombre,
+    preview: "card" as const,
+    fallbackDesktop: c.heroBannerImagen ?? c.bannerImagen,
+    fallbackMobile: c.heroBannerMovil,
+  }));
 
-function getBannerLocation(key: string): string {
-  const known = KNOWN_LOCATIONS.find((l) => l.key === key);
-  if (known) return known.label;
-  if (key.startsWith("categoria_")) {
-    return `Categorías → banner grande de la categoría "${key.replace("categoria_", "")}"`;
-  }
-  return "Ubicación personalizada (key no reconocida automáticamente)";
+const ALL_SLOTS = [...FIXED_SLOTS, ...CATEGORY_SLOTS];
+
+function UploadIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 16V4M12 4l-4 4M12 4l4 4" />
+      <path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+    </svg>
+  );
 }
-
-const EMPTY_FORM: FormState = {
-  key: "",
-  type: "SITE",
-  title1: "",
-  title2: "",
-  desktopImage: "",
-  mobileImage: "",
-  link: "",
-  metadataText: "",
-  active: true,
-  order: "0",
-};
 
 export default function BannersPanel() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<Banner | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState<FormState>(EMPTY_FORM);
-  const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState<"desktop" | "mobile" | null>(null);
+  const [tab, setTab] = useState<"home" | "categorias" | "outlet" | "otras">("home");
+  const [view, setView] = useState<"desktop" | "mobile">("desktop");
+  const [uploadingKey, setUploadingKey] = useState<string | null>(null);
+  const [pending, setPending] = useState<{ slot: Slot; file: File; previewUrl: string } | null>(null);
   const [alert, setAlert] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
-  const [keyMode, setKeyMode] = useState<"known" | "custom">("known");
   const router = useRouter();
-  const desktopInputRef = useRef<HTMLInputElement>(null);
-  const mobileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -97,345 +91,201 @@ export default function BannersPanel() {
 
   useEffect(() => { load(); }, [load]);
 
-  const openEdit = (banner: Banner) => {
-    setSelected(banner);
-    setCreating(false);
-    setForm({
-      key: banner.key,
-      type: banner.type,
-      title1: banner.title1 ?? "",
-      title2: banner.title2 ?? "",
-      desktopImage: banner.desktopImage ?? "",
-      mobileImage: banner.mobileImage ?? "",
-      link: banner.link ?? "",
-      metadataText: banner.metadata ? JSON.stringify(banner.metadata, null, 2) : "",
-      active: banner.active,
-      order: String(banner.order),
-    });
+  const bannerByKey = useMemo(() => {
+    const map = new Map<string, Banner>();
+    banners.forEach((b) => map.set(b.key, b));
+    return map;
+  }, [banners]);
+
+  const extraSlots: Slot[] = useMemo(() => {
+    const known = new Set(ALL_SLOTS.map((s) => s.key));
+    const unused = new Set(["categoria_Outlet"]);
+    return banners
+      .filter((b) => !known.has(b.key) && !unused.has(b.key))
+      .map((b) => ({ key: b.key, type: b.type as "CATEGORY" | "SITE", tab: "home" as const, group: "Otros", label: b.key, preview: "wide" as const }));
+  }, [banners]);
+
+  const slotsForTab = [...ALL_SLOTS, ...extraSlots].filter((s) => s.tab === tab);
+  const groups = Array.from(new Set(slotsForTab.map((s) => s.group)));
+
+  const pickFile = (slot: Slot, file: File) => {
     setAlert(null);
+    setPending({ slot, file, previewUrl: URL.createObjectURL(file) });
   };
 
-  const availableLocations = KNOWN_LOCATIONS.filter(
-    (loc) => !banners.some((b) => b.key === loc.key),
-  );
-
-  const openCreate = () => {
-    setSelected(null);
-    setCreating(true);
-    setForm(EMPTY_FORM);
-    setKeyMode(availableLocations.length > 0 ? "known" : "custom");
-    setAlert(null);
+  const cancelPending = () => {
+    if (pending) URL.revokeObjectURL(pending.previewUrl);
+    setPending(null);
   };
 
-  const closeModal = () => {
-    setSelected(null);
-    setCreating(false);
-  };
-
-  const uploadImage = async (file: File, slot: "desktop" | "mobile") => {
-    setUploading(slot);
+  const confirmUpload = async () => {
+    if (!pending) return;
+    const { slot, file } = pending;
+    setUploadingKey(slot.key);
     const fd = new FormData();
     fd.append("file", file);
-    fd.append("productName", `banner-${form.key || "nuevo"}`);
-    const r = await fetch("/api/uploads", { method: "POST", body: fd });
-    setUploading(null);
-    if (!r.ok) {
-      const d = await r.json();
+    fd.append("productName", `banner-${slot.key}`);
+    const up = await fetch("/api/uploads", { method: "POST", body: fd });
+    if (!up.ok) {
+      setUploadingKey(null);
+      const d = await up.json();
       setAlert({ type: "err", msg: d.error ?? "Error al subir imagen" });
       return;
     }
-    const d = (await r.json()) as { publicUrl: string };
-    setForm((f) => ({ ...f, [slot === "desktop" ? "desktopImage" : "mobileImage"]: d.publicUrl }));
-  };
-
-  const save = async () => {
-    if (!form.key.trim()) { setAlert({ type: "err", msg: "La key es obligatoria" }); return; }
-
-    let metadata: Record<string, unknown> | undefined;
-    if (form.metadataText.trim()) {
-      try {
-        metadata = JSON.parse(form.metadataText);
-      } catch {
-        setAlert({ type: "err", msg: "El metadata no es JSON válido" });
-        return;
-      }
-    }
-
-    setSaving(true);
-    const method = creating ? "POST" : "PATCH";
+    const { publicUrl } = (await up.json()) as { publicUrl: string };
+    const existing = bannerByKey.get(slot.key);
     const r = await fetch("/api/panel/banners", {
-      method,
+      method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        key: form.key.trim(),
-        type: form.type,
-        title1: form.title1 || undefined,
-        title2: form.title2 || undefined,
-        desktopImage: form.desktopImage || undefined,
-        mobileImage: form.mobileImage || undefined,
-        link: form.link || undefined,
-        metadata,
-        active: form.active,
-        order: Number(form.order) || 0,
+        key: slot.key,
+        type: slot.type,
+        title1: existing?.title1 ?? undefined,
+        title2: existing?.title2 ?? undefined,
+        link: existing?.link ?? undefined,
+        metadata: existing?.metadata ?? undefined,
+        active: existing?.active ?? true,
+        order: existing?.order ?? 0,
+        desktopImage: view === "desktop" ? publicUrl : existing?.desktopImage ?? undefined,
+        mobileImage: view === "mobile" ? publicUrl : existing?.mobileImage ?? undefined,
       }),
     });
-    setSaving(false);
+    setUploadingKey(null);
+    URL.revokeObjectURL(pending.previewUrl);
+    setPending(null);
     if (r.ok) {
-      setAlert({ type: "ok", msg: "Banner guardado" });
+      setAlert({ type: "ok", msg: "Imagen actualizada" });
       load();
-      closeModal();
     } else {
       const d = await r.json();
       setAlert({ type: "err", msg: d.error ?? "Error al guardar" });
     }
   };
 
-  const remove = async (id: string) => {
-    if (!confirm("¿Eliminar este banner?")) return;
-    await fetch(`/api/panel/banners?id=${id}`, { method: "DELETE" });
-    load();
-  };
-
   return (
     <div className="p-6 lg:p-8">
-      <div className="mb-6 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8]">Panel Comercial</p>
-          <h1 className="mt-1 text-2xl font-black text-[#1A1A1A]">Banners</h1>
-        </div>
+      <div className="mb-6">
+        <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8]">Panel maestro</p>
+        <h1 className="mt-1 text-2xl font-black text-[#1A1A1A]">Gestión de imágenes</h1>
+        <p className="mt-1 text-sm text-[#64748B]">Sube o reemplaza imágenes del sitio. JPG · PNG · WEBP · máx. 5 MB.</p>
+      </div>
+
+      <div className="mb-5 flex gap-2">
         <button
-          onClick={openCreate}
-          className="shrink-0 rounded-xl bg-[#27B1B8] px-4 py-2.5 text-xs font-bold text-white hover:opacity-80"
+          onClick={() => setView("desktop")}
+          className={`rounded-xl px-4 py-2 text-xs font-bold ${view === "desktop" ? "bg-[#1A1A1A] text-white" : "border border-[#E2E8F0] text-[#64748B]"}`}
         >
-          + Nuevo banner
+          🖥️ Escritorio
+        </button>
+        <button
+          onClick={() => setView("mobile")}
+          className={`rounded-xl px-4 py-2 text-xs font-bold ${view === "mobile" ? "bg-[#1A1A1A] text-white" : "border border-[#E2E8F0] text-[#64748B]"}`}
+        >
+          📱 Responsive
         </button>
       </div>
 
-      {loading ? (
-        <div className="flex h-40 items-center justify-center text-sm text-[#94A3B8]">Cargando banners…</div>
-      ) : (
-        <div className="rounded-2xl border border-[#E2E8F0] bg-white overflow-x-auto">
-          <table className="w-full min-w-[720px] text-sm">
-            <thead className="border-b border-[#E2E8F0] bg-[#F8FAFC]">
-              <tr>
-                {["Dónde aparece", "Preview", "Título", "Estado", "Orden"].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">{h}</th>
-                ))}
-                <th className="sticky right-0 border-l border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F1F5F9]">
-              {banners.map((b) => (
-                <tr key={b.id} className="hover:bg-[#F8FAFC] transition-colors">
-                  <td className="px-4 py-3">
-                    <p className="max-w-[260px] text-xs font-semibold text-[#1A1A1A]">{getBannerLocation(b.key)}</p>
-                    <p className="mt-0.5 font-mono text-[10px] text-[#94A3B8]">{b.key}</p>
-                  </td>
-                  <td className="px-4 py-3">
-                    {b.desktopImage ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={b.desktopImage} alt={b.key} className="h-10 w-16 rounded-lg object-cover bg-[#F1F5F9]" />
-                    ) : (
-                      <span className="text-xs text-[#CBD5E1]">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-[#64748B]">{b.title1 || "—"}</td>
-                  <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${b.active ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#FEE2E2] text-[#DC2626]"}`}>
-                      {b.active ? "Activo" : "Inactivo"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-[#94A3B8]">{b.order}</td>
-                  <td className="sticky right-0 border-l border-[#E2E8F0] bg-white px-4 py-3">
-                    <div className="flex gap-2">
-                      <button onClick={() => openEdit(b)} className="rounded-lg bg-[#27B1B8] px-3 py-1.5 text-xs font-bold text-white hover:opacity-80">
-                        Editar
-                      </button>
-                      <button onClick={() => remove(b.id)} className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-500 hover:bg-red-50">
-                        Eliminar
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="mb-6 flex gap-4 border-b border-[#E2E8F0]">
+        {([["home", "Home"], ["categorias", "Categorías"], ["outlet", "Outlet"], ["otras", "Otras páginas"]] as const).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            className={`-mb-px border-b-2 px-1 pb-2 text-sm font-bold ${tab === key ? "border-[#27B1B8] text-[#1A1A1A]" : "border-transparent text-[#94A3B8]"}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {alert && (
+        <div className={`mb-4 rounded-xl px-3 py-2 text-xs font-semibold ${alert.type === "ok" ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#FEE2E2] text-[#DC2626]"}`}>
+          {alert.msg}
         </div>
       )}
 
-      {(selected || creating) && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-8 w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="mb-4 flex items-start justify-between">
-              <h3 className="font-black text-[#1A1A1A]">{creating ? "Nuevo banner" : `Editar: ${selected?.key}`}</h3>
-              <button onClick={closeModal} className="text-[#94A3B8] hover:text-[#1A1A1A]">✕</button>
-            </div>
-
-            {!creating && selected && (
-              <div className="mb-4 rounded-xl bg-[#EFFAFB] px-3 py-2 text-xs font-semibold text-[#0C535B]">
-                📍 Dónde aparece: {getBannerLocation(selected.key)}
-              </div>
-            )}
-            {creating && keyMode === "custom" && (
-              <div className="mb-4 rounded-xl bg-[#FFF7ED] px-3 py-2 text-xs font-semibold text-[#9A3412]">
-                ⚠️ La &quot;key&quot; define dónde se muestra. Si no coincide con una key usada en el código, el banner se guarda pero no aparece en ningún lado del sitio.
-              </div>
-            )}
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              {creating && keyMode === "known" ? (
-                <div className="sm:col-span-2">
-                  <label className="mb-1 block text-xs font-bold text-[#64748B]">¿Dónde va este banner?</label>
-                  <select
-                    value={form.key}
-                    onChange={(e) => {
-                      const loc = availableLocations.find((l) => l.key === e.target.value);
-                      setForm((f) => ({ ...f, key: e.target.value, type: loc?.type ?? f.type }));
-                    }}
-                    className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]"
-                  >
-                    <option value="">Elegir ubicación…</option>
-                    {availableLocations.map((loc) => (
-                      <option key={loc.key} value={loc.key}>{loc.label}</option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => { setKeyMode("custom"); setForm((f) => ({ ...f, key: "" })); }}
-                    className="mt-1.5 text-[11px] font-semibold text-[#27B1B8] hover:underline"
-                  >
-                    Usar key personalizada en vez de la lista
-                  </button>
-                </div>
-              ) : (
-                <div>
-                  <label className="mb-1 block text-xs font-bold text-[#64748B]">Key (identificador único)</label>
-                  <input
-                    value={form.key}
-                    disabled={!creating}
-                    onChange={(e) => setForm((f) => ({ ...f, key: e.target.value }))}
-                    placeholder="ej: home_banner_1, categoria_champus"
-                    className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8] disabled:bg-[#F8FAFC] disabled:text-[#94A3B8]"
-                  />
-                  {creating && availableLocations.length > 0 && (
+      {loading ? (
+        <div className="flex h-40 items-center justify-center text-sm text-[#94A3B8]">Cargando…</div>
+      ) : (
+        groups.map((group) => (
+          <div key={group} className="mb-8">
+            <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">{group}</p>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {slotsForTab.filter((s) => s.group === group).map((slot) => {
+                const banner = bannerByKey.get(slot.key);
+                const mobileLocked = view === "mobile" && slot.mobileFixed;
+                const img = view === "desktop"
+                  ? banner?.desktopImage ?? slot.fallbackDesktop
+                  : banner?.mobileImage ?? slot.fallbackMobile ?? banner?.desktopImage ?? slot.fallbackDesktop;
+                const isUploading = uploadingKey === slot.key;
+                return (
+                  <div key={slot.key} className="rounded-2xl border border-[#E2E8F0] bg-white p-3">
+                    <div className="mb-2 flex h-32 items-center justify-center overflow-hidden rounded-xl bg-[#F1F5F9] px-3 text-center">
+                      {mobileLocked ? (
+                        <span className="text-xs text-[#94A3B8]">Diseño fijo en móvil, no editable</span>
+                      ) : img ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={img} alt={slot.label} className="h-full w-full object-cover" />
+                      ) : (
+                        <span className="text-xs text-[#CBD5E1]">Sin imagen</span>
+                      )}
+                    </div>
+                    <p className="mb-2 text-xs font-bold text-[#1A1A1A]">{slot.label}</p>
+                    <input
+                      ref={(el) => { fileInputs.current[slot.key] = el; }}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) pickFile(slot, f); e.target.value = ""; }}
+                    />
                     <button
-                      type="button"
-                      onClick={() => setKeyMode("known")}
-                      className="mt-1.5 text-[11px] font-semibold text-[#27B1B8] hover:underline"
+                      onClick={() => fileInputs.current[slot.key]?.click()}
+                      disabled={isUploading || mobileLocked}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#27B1B8] px-3 py-2 text-xs font-bold text-white hover:opacity-80 disabled:opacity-50"
                     >
-                      Elegir de la lista de ubicaciones conocidas
+                      {mobileLocked ? "No editable" : isUploading ? "Subiendo…" : (<><UploadIcon /> Cambiar</>)}
                     </button>
-                  )}
-                </div>
-              )}
-              <div>
-                <label className="mb-1 block text-xs font-bold text-[#64748B]">Tipo</label>
-                <select
-                  value={form.type}
-                  disabled={creating && keyMode === "known"}
-                  onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as "CATEGORY" | "SITE" }))}
-                  className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8] disabled:bg-[#F8FAFC] disabled:text-[#94A3B8]"
-                >
-                  <option value="SITE">SITE</option>
-                  <option value="CATEGORY">CATEGORY</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-bold text-[#64748B]">Título línea 1</label>
-                <input
-                  value={form.title1}
-                  onChange={(e) => setForm((f) => ({ ...f, title1: e.target.value }))}
-                  className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-bold text-[#64748B]">Título línea 2</label>
-                <input
-                  value={form.title2}
-                  onChange={(e) => setForm((f) => ({ ...f, title2: e.target.value }))}
-                  className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-bold text-[#64748B]">Link (opcional)</label>
-                <input
-                  value={form.link}
-                  onChange={(e) => setForm((f) => ({ ...f, link: e.target.value }))}
-                  className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-bold text-[#64748B]">Orden</label>
-                <input
-                  type="number"
-                  value={form.order}
-                  onChange={(e) => setForm((f) => ({ ...f, order: e.target.value }))}
-                  className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]"
-                />
-              </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))
+      )}
+
+      {pending && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
+          <div className="my-8 w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-4 flex items-start justify-between">
+              <h3 className="font-black text-[#1A1A1A]">Vista previa: {pending.slot.label}</h3>
+              <button onClick={cancelPending} className="text-[#94A3B8] hover:text-[#1A1A1A]">✕</button>
             </div>
 
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-xs font-bold text-[#64748B]">Imagen desktop</label>
-                <input ref={desktopInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage(f, "desktop"); }} />
-                <button onClick={() => desktopInputRef.current?.click()} disabled={uploading === "desktop"}
-                  className="w-full rounded-xl border border-dashed border-[#E2E8F0] px-4 py-2.5 text-xs font-bold text-[#64748B] hover:border-[#27B1B8] disabled:opacity-50">
-                  {uploading === "desktop" ? "Subiendo…" : "Cargar imagen desktop"}
-                </button>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-bold text-[#64748B]">Imagen móvil</label>
-                <input ref={mobileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage(f, "mobile"); }} />
-                <button onClick={() => mobileInputRef.current?.click()} disabled={uploading === "mobile"}
-                  className="w-full rounded-xl border border-dashed border-[#E2E8F0] px-4 py-2.5 text-xs font-bold text-[#64748B] hover:border-[#27B1B8] disabled:opacity-50">
-                  {uploading === "mobile" ? "Subiendo…" : "Cargar imagen móvil"}
-                </button>
-              </div>
-            </div>
+            <p className="mb-3 text-xs text-[#64748B]">Así se vería en la página ({view === "desktop" ? "escritorio" : "celular"}):</p>
 
-            {/* Vista previa: desktop -> mobile, siempre visible antes de guardar */}
-            <div className="mt-4">
-              <p className="mb-2 text-xs font-bold text-[#64748B]">Vista previa</p>
-              <div className="space-y-2">
-                <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-2">
-                  <p className="mb-1 text-[10px] font-bold uppercase text-[#94A3B8]">Desktop</p>
-                  {form.desktopImage ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={form.desktopImage} alt="preview desktop" className="h-28 w-full rounded-lg object-cover" />
-                  ) : (
-                    <div className="flex h-28 items-center justify-center rounded-lg bg-[#F1F5F9] text-xs text-[#CBD5E1]">Sin imagen</div>
-                  )}
-                </div>
-                <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-2">
-                  <p className="mb-1 text-[10px] font-bold uppercase text-[#94A3B8]">Móvil</p>
-                  {form.mobileImage ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={form.mobileImage} alt="preview móvil" className="mx-auto h-40 w-32 rounded-lg object-cover" />
-                  ) : (
-                    <div className="mx-auto flex h-40 w-32 items-center justify-center rounded-lg bg-[#F1F5F9] text-xs text-[#CBD5E1]">Sin imagen</div>
-                  )}
+            {pending.slot.preview === "hero" && (
+              <div className="relative overflow-hidden rounded-xl bg-[#0F172A]" style={{ aspectRatio: view === "desktop" ? "21/6" : "4/5" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={pending.previewUrl} alt="preview" className="h-full w-full object-cover opacity-90" />
+                <div className="absolute bottom-0 left-0 p-4">
+                  <div className="h-2.5 w-24 rounded bg-white/80" />
+                  <div className="mt-1.5 h-2.5 w-32 rounded bg-white/50" />
                 </div>
               </div>
-            </div>
+            )}
 
-            <div className="mt-3">
-              <label className="mb-1 block text-xs font-bold text-[#64748B]">Metadata avanzado (JSON opcional: beneficios, CTA, colores, etc.)</label>
-              <textarea
-                value={form.metadataText}
-                onChange={(e) => setForm((f) => ({ ...f, metadataText: e.target.value }))}
-                rows={4}
-                placeholder='{"heroDestacado": "líquidos", "textoDark": false}'
-                className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 font-mono text-xs outline-none focus:border-[#27B1B8]"
-              />
-            </div>
+            {pending.slot.preview === "wide" && (
+              <div className="overflow-hidden rounded-xl" style={{ aspectRatio: view === "desktop" ? "3/1" : "1/1" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={pending.previewUrl} alt="preview" className="h-full w-full object-cover" />
+              </div>
+            )}
 
-            <label className="mt-3 flex items-center gap-2 text-xs font-bold text-[#64748B]">
-              <input type="checkbox" checked={form.active} onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))} />
-              Activo
-            </label>
+            {pending.slot.preview === "card" && (
+              <div className="mx-auto w-1/2 overflow-hidden rounded-xl" style={{ aspectRatio: "4/5" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={pending.previewUrl} alt="preview" className="h-full w-full object-cover" />
+              </div>
+            )}
 
             {alert && (
               <div className={`mt-3 rounded-xl px-3 py-2 text-xs font-semibold ${alert.type === "ok" ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#FEE2E2] text-[#DC2626]"}`}>
@@ -443,12 +293,12 @@ export default function BannersPanel() {
               </div>
             )}
 
-            <div className="mt-4 flex gap-2">
-              <button onClick={closeModal} className="flex-1 rounded-xl border border-[#E2E8F0] py-2.5 text-sm font-bold text-[#64748B] hover:bg-[#F8FAFC]">
+            <div className="mt-5 flex gap-2">
+              <button onClick={cancelPending} className="flex-1 rounded-xl border border-[#E2E8F0] py-2.5 text-sm font-bold text-[#64748B] hover:bg-[#F8FAFC]">
                 Cancelar
               </button>
-              <button onClick={save} disabled={saving} className="flex-1 rounded-xl bg-[#27B1B8] py-2.5 text-sm font-bold text-white hover:opacity-80 disabled:opacity-50">
-                {saving ? "Guardando…" : "Guardar banner"}
+              <button onClick={confirmUpload} disabled={uploadingKey === pending.slot.key} className="flex-1 rounded-xl bg-[#27B1B8] py-2.5 text-sm font-bold text-white hover:opacity-80 disabled:opacity-50">
+                {uploadingKey === pending.slot.key ? "Subiendo…" : "Confirmar y subir"}
               </button>
             </div>
           </div>

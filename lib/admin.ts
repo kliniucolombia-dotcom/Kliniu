@@ -1,5 +1,6 @@
 import { getSessionFromCookies } from "@/lib/auth";
 import { getUserById } from "@/lib/users";
+import { isAdmin } from "@/lib/roles";
 
 export async function requireAdminUser() {
   const session = await getSessionFromCookies();
@@ -10,7 +11,7 @@ export async function requireAdminUser() {
 
   const user = await getUserById(session.userId);
 
-  if (!user || user.role !== "ADMIN") {
+  if (!user || !isAdmin(user)) {
     throw new Error("FORBIDDEN");
   }
 
@@ -26,7 +27,7 @@ export async function requireAdminOrSeller() {
 
   const user = await getUserById(session.userId);
 
-  if (!user || (user.role !== "ADMIN" && user.role !== "SELLER")) {
+  if (!user || (user.role !== "SELLER" && !isAdmin(user))) {
     throw new Error("FORBIDDEN");
   }
 

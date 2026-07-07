@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getSessionFromCookies } from "@/lib/auth";
 import { TIERS_K, getUserKData, getKTierData } from "@/lib/points";
+import { getBannerByKey } from "@/lib/banners";
 import SiteFooter from "@/app/components/site-footer";
 import { FadeIn } from "./fade-in";
 
@@ -97,6 +98,8 @@ export default async function PuntosPage() {
   const session = await getSessionFromCookies();
   const kData = session ? await getUserKData(session.userId) : null;
   const userTierData = kData ? getKTierData(kData.currentTier) : null;
+  const heroBanner = await getBannerByKey("puntos_hero");
+  const heroImage = heroBanner?.desktopImage ?? "/puntos-k-banner.jpg";
 
   return (
     <main className="min-h-screen bg-white text-[#1A1A1A]">
@@ -104,7 +107,7 @@ export default async function PuntosPage() {
       {/* ─── HERO ─── */}
       <section className="puntos-hero-energy relative w-full overflow-hidden bg-[#7B3FCF]" style={{ minHeight: 580 }}>
         <Image
-          src="/puntos-k-banner.jpg"
+          src={heroImage}
           alt="Puntos K Kliniu"
           fill
           priority

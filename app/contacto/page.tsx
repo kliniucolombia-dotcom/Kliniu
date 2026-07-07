@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import SiteFooter from "../components/site-footer";
 import ContactForm from "./contact-form";
+import { getBannerByKey } from "@/lib/banners";
 
 export const metadata: Metadata = {
   title: "Contacto | Kliniu",
@@ -112,13 +113,16 @@ const paises = [
   },
 ];
 
-export default function ContactoPage() {
+export default async function ContactoPage() {
+  const heroBanner = await getBannerByKey("contacto_hero");
+  const heroDesktop = heroBanner?.desktopImage ?? "/banners-web/BANNER-FINALES-09.png";
+  const heroMobile = heroBanner?.mobileImage ?? "/banners-responsive/BANNER-FINALES-30.png";
   return (
     <main className="min-h-screen bg-white text-[#111]">
       {/* Hero */}
       <section className="home-reveal relative aspect-[4500/2083] md:aspect-[10000/2084]" style={{ overflow: "clip" }}>
         <Image
-          src="/banners-web/BANNER-FINALES-09.png"
+          src={heroDesktop}
           alt="Atención Kliniu"
           fill
           priority
@@ -127,7 +131,7 @@ export default function ContactoPage() {
           className="hidden object-cover object-center md:block"
         />
         <Image
-          src="/banners-responsive/BANNER-FINALES-30.png"
+          src={heroMobile}
           alt="Atención Kliniu"
           fill
           priority
