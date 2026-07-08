@@ -47,7 +47,7 @@ export default function CotizacionesListPage() {
       const qd = await qr.json();
       const cd = await cr.json();
       setQuotations(qd.quotations ?? []);
-      setClients(cd ?? []);
+      setClients(Array.isArray(cd) ? cd : []);
     } finally {
       setLoading(false);
     }
