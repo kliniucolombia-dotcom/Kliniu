@@ -11,7 +11,7 @@ import { useProducts } from "../../components/products-provider";
 import SiteFooter from "../../components/site-footer";
 import QuoteModal from "../../components/quote-modal";
 import ProductosCarousel from "../../components/productos-carousel";
-import { getVolumePricing, TIPO_VARIANTES } from "@/lib/volume-discounts";
+import { getVolumePricing, TIPO_VARIANTES, INSUMO_PACK_TIERS, NO_PACK_SLUGS } from "@/lib/volume-discounts";
 import type { ProductoEspecificacion } from "../../data/catalog";
 
 const esInox = (nombre: string, categoria: string, descripcion?: string) =>
@@ -780,11 +780,11 @@ export default function ProductoDetallePage() {
                 </button>
 
                 {/* Packs fijos */}
-                {[
+                {(INSUMO_PACK_TIERS[producto.slug]?.map((p) => ({ label: p.label, qty: p.qty })) ?? (NO_PACK_SLUGS.has(producto.slug) ? [] : [
                   { label: "× 12 und", qty: 12 },
                   { label: "× 48 und", qty: 48 },
                   { label: "× 100 und", qty: 100 },
-                ].map((pack) => {
+                ])).map((pack) => {
                   const isActive = !esUnidad && cantidad === pack.qty;
                   return (
                     <button
