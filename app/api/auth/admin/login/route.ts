@@ -1,15 +1,18 @@
 import { authenticateUser } from "@/lib/users";
 import { setSessionCookie } from "@/lib/auth";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as {
       email?: string;
       password?: string;
+      adminPin?: string;
     };
 
     const email = body.email?.trim() || "";
     const password = body.password || "";
+    const adminPin = body.adminPin?.trim() || "";
 
     if (!email || !password) {
       return Response.json(
@@ -18,11 +21,38 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!checkRateLimit(`admin-login:${getClientIp(request)}:${email}`, 10, 10 * 60 * 1000)) {
+      return Response.json(
+        { error: "Demasiados intentos. Espera unos minutos e intenta de nuevo." },
+        { status: 429 },
+      );
+    }
+
     const user = await authenticateUser(email, password);
 
     if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
       return Response.json(
         { error: "Esta cuenta no tiene permisos de administrador." },
+        { status: 403 },
+      );
+    }
+
+    const expectedAdminPin = process.env.ADMIN_EXTRA_PIN?.trim() || "1234";
+
+    if (user.role === "ADMIN" && !adminPin) {
+      return Response.json(
+        {
+          requiresAdminPin: true,
+          user: { id: user.id, role: user.role },
+          message: "Confirma el PIN adicional para entrar al panel.",
+        },
+        { status: 202 },
+      );
+    }
+
+    if (user.role === "ADMIN" && adminPin !== expectedAdminPin) {
+      return Response.json(
+        { error: "El PIN de administrador es incorrecto." },
         { status: 403 },
       );
     }

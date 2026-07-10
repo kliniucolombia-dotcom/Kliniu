@@ -1,5 +1,6 @@
 import { authenticateUser } from "@/lib/users";
 import { setSessionCookie } from "@/lib/auth";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
@@ -17,6 +18,13 @@ export async function POST(request: Request) {
       return Response.json(
         { error: "Ingresa tu correo y contraseña." },
         { status: 400 },
+      );
+    }
+
+    if (!checkRateLimit(`login:${getClientIp(request)}:${email}`, 10, 10 * 60 * 1000)) {
+      return Response.json(
+        { error: "Demasiados intentos. Espera unos minutos e intenta de nuevo." },
+        { status: 429 },
       );
     }
 

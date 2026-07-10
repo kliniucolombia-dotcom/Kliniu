@@ -1,7 +1,15 @@
 import { registerUser } from "@/lib/users";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    if (!checkRateLimit(`register:${getClientIp(request)}`, 5, 10 * 60 * 1000)) {
+      return Response.json(
+        { error: "Demasiados intentos. Espera unos minutos e intenta de nuevo." },
+        { status: 429 },
+      );
+    }
+
     const body = (await request.json()) as {
       fullName?: string;
       company?: string;

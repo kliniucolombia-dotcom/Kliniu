@@ -5,8 +5,13 @@ export function proxy(request: NextRequest) {
   const hasSession = request.cookies.has("kliniu_session");
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith("/mi-cuenta") && !hasSession) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  if (
+    (pathname.startsWith("/mi-cuenta") || pathname.startsWith("/panel") || pathname.startsWith("/empaque") || pathname.startsWith("/admin")) &&
+    !hasSession
+  ) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   if ((pathname.startsWith("/login") || pathname.startsWith("/registro")) && hasSession) {
@@ -17,5 +22,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/mi-cuenta/:path*", "/login", "/registro"],
+  matcher: ["/mi-cuenta/:path*", "/panel/:path*", "/empaque/:path*", "/admin/:path*", "/login", "/registro"],
 };
