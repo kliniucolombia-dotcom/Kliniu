@@ -58,6 +58,7 @@ export default function UsuariosPage() {
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ fullName: "", email: "", password: "", role: "SELLER" as Role });
+  const [showPassword, setShowPassword] = useState(false);
   const [permUserId, setPermUserId] = useState<string | null>(null);
   const [perms, setPerms] = useState<ModulePermission[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
@@ -181,9 +182,27 @@ export default function UsuariosPage() {
           <input placeholder="Correo" value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
-          <input placeholder="Contraseña" type="password" value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-            className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
+          <div className="relative">
+            <input placeholder="Contraseña" type={showPassword ? "text" : "password"} value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2 pr-9 text-sm" />
+            <button type="button" onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#27B1B8]">
+              {showPassword ? (
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M3 3l18 18" />
+                  <path d="M10.6 5.2A10.6 10.6 0 0112 5c6 0 10 7 10 7a17.7 17.7 0 01-3.2 4M6.5 6.6C3.9 8.3 2 12 2 12s4 7 10 7a9.9 9.9 0 004.4-1" />
+                  <path d="M9.9 9.9a3 3 0 004.2 4.2" />
+                </svg>
+              )}
+            </button>
+          </div>
           <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
             className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm">
             {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}

@@ -12,11 +12,11 @@ import { formatearMoneda } from "./data/catalog";
 const REEL_DEFAULT = "https://www.instagram.com/reel/DTQToikk3vI/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==";
 
 const videos = [
-  { id: 1, titulo: "Dispensador automático", href: REEL_DEFAULT, thumb: "/foca-video-1.png" },
-  { id: 2, titulo: "Kit alto tráfico", href: REEL_DEFAULT, thumb: "/foca-video-2.png" },
-  { id: 3, titulo: "KlinOx Inoxidable", href: REEL_DEFAULT, thumb: "/foca-video-3.png" },
-  { id: 4, titulo: "Soluciones hotel", href: REEL_DEFAULT, thumb: "/foca-video-4.png" },
-  { id: 5, titulo: "Instalación rápida", href: REEL_DEFAULT, thumb: "/foca-video-5.png" },
+  { id: 1, titulo: "Dispensadores para líquidos", href: REEL_DEFAULT, thumb: "/foca-video-1.png" },
+  { id: 2, titulo: "Dispensadores de papel, toalla y servilletas", href: REEL_DEFAULT, thumb: "/foca-video-2.png" },
+  { id: 3, titulo: "KlinOx Acero Inoxidable", href: REEL_DEFAULT, thumb: "/foca-video-3.png" },
+  { id: 4, titulo: "Dispensador de crema dental", href: REEL_DEFAULT, thumb: "/foca-video-4.png" },
+  { id: 5, titulo: "Hoteles y Restaurantes", href: REEL_DEFAULT, thumb: "/foca-video-5.png" },
 ];
 
 export default async function Home() {
@@ -41,6 +41,12 @@ export default async function Home() {
     imagen: combo.image ?? "/combo-productos-kliniu.png",
     destacado: false,
     items: combo.items.map((i) => `${i.quantity}× ${i.product.name}`),
+    productos: combo.items.map((i) => ({
+      nombre: i.product.name,
+      cantidad: i.quantity,
+      imagen: i.product.image || "/product-placeholder.png",
+      precio: formatearMoneda(i.product.price),
+    })),
     precio: formatearMoneda(combo.price),
     precioNumero: combo.price,
     sku: combo.sku,

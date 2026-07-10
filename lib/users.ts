@@ -295,6 +295,7 @@ export async function listUsers(): Promise<PublicUser[]> {
   }
 
   return await prisma.user.findMany({
+    where: { role: { not: "CUSTOMER" } },
     orderBy: { createdAt: "desc" },
     select: {
       id: true, fullName: true, company: true, email: true, phone: true,

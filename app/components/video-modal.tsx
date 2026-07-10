@@ -63,7 +63,7 @@ export default function VideoModal({ videos }: { videos: Video[] }) {
             key={v.id}
             type="button"
             onClick={() => setActiveHref(v.href)}
-            className="interactive-lift group flex h-44 w-40 shrink-0 cursor-pointer flex-col items-center justify-end overflow-hidden rounded-2xl border border-black/8 bg-white transition-shadow hover:shadow-md"
+            className="interactive-lift group flex h-44 w-40 shrink-0 cursor-pointer flex-col items-center justify-end overflow-hidden rounded-[14px] border border-[#e2e8e8] bg-white transition-all duration-300 hover:-translate-y-1 hover:border-[#9bdddf] hover:shadow-[0_18px_36px_rgba(10,92,99,0.08)]"
           >
             {v.thumb ? (
               <div className="relative flex flex-1 w-full items-center justify-center overflow-hidden">
@@ -90,7 +90,7 @@ export default function VideoModal({ videos }: { videos: Video[] }) {
                 </div>
               </div>
             )}
-            <p className="w-full bg-white px-2 py-2 text-center text-xs font-medium text-[#0C535B]">{v.titulo}</p>
+            <p className="flex h-11 w-full items-center justify-center bg-white px-2 text-center text-xs font-bold leading-[1.25] text-[#064f59]">{v.titulo}</p>
           </button>
         ))}
       </div>
