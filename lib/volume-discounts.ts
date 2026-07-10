@@ -53,42 +53,48 @@ export const PRODUCT_VOLUME_PRICES: Record<
   "dispensador-deco-klin-con-repisa-antivandalico": { unit: 57699, tiers: [{ min: 100, unitPrice: 26800 }, { min: 48, unitPrice: 30999 }, { min: 12, unitPrice: 31100 }] },
 };
 
-export const INSUMO_PACK_TIERS: Record<string, { label: string; qty: number; totalPrice: number }[]> = {
-  "toalla-de-insumo": [
+// Llaves por SKU (estable ante ediciones de nombre/foto) en vez de slug.
+// El slug se regenera automáticamente del nombre en cada edición del producto
+// (ver lib/products.ts updateProduct), así que usarlo como llave rompía estos
+// mapas cada vez que alguien tocaba el nombre o subía una foto y reenviaba el
+// formulario completo. El SKU solo cambia si se edita explícitamente ese campo.
+export const INSUMO_PACK_TIERS_BY_SKU: Record<string, { label: string; qty: number; totalPrice: number }[]> = {
+  "PTZ - 118": [
     { label: "Paquete x24", qty: 24, totalPrice: 130000 },
     { label: "Paquete x48", qty: 48, totalPrice: 220000 },
   ],
-  "insumo-de-papel-higienico-flujo-central": [
+  "RPFC - 055": [
     { label: "Paquete x4", qty: 4, totalPrice: 100000 },
   ],
-  "insumo-de-papel-higienico": [
+  "RPH - 067": [
     { label: "Paquete x8", qty: 8, totalPrice: 84900 },
     { label: "Paquete x16", qty: 16, totalPrice: 136000 },
   ],
-  "insumo-de-papel-higienico-hogar-3-hojas": [
+  "RPHH - 276": [
     { label: "Paquete x18", qty: 18, totalPrice: 33000 },
   ],
-  "insumo-de-toalla-natural-en-rollo-scott": [
+  "RTX100 - 261": [
     { label: "Paquete x3", qty: 3, totalPrice: 67500 },
   ],
-  "insumo-de-servilletas-cuadradas-1a1": [
+  "SV.CN. - 033": [
     { label: "Caja x30", qty: 30, totalPrice: 100000 },
   ],
-  "insumo-de-servilletas-rectangulares": [
+  "SV.RN. - 037": [
     { label: "Caja x60", qty: 60, totalPrice: 130000 },
   ],
-  "insumo-de-toalla-en-rollo": [
+  "TPMR - 119": [
+    { label: "Paquete x2", qty: 2, totalPrice: 79600 },
     { label: "Paquete x6", qty: 6, totalPrice: 166000 },
   ],
 };
 
-export const NO_PACK_SLUGS = new Set([
-  "insumo-de-jabon-espuma-frutos-rojos",
-  "insumo-de-jabon-espuma-frutos-verdes",
-  "insumo-de-jabon-liquido-blanco",
-  "insumo-de-jabon-liquido-frutos-rojos",
-  "insumo-de-jabon-liquido-frutos-verdes",
-  "insumo-de-toalla-natural-en-rollo-precortado",
+export const NO_PACK_SKUS = new Set([
+  "TJER - 131", // Insumo De Jabon Espuma Frutos Rojos 1000 ml
+  "TJEV - 132", // Insumo De Jabon Espuma Frutos Verdes 1000 ml
+  "TJLA - 128", // Insumo De Jabon Líquido Avena 1000 ml
+  "TJLR - 129", // Insumo De Jabon Líquido Frutos Rojos 1000 ml
+  "TJLV - 130", // Insumo De Jabon Líquido Frutos Verdes 1000 ml
+  "RTPCP - 066", // Insumo De Toalla Natural En Rollo Precortado x 100 Mts (sin precio de paquete en excel)
 ]);
 
 const BASE = "https://yotsdpjfnsrejtoufkuu.supabase.co/storage/v1/object/public/product-images/products";
@@ -142,9 +148,10 @@ export function getVolumePricing(
   quantity: number,
   productSlug?: string,
   preciosPorCantidad?: { cantidad: number; precioUnitario: number }[],
+  productSku?: string,
 ) {
   // Insumos: paquetes reales del excel, precio total fijo (no porcentaje)
-  const insumoPacks = productSlug ? INSUMO_PACK_TIERS[productSlug] : undefined;
+  const insumoPacks = productSku ? INSUMO_PACK_TIERS_BY_SKU[productSku] : undefined;
   if (insumoPacks) {
     const baseUnitPrice = parsePriceValue(price);
     const match = insumoPacks.find((t) => quantity === t.qty);

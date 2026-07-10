@@ -11,7 +11,7 @@ import { useProducts } from "../../components/products-provider";
 import SiteFooter from "../../components/site-footer";
 import QuoteModal from "../../components/quote-modal";
 import ProductosCarousel from "../../components/productos-carousel";
-import { getVolumePricing, TIPO_VARIANTES, INSUMO_PACK_TIERS, NO_PACK_SLUGS } from "@/lib/volume-discounts";
+import { getVolumePricing, TIPO_VARIANTES, INSUMO_PACK_TIERS_BY_SKU, NO_PACK_SKUS } from "@/lib/volume-discounts";
 import type { ProductoEspecificacion } from "../../data/catalog";
 
 const esInox = (nombre: string, categoria: string, descripcion?: string) =>
@@ -489,7 +489,7 @@ export default function ProductoDetallePage() {
 
   const handleAddToCart = () => {
     if (!producto || producto.puedeComprar === false) return;
-    const pricing = getVolumePricing(producto.precio, cantidad, effectiveSlug, preciosBase);
+    const pricing = getVolumePricing(producto.precio, cantidad, effectiveSlug, preciosBase, producto.sku);
     const varianteActiva = allVariants[colorActivo];
     const imagenSeleccionada = varianteActiva?.images?.[0] ?? varianteActiva?.image ?? producto.imagen;
     const colorLabel = allVariants.length > 0 ? varianteActiva?.label : undefined;
@@ -568,7 +568,7 @@ export default function ProductoDetallePage() {
   const relacionados = products
     .filter((p) => p.categoria === producto.categoria && p.slug !== producto.slug)
     .slice(0, 4);
-  const volumePricing = getVolumePricing(producto.precio, cantidad, effectiveSlug, preciosBase);
+  const volumePricing = getVolumePricing(producto.precio, cantidad, effectiveSlug, preciosBase, producto.sku);
 
   const fichaTecnica: ProductoEspecificacion[] =
     producto.especificacionesTecnicas?.length
@@ -780,7 +780,7 @@ export default function ProductoDetallePage() {
                 </button>
 
                 {/* Packs fijos */}
-                {(INSUMO_PACK_TIERS[producto.slug]?.map((p) => ({ label: p.label, qty: p.qty })) ?? (NO_PACK_SLUGS.has(producto.slug) ? [] : [
+                {(INSUMO_PACK_TIERS_BY_SKU[producto.sku ?? ""]?.map((p) => ({ label: p.label, qty: p.qty })) ?? (NO_PACK_SKUS.has(producto.sku ?? "") ? [] : [
                   { label: "× 12 und", qty: 12 },
                   { label: "× 48 und", qty: 48 },
                   { label: "× 100 und", qty: 100 },
