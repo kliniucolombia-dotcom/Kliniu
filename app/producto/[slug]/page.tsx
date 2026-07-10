@@ -477,10 +477,17 @@ export default function ProductoDetallePage() {
 
   const slug = params.slug;
   const producto = products.find((p) => p.slug === slug);
-  const codigoConSello = producto?.referenciasAlternas?.[0];
-  const codigoMostrado = sinSello || !codigoConSello ? producto?.sku : codigoConSello;
 
   const tiposVariantes = producto ? TIPO_VARIANTES[producto.slug] : undefined;
+  const tipoVarianteActiva = tiposVariantes?.[tipoActivo];
+  const colorVarianteActiva = producto?.variacionesColor?.[colorActivo];
+
+  // Código sin sello / con sello: prioriza el de la variante de tipo (ej. Xpert
+  // Bolsa/Botella) o de color (ej. Antigoteo Blanco/Negro) sobre el del producto base.
+  const codigoSinSello = tipoVarianteActiva?.sku ?? colorVarianteActiva?.sku ?? producto?.sku;
+  const codigoConSello = tipoVarianteActiva?.skuSello ?? colorVarianteActiva?.skuSello ?? producto?.referenciasAlternas?.[0];
+  const codigoMostrado = sinSello || !codigoConSello ? codigoSinSello : codigoConSello;
+
   const effectiveSlug = tiposVariantes
     ? `${slug}${tiposVariantes[tipoActivo].slugSuffix}`
     : slug;

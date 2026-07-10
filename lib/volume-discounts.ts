@@ -108,14 +108,16 @@ const TOALLA_CZ_BLANCO_METALICO   = `${BASE}/toalla-cz-blanco-metalico.png`;
 const TOALLA_CZ_NEGRO_METALICO    = `${BASE}/toalla-cz-negro-metalico.png`;
 const TOALLA_CZ_BLANCO_PLASTICO   = `${BASE}/toalla-cz-blanco-plastico.png`;
 
-export const TIPO_VARIANTES: Record<string, { label: string; slugSuffix: string; image?: string }[]> = {
+export const TIPO_VARIANTES: Record<string, { label: string; slugSuffix: string; image?: string; sku?: string; skuSello?: string }[]> = {
   "dispensador-xpert-professional-para-jabon-espuma": [
     { label: "Bolsa", slugSuffix: "", image: XPERT_IMG_BOLSA },
     { label: "Contenedor", slugSuffix: "--frasco", image: XPERT_IMG_FRASCO },
+    { label: "Botella", slugSuffix: "--botella", sku: "DXP.BT.EP - 092", skuSello: "XP.BEP.TK - 139" },
   ],
   "dispensador-xpert-professional-para-jabon-liquido": [
     { label: "Bolsa", slugSuffix: "", image: XPERT_IMG_BOLSA },
     { label: "Contenedor", slugSuffix: "--frasco", image: XPERT_IMG_FRASCO },
+    { label: "Botella", slugSuffix: "--botella", sku: "DXP.BT.LQ - 091", skuSello: "XP.BT.LQ.TK - 140" },
   ],
   "dispensador-papel-higienico-institucional": [
     { label: "Cierre Plástico", slugSuffix: "", image: PAPEL_INST_BLANCO_PLASTICO },
