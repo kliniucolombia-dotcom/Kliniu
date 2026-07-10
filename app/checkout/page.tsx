@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import CheckoutForm from "./checkout-form";
 import { getSessionFromCookies } from "@/lib/auth";
 import { getCartItemsForUser } from "@/lib/cart";
 import { getUserById } from "@/lib/users";
+
+export const metadata: Metadata = {
+  title: "Finalizar compra",
+};
 
 function parsePriceValue(price: string) {
   const numeric = Number(price.replace(/[^\d]/g, ""));

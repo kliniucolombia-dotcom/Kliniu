@@ -45,6 +45,8 @@ const MODULE_LABELS: Record<string, string> = {
   MODULE_PRODUCCION: "Producción",
   MODULE_ODOO: "Odoo",
   MODULE_USUARIOS: "Usuarios",
+  MODULE_BANNERS: "Banners",
+  MODULE_COMBOS: "Combos",
 };
 
 const ROLES: Role[] = ["CUSTOMER", "ADMIN", "SELLER", "PACKING", "SUPERADMIN"];

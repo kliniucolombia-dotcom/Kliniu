@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getSessionFromCookies } from "@/lib/auth";
 import { getOrdersForUser } from "@/lib/orders";
@@ -5,6 +6,10 @@ import { getUserById } from "@/lib/users";
 import AccountProfileForm from "./profile-form";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Mi cuenta",
+};
 
 export default async function MiCuentaPage() {
   const session = await getSessionFromCookies();

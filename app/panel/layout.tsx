@@ -60,10 +60,13 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
       .then((r) => r.json())
       .then((d) => {
         const perms = d.permissions as Record<string, { canView: boolean }> | undefined;
-        if (!perms) return;
+        if (!perms) {
+          setVisibleModules(new Set());
+          return;
+        }
         setVisibleModules(new Set(Object.entries(perms).filter(([, p]) => p.canView).map(([m]) => m)));
       })
-      .catch(() => {});
+      .catch(() => setVisibleModules(new Set()));
   }, []);
 
   useEffect(() => {
@@ -133,7 +136,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         <nav className="flex-1 overflow-y-auto px-2 py-3">
           {(() => {
             const matches = (href: string) => pathname === href || (href !== "/panel" && pathname.startsWith(`${href}/`));
-            const items = visibleModules ? NAV.filter((n) => visibleModules.has(n.module)) : NAV;
+            const items = visibleModules ? NAV.filter((n) => visibleModules.has(n.module)) : [];
             const activeHref = items.filter((n) => matches(n.href)).sort((a, b) => b.href.length - a.href.length)[0]?.href;
             return items.map((item) => {
               const active = item.href === activeHref;

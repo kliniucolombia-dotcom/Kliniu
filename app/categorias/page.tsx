@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { categoriasData } from "../data/catalog";
 import { getBannerByKey } from "@/lib/banners";
 import CategoriasClient, { type CategoryBannerData } from "./categorias-client";
+
+export const metadata: Metadata = {
+  title: "Categorías",
+};
 
 async function getCategoryBanners(): Promise<Record<string, CategoryBannerData>> {
   if (!prisma) return {};

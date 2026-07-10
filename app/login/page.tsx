@@ -421,7 +421,12 @@ export default function LoginPage() {
                 <label htmlFor="password" className="text-sm font-medium text-[#333]">
                   Contraseña
                 </label>
-                <Link href="/registro" className="text-xs text-[#27B1B8] hover:underline">
+                <Link
+                  href="https://wa.me/573208905307?text=Hola%2C%20olvid%C3%A9%20mi%20contrase%C3%B1a%20de%20Kliniu%20y%20necesito%20ayuda%20para%20recuperarla."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-[#27B1B8] hover:underline"
+                >
                   ¿Olvidaste tu contraseña?
                 </Link>
               </div>
