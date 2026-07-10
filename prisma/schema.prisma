@@ -133,6 +133,8 @@ model Order {
   odooSyncStatus   OdooSyncStatus @default(NOT_SYNCED)
   odooSyncError    String?
   odooSyncedAt     DateTime?
+  wompiReference   String?        @unique
+  wompiTransactionId String?
   assignedSeller   User?          @relation("AssignedOrders", fields: [assignedSellerId], references: [id])
   user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   items            OrderItem[]

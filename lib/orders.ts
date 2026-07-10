@@ -434,55 +434,67 @@ export async function updateOrderShipping(
   return updated;
 }
 
-export async function confirmSimulatedOrderPayment(
-  orderId: string,
-  userId: string,
-  paymentCode: string,
-) {
+export async function setOrderWompiReference(orderId: string, userId: string) {
   if (!prisma) {
     throw new Error("DATABASE_NOT_CONFIGURED");
   }
 
-  const expectedPaymentCode =
-    process.env.SIMULATED_PAYMENT_CODE?.trim() || "1234";
-
-  if (paymentCode.trim() !== expectedPaymentCode) {
-    throw new Error("INVALID_PAYMENT_CODE");
-  }
-
   const order = await prisma.order.findFirst({
-    where: {
-      id: orderId,
-      userId,
-    },
-    include: {
-      items: {
-        orderBy: { createdAt: "asc" },
-      },
-    },
+    where: { id: orderId, userId },
+    select: { id: true, subtotal: true, customerEmail: true, wompiReference: true },
   });
 
   if (!order) {
     throw new Error("ORDER_NOT_FOUND");
   }
 
-  const paidOrder = await prisma.order.update({
+  // La referencia debe ser única por intento de pago para Wompi.
+  const reference = `${order.id}-${Date.now()}`;
+
+  await prisma.order.update({
     where: { id: orderId },
+    data: { wompiReference: reference },
+  });
+
+  return { ...order, wompiReference: reference };
+}
+
+export async function markOrderPaidByWompiReference(
+  reference: string,
+  transactionId: string,
+  status: "APPROVED" | "DECLINED" | "VOIDED" | "ERROR",
+) {
+  if (!prisma) {
+    throw new Error("DATABASE_NOT_CONFIGURED");
+  }
+
+  const order = await prisma.order.findUnique({ where: { wompiReference: reference } });
+
+  if (!order) {
+    throw new Error("ORDER_NOT_FOUND");
+  }
+
+  if (status !== "APPROVED") {
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { wompiTransactionId: transactionId, paymentStatus: "FAILED" },
+    });
+    return order;
+  }
+
+  if (order.paymentStatus === "PAID") {
+    return order;
+  }
+
+  await prisma.order.update({
+    where: { id: order.id },
     data: {
+      wompiTransactionId: transactionId,
       paymentStatus: "PAID",
       status: "PAID",
-      shippingStatus:
-        order.shippingStatus === "PENDING" ? "PREPARING" : order.shippingStatus,
-      adminNotes:
-        order.adminNotes ||
-        "Pago demo confirmado con código interno de validación.",
-    },
-    include: {
-      items: {
-        orderBy: { createdAt: "asc" },
-      },
+      shippingStatus: order.shippingStatus === "PENDING" ? "PREPARING" : order.shippingStatus,
     },
   });
 
-  return await syncOrderToOdoo(orderId);
+  return await syncOrderToOdoo(order.id);
 }

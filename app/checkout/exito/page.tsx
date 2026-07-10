@@ -1,28 +1,42 @@
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 
 export default async function CheckoutSuccessPage({
   searchParams,
 }: {
-  searchParams: Promise<{ pedido?: string; pagado?: string }>;
+  searchParams: Promise<{ pedido?: string }>;
 }) {
   const params = await searchParams;
-  const paymentConfirmed = params.pagado === "1";
+
+  const order = params.pedido && prisma
+    ? await prisma.order.findUnique({
+        where: { id: params.pedido },
+        select: { paymentStatus: true },
+      })
+    : null;
+
+  const paymentConfirmed = order?.paymentStatus === "PAID";
+  const paymentFailed = order?.paymentStatus === "FAILED";
 
   return (
     <main className="flex min-h-[calc(100vh-88px)] items-center justify-center bg-[#f5f5f5] px-6 py-16">
       <section className="w-full max-w-2xl rounded-[2rem] bg-white p-8 text-center shadow-lg shadow-black/10 md:p-10">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#27B1B8]">
-          {paymentConfirmed ? "Pago confirmado" : "Pedido creado"}
+          {paymentConfirmed ? "Pago confirmado" : paymentFailed ? "Pago rechazado" : "Estamos verificando tu pago"}
         </p>
         <h1 className="mt-3 text-3xl font-bold text-[#0C535B] md:text-4xl">
           {paymentConfirmed
-            ? "Tu pago demo quedó aprobado"
-            : "Recibimos tu solicitud correctamente"}
+            ? "Tu pago quedó aprobado"
+            : paymentFailed
+              ? "El pago no fue aprobado"
+              : "Estamos confirmando tu pago con Wompi"}
         </h1>
         <p className="mt-4 text-sm leading-7 text-slate-600">
           {paymentConfirmed
-            ? "El pedido quedó pagado dentro del flujo demo y ya puedes mostrar el seguimiento completo en tu cuenta."
-            : "Tu pedido quedó guardado en la base de datos y ya aparece dentro de tu cuenta. El siguiente paso será conectar el pago con Wompi sobre esta misma orden."}
+            ? "El pedido quedó pagado y ya puedes ver el seguimiento completo en tu cuenta."
+            : paymentFailed
+              ? "Wompi rechazó la transacción. Puedes intentar de nuevo desde tu cuenta."
+              : "Tu pedido quedó guardado. Si el pago fue aprobado, el estado se actualizará en unos segundos."}
         </p>
 
         {params.pedido && (

@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { departamentosColombia, getCitiesForDepartment } from "@/lib/colombia-locations";
 
 type CheckoutItem = {
@@ -41,8 +40,6 @@ type FormState = {
   notes: string;
 };
 
-type PendingOrderState = { id: string; totalItems: number; subtotal: number } | null;
-
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("es-CO", {
     style: "currency",
@@ -74,7 +71,6 @@ export default function CheckoutForm({
   items: CheckoutItem[];
   subtotal: number;
 }) {
-  const router = useRouter();
   const hasSavedAddress = Boolean(user.city || user.addressLine1);
   const [form, setForm] = useState<FormState>({
     customerName: user.fullName,
@@ -91,9 +87,6 @@ export default function CheckoutForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inlineError, setInlineError] = useState("");
   const [toast, setToast] = useState<ToastState>(null);
-  const [pendingOrder, setPendingOrder] = useState<PendingOrderState>(null);
-  const [paymentCode, setPaymentCode] = useState("");
-  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const cityOptions = useMemo(() => getCitiesForDepartment(form.department), [form.department]);
 
   const step1Done = Boolean(form.customerName.trim() && form.customerEmail.trim() && form.customerPhone.trim());
@@ -143,97 +136,32 @@ export default function CheckoutForm({
       order?: { id: string; totalItems: number; subtotal: number };
     };
 
-    setIsSubmitting(false);
-
     if (!response.ok || !payload.order) {
+      setIsSubmitting(false);
       const message = payload.error || "No fue posible crear el pedido.";
       setInlineError(message);
       setToast({ tone: "error", message });
       return;
     }
 
-    setPendingOrder(payload.order);
-    setPaymentCode("");
-    setToast({ tone: "success", message: payload.message || "Pedido creado. Confirma el pago demo." });
-  };
+    const orderId = payload.order.id;
+    const payResponse = await fetch(`/api/orders/${orderId}/pay`, { method: "POST" });
+    const payPayload = (await payResponse.json()) as { error?: string; checkoutUrl?: string };
 
-  const handleConfirmPayment = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!pendingOrder) return;
+    setIsSubmitting(false);
 
-    setInlineError("");
-    setToast(null);
-    setIsConfirmingPayment(true);
-
-    const response = await fetch(`/api/orders/${pendingOrder.id}/pay`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ paymentCode }),
-    });
-
-    const payload = (await response.json()) as {
-      error?: string; message?: string; order?: { id: string };
-    };
-
-    setIsConfirmingPayment(false);
-
-    if (!response.ok || !payload.order) {
-      const message = payload.error || "No fue posible confirmar el pago.";
+    if (!payResponse.ok || !payPayload.checkoutUrl) {
+      const message = payPayload.error || "No fue posible iniciar el pago.";
       setInlineError(message);
       setToast({ tone: "error", message });
       return;
     }
 
-    setToast({ tone: "success", message: payload.message || "Pago confirmado." });
-    router.push(`/checkout/exito?pedido=${payload.order.id}&pagado=1`);
-    router.refresh();
+    window.location.href = payPayload.checkoutUrl;
   };
 
   return (
     <main className="min-h-screen bg-white text-[#111]">
-      {/* Payment demo modal */}
-      {pendingOrder && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#0f172a]/45 px-4 backdrop-blur-[2px] sm:px-6">
-          <div className="w-full max-w-lg rounded-2xl border border-black/8 bg-white p-5 shadow-[0_30px_80px_rgba(15,23,42,0.28)] sm:p-7">
-            <p className="text-sm font-bold uppercase tracking-wider text-[#27B1B8]">Pago demo</p>
-            <h2 className="mt-2 text-2xl font-extrabold text-[#0C535B]">Simular pago del pedido</h2>
-            <p className="mt-2 text-sm leading-6 text-[#555]">
-              Usa el código <span className="font-bold text-[#0C535B]">1234</span> para aprobar el pago demo.
-            </p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-black/8 bg-[#f8f8f7] px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#aaa]">Pedido</p>
-                <p className="mt-1 text-sm font-semibold text-[#0C535B]">{pendingOrder.id}</p>
-              </div>
-              <div className="rounded-xl border border-black/8 bg-[#f8f8f7] px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#aaa]">Total</p>
-                <p className="mt-1 text-sm font-semibold text-[#0C535B]">{formatCurrency(pendingOrder.subtotal)}</p>
-              </div>
-            </div>
-            <form onSubmit={handleConfirmPayment} className="mt-5 space-y-4">
-              <input
-                type="password"
-                value={paymentCode}
-                onChange={(e) => setPaymentCode(e.target.value)}
-                placeholder="Código de pago demo"
-                autoFocus required
-                className="h-11 w-full rounded-xl border border-black/10 px-4 text-sm outline-none transition focus:border-[#27B1B8]"
-              />
-              <div className="flex gap-3">
-                <button type="button" onClick={() => { setPendingOrder(null); setPaymentCode(""); }}
-                  className="flex-1 rounded-full border border-[#0C535B]/20 py-3 text-sm font-bold text-[#0C535B] hover:bg-[#0C535B] hover:text-white transition-colors">
-                  Pagar luego
-                </button>
-                <button type="submit" disabled={isConfirmingPayment}
-                  className="flex-1 rounded-full bg-[#27B1B8] py-3 text-sm font-bold text-white hover:bg-[#1E969B] transition-colors disabled:opacity-60">
-                  {isConfirmingPayment ? "Validando..." : "Confirmar pago"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* Toast */}
       {toast && (
         <div className="fixed right-5 top-5 z-[80] w-[min(92vw,380px)]">
@@ -436,7 +364,7 @@ export default function CheckoutForm({
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0110 0v4" />
                 </svg>
-                {isSubmitting ? "Procesando..." : "Finalizar compra"}
+                {isSubmitting ? "Redirigiendo a Wompi..." : "Ir a pagar"}
               </button>
               <p className="mt-3 text-center text-xs text-[#aaa]">
                 Al continuar, aceptas nuestros{" "}
