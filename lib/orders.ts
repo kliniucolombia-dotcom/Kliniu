@@ -25,6 +25,12 @@ function parsePriceValue(price: string) {
   return Number.isFinite(numeric) ? numeric : 0;
 }
 
+// El carrito guarda variantes de color/tipo como "slug--color--tipo" en
+// CartItem.productId; el producto real solo existe con el slug base.
+function baseProductSlug(productId: string) {
+  return productId.split("--")[0];
+}
+
 export async function createOrderFromCart(userId: string, input: CheckoutInput) {
   if (!prisma) {
     throw new Error("DATABASE_NOT_CONFIGURED");
@@ -70,7 +76,7 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
     const productCartItems = cartItems.filter((item) => item.productId);
     const comboCartItems = cartItems.filter((item) => item.comboId);
 
-    const productSlugs = productCartItems.map((item) => item.productId as string);
+    const productSlugs = productCartItems.map((item) => baseProductSlug(item.productId as string));
     const products = await tx.product.findMany({
       where: {
         slug: {
@@ -86,7 +92,7 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
     });
 
     for (const item of productCartItems) {
-      const product = products.find((entry) => entry.slug === item.productId);
+      const product = products.find((entry) => entry.slug === baseProductSlug(item.productId as string));
 
       if (!product) {
         throw new Error(`INSUFFICIENT_STOCK:${item.name}`);
@@ -109,7 +115,7 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
     >();
 
     for (const item of productCartItems) {
-      const product = products.find((entry) => entry.slug === item.productId);
+      const product = products.find((entry) => entry.slug === baseProductSlug(item.productId as string));
       if (!product) continue;
       const tracked = stockDeductions.get(product.id) ?? {
         id: product.id,
