@@ -52,6 +52,20 @@ const MODULE_LABELS: Record<string, string> = {
 const ROLES: Role[] = ["CUSTOMER", "ADMIN", "SELLER", "PACKING", "SUPERADMIN"];
 const STATUSES: Status[] = ["ACTIVE", "INACTIVE", "SUSPENDED"];
 
+const ROLE_LABELS: Record<Role, string> = {
+  CUSTOMER: "Cliente",
+  ADMIN: "Administrador",
+  SELLER: "Vendedor",
+  PACKING: "Empaque",
+  SUPERADMIN: "Superadmin",
+};
+
+const STATUS_LABELS: Record<Status, string> = {
+  ACTIVE: "Activo",
+  INACTIVE: "Inactivo",
+  SUSPENDED: "Suspendido",
+};
+
 export default function UsuariosPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -205,7 +219,7 @@ export default function UsuariosPage() {
           </div>
           <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
             className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm">
-            {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+            {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
           </select>
           <button onClick={createUser} className="col-span-full rounded-lg bg-[#27B1B8] px-3 py-2 text-sm font-bold text-white">
             Crear
@@ -232,13 +246,13 @@ export default function UsuariosPage() {
               <td className="p-3">
                 <select value={u.role} onChange={(e) => updateUser(u.id, { role: e.target.value as Role })}
                   className="rounded-lg border border-[#E2E8F0] px-2 py-1 text-xs">
-                  {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                  {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
                 </select>
               </td>
               <td className="p-3">
                 <select value={u.status} onChange={(e) => updateUser(u.id, { status: e.target.value as Status })}
                   className="rounded-lg border border-[#E2E8F0] px-2 py-1 text-xs">
-                  {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                  {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
                 </select>
               </td>
               <td className="sticky right-0 border-l border-[#E2E8F0] bg-white p-3">

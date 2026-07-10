@@ -75,7 +75,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
+    window.location.href = "/login";
   };
 
   return (

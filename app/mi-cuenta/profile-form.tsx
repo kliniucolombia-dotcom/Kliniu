@@ -392,7 +392,7 @@ export default function AccountProfileForm({
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
+    window.location.href = "/login";
   };
 
   const navItems: Array<{ id: Exclude<AccountPanel, "details">; label: string; icon: React.ReactNode }> = [
