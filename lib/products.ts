@@ -703,3 +703,78 @@ export async function getRecentInventoryMovements(limit = 16) {
     }),
   );
 }
+
+export type StockSyncResult = {
+  updated: number;
+  unchanged: number;
+  unmatched: string[];
+  total: number;
+};
+
+// Trae qty_available de Odoo (por SKU) y lo refleja en Product.stock. No
+// bloquea la compra si no hay match o si Odoo marca 0 — solo informa.
+export async function syncStockFromOdoo(): Promise<StockSyncResult> {
+  if (!supabaseDb) {
+    throw new Error("DATABASE_NOT_CONFIGURED");
+  }
+
+  const { getOdooStockBySku, normalizeCode } = await import("@/lib/odoo");
+  const stockBySku = await getOdooStockBySku();
+
+  const { data: products, error } = await supabaseDb
+    .from("Product")
+    .select("id, slug, sku, stock, minimumStock")
+    .not("sku", "is", null);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const result: StockSyncResult = { updated: 0, unchanged: 0, unmatched: [], total: (products ?? []).length };
+
+  for (const product of (products ?? []) as { id: string; slug: string; sku: string | null; stock: number; minimumStock: number }[]) {
+    if (!product.sku) continue;
+
+    const odooQty = stockBySku.get(normalizeCode(product.sku));
+    if (odooQty === undefined) {
+      result.unmatched.push(product.sku);
+      continue;
+    }
+
+    const nextStock = Math.max(Math.trunc(odooQty), 0);
+    if (nextStock === product.stock) {
+      result.unchanged++;
+      continue;
+    }
+
+    const { error: updateError } = await supabaseDb
+      .from("Product")
+      .update({
+        stock: nextStock,
+        availability:
+          nextStock <= 0
+            ? "Agotado"
+            : nextStock <= product.minimumStock
+              ? "Disponible por pedido"
+              : "Entrega inmediata",
+        updatedAt: new Date().toISOString(),
+      })
+      .eq("id", product.id);
+
+    if (updateError) continue;
+
+    await supabaseDb.from("InventoryMovement").insert({
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      productId: product.id,
+      type: "ADJUSTMENT",
+      quantity: nextStock - product.stock,
+      stockAfter: nextStock,
+      note: "Sincronización automática de stock desde Odoo",
+    });
+
+    result.updated++;
+  }
+
+  return result;
+}

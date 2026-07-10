@@ -794,8 +794,27 @@ async function findOrCreateOdooPartner(input: OdooOrderPushInput): Promise<numbe
   ]);
 }
 
-function normalizeCode(code: string): string {
+export function normalizeCode(code: string): string {
   return code.toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+// Mapa código normalizado -> cantidad disponible en Odoo (qty_available),
+// para sincronizar el stock local sin depender del formato exacto del SKU.
+export async function getOdooStockBySku(): Promise<Map<string, number>> {
+  const products = await executeOdooKw<{ default_code: string | false; qty_available?: number }[]>(
+    "product.product",
+    "search_read",
+    [[["default_code", "!=", false]]],
+    { fields: ["default_code", "qty_available"], limit: 0 },
+  );
+
+  const map = new Map<string, number>();
+  for (const product of products) {
+    if (typeof product.default_code === "string" && product.default_code) {
+      map.set(normalizeCode(product.default_code), product.qty_available ?? 0);
+    }
+  }
+  return map;
 }
 
 async function findOdooProductId(sku: string | null | undefined, fallbackName: string): Promise<number | null> {

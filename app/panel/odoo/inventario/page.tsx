@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/permissions";
 import { getOdooProducts } from "@/lib/odoo";
 import { getOdooErrorMessage, OdooErrorPanel } from "../odoo-error-panel";
+import SyncStockButton from "../sync-stock-button";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Inventario Odoo — Panel Comercial" };
@@ -54,9 +55,12 @@ export default async function OdooInventoryPage() {
           <h1 className="mt-1 text-2xl font-black text-[#1A1A1A]">Inventario</h1>
           <p className="mt-1 text-sm text-[#64748B]">Ordenado por menor disponibilidad para priorizar seguimiento.</p>
         </div>
-        <Link href="/panel/odoo/productos" className="rounded-xl border border-[#E2E8F0] bg-white px-4 py-2.5 text-sm font-bold text-[#64748B] transition-colors hover:border-[#27B1B8] hover:text-[#0C535B]">
-          Ver productos
-        </Link>
+        <div className="flex items-start gap-3">
+          <Link href="/panel/odoo/productos" className="rounded-xl border border-[#E2E8F0] bg-white px-4 py-2.5 text-sm font-bold text-[#64748B] transition-colors hover:border-[#27B1B8] hover:text-[#0C535B]">
+            Ver productos
+          </Link>
+          <SyncStockButton />
+        </div>
       </div>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
