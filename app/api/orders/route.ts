@@ -75,9 +75,9 @@ export async function POST(request: Request) {
       message: "Pedido creado correctamente.",
     });
   } catch (error) {
-    const isInsufficientStock =
-      error instanceof Error && error.message.startsWith("INSUFFICIENT_STOCK");
-    const stockProductName = isInsufficientStock
+    const isProductNotFound =
+      error instanceof Error && error.message.startsWith("PRODUCT_NOT_FOUND");
+    const missingProductName = isProductNotFound
       ? (error as Error).message.split(":").slice(1).join(":").trim()
       : "";
 
@@ -86,10 +86,10 @@ export async function POST(request: Request) {
         ? "Completa los datos principales de entrega para continuar."
         : error instanceof Error && error.message === "EMPTY_CART"
           ? "Tu carrito está vacío en este momento."
-          : isInsufficientStock
-            ? stockProductName
-              ? `"${stockProductName}" ya no tiene stock suficiente. Ajusta la cantidad o quítalo del carrito.`
-              : "Uno de los productos ya no tiene stock suficiente para completar el pedido."
+          : isProductNotFound
+            ? missingProductName
+              ? `"${missingProductName}" ya no está disponible en el catálogo. Quítalo del carrito para continuar.`
+              : "Uno de los productos ya no está disponible en el catálogo."
           : error instanceof Error && error.message === "DATABASE_NOT_CONFIGURED"
             ? "La base de datos no está configurada todavía."
             : "No fue posible crear el pedido.";
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
         ? 400
         : error instanceof Error && error.message === "EMPTY_CART"
           ? 400
-          : isInsufficientStock
+          : isProductNotFound
             ? 409
           : 500;
 

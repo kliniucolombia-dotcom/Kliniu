@@ -91,15 +91,13 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
       },
     });
 
+    // No bloqueamos por falta de stock: la empresa puede fabricar/conseguir
+    // el producto sobre pedido aunque el inventario esté en 0.
     for (const item of productCartItems) {
       const product = products.find((entry) => entry.slug === baseProductSlug(item.productId as string));
 
       if (!product) {
-        throw new Error(`INSUFFICIENT_STOCK:${item.name}`);
-      }
-
-      if (product.stock > 0 && product.stock < item.quantity) {
-        throw new Error(`INSUFFICIENT_STOCK:${item.name}`);
+        throw new Error(`PRODUCT_NOT_FOUND:${item.name}`);
       }
     }
 
@@ -143,10 +141,6 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
         };
         tracked.needed += neededQuantity;
         stockDeductions.set(comboItem.productId, tracked);
-
-        if (comboItem.product.stock > 0 && comboItem.product.stock < tracked.needed) {
-          throw new Error(`INSUFFICIENT_STOCK:${combo.name}`);
-        }
       }
     }
 

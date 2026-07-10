@@ -88,7 +88,9 @@ export default function CarritoPage() {
     .filter((p) => !items.some((i) => i.id === p.slug))
     .slice(0, 6);
 
-  const stockIssues = items
+  // Informativo únicamente: si el stock no alcanza, el producto queda
+  // "Sobre pedido" (la empresa lo fabrica/consigue), nunca bloquea la compra.
+  const backorderItems = items
     .map((item) => {
       const slug = item.id.split("--")[0];
       const producto = products.find((p) => p.slug === slug);
@@ -98,8 +100,6 @@ export default function CarritoPage() {
       return null;
     })
     .filter((issue): issue is { item: (typeof items)[number]; disponible: number } => issue !== null);
-
-  const hasStockIssues = stockIssues.length > 0;
 
   return (
     <main className="min-h-screen bg-white text-[#111]">
@@ -156,7 +156,7 @@ export default function CarritoPage() {
                   const subtotalItem = unitario * item.cantidad;
                   const originalUnitario = item.precioOriginal ? parsePrecio(item.precioOriginal) : null;
                   const ahorro = originalUnitario ? (originalUnitario - unitario) * item.cantidad : 0;
-                  const issue = stockIssues.find((s) => s.item.id === item.id);
+                  const issue = backorderItems.find((s) => s.item.id === item.id);
                   return (
                     <div
                       key={item.id}
@@ -188,10 +188,10 @@ export default function CarritoPage() {
                             <span className="text-[11px] text-[#555]">Envío estimado: 2 días hábiles</span>
                           </div>
                           {issue ? (
-                            <span className="mt-1 inline-block rounded bg-[#fdecec] px-1.5 py-0.5 text-[10px] font-semibold text-[#c0392b]">
+                            <span className="mt-1 inline-block rounded bg-[#fff4e5] px-1.5 py-0.5 text-[10px] font-semibold text-[#b5730a]">
                               {issue.disponible <= 0
-                                ? "Sin stock"
-                                : `Solo quedan ${issue.disponible} disponibles`}
+                                ? "Sobre pedido"
+                                : `${issue.disponible} en stock, resto sobre pedido`}
                             </span>
                           ) : (
                             <span className="mt-1 inline-block rounded bg-[#e8f7f0] px-1.5 py-0.5 text-[10px] font-semibold text-[#2a8a5e]">
@@ -315,43 +315,32 @@ export default function CarritoPage() {
                 <span className="text-2xl font-extrabold text-[#27B1B8]">{formatPrecio(total)}</span>
               </div>
 
-              {hasStockIssues && (
-                <div className="mt-4 rounded-xl border border-[#f2b8b5] bg-[#fdecec] px-3 py-2.5 text-xs text-[#c0392b]">
-                  <p className="font-semibold">No puedes finalizar la compra:</p>
+              {backorderItems.length > 0 && (
+                <div className="mt-4 rounded-xl border border-[#f5dca6] bg-[#fff4e5] px-3 py-2.5 text-xs text-[#8a5a06]">
+                  <p className="font-semibold">Estos productos quedan sobre pedido:</p>
                   <ul className="mt-1 list-disc space-y-0.5 pl-4">
-                    {stockIssues.map(({ item, disponible }) => (
+                    {backorderItems.map(({ item, disponible }) => (
                       <li key={item.id}>
                         {item.nombre}{" "}
                         {disponible <= 0
-                          ? "no tiene stock disponible"
-                          : `— solo quedan ${disponible} unidades`}
+                          ? "— se fabrica/consigue para tu pedido"
+                          : `— ${disponible} en stock, el resto se fabrica/consigue`}
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-1">Ajusta la cantidad o elimínalo del carrito para continuar.</p>
                 </div>
               )}
 
-              {hasStockIssues ? (
-                <button
-                  type="button"
-                  disabled
-                  className="mt-5 flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-full bg-[#c9c9c7] px-5 py-3 text-sm font-bold text-white"
-                >
-                  Finalizar compra
-                </button>
-              ) : (
-                <Link
-                  href="/checkout"
-                  className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[#0C535B] px-5 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
-                >
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                  Finalizar compra
-                </Link>
-              )}
+              <Link
+                href="/checkout"
+                className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[#0C535B] px-5 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                Finalizar compra
+              </Link>
 
               <button
                 type="button"
