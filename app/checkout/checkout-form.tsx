@@ -327,27 +327,17 @@ export default function CheckoutForm({
               <h2 className="mb-4 text-base font-extrabold text-[#111]">
                 3. Método de pago
               </h2>
-              <div className="space-y-3">
-                {["Tarjeta de crédito o débito", "PSE - Débito bancario", "Efectivo / Contraentrega"].map((method, i) => (
-                  <label key={method} className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition ${
-                    i === 0 ? "border-[#27B1B8] bg-[#f0fafa]" : "border-black/10 hover:border-[#27B1B8]/40"
-                  }`}>
-                    <input type="radio" name="paymentMethod" defaultChecked={i === 0}
-                      className="h-4 w-4 text-[#27B1B8]" />
-                    <div>
-                      <p className="text-sm font-semibold text-[#111]">{method}</p>
-                      {i === 0 && <p className="text-xs text-[#6e7379]">Visa, Mastercard</p>}
-                    </div>
-                    {i === 0 && (
-                      <svg viewBox="0 0 48 16" className="ml-auto h-4" fill="none">
-                        <rect x="0" y="0" width="22" height="16" rx="3" fill="#1A1F71" />
-                        <text x="11" y="12" textAnchor="middle" fill="white" fontSize="9" fontWeight="bold">VISA</text>
-                        <rect x="26" y="0" width="22" height="16" rx="3" fill="#EB001B" />
-                        <circle cx="37" cy="8" r="6" fill="#F79E1B" opacity="0.8" />
-                      </svg>
-                    )}
-                  </label>
-                ))}
+              <div className="flex items-center gap-3 rounded-xl border border-[#27B1B8] bg-[#f0fafa] px-4 py-3">
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-[#111]">Pago seguro con Wompi</p>
+                  <p className="text-xs text-[#6e7379]">Tarjeta, PSE, Nequi y más</p>
+                </div>
+                <svg viewBox="0 0 48 16" className="h-4" fill="none">
+                  <rect x="0" y="0" width="22" height="16" rx="3" fill="#1A1F71" />
+                  <text x="11" y="12" textAnchor="middle" fill="white" fontSize="9" fontWeight="bold">VISA</text>
+                  <rect x="26" y="0" width="22" height="16" rx="3" fill="#EB001B" />
+                  <circle cx="37" cy="8" r="6" fill="#F79E1B" opacity="0.8" />
+                </svg>
               </div>
             </div>
 

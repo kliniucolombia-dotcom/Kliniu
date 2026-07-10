@@ -234,9 +234,9 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
       });
     }
 
-    await tx.cartItem.deleteMany({
-      where: { userId },
-    });
+    // El carrito se limpia solo cuando el pago quede confirmado (ver
+    // markOrderPaidByWompiReference), no al crear el pedido: si el pago
+    // se rechaza o se abandona en Wompi, el usuario no debe perder su carrito.
 
     return createdOrder;
   });
@@ -495,6 +495,8 @@ export async function markOrderPaidByWompiReference(
       shippingStatus: order.shippingStatus === "PENDING" ? "PREPARING" : order.shippingStatus,
     },
   });
+
+  await prisma.cartItem.deleteMany({ where: { userId: order.userId } });
 
   return await syncOrderToOdoo(order.id);
 }
