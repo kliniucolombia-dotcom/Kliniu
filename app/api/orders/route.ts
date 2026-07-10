@@ -75,13 +75,21 @@ export async function POST(request: Request) {
       message: "Pedido creado correctamente.",
     });
   } catch (error) {
+    const isInsufficientStock =
+      error instanceof Error && error.message.startsWith("INSUFFICIENT_STOCK");
+    const stockProductName = isInsufficientStock
+      ? (error as Error).message.split(":").slice(1).join(":").trim()
+      : "";
+
     const message =
       error instanceof Error && error.message === "INVALID_CHECKOUT"
         ? "Completa los datos principales de entrega para continuar."
         : error instanceof Error && error.message === "EMPTY_CART"
           ? "Tu carrito está vacío en este momento."
-          : error instanceof Error && error.message === "INSUFFICIENT_STOCK"
-            ? "Uno de los productos ya no tiene stock suficiente para completar el pedido."
+          : isInsufficientStock
+            ? stockProductName
+              ? `"${stockProductName}" ya no tiene stock suficiente. Ajusta la cantidad o quítalo del carrito.`
+              : "Uno de los productos ya no tiene stock suficiente para completar el pedido."
           : error instanceof Error && error.message === "DATABASE_NOT_CONFIGURED"
             ? "La base de datos no está configurada todavía."
             : "No fue posible crear el pedido.";
@@ -91,7 +99,7 @@ export async function POST(request: Request) {
         ? 400
         : error instanceof Error && error.message === "EMPTY_CART"
           ? 400
-          : error instanceof Error && error.message === "INSUFFICIENT_STOCK"
+          : isInsufficientStock
             ? 409
           : 500;
 

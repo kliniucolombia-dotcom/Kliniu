@@ -89,11 +89,11 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
       const product = products.find((entry) => entry.slug === item.productId);
 
       if (!product) {
-        throw new Error("INSUFFICIENT_STOCK");
+        throw new Error(`INSUFFICIENT_STOCK:${item.name}`);
       }
 
       if (product.stock > 0 && product.stock < item.quantity) {
-        throw new Error("INSUFFICIENT_STOCK");
+        throw new Error(`INSUFFICIENT_STOCK:${item.name}`);
       }
     }
 
@@ -124,7 +124,7 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
     for (const cartCombo of comboCartItems) {
       const combo = combos.find((c) => c.id === cartCombo.comboId);
       if (!combo || !combo.active) {
-        throw new Error("INSUFFICIENT_STOCK");
+        throw new Error(`INSUFFICIENT_STOCK:${cartCombo.name}`);
       }
 
       for (const comboItem of combo.items) {
@@ -139,7 +139,7 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
         stockDeductions.set(comboItem.productId, tracked);
 
         if (comboItem.product.stock > 0 && comboItem.product.stock < tracked.needed) {
-          throw new Error("INSUFFICIENT_STOCK");
+          throw new Error(`INSUFFICIENT_STOCK:${combo.name}`);
         }
       }
     }
