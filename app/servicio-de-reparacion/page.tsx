@@ -4,7 +4,7 @@ import Link from "next/link";
 import SiteFooter from "@/app/components/site-footer";
 
 export const metadata: Metadata = {
-  title: "Servicio de reparación | Kliniu",
+  title: "Servicio de reparación",
   description: "Soporte, agenda y aliados del servicio de reparación de Kliniu.",
 };
 

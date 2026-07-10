@@ -162,7 +162,7 @@ export async function generateMetadata({
   if (!policy) return {};
 
   return {
-    title: `${policy.title} | Kliniu`,
+    title: policy.title,
     description: policy.summary,
   };
 }

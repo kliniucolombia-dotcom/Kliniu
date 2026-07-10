@@ -5,7 +5,7 @@ import { getOdooSalesReport, type OdooReportPeriod } from "@/lib/odoo";
 import { getOdooErrorMessage } from "../odoo-error-panel";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Reportes Odoo — Panel Comercial Kliniu" };
+export const metadata = { title: "Reportes Odoo — Panel Comercial" };
 
 const fmtMoney = (value: number) =>
   new Intl.NumberFormat("es-CO", {

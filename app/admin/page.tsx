@@ -1075,10 +1075,14 @@ export default function AdminPage() {
       }
 
       const payload = (await response.json()) as {
-        user?: { fullName: string; role: "CUSTOMER" | "ADMIN" | "SELLER" };
+        user?: { fullName: string; role: "CUSTOMER" | "ADMIN" | "SELLER" | "SUPERADMIN" };
       };
 
-      if (payload.user?.role === "ADMIN" || payload.user?.role === "SELLER") {
+      if (
+        payload.user?.role === "ADMIN" ||
+        payload.user?.role === "SELLER" ||
+        payload.user?.role === "SUPERADMIN"
+      ) {
         setIsAuthenticated(true);
         setAdminName(payload.user.fullName);
       } else {

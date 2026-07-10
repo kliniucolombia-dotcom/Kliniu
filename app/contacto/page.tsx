@@ -5,7 +5,7 @@ import ContactForm from "./contact-form";
 import { getBannerByKey } from "@/lib/banners";
 
 export const metadata: Metadata = {
-  title: "Contacto | Kliniu",
+  title: "Contacto",
   description: "Canales de contacto y presencia internacional de Kliniu.",
 };
 

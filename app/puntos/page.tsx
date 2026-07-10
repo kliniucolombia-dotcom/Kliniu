@@ -7,7 +7,7 @@ import SiteFooter from "@/app/components/site-footer";
 import { FadeIn } from "./fade-in";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Puntos K — Programa de Fidelización Kliniu" };
+export const metadata = { title: "Puntos K — Programa de Fidelización" };
 
 const fmt = (n: number) =>
   n.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });

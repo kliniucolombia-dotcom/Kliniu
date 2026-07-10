@@ -3,7 +3,7 @@ import { requirePermission } from "@/lib/permissions";
 import { getMetrics, getDashboardStats } from "@/lib/panel";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Métricas — Panel Comercial Kliniu" };
+export const metadata = { title: "Métricas — Panel Comercial" };
 
 const fmt = (n: number) =>
   n.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });

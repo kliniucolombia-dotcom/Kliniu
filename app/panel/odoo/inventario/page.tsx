@@ -5,7 +5,7 @@ import { getOdooProducts } from "@/lib/odoo";
 import { getOdooErrorMessage, OdooErrorPanel } from "../odoo-error-panel";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Inventario Odoo — Panel Comercial Kliniu" };
+export const metadata = { title: "Inventario Odoo — Panel Comercial" };
 
 function getOdooCategoryName(category: [number, string] | false | undefined) {
   return Array.isArray(category) ? category[1] : "Sin categoría";

@@ -5,7 +5,7 @@ import { slugCategoria } from "../data/catalog";
 import { getProducts } from "@/lib/products";
 
 export const metadata = {
-  title: "Buscar por imagen | Kliniu",
+  title: "Buscar por imagen",
   description: "Concepto visual de búsqueda de repuestos por imagen en Kliniu.",
 };
 

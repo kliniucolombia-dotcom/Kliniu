@@ -2,7 +2,7 @@ import { mediaHubItems } from "../data/media-hub";
 import MediaShowcase from "./media-showcase";
 
 export const metadata = {
-  title: "Tips y videos | Kliniu",
+  title: "Tips y videos",
   description:
     "Hub de contenido de Kliniu con videos, tips y piezas útiles para orientar la compra.",
 };

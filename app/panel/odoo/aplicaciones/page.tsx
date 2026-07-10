@@ -4,7 +4,7 @@ import { getOdooApps } from "@/lib/odoo";
 import { getOdooErrorMessage, OdooErrorPanel } from "../odoo-error-panel";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Aplicaciones Odoo — Panel Comercial Kliniu" };
+export const metadata = { title: "Aplicaciones Odoo — Panel Comercial" };
 
 const fallbackIcons = ["◒", "31", "▥", "▣", "◆", "▦", "▤", "◈", "⬢", "▰", "◉", "⌕"];
 

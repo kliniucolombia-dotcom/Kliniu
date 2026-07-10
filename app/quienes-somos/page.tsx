@@ -4,7 +4,7 @@ import SiteFooter from "../components/site-footer";
 import { getBannerByKey } from "@/lib/banners";
 
 export const metadata: Metadata = {
-  title: "Quiénes somos | Kliniu",
+  title: "Quiénes somos",
   description:
     "Somos Kliniu, una compañía colombiana dedicada a desarrollar y comercializar dispensadores e insumos de higiene.",
 };

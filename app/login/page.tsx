@@ -83,7 +83,7 @@ export default function LoginPage() {
         if (!data?.user) return;
         const role = data.user.role;
         if (role === "ADMIN") router.replace("/admin");
-        else if (role === "SELLER") router.replace("/panel");
+        else if (role === "SELLER" || role === "SUPERADMIN") router.replace("/panel");
         else if (role === "PACKING") router.replace("/empaque");
         else router.replace("/mi-cuenta");
       })

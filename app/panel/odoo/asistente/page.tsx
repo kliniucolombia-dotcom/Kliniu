@@ -3,7 +3,7 @@ import { requirePermission } from "@/lib/permissions";
 import { OdooSalesChat } from "./odoo-sales-chat";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Asistente Odoo — Panel Comercial Kliniu" };
+export const metadata = { title: "Asistente Odoo — Panel Comercial" };
 
 export default async function OdooAssistantPage() {
   const access = await requirePermission("MODULE_ODOO", "view");

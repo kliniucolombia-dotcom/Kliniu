@@ -6,7 +6,7 @@ import { getUserKData, getKTierData, TIERS_K, getMonthlySpendForUser } from "@/l
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Mis Puntos K — Kliniu" };
+export const metadata = { title: "Mis Puntos K" };
 
 const fmt = (n: number) =>
   n.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
