@@ -63,7 +63,7 @@ export default function VideoModal({ videos }: { videos: Video[] }) {
             key={v.id}
             type="button"
             onClick={() => setActiveHref(v.href)}
-            className="motion-card interactive-lift group flex h-44 w-40 shrink-0 cursor-pointer flex-col items-center justify-end overflow-hidden rounded-2xl border border-black/8 bg-white transition-shadow hover:shadow-md"
+            className="interactive-lift group flex h-44 w-40 shrink-0 cursor-pointer flex-col items-center justify-end overflow-hidden rounded-2xl border border-black/8 bg-white transition-shadow hover:shadow-md"
           >
             {v.thumb ? (
               <div className="relative flex flex-1 w-full items-center justify-center overflow-hidden">
