@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import FooterWhatsapp from "./footer-whatsapp";
 
 const colPoliticas = [
   { label: "Políticas de privacidad", href: "/politicas/privacidad" },
@@ -9,7 +10,6 @@ const colPoliticas = [
 ];
 
 const colContacto = [
-  { label: "+57 320 8905307", href: "https://wa.me/573208905307", icon: "/icono-whatsapp.png" },
   { label: "ventas@kliniu.com", href: "mailto:ventas@kliniu.com", icon: "/icono-correo.png" },
   {
     label: "Av 28 No. 34-43 Barrio la Soledad\nBogotá, Colombia.",
@@ -59,6 +59,7 @@ export default function SiteFooter() {
               Departamento comercial
             </p>
             <ul className="space-y-3">
+              <FooterWhatsapp />
               {colContacto.map((item) => (
                 <li key={item.label}>
                   <a
