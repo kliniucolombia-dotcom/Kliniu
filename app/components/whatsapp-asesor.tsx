@@ -6,14 +6,22 @@ type Props = {
   children: React.ReactNode;
   className?: string;
   message?: string;
+  randomAsesor?: boolean;
 };
 
 const FALLBACK = "573125860921";
+const ASESORES = ["573112088806", "573226556454", "573105750449"];
 
-export default function WhatsAppAsesor({ children, className, message }: Props) {
+export default function WhatsAppAsesor({ children, className, message, randomAsesor }: Props) {
   const [href, setHref] = useState(`https://wa.me/${FALLBACK}`);
 
   useEffect(() => {
+    if (randomAsesor) {
+      const phone = ASESORES[Math.floor(Math.random() * ASESORES.length)];
+      const text = message ?? "Hola, tengo una consulta sobre un producto de Kliniu";
+      setHref(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`);
+      return;
+    }
     fetch("/api/seller/contact")
       .then((r) => r.json())
       .then((d: { phone: string; name: string }) => {
@@ -21,7 +29,7 @@ export default function WhatsAppAsesor({ children, className, message }: Props) 
         setHref(`https://wa.me/${d.phone}?text=${encodeURIComponent(text)}`);
       })
       .catch(() => {});
-  }, [message]);
+  }, [message, randomAsesor]);
 
   return (
     <a href={href} target="_blank" rel="noreferrer" className={className}>
