@@ -15,7 +15,7 @@ const videos = [
   { id: 1, titulo: "Dispensadores para líquidos", href: "https://www.instagram.com/reel/DYiUdCLEd8A/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==", thumb: "/foca-video-1.png" },
   { id: 2, titulo: "Dispensadores de papel, toalla y servilletas", href: REEL_DEFAULT, thumb: "/foca-video-2.png" },
   { id: 3, titulo: "KlinOx Acero Inoxidable", href: "https://www.instagram.com/reel/DSKh2tCjfgf/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==", thumb: "/foca-video-3.png" },
-  { id: 4, titulo: "Dispensador de crema dental", href: REEL_DEFAULT, thumb: "/foca-video-4.png" },
+  { id: 4, titulo: "Dispensadores de pasta dental", href: REEL_DEFAULT, thumb: "/foca-video-4.png" },
   { id: 5, titulo: "Hoteles y Restaurantes", href: "https://www.instagram.com/reel/DVOelzuDWWd/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==", thumb: "/foca-video-5.png" },
 ];
 
