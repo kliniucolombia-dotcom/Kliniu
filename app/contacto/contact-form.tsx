@@ -70,25 +70,29 @@ export default function ContactForm() {
   const [form, setForm] = useState<FormState>(initialState);
   const [feedback, setFeedback] = useState("");
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const body = [
-      `Nombre: ${form.nombre}`,
-      `Email: ${form.email}`,
-      form.empresa ? `Empresa: ${form.empresa}` : "",
-      form.pais ? `País: ${form.pais}` : "",
-      "",
-      "Consulta:",
-      form.consulta,
-    ]
-      .filter(Boolean)
-      .join("\n");
+  const [enviando, setEnviando] = useState(false);
 
-    window.location.href = `mailto:ventas@kliniu.com?subject=${encodeURIComponent(
-      "Consulta desde kliniu.com",
-    )}&body=${encodeURIComponent(body)}`;
-    setFeedback("¡Mensaje enviado! Abrimos tu correo para completar el envío.");
-    setForm(initialState);
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setEnviando(true);
+    setFeedback("");
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      if (!res.ok) throw new Error("fallo el envío");
+
+      setFeedback("¡Mensaje enviado! Te contactaremos pronto.");
+      setForm(initialState);
+    } catch {
+      setFeedback("No pudimos enviar tu mensaje. Intenta de nuevo o escríbenos a ventas@kliniu.com.");
+    } finally {
+      setEnviando(false);
+    }
   };
 
   const set = (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -181,9 +185,10 @@ export default function ContactForm() {
 
               <button
                 type="submit"
-                className="shine-sweep inline-flex items-center gap-2 rounded bg-[#073F43] px-5 py-2 text-[12px] font-black text-white transition-colors hover:bg-[#0C535B]"
+                disabled={enviando}
+                className="shine-sweep inline-flex items-center gap-2 rounded bg-[#073F43] px-5 py-2 text-[12px] font-black text-white transition-colors hover:bg-[#0C535B] disabled:opacity-60"
               >
-                Enviar mensaje →
+                {enviando ? "Enviando..." : "Enviar mensaje →"}
               </button>
             </form>
           </div>
