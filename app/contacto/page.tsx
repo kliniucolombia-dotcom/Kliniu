@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import SiteFooter from "../components/site-footer";
 import ContactForm from "./contact-form";
+import ContactBar from "./contact-bar";
 import { getBannerByKey } from "@/lib/banners";
 
 export const metadata: Metadata = {
@@ -144,23 +145,7 @@ export default async function ContactoPage() {
       {/* Contact bar */}
       <section className="home-reveal border-y border-black/8 bg-white">
         <div className="mx-auto max-w-[1440px] px-5">
-          <div className="grid grid-cols-2 divide-x divide-black/8 md:grid-cols-4">
-            {contactBar.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                target={item.href.startsWith("http") ? "_blank" : undefined}
-                rel={item.href.startsWith("http") ? "noreferrer" : undefined}
-                className="interactive-lift flex flex-col items-center gap-2 px-4 py-5 text-center transition-colors hover:bg-[#f0f8f8]"
-              >
-                <span className="text-[#27B1B8]">{item.icon}</span>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6e7379]">
-                  {item.label}
-                </span>
-                <span className="text-sm font-bold text-[#0C535B]">{item.value}</span>
-              </a>
-            ))}
-          </div>
+          <ContactBar items={contactBar} />
         </div>
       </section>
 
