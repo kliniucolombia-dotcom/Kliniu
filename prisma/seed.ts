@@ -22,6 +22,7 @@ async function main() {
   const adminPasswordHash = await hash("123456789", 10);
   const packingPasswordHash = await hash("empaque2024", 10);
   const sellerPasswordHash = await hash("Kliniu2025", 10);
+  const rrhhPasswordHash = await hash("Kliniu2025", 10);
 
   await prisma.user.upsert({
     where: {
@@ -71,6 +72,23 @@ async function main() {
       email: "vendedor1@kliniu.com",
       passwordHash: sellerPasswordHash,
       role: "SELLER",
+    },
+  });
+
+  await prisma.user.upsert({
+    where: {
+      email: "rrhh@kliniu.com",
+    },
+    update: {
+      fullName: "RRHH Kliniu",
+      role: "RRHH",
+      passwordHash: rrhhPasswordHash,
+    },
+    create: {
+      fullName: "RRHH Kliniu",
+      email: "rrhh@kliniu.com",
+      passwordHash: rrhhPasswordHash,
+      role: "RRHH",
     },
   });
 

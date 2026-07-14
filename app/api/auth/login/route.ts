@@ -64,6 +64,7 @@ export async function POST(request: Request) {
       user.role === "SELLER"     ? "/panel"      :
       user.role === "PACKING"    ? "/empaque"    :
       user.role === "RRHH"       ? "/panel/rrhh" :
+      user.role === "EMPLOYEE"   ? "/empleado"   :
       "/mi-cuenta";
 
     return Response.json({

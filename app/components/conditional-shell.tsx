@@ -5,13 +5,13 @@ import SiteHeader from "./site-header";
 import SupportChat from "./support-chat";
 
 type Props = {
-  currentUser: { fullName: string; role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" } | null;
+  currentUser: { fullName: string; role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "EMPLOYEE" } | null;
   children: React.ReactNode;
 };
 
 export default function ConditionalShell({ currentUser, children }: Props) {
   const pathname = usePathname();
-  const isPanelRoute = pathname.startsWith("/panel") || pathname.startsWith("/empaque") || pathname.startsWith("/imprimir-cotizacion");
+  const isPanelRoute = pathname.startsWith("/panel") || pathname.startsWith("/empaque") || pathname.startsWith("/imprimir-cotizacion") || pathname.startsWith("/empleado");
 
   return (
     <>

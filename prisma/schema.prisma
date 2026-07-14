@@ -368,6 +368,7 @@ enum UserRole {
   PACKING
   SUPERADMIN
   RRHH
+  EMPLOYEE
 }
 
 enum UserStatus {
@@ -684,6 +685,7 @@ model TimeOffRequest {
   durationDays Int
   reason       String?
   status       TimeOffStatus @default(PENDING)
+  reviewNote   String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 

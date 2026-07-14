@@ -86,6 +86,7 @@ export default function LoginPage() {
         else if (role === "SELLER" || role === "SUPERADMIN") router.replace("/panel");
         else if (role === "PACKING") router.replace("/empaque");
         else if (role === "RRHH") router.replace("/panel/rrhh");
+        else if (role === "EMPLOYEE") router.replace("/empleado");
         else router.replace("/mi-cuenta");
       })
       .catch(() => {});
@@ -149,7 +150,7 @@ export default function LoginPage() {
   const completeLogin = async (payload: {
     message?: string;
     redirectTo?: string;
-    user?: { id: string; role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "RRHH" | "SUPERADMIN" };
+    user?: { id: string; role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "RRHH" | "SUPERADMIN" | "EMPLOYEE" };
   }) => {
     setIsEnteringAccount(true);
     setForm(initialState);
@@ -202,7 +203,7 @@ export default function LoginPage() {
       error?: string;
       message?: string;
       redirectTo?: string;
-      user?: { id: string; role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "RRHH" | "SUPERADMIN" };
+      user?: { id: string; role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "RRHH" | "SUPERADMIN" | "EMPLOYEE" };
       requiresAdminPin?: boolean;
     };
 
@@ -249,7 +250,7 @@ export default function LoginPage() {
     const payload = (await response.json()) as {
       error?: string;
       message?: string;
-      user?: { id: string; role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "RRHH" | "SUPERADMIN" };
+      user?: { id: string; role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "RRHH" | "SUPERADMIN" | "EMPLOYEE" };
     };
 
     setIsSubmitting(false);

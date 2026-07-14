@@ -1,3 +1,4 @@
+import { hash } from "bcryptjs";
 import { requireRRHH } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
@@ -26,8 +27,9 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const {
-    userId,
-    employeeCode,
+    fullName,
+    email,
+    cedula,
     jobTitle,
     departmentId,
     contractType,
@@ -38,8 +40,9 @@ export async function POST(request: Request) {
     afp,
     arl,
   } = body as {
-    userId?: string;
-    employeeCode?: string;
+    fullName?: string;
+    email?: string;
+    cedula?: string;
     jobTitle?: string;
     departmentId?: string;
     contractType?: string;
@@ -51,19 +54,41 @@ export async function POST(request: Request) {
     arl?: string;
   };
 
-  if (!userId || !employeeCode || !jobTitle || !hireDate) {
-    return Response.json({ error: "userId, employeeCode, jobTitle y hireDate son obligatorios" }, { status: 400 });
+  const normalizedEmail = email?.trim().toLowerCase();
+  const normalizedCedula = cedula?.trim();
+
+  if (!fullName?.trim() || !normalizedEmail || !normalizedCedula || !jobTitle || !hireDate) {
+    return Response.json(
+      { error: "nombre, correo, cédula, cargo y fecha de ingreso son obligatorios" },
+      { status: 400 },
+    );
   }
 
-  const existing = await prisma.employee.findUnique({ where: { userId } });
-  if (existing) {
-    return Response.json({ error: "Este usuario ya tiene un registro de empleado" }, { status: 409 });
+  const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  if (existingUser) {
+    return Response.json({ error: "Ya existe un usuario con este correo" }, { status: 409 });
   }
+
+  const existingCode = await prisma.employee.findUnique({ where: { employeeCode: normalizedCedula } });
+  if (existingCode) {
+    return Response.json({ error: "Ya existe un empleado con esta cédula" }, { status: 409 });
+  }
+
+  const passwordHash = await hash(normalizedCedula, 10);
+
+  const newUser = await prisma.user.create({
+    data: {
+      fullName: fullName.trim(),
+      email: normalizedEmail,
+      passwordHash,
+      role: "EMPLOYEE",
+    },
+  });
 
   const employee = await prisma.employee.create({
     data: {
-      userId,
-      employeeCode,
+      userId: newUser.id,
+      employeeCode: normalizedCedula,
       jobTitle,
       departmentId: departmentId || null,
       contractType: (contractType as never) || "INDEFINITE",

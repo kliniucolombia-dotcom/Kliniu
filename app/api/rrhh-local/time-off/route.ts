@@ -1,13 +1,25 @@
-import { requireRRHH } from "@/lib/permissions";
+import { isRRHH } from "@/lib/roles";
+import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const access = await requireRRHH();
+  const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-
   if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
 
+  if (isRRHH(access.user)) {
+    const requests = await prisma.timeOffRequest.findMany({
+      orderBy: { createdAt: "desc" },
+      include: { employee: { include: { user: { select: { fullName: true } } } } },
+    });
+    return Response.json(requests);
+  }
+
+  const employee = await prisma.employee.findUnique({ where: { userId: access.user.id } });
+  if (!employee) return Response.json({ error: "No tienes un perfil de empleado" }, { status: 403 });
+
   const requests = await prisma.timeOffRequest.findMany({
+    where: { employeeId: employee.id },
     orderBy: { createdAt: "desc" },
     include: { employee: { include: { user: { select: { fullName: true } } } } },
   });
@@ -16,9 +28,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const access = await requireRRHH();
+  const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-
   if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
 
   const body = await request.json();
@@ -30,8 +41,20 @@ export async function POST(request: Request) {
     reason?: string;
   };
 
-  if (!employeeId || !type || !startDate || !endDate) {
-    return Response.json({ error: "employeeId, type, startDate y endDate son obligatorios" }, { status: 400 });
+  if (!type || !startDate || !endDate) {
+    return Response.json({ error: "type, startDate y endDate son obligatorios" }, { status: 400 });
+  }
+
+  let finalEmployeeId = employeeId;
+
+  if (!isRRHH(access.user)) {
+    const employee = await prisma.employee.findUnique({ where: { userId: access.user.id } });
+    if (!employee) return Response.json({ error: "No tienes un perfil de empleado" }, { status: 403 });
+    finalEmployeeId = employee.id;
+  }
+
+  if (!finalEmployeeId) {
+    return Response.json({ error: "employeeId es obligatorio" }, { status: 400 });
   }
 
   const start = new Date(startDate);
@@ -40,7 +63,7 @@ export async function POST(request: Request) {
 
   const timeOffRequest = await prisma.timeOffRequest.create({
     data: {
-      employeeId,
+      employeeId: finalEmployeeId,
       type: type as never,
       startDate: start,
       endDate: end,

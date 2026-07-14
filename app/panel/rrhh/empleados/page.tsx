@@ -14,7 +14,6 @@ type EmployeeRow = {
   department: { name: string } | null;
 };
 
-type StaffUser = { id: string; fullName: string; email: string; role: string };
 type DepartmentOption = { id: string; name: string };
 
 const CONTRACT_TYPES = [
@@ -40,9 +39,19 @@ const PERIOD_LABELS: Record<string, string> = {
   HOURLY: "Por hora",
 };
 
+const CONTRACT_LABELS: Record<string, string> = {
+  INDEFINITE: "Indefinido",
+  FIXED_TERM: "Término fijo",
+  WORK_OR_LABOR: "Obra o labor",
+  APPRENTICESHIP: "Aprendizaje",
+  TEMPORARY: "Temporal",
+  CIVIL: "Civil",
+};
+
 const initialForm = {
-  userId: "",
-  employeeCode: "",
+  fullName: "",
+  email: "",
+  cedula: "",
   jobTitle: "",
   departmentId: "",
   contractType: "INDEFINITE" as (typeof CONTRACT_TYPES)[number],
@@ -60,7 +69,6 @@ function formatMoney(amount: number, currency: string) {
 
 export default function EmpleadosPage() {
   const [employees, setEmployees] = useState<EmployeeRow[]>([]);
-  const [staffUsers, setStaffUsers] = useState<StaffUser[]>([]);
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -70,14 +78,12 @@ export default function EmpleadosPage() {
 
   const load = async () => {
     setLoading(true);
-    const [empRes, usersRes, deptRes] = await Promise.all([
+    const [empRes, deptRes] = await Promise.all([
       fetch("/api/rrhh-local/employees"),
-      fetch("/api/rrhh-local/staff-users"),
       fetch("/api/rrhh-local/departments"),
     ]);
     if (empRes.ok) setEmployees(await empRes.json());
     else setError("No fue posible cargar los empleados");
-    if (usersRes.ok) setStaffUsers(await usersRes.json());
     if (deptRes.ok) setDepartments(await deptRes.json());
     setLoading(false);
   };
@@ -94,8 +100,9 @@ export default function EmpleadosPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: form.userId,
-          employeeCode: form.employeeCode,
+          fullName: form.fullName,
+          email: form.email,
+          cedula: form.cedula,
           jobTitle: form.jobTitle,
           departmentId: form.departmentId || undefined,
           contractType: form.contractType,
@@ -139,16 +146,14 @@ export default function EmpleadosPage() {
 
       {creating && (
         <div className="grid grid-cols-1 gap-3 rounded-xl border border-[#E2E8F0] bg-white p-4 md:grid-cols-3">
-          <select value={form.userId}
-            onChange={(e) => setForm({ ...form, userId: e.target.value })}
-            className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm">
-            <option value="">Selecciona usuario…</option>
-            {staffUsers.map((u) => (
-              <option key={u.id} value={u.id}>{u.fullName} ({u.email})</option>
-            ))}
-          </select>
-          <input placeholder="Código de empleado (ej. EMP-001)" value={form.employeeCode}
-            onChange={(e) => setForm({ ...form, employeeCode: e.target.value })}
+          <input placeholder="Nombre completo" value={form.fullName}
+            onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+            className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
+          <input placeholder="Correo (para iniciar sesión)" type="email" value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
+          <input placeholder="Cédula de ciudadanía (será la contraseña)" value={form.cedula}
+            onChange={(e) => setForm({ ...form, cedula: e.target.value })}
             className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
           <input placeholder="Cargo" value={form.jobTitle}
             onChange={(e) => setForm({ ...form, jobTitle: e.target.value })}
@@ -164,7 +169,7 @@ export default function EmpleadosPage() {
           <select value={form.contractType}
             onChange={(e) => setForm({ ...form, contractType: e.target.value as typeof form.contractType })}
             className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm">
-            {CONTRACT_TYPES.map((c) => <option key={c} value={c}>{c}</option>)}
+            {CONTRACT_TYPES.map((c) => <option key={c} value={c}>{CONTRACT_LABELS[c]}</option>)}
           </select>
           <input type="date" value={form.hireDate}
             onChange={(e) => setForm({ ...form, hireDate: e.target.value })}
@@ -175,7 +180,7 @@ export default function EmpleadosPage() {
           <select value={form.salaryPeriod}
             onChange={(e) => setForm({ ...form, salaryPeriod: e.target.value as typeof form.salaryPeriod })}
             className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm">
-            {SALARY_PERIODS.map((p) => <option key={p} value={p}>{p}</option>)}
+            {SALARY_PERIODS.map((p) => <option key={p} value={p}>{PERIOD_LABELS[p]}</option>)}
           </select>
           <input placeholder="EPS" value={form.eps}
             onChange={(e) => setForm({ ...form, eps: e.target.value })}
@@ -188,7 +193,7 @@ export default function EmpleadosPage() {
             className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
           <button
             onClick={submit}
-            disabled={saving || !form.userId}
+            disabled={saving || !form.fullName || !form.email || !form.cedula || !form.jobTitle}
             className="col-span-full rounded-lg bg-[#27B1B8] px-3 py-2 text-sm font-bold text-white disabled:opacity-50"
           >
             {saving ? "Guardando…" : "Contratar"}

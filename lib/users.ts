@@ -23,7 +23,7 @@ export type PublicUser = {
   city: string | null;
   addressLine1: string | null;
   addressLine2: string | null;
-  role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH";
+  role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "EMPLOYEE";
   status: "ACTIVE" | "INACTIVE" | "SUSPENDED";
   createdAt: Date;
 };
@@ -250,7 +250,7 @@ export type CreateUserByAdminInput = {
   fullName: string;
   email: string;
   password: string;
-  role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH";
+  role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "EMPLOYEE";
 };
 
 export async function createUserByAdmin(input: CreateUserByAdminInput): Promise<PublicUser> {

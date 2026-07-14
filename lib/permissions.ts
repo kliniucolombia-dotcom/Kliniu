@@ -98,3 +98,7 @@ export async function requireRRHH(): Promise<AuthResult> {
   if (!isRRHH(resolved.user)) return { ok: false, status: 403 };
   return resolved;
 }
+
+export async function requireActiveUser(): Promise<AuthResult> {
+  return resolveActiveUser();
+}

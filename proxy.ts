@@ -6,7 +6,7 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (
-    (pathname.startsWith("/mi-cuenta") || pathname.startsWith("/panel") || pathname.startsWith("/empaque") || pathname.startsWith("/admin")) &&
+    (pathname.startsWith("/mi-cuenta") || pathname.startsWith("/panel") || pathname.startsWith("/empaque") || pathname.startsWith("/admin") || pathname.startsWith("/empleado")) &&
     !hasSession
   ) {
     const loginUrl = new URL("/login", request.url);
@@ -22,5 +22,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/mi-cuenta/:path*", "/panel/:path*", "/empaque/:path*", "/admin/:path*", "/login", "/registro"],
+  matcher: ["/mi-cuenta/:path*", "/panel/:path*", "/empaque/:path*", "/admin/:path*", "/empleado/:path*", "/login", "/registro"],
 };

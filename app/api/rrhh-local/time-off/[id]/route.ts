@@ -9,15 +9,19 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await request.json();
-  const { status } = body as { status?: "APPROVED" | "REJECTED" };
+  const { status, reviewNote } = body as { status?: "APPROVED" | "REJECTED"; reviewNote?: string };
 
   if (status !== "APPROVED" && status !== "REJECTED") {
     return Response.json({ error: "status debe ser APPROVED o REJECTED" }, { status: 400 });
   }
 
+  if (status === "REJECTED" && !reviewNote?.trim()) {
+    return Response.json({ error: "El motivo de rechazo es obligatorio" }, { status: 400 });
+  }
+
   const updated = await prisma.timeOffRequest.update({
     where: { id },
-    data: { status },
+    data: { status, reviewNote: status === "REJECTED" ? reviewNote!.trim() : null },
     include: { employee: { include: { user: { select: { fullName: true } } } } },
   });
 

@@ -1,8 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 
-type EmployeeOption = { id: string; employeeCode: string; user: { fullName: string } };
-
 type TimeOffRequestRow = {
   id: string;
   type: string;
@@ -11,6 +9,7 @@ type TimeOffRequestRow = {
   endDate: string;
   durationDays: number;
   reason: string | null;
+  reviewNote: string | null;
   employee: { employeeCode: string; user: { fullName: string } };
 };
 
@@ -26,27 +25,21 @@ function fmt(d: string) {
 
 export default function VacacionesPage() {
   const [requests, setRequests] = useState<TimeOffRequestRow[]>([]);
-  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ employeeId: "", startDate: "", endDate: "", reason: "" });
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   const load = async () => {
     setLoading(true);
-    const [reqRes, empRes] = await Promise.all([
-      fetch("/api/rrhh-local/time-off"),
-      fetch("/api/rrhh-local/employees"),
-    ]);
+    const reqRes = await fetch("/api/rrhh-local/time-off");
     if (reqRes.ok) {
       const all: TimeOffRequestRow[] = await reqRes.json();
       setRequests(all.filter((r) => r.type === "VACATION"));
     } else {
       setError("No fue posible cargar las solicitudes de vacaciones");
     }
-    if (empRes.ok) setEmployees(await empRes.json());
     setLoading(false);
   };
 
@@ -54,35 +47,34 @@ export default function VacacionesPage() {
     load();
   }, []);
 
-  const resolve = async (id: string, status: "APPROVED" | "REJECTED") => {
+  const approve = async (id: string) => {
     setBusyId(id);
     const res = await fetch(`/api/rrhh-local/time-off/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status: "APPROVED" }),
     });
     if (res.ok) await load();
-    else setError("No fue posible resolver la solicitud");
+    else setError("No fue posible aprobar la solicitud");
     setBusyId(null);
   };
 
-  const submit = async () => {
-    setError("");
-    setSaving(true);
-    const res = await fetch("/api/rrhh-local/time-off", {
-      method: "POST",
+  const confirmReject = async () => {
+    if (!rejectingId || !rejectReason.trim()) return;
+    setBusyId(rejectingId);
+    const res = await fetch(`/api/rrhh-local/time-off/${rejectingId}`, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, type: "VACATION" }),
+      body: JSON.stringify({ status: "REJECTED", reviewNote: rejectReason.trim() }),
     });
     if (res.ok) {
-      setForm({ employeeId: "", startDate: "", endDate: "", reason: "" });
-      setCreating(false);
+      setRejectingId(null);
+      setRejectReason("");
       await load();
     } else {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error || "No fue posible crear la solicitud");
+      setError("No fue posible rechazar la solicitud");
     }
-    setSaving(false);
+    setBusyId(null);
   };
 
   if (loading) return <div className="p-6">Cargando…</div>;
@@ -91,42 +83,33 @@ export default function VacacionesPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-black text-[#1A1A1A]">Vacaciones</h1>
-        <button
-          onClick={() => setCreating((c) => !c)}
-          className="rounded-xl bg-[#27B1B8] px-4 py-2 text-sm font-bold text-white"
-        >
-          {creating ? "Cancelar" : "Nueva solicitud"}
-        </button>
       </div>
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
-      {creating && (
-        <div className="grid grid-cols-1 gap-3 rounded-xl border border-[#E2E8F0] bg-white p-4 md:grid-cols-3">
-          <select value={form.employeeId}
-            onChange={(e) => setForm({ ...form, employeeId: e.target.value })}
-            className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm">
-            <option value="">Selecciona empleado…</option>
-            {employees.map((e) => (
-              <option key={e.id} value={e.id}>{e.user.fullName} ({e.employeeCode})</option>
-            ))}
-          </select>
-          <input type="date" value={form.startDate}
-            onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-            className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
-          <input type="date" value={form.endDate}
-            onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-            className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
-          <input placeholder="Motivo" value={form.reason}
-            onChange={(e) => setForm({ ...form, reason: e.target.value })}
-            className="col-span-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
-          <button
-            onClick={submit}
-            disabled={saving || !form.employeeId || !form.startDate || !form.endDate}
-            className="col-span-full rounded-lg bg-[#27B1B8] px-3 py-2 text-sm font-bold text-white disabled:opacity-50"
-          >
-            {saving ? "Guardando…" : "Crear solicitud"}
-          </button>
+      {rejectingId && (
+        <div className="grid grid-cols-1 gap-3 rounded-xl border border-red-200 bg-red-50 p-4 md:grid-cols-3">
+          <input
+            placeholder="Motivo del rechazo"
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            className="col-span-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm md:col-span-2"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={confirmReject}
+              disabled={busyId === rejectingId || !rejectReason.trim()}
+              className="flex-1 rounded-lg bg-red-500 px-3 py-2 text-sm font-bold text-white disabled:opacity-50"
+            >
+              {busyId === rejectingId ? "Guardando…" : "Confirmar rechazo"}
+            </button>
+            <button
+              onClick={() => { setRejectingId(null); setRejectReason(""); }}
+              className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm font-bold text-[#1A1A1A]"
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
       )}
 
@@ -150,20 +133,24 @@ export default function VacacionesPage() {
                 <td className="p-3">{fmt(r.startDate)}</td>
                 <td className="p-3">{fmt(r.endDate)}</td>
                 <td className="p-3">{r.durationDays}</td>
-                <td className="p-3">{r.reason ?? "—"}</td>
+                <td className="p-3">
+                  {r.status === "REJECTED" && r.reviewNote
+                    ? <span className="text-red-500">Rechazada: {r.reviewNote}</span>
+                    : r.reason ?? "—"}
+                </td>
                 <td className="p-3">{STATUS_LABELS[r.status] ?? r.status}</td>
                 <td className="p-3">
                   {r.status === "PENDING" ? (
                     <div className="flex gap-2">
                       <button
-                        onClick={() => resolve(r.id, "APPROVED")}
+                        onClick={() => approve(r.id)}
                         disabled={busyId === r.id}
                         className="rounded-lg bg-[#27B1B8] px-2 py-1 text-xs font-bold text-white disabled:opacity-50"
                       >
                         Aprobar
                       </button>
                       <button
-                        onClick={() => resolve(r.id, "REJECTED")}
+                        onClick={() => { setRejectingId(r.id); setRejectReason(""); }}
                         disabled={busyId === r.id}
                         className="rounded-lg bg-red-500 px-2 py-1 text-xs font-bold text-white disabled:opacity-50"
                       >
