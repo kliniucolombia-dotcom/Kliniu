@@ -125,7 +125,7 @@ export const categoriasData: readonly CategoriaMeta[] = [
     ],
   },
   {
-    nombre: "Dispensador de crema dental",
+    nombre: "Dispensadores de pasta dental",
     color: "#4caf9a",
     icono: "◇",
     bannerImagen: "/cat-crema-dental.png",
@@ -136,12 +136,12 @@ export const categoriasData: readonly CategoriaMeta[] = [
     iconoImagen: "/cat-crema-dental.png",
     flipImagen: false,
     bannerCopy: "Sistemas de dispensación higiénica de crema dental para instituciones, colegios y empresas.",
-    heroTitulo1: "Dispensador de",
+    heroTitulo1: "Dispensadores de",
     heroTitulo2: "",
-    heroDestacado: "crema dental",
+    heroDestacado: "pasta dental",
     textoDark: true,
     comoElegirFoca: "/foca-como-elegir-crema-dental.png",
-    comoElegirTitulo: "dispensador de crema dental ideal",
+    comoElegirTitulo: "dispensador de pasta dental ideal",
     beneficiosHero: [
       { icono: "🧴", imagen: "/iconos/higiene-premium.png", texto: "Dosificación higiénica" },
       { icono: "💰", imagen: "/iconos/ahorro-insumos.png", texto: "Ahorro y control" },
@@ -690,7 +690,7 @@ export const productosCatalogo: ProductoCatalogo[] = [
   {
     slug: "dispensador-crema-dental-2-cepillos",
     sku: "DO PC JB1-000-005",
-    categoria: "Dispensador de crema dental",
+    categoria: "Dispensadores de pasta dental",
     nombre: "Dispensador de crema dental para 2 cepillos",
     marca: "Kliniu",
     precio: "$44.863",
@@ -720,7 +720,7 @@ export const productosCatalogo: ProductoCatalogo[] = [
   {
     slug: "dispensador-crema-dental-4-cepillos",
     sku: "DC 4-010",
-    categoria: "Dispensador de crema dental",
+    categoria: "Dispensadores de pasta dental",
     nombre: "Dispensador de Crema Dental para 4 cepillos",
     marca: "Kliniu",
     precio: "$49.899",
@@ -748,7 +748,7 @@ export const productosCatalogo: ProductoCatalogo[] = [
   },
   {
     slug: "dispensador-crema-dental-kids",
-    categoria: "Dispensador de crema dental",
+    categoria: "Dispensadores de pasta dental",
     nombre: "Dispensador de crema dental KIDS",
     marca: "Kliniu",
     precio: "$44.863",

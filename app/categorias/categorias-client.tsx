@@ -789,7 +789,7 @@ export default function CategoriasPage({
     "Dispensadores para líquidos": "Encuentra el dispensador de líquidos ideal",
     "Dispensadores de papel, toalla y servilletas": "Encuentra el dispensador de papel ideal",
     "KlinOx Acero Inoxidable": "Encuentra tu dispensador de acero inoxidable ideal",
-    "Dispensador de crema dental": "Encuentra tu dispensador de crema dental ideal",
+    "Dispensadores de pasta dental": "Encuentra tu dispensador de pasta dental ideal",
     "Hoteles y Restaurantes": "Encuentra tu dispensador de acero inoxidable ideal",
   };
 
