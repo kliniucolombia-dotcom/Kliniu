@@ -2,14 +2,22 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { MdDashboard, MdInventory2, MdCategory, MdBarChart, MdCampaign, MdAttachMoney, MdSettings, MdCalculate, MdDescription, MdPrecisionManufacturing, MdAssignment, MdPeople, MdImage, MdCardGiftcard, MdLocalOffer } from "react-icons/md";
+import {
+  MdDashboard, MdInventory2, MdCategory, MdBarChart, MdCampaign, MdAttachMoney, MdSettings,
+  MdCalculate, MdDescription, MdPrecisionManufacturing, MdAssignment, MdPeople, MdImage,
+  MdCardGiftcard, MdLocalOffer, MdWork, MdHome, MdSearch, MdNotificationsNone, MdPersonOutline,
+  MdApartment, MdAccessTime, MdBeachAccess, MdRemoveCircleOutline, MdSwapHoriz, MdHandshake,
+  MdCreditCard, MdHelpOutline, MdGroup,
+} from "react-icons/md";
+
+type NavChild = { href: string; label: string; group?: string; groupIcon?: React.ReactNode; icon?: React.ReactNode };
 
 type NavItem = {
   href: string;
   label: string;
   icon: React.ReactNode;
   module: string;
-  children?: Array<{ href: string; label: string }>;
+  children?: NavChild[];
 };
 
 const NAV: NavItem[] = [
@@ -41,6 +49,37 @@ const NAV: NavItem[] = [
     ],
   },
   { href: "/panel/usuarios", label: "Usuarios", icon: <MdPeople size={18} />, module: "MODULE_USUARIOS" },
+  {
+    href: "/panel/rrhh",
+    label: "Recursos Humanos",
+    icon: <MdWork size={18} />,
+    module: "MODULE_RRHH",
+    children: [
+      { href: "/panel/rrhh", label: "Dashboard", group: "General", groupIcon: <MdHome size={14} />, icon: <MdHome size={17} /> },
+      { href: "/panel/rrhh/busqueda", label: "Búsqueda", icon: <MdSearch size={17} /> },
+      { href: "/panel/rrhh/notificaciones", label: "Notificaciones", icon: <MdNotificationsNone size={17} /> },
+
+      { href: "/panel/rrhh/empleados", label: "Empleados", group: "Capital humano", groupIcon: <MdGroup size={14} />, icon: <MdPersonOutline size={17} /> },
+      { href: "/panel/rrhh/departamentos", label: "Departamentos", icon: <MdApartment size={17} /> },
+      { href: "/panel/rrhh/asistencia", label: "Asistencia", icon: <MdAccessTime size={17} /> },
+      { href: "/panel/rrhh/vacaciones", label: "Vacaciones", icon: <MdBeachAccess size={17} /> },
+      { href: "/panel/rrhh/ausencias", label: "Ausencias", icon: <MdRemoveCircleOutline size={17} /> },
+      { href: "/panel/rrhh/nomina", label: "Nómina", icon: <MdAttachMoney size={17} /> },
+
+      { href: "/panel/rrhh/documentos", label: "Documentos", group: "Operación", groupIcon: <MdAssignment size={14} />, icon: <MdDescription size={17} /> },
+      { href: "/panel/rrhh/flujos", label: "Flujos", icon: <MdSwapHoriz size={17} /> },
+      { href: "/panel/rrhh/inventario", label: "Inventario", icon: <MdInventory2 size={17} /> },
+      { href: "/panel/rrhh/crm", label: "CRM", icon: <MdHandshake size={17} /> },
+
+      { href: "/panel/rrhh/tesoreria", label: "Tesorería", group: "Finanzas", groupIcon: <MdCreditCard size={14} />, icon: <MdCreditCard size={17} /> },
+      { href: "/panel/rrhh/contabilidad", label: "Contabilidad", icon: <MdBarChart size={17} /> },
+      { href: "/panel/rrhh/reportes", label: "Reportes", icon: <MdBarChart size={17} /> },
+
+      { href: "/panel/rrhh/vendedores", label: "Vendedores", group: "Equipo Kliniu", groupIcon: <MdGroup size={14} />, icon: <MdPeople size={17} /> },
+      { href: "/panel/rrhh/roles", label: "Roles", icon: <MdAssignment size={17} /> },
+      { href: "/panel/rrhh/ayuda", label: "Ayuda", icon: <MdHelpOutline size={17} /> },
+    ],
+  },
 ];
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
@@ -162,22 +201,44 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                   )}
                 </Link>
                 {!collapsed && item.children && active && (
-                  <div className="mt-1 space-y-1 pl-8">
-                    {item.children.map((child) => {
+                  <div className="mt-3 pl-1">
+                    {item.children.map((child, i) => {
                       const childActive = pathname === child.href;
+                      const showGroup = Boolean(child.group);
 
                       return (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          className={`block rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
-                            childActive
-                              ? "bg-[#E8FAFB] text-[#0C535B]"
-                              : "text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#1A1A1A]"
-                          }`}
-                        >
-                          {child.label}
-                        </Link>
+                        <div key={child.href}>
+                          {showGroup && (
+                            <div
+                              className={`flex items-center gap-1.5 px-3 pb-2 text-[#94A3B8] ${
+                                i === 0 ? "" : "mt-6 border-t border-[#F1F5F9] pt-5"
+                              }`}
+                            >
+                              {child.groupIcon}
+                              <p className="text-[12px] font-semibold uppercase tracking-wide">
+                                {child.group}
+                              </p>
+                            </div>
+                          )}
+                          <Link
+                            href={child.href}
+                            className={`relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                              childActive
+                                ? "bg-[#E8FAFB] text-[#0C535B]"
+                                : "text-[#475569] hover:bg-[#F8FAFC] hover:text-[#1A1A1A]"
+                            }`}
+                          >
+                            {childActive && (
+                              <span className="absolute inset-y-1 left-0 w-[3px] rounded-full bg-[#27B1B8]" />
+                            )}
+                            {child.icon && (
+                              <span className="flex shrink-0 items-center justify-center opacity-80">
+                                {child.icon}
+                              </span>
+                            )}
+                            {child.label}
+                          </Link>
+                        </div>
                       );
                     })}
                   </div>

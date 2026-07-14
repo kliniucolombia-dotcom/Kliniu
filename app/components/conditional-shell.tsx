@@ -5,7 +5,7 @@ import SiteHeader from "./site-header";
 import SupportChat from "./support-chat";
 
 type Props = {
-  currentUser: { fullName: string; role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" } | null;
+  currentUser: { fullName: string; role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" } | null;
   children: React.ReactNode;
 };
 

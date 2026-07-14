@@ -15,6 +15,11 @@ export function isStaff(user: RoleHolder): boolean {
     user.role === "ADMIN" ||
     user.role === "SELLER" ||
     user.role === "PACKING" ||
+    user.role === "RRHH" ||
     isSuperAdmin(user)
   );
+}
+
+export function isRRHH(user: RoleHolder): boolean {
+  return user.role === "RRHH" || isSuperAdmin(user);
 }

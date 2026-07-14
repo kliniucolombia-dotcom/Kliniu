@@ -15,7 +15,7 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => ({})) as {
     fullName?: string; email?: string; password?: string;
-    role?: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN";
+    role?: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH";
   };
 
   if (!body.fullName?.trim() || !body.email?.trim() || !body.password || !body.role) {

@@ -81,6 +81,7 @@ model User {
   productionRuns           ProductionRun[]    @relation("ProductionOperator")
   productionOrdersCreated  ProductionOrder[]  @relation("ProductionOrderCreatedBy")
   productionOrdersApproved ProductionOrder[]  @relation("ProductionOrderApprovedBy")
+  employee                 Employee?
 }
 
 model CartItem {
@@ -104,41 +105,41 @@ model CartItem {
 }
 
 model Order {
-  id               String         @id @default(cuid())
-  userId           String
-  status           OrderStatus    @default(PENDING)
-  paymentStatus    PaymentStatus  @default(PENDING)
-  shippingStatus   ShippingStatus @default(PENDING)
-  customerName     String
-  customerEmail    String
-  customerPhone    String
-  company          String?
-  department       String
-  city             String
-  addressLine1     String
-  addressLine2     String?
-  notes            String?
-  carrier          String?
-  trackingNumber   String?
-  adminNotes       String?
-  shippedAt        DateTime?
-  deliveredAt      DateTime?
-  subtotal         Int
-  totalItems       Int
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  assignedSellerId String?
-  odooOrderId      Int?
-  odooOrderName    String?
-  odooSyncStatus   OdooSyncStatus @default(NOT_SYNCED)
-  odooSyncError    String?
-  odooSyncedAt     DateTime?
-  wompiReference   String?        @unique
+  id                 String         @id @default(cuid())
+  userId             String
+  status             OrderStatus    @default(PENDING)
+  paymentStatus      PaymentStatus  @default(PENDING)
+  shippingStatus     ShippingStatus @default(PENDING)
+  customerName       String
+  customerEmail      String
+  customerPhone      String
+  company            String?
+  department         String
+  city               String
+  addressLine1       String
+  addressLine2       String?
+  notes              String?
+  carrier            String?
+  trackingNumber     String?
+  adminNotes         String?
+  shippedAt          DateTime?
+  deliveredAt        DateTime?
+  subtotal           Int
+  totalItems         Int
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  assignedSellerId   String?
+  odooOrderId        Int?
+  odooOrderName      String?
+  odooSyncStatus     OdooSyncStatus @default(NOT_SYNCED)
+  odooSyncError      String?
+  odooSyncedAt       DateTime?
+  wompiReference     String?        @unique
   wompiTransactionId String?
-  assignedSeller   User?          @relation("AssignedOrders", fields: [assignedSellerId], references: [id])
-  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items            OrderItem[]
-  quotation        Quotation?
+  assignedSeller     User?          @relation("AssignedOrders", fields: [assignedSellerId], references: [id])
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items              OrderItem[]
+  quotation          Quotation?
 }
 
 enum OdooSyncStatus {
@@ -366,6 +367,7 @@ enum UserRole {
   SELLER
   PACKING
   SUPERADMIN
+  RRHH
 }
 
 enum UserStatus {
@@ -388,6 +390,7 @@ enum PanelModule {
   MODULE_USUARIOS
   MODULE_BANNERS
   MODULE_COMBOS
+  MODULE_RRHH
 }
 
 enum BannerType {
@@ -630,4 +633,116 @@ model UserPermission {
 
   @@unique([userId, module])
   @@index([userId])
+}
+
+model Department {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  employees Employee[]
+}
+
+model Employee {
+  id              String         @id @default(cuid())
+  userId          String         @unique
+  employeeCode    String         @unique
+  jobTitle        String
+  departmentId    String?
+  contractType    ContractType   @default(INDEFINITE)
+  status          EmployeeStatus @default(ACTIVE)
+  hireDate        DateTime
+  terminationDate DateTime?
+  salaryAmount    Int?
+  salaryCurrency  String         @default("COP")
+  salaryPeriod    SalaryPeriod   @default(MONTHLY)
+  eps             String?
+  afp             String?
+  arl             String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department Department? @relation(fields: [departmentId], references: [id])
+
+  timeOffRequests   TimeOffRequest[]
+  attendanceRecords AttendanceRecord[]
+
+  @@index([departmentId])
+}
+
+model TimeOffRequest {
+  id           String        @id @default(cuid())
+  employeeId   String
+  type         TimeOffType
+  startDate    DateTime
+  endDate      DateTime
+  durationDays Int
+  reason       String?
+  status       TimeOffStatus @default(PENDING)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+}
+
+enum TimeOffType {
+  VACATION
+  PERMIT
+  LEAVE
+  INCAPACITY
+  UNPAID
+}
+
+enum TimeOffStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model AttendanceRecord {
+  id         String           @id @default(cuid())
+  employeeId String
+  date       DateTime
+  status     AttendanceStatus @default(PRESENT)
+  note       String?
+  createdAt  DateTime         @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, date])
+  @@index([employeeId])
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+}
+
+enum ContractType {
+  INDEFINITE
+  FIXED_TERM
+  WORK_OR_LABOR
+  APPRENTICESHIP
+  TEMPORARY
+  CIVIL
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  ON_LEAVE
+  TERMINATED
+}
+
+enum SalaryPeriod {
+  MONTHLY
+  BIWEEKLY
+  HOURLY
 }

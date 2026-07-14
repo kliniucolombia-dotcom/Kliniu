@@ -8,7 +8,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const body = await request.json().catch(() => ({})) as {
     fullName?: string; email?: string;
-    role?: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN";
+    role?: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH";
     status?: "ACTIVE" | "INACTIVE" | "SUSPENDED";
     newPassword?: string;
   };

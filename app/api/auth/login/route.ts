@@ -59,10 +59,11 @@ export async function POST(request: Request) {
     });
 
     const redirectTo =
-      user.role === "ADMIN"      ? "/admin"   :
-      user.role === "SUPERADMIN" ? "/panel"   :
-      user.role === "SELLER"     ? "/panel"   :
-      user.role === "PACKING"    ? "/empaque" :
+      user.role === "ADMIN"      ? "/admin"      :
+      user.role === "SUPERADMIN" ? "/panel"      :
+      user.role === "SELLER"     ? "/panel"      :
+      user.role === "PACKING"    ? "/empaque"    :
+      user.role === "RRHH"       ? "/panel/rrhh" :
       "/mi-cuenta";
 
     return Response.json({

@@ -23,7 +23,7 @@ export type PublicUser = {
   city: string | null;
   addressLine1: string | null;
   addressLine2: string | null;
-  role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN";
+  role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH";
   status: "ACTIVE" | "INACTIVE" | "SUSPENDED";
   createdAt: Date;
 };
@@ -250,7 +250,7 @@ export type CreateUserByAdminInput = {
   fullName: string;
   email: string;
   password: string;
-  role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN";
+  role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH";
 };
 
 export async function createUserByAdmin(input: CreateUserByAdminInput): Promise<PublicUser> {
@@ -308,7 +308,7 @@ export async function listUsers(): Promise<PublicUser[]> {
 export type UpdateUserByAdminInput = {
   fullName?: string;
   email?: string;
-  role?: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN";
+  role?: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH";
   status?: "ACTIVE" | "INACTIVE" | "SUSPENDED";
   newPassword?: string;
 };
@@ -396,7 +396,7 @@ export async function updateUserByAdmin(userId: string, input: UpdateUserByAdmin
 
   const data: {
     fullName?: string; email?: string;
-    role?: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN";
+    role?: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH";
     status?: "ACTIVE" | "INACTIVE" | "SUSPENDED";
     passwordHash?: string;
   } = {};

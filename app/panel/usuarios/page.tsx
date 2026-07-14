@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 
-type Role = "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN";
+type Role = "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH";
 type Status = "ACTIVE" | "INACTIVE" | "SUSPENDED";
 
 type UserRow = {
@@ -49,7 +49,7 @@ const MODULE_LABELS: Record<string, string> = {
   MODULE_COMBOS: "Combos",
 };
 
-const ROLES: Role[] = ["CUSTOMER", "ADMIN", "SELLER", "PACKING", "SUPERADMIN"];
+const ROLES: Role[] = ["CUSTOMER", "ADMIN", "SELLER", "PACKING", "SUPERADMIN", "RRHH"];
 const STATUSES: Status[] = ["ACTIVE", "INACTIVE", "SUSPENDED"];
 
 const ROLE_LABELS: Record<Role, string> = {
@@ -58,6 +58,7 @@ const ROLE_LABELS: Record<Role, string> = {
   SELLER: "Vendedor",
   PACKING: "Empaque",
   SUPERADMIN: "Superadmin",
+  RRHH: "Recursos Humanos",
 };
 
 const STATUS_LABELS: Record<Status, string> = {

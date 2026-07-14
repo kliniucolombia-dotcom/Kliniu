@@ -1,6 +1,6 @@
 import { getSessionFromCookies, type SessionPayload } from "@/lib/auth";
 import { getUserById, type PublicUser } from "@/lib/users";
-import { isAdmin, isSuperAdmin } from "@/lib/roles";
+import { isAdmin, isSuperAdmin, isRRHH } from "@/lib/roles";
 import { DEFAULT_PERMISSIONS, ALL_MODULES, type Permission } from "@/lib/permission-defaults";
 import { prisma } from "@/lib/prisma";
 import type { PanelModule } from "@/generated/prisma/client";
@@ -88,5 +88,13 @@ export async function requireSuperAdmin(): Promise<AuthResult> {
   if (!resolved.ok) return resolved;
 
   if (!isSuperAdmin(resolved.user)) return { ok: false, status: 403 };
+  return resolved;
+}
+
+export async function requireRRHH(): Promise<AuthResult> {
+  const resolved = await resolveActiveUser();
+  if (!resolved.ok) return resolved;
+
+  if (!isRRHH(resolved.user)) return { ok: false, status: 403 };
   return resolved;
 }
