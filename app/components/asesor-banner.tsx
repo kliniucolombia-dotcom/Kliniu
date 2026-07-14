@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 export type AsesorBannerData = {
   desktopImage: string | null;
@@ -6,8 +9,16 @@ export type AsesorBannerData = {
   link: string | null;
 };
 
+const ASESORES = ["573112088806", "573226556454", "573105750449"];
+
 export default function AsesorBanner({ banner }: { banner?: AsesorBannerData }) {
-  const link = banner?.link ?? "https://wa.me/573214198831";
+  const [phone, setPhone] = useState(ASESORES[0]);
+
+  useEffect(() => {
+    setPhone(ASESORES[Math.floor(Math.random() * ASESORES.length)]);
+  }, []);
+
+  const link = banner?.link ?? `https://wa.me/${phone}`;
   const desktopImage = banner?.desktopImage ?? "/banners-web/BANNER-FINALES-20.png";
 
   return (
