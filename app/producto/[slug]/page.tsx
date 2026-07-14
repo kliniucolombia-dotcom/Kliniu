@@ -480,7 +480,22 @@ export default function ProductoDetallePage() {
 
   const tiposVariantes = producto ? TIPO_VARIANTES[producto.slug] : undefined;
   const tipoVarianteActiva = tiposVariantes?.[tipoActivo];
-  const colorVarianteActiva = producto?.variacionesColor?.[colorActivo];
+
+  const variacionesColor = producto?.variacionesColor ?? [];
+
+  // Prepend the base product image as "Blanco" cuando faltan colores y ninguna variante trae SKU propio
+  // (productos con SKU por color ya declaran todos sus colores reales explícitamente, no hay "Blanco" implícito que rellenar)
+  const allVariants = useMemo(() => {
+    if (!producto || variacionesColor.length === 0) return [];
+    const hasBlanco = variacionesColor.some((v) => v.label.toLowerCase() === "blanco");
+    const hasSku = variacionesColor.some((v) => v.sku);
+    return hasBlanco || hasSku
+      ? variacionesColor
+      : [{ color: "#ffffff", label: "Blanco", image: producto.imagen, images: [producto.imagen] }, ...variacionesColor];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [producto]);
+
+  const colorVarianteActiva = allVariants[colorActivo];
 
   // Código sin sello / con sello: prioriza el de la variante de tipo (ej. Xpert
   // Bolsa/Botella) o de color (ej. Antigoteo Blanco/Negro) sobre el del producto base.
@@ -517,18 +532,6 @@ export default function ProductoDetallePage() {
     if (agregadoTimeout.current) clearTimeout(agregadoTimeout.current);
     agregadoTimeout.current = setTimeout(() => setAgregado(false), 1200);
   };
-
-  const variacionesColor = producto?.variacionesColor ?? [];
-
-  // Prepend the base product image as "Blanco" when there are other color variants and no explicit Blanco
-  const allVariants = useMemo(() => {
-    if (!producto || variacionesColor.length === 0) return [];
-    const hasBlanco = variacionesColor.some((v) => v.label.toLowerCase() === "blanco");
-    return hasBlanco
-      ? variacionesColor
-      : [{ color: "#ffffff", label: "Blanco", image: producto.imagen, images: [producto.imagen] }, ...variacionesColor];
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [producto]);
 
   const galleryImages = useMemo(() => {
     if (!producto) return [];
