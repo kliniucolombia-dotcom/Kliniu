@@ -4,6 +4,7 @@ import HeroCarousel from "./components/hero-carousel";
 import ProductosCarousel from "./components/productos-carousel";
 import SiteFooter from "./components/site-footer";
 import VideoModal from "./components/video-modal";
+import WhatsAppAsesor from "./components/whatsapp-asesor";
 import { getFeaturedProducts } from "@/lib/products";
 import { getActiveCombos } from "@/lib/combos";
 import { getBannersByKeys } from "@/lib/banners";
@@ -130,12 +131,12 @@ export default async function Home() {
       <section className="home-reveal bg-white px-4 py-10 sm:px-6 md:py-16">
         <div className="mx-auto grid max-w-[1440px] gap-4 md:grid-cols-2 md:gap-5">
           {/* Asesoría → WhatsApp */}
-          <a href={bannerAsesoria?.link ?? "https://wa.me/573125860921"} target="_blank" rel="noreferrer" className="interactive-lift block overflow-hidden rounded-2xl">
+          <WhatsAppAsesor randomAsesor overrideLink={bannerAsesoria?.link} className="interactive-lift block overflow-hidden rounded-2xl">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={bannerAsesoria?.desktopImage ?? "/banners-web/BANNER-FINALES-13.png"} alt="Asesoría Kliniu" className="hidden w-full object-cover md:block" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={bannerAsesoria?.mobileImage ?? "/banners-responsive/BANNER-FINALES-32.png"} alt="Asesoría Kliniu" className="w-full object-cover md:hidden" />
-          </a>
+          </WhatsAppAsesor>
 
           {/* Insumos → /categorias?tipo=insumos */}
           <Link href={bannerInsumos?.link ?? "/categorias?tipo=insumos"} className="interactive-lift block overflow-hidden rounded-2xl">
