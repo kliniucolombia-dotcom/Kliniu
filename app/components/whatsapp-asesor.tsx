@@ -16,12 +16,7 @@ export default function WhatsAppAsesor({ children, className, message, randomAse
   const [href, setHref] = useState(`https://wa.me/${FALLBACK}`);
 
   useEffect(() => {
-    if (randomAsesor) {
-      const phone = ASESORES[Math.floor(Math.random() * ASESORES.length)];
-      const text = message ?? "Hola, tengo una consulta sobre un producto de Kliniu";
-      setHref(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`);
-      return;
-    }
+    if (randomAsesor) return;
     fetch("/api/seller/contact")
       .then((r) => r.json())
       .then((d: { phone: string; name: string }) => {
@@ -31,8 +26,16 @@ export default function WhatsAppAsesor({ children, className, message, randomAse
       .catch(() => {});
   }, [message, randomAsesor]);
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (!randomAsesor) return;
+    e.preventDefault();
+    const phone = ASESORES[Math.floor(Math.random() * ASESORES.length)];
+    const text = message ?? "Hola, tengo una consulta sobre un producto de Kliniu";
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+  };
+
   return (
-    <a href={href} target="_blank" rel="noreferrer" className={className}>
+    <a href={randomAsesor ? "#" : href} onClick={handleClick} target="_blank" rel="noreferrer" className={className}>
       {children}
     </a>
   );

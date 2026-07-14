@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
 
 export type AsesorBannerData = {
   desktopImage: string | null;
@@ -11,14 +10,18 @@ export type AsesorBannerData = {
 
 const ASESORES = ["573112088806", "573226556454", "573105750449"];
 
+function pickAsesorLink(customLink: string | null | undefined) {
+  if (customLink) return customLink;
+  const phone = ASESORES[Math.floor(Math.random() * ASESORES.length)];
+  return `https://wa.me/${phone}`;
+}
+
 export default function AsesorBanner({ banner }: { banner?: AsesorBannerData }) {
-  const [phone, setPhone] = useState(ASESORES[0]);
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.open(pickAsesorLink(banner?.link), "_blank", "noopener,noreferrer");
+  };
 
-  useEffect(() => {
-    setPhone(ASESORES[Math.floor(Math.random() * ASESORES.length)]);
-  }, []);
-
-  const link = banner?.link ?? `https://wa.me/${phone}`;
   const desktopImage = banner?.desktopImage ?? "/banners-web/BANNER-FINALES-20.png";
 
   return (
@@ -41,9 +44,8 @@ export default function AsesorBanner({ banner }: { banner?: AsesorBannerData }) 
             ¿Necesitas ayuda<br />para elegir?
           </p>
           <a
-            href={link}
-            target="_blank"
-            rel="noreferrer"
+            href="#"
+            onClick={handleClick}
             className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#0C535B] px-5 py-2.5 text-sm font-extrabold text-white transition-opacity hover:opacity-90"
           >
             <span>Hablar con un asesor</span>
@@ -54,7 +56,7 @@ export default function AsesorBanner({ banner }: { banner?: AsesorBannerData }) 
 
       {/* DESKTOP */}
       <div className="mx-auto hidden w-full max-w-[1440px] px-4 md:block md:px-2">
-        <a href={link} target="_blank" rel="noreferrer" className="block w-full">
+        <a href="#" onClick={handleClick} className="block w-full">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={desktopImage}
