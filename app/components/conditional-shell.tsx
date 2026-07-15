@@ -3,9 +3,10 @@
 import { usePathname } from "next/navigation";
 import SiteHeader from "./site-header";
 import SupportChat from "./support-chat";
+import type { UserRole } from "@/generated/prisma/client";
 
 type Props = {
-  currentUser: { fullName: string; role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "EMPLOYEE" } | null;
+  currentUser: { fullName: string; role: UserRole } | null;
   children: React.ReactNode;
 };
 

@@ -46,9 +46,9 @@ export async function getDashboardStats() {
   const startOfWeek  = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
 
   const [todayOrders, weekOrders, monthOrders, campaigns, products, newCustomers] = await Promise.all([
-    prisma.order.findMany({ where: { createdAt: { gte: startOfDay }, status: { not: "CANCELLED" } }, select: { subtotal: true } }),
-    prisma.order.findMany({ where: { createdAt: { gte: startOfWeek }, status: { not: "CANCELLED" } }, select: { subtotal: true } }),
-    prisma.order.findMany({ where: { createdAt: { gte: startOfMonth }, status: { not: "CANCELLED" } }, select: { subtotal: true, userId: true } }),
+    prisma.order.findMany({ where: { createdAt: { gte: startOfDay }, status: "PAID" }, select: { subtotal: true } }),
+    prisma.order.findMany({ where: { createdAt: { gte: startOfWeek }, status: "PAID" }, select: { subtotal: true } }),
+    prisma.order.findMany({ where: { createdAt: { gte: startOfMonth }, status: "PAID" }, select: { subtotal: true, userId: true } }),
     prisma.campaign.findMany({ include: { seller: { select: { id: true, fullName: true } }, product: { select: { name: true, image: true } } } }),
     prisma.product.count({ where: { active: true } }),
     prisma.user.count({ where: { role: "CUSTOMER", createdAt: { gte: startOfMonth } } }),
@@ -69,7 +69,7 @@ export async function getDashboardStats() {
   // Top product from orders this month
   const itemCounts: Record<string, { name: string; qty: number }> = {};
   const monthOrderItems = await prisma.orderItem.findMany({
-    where: { order: { createdAt: { gte: startOfMonth }, status: { not: "CANCELLED" } } },
+    where: { order: { createdAt: { gte: startOfMonth }, status: "PAID" } },
     select: { productId: true, name: true, quantity: true },
   });
   for (const item of monthOrderItems) {
@@ -127,7 +127,7 @@ export async function getSellerStats() {
       email: true,
       whatsappPhone: true,
       assignedOrders: {
-        where: { status: { not: "CANCELLED" } },
+        where: { status: "PAID" },
         select: { subtotal: true, createdAt: true, shippingStatus: true },
       },
     },

@@ -369,6 +369,12 @@ enum UserRole {
   SUPERADMIN
   RRHH
   EMPLOYEE
+  BODEGA
+  DISENO
+  MARKETING
+  JEFE_VENTAS
+  TESORERIA
+  INGENIERIA
 }
 
 enum UserStatus {

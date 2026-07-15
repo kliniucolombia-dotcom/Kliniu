@@ -8,17 +8,20 @@ import { useCart } from "./cart-provider";
 import { useProducts } from "./products-provider";
 import { categoriasData, slugCategoria } from "../data/catalog";
 import AdvisorCtaCard from "./advisor-cta-card";
+import type { UserRole } from "@/generated/prisma/client";
 
 type SiteHeaderProps = {
   currentUser: {
     fullName: string;
-    role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "EMPLOYEE";
+    role: UserRole;
   } | null;
 };
 
-function getUserHref(role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "EMPLOYEE"): string {
+const PANEL_ROLES: UserRole[] = ["SELLER", "SUPERADMIN", "BODEGA", "DISENO", "MARKETING", "JEFE_VENTAS", "TESORERIA", "INGENIERIA"];
+
+function getUserHref(role: UserRole): string {
   if (role === "ADMIN") return "/admin";
-  if (role === "SELLER" || role === "SUPERADMIN") return "/panel";
+  if (PANEL_ROLES.includes(role)) return "/panel";
   if (role === "RRHH") return "/panel/rrhh";
   if (role === "EMPLOYEE") return "/empleado";
   return "/mi-cuenta";

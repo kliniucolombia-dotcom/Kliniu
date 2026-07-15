@@ -59,15 +59,15 @@ export async function POST(request: Request) {
       role: user.role,
     });
 
-    const fullUser = (user.role === "SELLER" || user.role === "RRHH") ? await getUserById(user.id) : null;
+    const PANEL_ROLES = ["SELLER", "RRHH", "BODEGA", "DISENO", "MARKETING", "JEFE_VENTAS", "TESORERIA", "INGENIERIA"];
+    const fullUser = PANEL_ROLES.includes(user.role) ? await getUserById(user.id) : null;
 
     const redirectTo =
       user.role === "ADMIN"      ? "/admin"      :
       user.role === "SUPERADMIN" ? "/panel"      :
-      user.role === "SELLER"     ? await getPanelLandingPath(fullUser!) :
       user.role === "PACKING"    ? "/empaque"    :
-      user.role === "RRHH"       ? await getPanelLandingPath(fullUser!) :
       user.role === "EMPLOYEE"   ? "/empleado"   :
+      PANEL_ROLES.includes(user.role) ? await getPanelLandingPath(fullUser!) :
       "/mi-cuenta";
 
     return Response.json({

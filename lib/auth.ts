@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import type { UserRole } from "@/generated/prisma/client";
 
 const SESSION_COOKIE_NAME = "kliniu_session";
 const encoder = new TextEncoder();
@@ -15,7 +16,7 @@ function getSessionKey() {
 export type SessionPayload = {
   userId: string;
   email: string;
-  role: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "EMPLOYEE";
+  role: UserRole;
 };
 
 export async function createSessionToken(payload: SessionPayload) {

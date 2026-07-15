@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { DEFAULT_PERMISSIONS } from "@/lib/permission-defaults";
 
-type Role = "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH";
+type Role = "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "BODEGA" | "DISENO" | "MARKETING" | "JEFE_VENTAS" | "TESORERIA" | "INGENIERIA";
 type Status = "ACTIVE" | "INACTIVE" | "SUSPENDED";
 
 type UserRow = {
@@ -52,25 +53,7 @@ const MODULE_LABELS: Record<string, string> = {
   MODULE_OUTLET: "Outlet",
 };
 
-const SELLER_DEFAULT_PERMS: Record<string, Omit<ModulePermission, "module" | "isOverride">> = {
-  MODULE_DASHBOARD: { canView: true, canCreate: false, canEdit: false, canDelete: false },
-  MODULE_PEDIDOS: { canView: true, canCreate: false, canEdit: true, canDelete: false },
-  MODULE_PRODUCTOS: { canView: true, canCreate: false, canEdit: true, canDelete: false },
-  MODULE_METRICAS: { canView: true, canCreate: false, canEdit: false, canDelete: false },
-  MODULE_CAMPANAS: { canView: true, canCreate: true, canEdit: true, canDelete: true },
-  MODULE_COSTOS: { canView: true, canCreate: true, canEdit: true, canDelete: false },
-  MODULE_CALCULADORA_PRECIO: { canView: true, canCreate: true, canEdit: true, canDelete: true },
-  MODULE_COTIZACIONES: { canView: true, canCreate: true, canEdit: true, canDelete: true },
-  MODULE_PRODUCCION: { canView: true, canCreate: true, canEdit: true, canDelete: true },
-  MODULE_ODOO: { canView: false, canCreate: false, canEdit: false, canDelete: false },
-  MODULE_USUARIOS: { canView: false, canCreate: false, canEdit: false, canDelete: false },
-  MODULE_BANNERS: { canView: false, canCreate: false, canEdit: false, canDelete: false },
-  MODULE_COMBOS: { canView: true, canCreate: true, canEdit: true, canDelete: false },
-  MODULE_RRHH: { canView: false, canCreate: false, canEdit: false, canDelete: false },
-  MODULE_OUTLET: { canView: true, canCreate: true, canEdit: true, canDelete: false },
-};
-
-const ROLES: Role[] = ["CUSTOMER", "ADMIN", "SELLER", "PACKING", "SUPERADMIN", "RRHH"];
+const ROLES: Role[] = ["CUSTOMER", "ADMIN", "SELLER", "PACKING", "SUPERADMIN", "RRHH", "BODEGA", "DISENO", "MARKETING", "JEFE_VENTAS", "TESORERIA", "INGENIERIA"];
 const STATUSES: Status[] = ["ACTIVE", "INACTIVE", "SUSPENDED"];
 
 const ROLE_LABELS: Record<Role, string> = {
@@ -80,6 +63,12 @@ const ROLE_LABELS: Record<Role, string> = {
   PACKING: "Empaque",
   SUPERADMIN: "Superadmin",
   RRHH: "Recursos Humanos",
+  BODEGA: "Bodega",
+  DISENO: "Diseño",
+  MARKETING: "Marketing",
+  JEFE_VENTAS: "Jefe de Ventas",
+  TESORERIA: "Tesorería",
+  INGENIERIA: "Ingeniería",
 };
 
 const STATUS_LABELS: Record<Status, string> = {
@@ -95,6 +84,12 @@ const ROLE_BADGE: Record<Role, string> = {
   PACKING: "bg-[#FFEDD5] text-[#C2410C]",
   SUPERADMIN: "bg-[#EDE9FE] text-[#6D28D9]",
   RRHH: "bg-[#FCE7F3] text-[#BE185D]",
+  BODEGA: "bg-[#FEF3C7] text-[#B45309]",
+  DISENO: "bg-[#FCE7F3] text-[#BE185D]",
+  MARKETING: "bg-[#DCFCE7] text-[#15803D]",
+  JEFE_VENTAS: "bg-[#DBEAFE] text-[#1D4ED8]",
+  TESORERIA: "bg-[#EDE9FE] text-[#6D28D9]",
+  INGENIERIA: "bg-[#FEE2E2] text-[#DC2626]",
 };
 
 const STATUS_DOT: Record<Status, string> = {
@@ -297,6 +292,7 @@ export default function UsuariosPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [toast, setToast] = useState("");
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ fullName: "", email: "", password: "", role: "SELLER" as Role });
   const [showPassword, setShowPassword] = useState(false);
@@ -329,6 +325,11 @@ export default function UsuariosPage() {
 
   useEffect(() => { loadUsers(); }, []);
 
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(""), 3000);
+  };
+
   const createUser = async () => {
     setError("");
     const res = await fetch("/api/panel/users", {
@@ -342,7 +343,8 @@ export default function UsuariosPage() {
       setCreating(false);
       loadUsers();
       setPermUserId(newUser.id);
-      const defaults = form.role === "SELLER" ? SELLER_DEFAULT_PERMS : {};
+      const defaults: Partial<Record<string, Omit<ModulePermission, "module" | "isOverride">>> =
+        form.role === "SUPERADMIN" ? {} : DEFAULT_PERMISSIONS[form.role as Exclude<Role, "SUPERADMIN">];
       setPerms(Object.keys(MODULE_LABELS).map((module) => ({
         module,
         isOverride: true,
@@ -351,13 +353,14 @@ export default function UsuariosPage() {
         canEdit: defaults[module]?.canEdit ?? false,
         canDelete: defaults[module]?.canDelete ?? false,
       })));
+      showToast("Usuario creado correctamente");
     } else {
       const data = await res.json().catch(() => ({}));
       setError(data.error ?? "Error al crear usuario");
     }
   };
 
-  const updateUser = async (id: string, patch: Partial<Pick<UserRow, "role" | "status" | "email">> & { newPassword?: string }) => {
+  const updateUser = async (id: string, patch: Partial<Pick<UserRow, "role" | "status" | "email">> & { newPassword?: string }, successMsg?: string) => {
     const res = await fetch(`/api/panel/users/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -365,6 +368,7 @@ export default function UsuariosPage() {
     });
     if (res.ok) {
       loadUsers();
+      showToast(successMsg ?? "Usuario actualizado correctamente");
     } else {
       const data = await res.json().catch(() => ({}));
       setError(data.error ?? "Error al actualizar usuario");
@@ -379,7 +383,7 @@ export default function UsuariosPage() {
   const confirmEditEmail = () => {
     if (!emailTarget) return;
     const value = emailValue.trim();
-    if (value && value !== emailTarget.email) updateUser(emailTarget.id, { email: value });
+    if (value && value !== emailTarget.email) updateUser(emailTarget.id, { email: value }, "Correo actualizado correctamente");
     setEmailTarget(null);
   };
 
@@ -392,7 +396,7 @@ export default function UsuariosPage() {
   const confirmEditPassword = () => {
     if (!passwordTarget) return;
     const value = passwordValue.trim();
-    if (value) updateUser(passwordTarget.id, { newPassword: value });
+    if (value) updateUser(passwordTarget.id, { newPassword: value }, "Contraseña actualizada correctamente");
     setPasswordTarget(null);
   };
 
@@ -404,6 +408,7 @@ export default function UsuariosPage() {
       setDeleteTarget(null);
       setDeleteImpact(null);
       loadUsers();
+      showToast("Usuario eliminado correctamente");
     } else if (res.status === 409) {
       const data = await res.json().catch(() => ({}));
       if (data.requiresConfirmation && data.impact) {
@@ -455,7 +460,10 @@ export default function UsuariosPage() {
         })),
       }),
     });
-    if (res.ok) setPermUserId(null);
+    if (res.ok) {
+      setPermUserId(null);
+      showToast("Permisos actualizados correctamente");
+    }
   };
 
   const exportCsv = () => {
@@ -529,6 +537,15 @@ export default function UsuariosPage() {
       </div>
 
       {error && <p className="text-sm text-red-500">{error}</p>}
+
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-[#16A34A] px-4 py-3 text-sm font-bold text-white shadow-lg">
+          <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+          {toast}
+        </div>
+      )}
 
       <div className="flex flex-col gap-3 md:flex-row">
         <StatCard icon={<IconUsers />} iconClass="bg-[#D9F2F3] text-[#0E7C82]" label="Total usuarios" value={stats.total} hint="Cuentas registradas" />
@@ -632,14 +649,14 @@ export default function UsuariosPage() {
                 </td>
                 <td className="p-3 text-[#64748B]">{u.email}</td>
                 <td className="p-3">
-                  <select value={u.role} onChange={(e) => updateUser(u.id, { role: e.target.value as Role })}
+                  <select value={u.role} onChange={(e) => updateUser(u.id, { role: e.target.value as Role }, "Rol actualizado correctamente")}
                     className={`rounded-full border-0 px-3 py-1 text-xs font-bold ${ROLE_BADGE[u.role]}`}>
                     {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
                   </select>
                 </td>
                 <td className="p-3">
                   <div className="flex items-center gap-2">
-                    <select value={u.status} onChange={(e) => updateUser(u.id, { status: e.target.value as Status })}
+                    <select value={u.status} onChange={(e) => updateUser(u.id, { status: e.target.value as Status }, "Estado actualizado correctamente")}
                       className={`rounded-full border-0 bg-transparent px-1 py-1 text-xs font-bold ${STATUS_TEXT[u.status]}`}>
                       {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
                     </select>
