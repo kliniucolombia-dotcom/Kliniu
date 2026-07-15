@@ -14,6 +14,7 @@ import {
   type VariacionColor,
 } from "@/app/data/catalog";
 import { supabaseDb } from "@/lib/supabase-db";
+import { setWarehouseStockAbsolute, WAREHOUSE_KEYS } from "@/lib/warehouses";
 
 type ProductRecord = {
   id: string;
@@ -747,31 +748,17 @@ export async function syncStockFromOdoo(): Promise<StockSyncResult> {
       continue;
     }
 
-    const { error: updateError } = await supabaseDb
-      .from("Product")
-      .update({
-        stock: nextStock,
-        availability:
-          nextStock <= 0
-            ? "Agotado"
-            : nextStock <= product.minimumStock
-              ? "Disponible por pedido"
-              : "Entrega inmediata",
-        updatedAt: new Date().toISOString(),
-      })
-      .eq("id", product.id);
-
-    if (updateError) continue;
-
-    await supabaseDb.from("InventoryMovement").insert({
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
+    await setWarehouseStockAbsolute({
       productId: product.id,
-      type: "ADJUSTMENT",
-      quantity: nextStock - product.stock,
-      stockAfter: nextStock,
+      warehouseKey: WAREHOUSE_KEYS.PRODUCTO_TERMINADO,
+      quantity: nextStock,
+      source: "ODOO",
       note: "Sincronización automática de stock desde Odoo",
     });
+
+    // No se repite el update de `availability` vía supabaseDb: setWarehouseStockAbsolute
+    // ya deja `Product.stock` y `Product.availability` correctos vía recalculateProductStock
+    // (Prisma), dentro de la misma transacción — repetirlo aquí sería redundante.
 
     result.updated++;
   }
