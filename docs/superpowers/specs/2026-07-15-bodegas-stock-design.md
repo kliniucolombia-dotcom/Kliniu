@@ -26,12 +26,13 @@ exactamente 3 bodegas físicas, no una cantidad variable).
 
 ```prisma
 model Warehouse {
-  id     String   @id @default(cuid())
-  key    String   @unique // "MATERIA_PRIMA_MOLDES" | "PIEZAS_IMPORTADAS" | "PRODUCTO_TERMINADO"
-  name   String
-  order  Int
-  stocks ProductWarehouseStock[]
-  movements WarehouseMovement[]
+  id             String                  @id @default(cuid())
+  key            String                  @unique // "MATERIA_PRIMA_MOLDES" | "PIEZAS_IMPORTADAS" | "PRODUCTO_TERMINADO"
+  name           String
+  order          Int
+  stocks         ProductWarehouseStock[]
+  movementsFrom  WarehouseMovement[]     @relation("MovementFrom")
+  movementsTo    WarehouseMovement[]     @relation("MovementTo")
 }
 ```
 
@@ -44,16 +45,34 @@ model ProductWarehouseStock {
   productId   String
   warehouseId String
   quantity    Int       @default(0)
+  createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
   warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
 
   @@unique([productId, warehouseId])
+  @@index([warehouseId])
+  @@index([productId])
 }
 ```
 
 ### `WarehouseMovement`
-Historial de ajustes/transferencias.
+Historial de ajustes/transferencias. Origen/destino explícitos en vez de un
+`warehouseId` + `relatedWarehouseId` que obliga a interpretar según el tipo:
+
+- Entrada: `fromWarehouseId = null`, `toWarehouseId = <bodega>`.
+- Salida: `fromWarehouseId = <bodega>`, `toWarehouseId = null`.
+- Transferencia: `fromWarehouseId = <origen>`, `toWarehouseId = <destino>` — **un solo
+  registro**, no dos. La transacción resta `quantity` en `fromWarehouseId` y suma
+  `quantity` en `toWarehouseId`.
+
+`quantityAfter` se elimina del modelo: con from/to no hay un único "stock resultante"
+que tenga sentido guardar en la fila (serían dos). El estado actual siempre se lee de
+`ProductWarehouseStock`, que es la fuente de verdad; el historial solo registra el delta.
+
+`userId` es obligatorio — no hay movimientos anónimos. Para movimientos que no origina
+una persona (sync de Odoo) se usa un `source` explícito en vez de deducir intención por
+el texto de la nota:
 
 ```prisma
 enum WarehouseMovementType {
@@ -62,21 +81,39 @@ enum WarehouseMovementType {
   TRANSFERENCIA
 }
 
+enum WarehouseMovementSource {
+  USER   // ajuste manual desde /panel/bodegas
+  ODOO   // syncStockFromOdoo
+  SYSTEM // migración inicial / futuros procesos automáticos
+}
+
 model WarehouseMovement {
-  id                String                @id @default(cuid())
+  id                String                  @id @default(cuid())
   productId         String
-  warehouseId       String
   type              WarehouseMovementType
+  source            WarehouseMovementSource
   quantity          Int
-  quantityAfter     Int
+  fromWarehouseId   String?
+  toWarehouseId     String?
   note              String?
-  userId            String?
-  relatedWarehouseId String?              // bodega destino/origen si type = TRANSFERENCIA
-  createdAt         DateTime              @default(now())
-  product           Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
-  warehouse         Warehouse             @relation(fields: [warehouseId], references: [id])
+  userId            String
+  createdAt         DateTime                @default(now())
+  product           Product                 @relation(fields: [productId], references: [id], onDelete: Cascade)
+  fromWarehouse     Warehouse?              @relation("MovementFrom", fields: [fromWarehouseId], references: [id])
+  toWarehouse       Warehouse?              @relation("MovementTo", fields: [toWarehouseId], references: [id])
+
+  @@index([productId])
+  @@index([fromWarehouseId])
+  @@index([toWarehouseId])
 }
 ```
+
+Para movimientos con `source = ODOO`/`SYSTEM` que no tienen un usuario real, `userId`
+apunta a una cuenta de servicio fija (ya existe patrón similar para procesos
+automáticos — si no existe, se crea un `User` técnico `system@kliniu.internal` con rol
+sin acceso al panel). Así `userId` sigue siendo NOT NULL sin excepciones, y quién/qué
+originó el movimiento se filtra por `source`, nunca por el texto de `note` (`note` es
+siempre texto libre, nunca se usa en lógica — nada de `if note === "..."`).
 
 `Product` gana relaciones `warehouseStocks ProductWarehouseStock[]` y
 `warehouseMovements WarehouseMovement[]`.
@@ -86,22 +123,28 @@ model WarehouseMovement {
 - `Product.stock` **se mantiene** como columna (no se elimina — muchas queries de listado
   la leen directo), pero pasa a ser un valor **calculado**: suma de las 3
   `ProductWarehouseStock.quantity` de ese producto.
-- Cada vez que cambia una cantidad de bodega (por movimiento manual o por sync de Odoo),
-  se recalcula `Product.stock` en la misma transacción.
+- Recálculo centralizado: una única función `recalculateProductStock(productId, tx)` en
+  `lib/warehouses.ts` hace `SUM(quantity)` y actualiza `Product.stock`. **Todo** el código
+  que toca `ProductWarehouseStock` (ajuste manual, transferencia, sync de Odoo, seed de
+  migración) termina llamando esta función dentro de la misma transacción — cero lógica
+  de recálculo duplicada en los distintos call sites.
 - La bodega **"Producto terminado"** es la única que tocan:
-  - `syncStockFromOdoo` (en vez de escribir `Product.stock` directo, escribe/ajusta
-    `ProductWarehouseStock` de esa bodega, generando un `WarehouseMovement` tipo
-    `ENTRADA`/`SALIDA` con nota `"Sincronización automática de stock desde Odoo"`, igual
-    que hoy hace con `InventoryMovement`).
+  - `syncStockFromOdoo`: en vez de escribir `Product.stock` directo, ajusta
+    `ProductWarehouseStock` de esa bodega y crea un `WarehouseMovement`
+    (`type` ENTRADA/SALIDA según el signo del delta, `source = ODOO`), luego llama
+    `recalculateProductStock`.
   - El campo `stock` del form crear/editar producto en `/panel/productos` (en
     `createProduct`/`updateProduct` de `lib/products.ts`): el valor que el usuario escribe
-    ahí se guarda como la cantidad de la bodega "Producto terminado", no como
-    `Product.stock` directo.
+    ahí se guarda como la cantidad de la bodega "Producto terminado" (`source = USER`), no
+    como `Product.stock` directo.
 - Bodegas 1 y 2 (materia prima/moldes, piezas) **solo** cambian vía movimiento manual
-  desde `/panel/bodegas` (rol BODEGA). Nadie más las toca.
-- `InventoryMovement` (tabla existente) se mantiene sin cambios — sigue registrando el
-  movimiento a nivel de `Product.stock` total, en paralelo a `WarehouseMovement`. No se
-  fusionan las dos tablas para no tocar código existente que lee `InventoryMovement`.
+  desde `/panel/bodegas` (rol BODEGA, `source = USER`). Nadie más las toca.
+- `InventoryMovement` (tabla existente) **queda deprecada**: se mantiene sin cambios de
+  esquema por compatibilidad con el código que ya la lee (`/admin`,
+  `getRecentInventoryMovements`), pero **todo código nuevo usa `WarehouseMovement`**. No
+  se escriben features nuevas sobre `InventoryMovement`. Se anota como candidata a
+  retirar/migrar en una fase futura, para no terminar con dos historiales de stock que
+  nadie sepa reconciliar.
 
 ## Permisos
 
@@ -129,36 +172,50 @@ pesado salvo para el movimiento).
   movimiento:
   - Tipo: Entrada / Salida / Transferencia a otra bodega.
   - Cantidad.
-  - Si Transferencia: selector de bodega destino (resta de la actual, suma a la destino,
-    genera 2 `WarehouseMovement` con `relatedWarehouseId` cruzado).
-  - Nota opcional.
-  - Confirmar → API crea el/los `WarehouseMovement`, actualiza
-    `ProductWarehouseStock.quantity`, recalcula `Product.stock`.
+  - Si Transferencia: selector de bodega destino → **un solo** `WarehouseMovement` con
+    `fromWarehouseId`/`toWarehouseId`, la transacción resta en origen y suma en destino.
+  - Nota opcional (texto libre, no se interpreta en ningún `if`).
+  - Confirmar → API crea el `WarehouseMovement` (`source = USER`, `userId` del usuario en
+    sesión), actualiza `ProductWarehouseStock.quantity` afectadas, llama
+    `recalculateProductStock`.
   - Validación: no permitir Salida/Transferencia que deje la cantidad en negativo.
 - **Historial**: tab o sección expandible por producto, lista los últimos
-  `WarehouseMovement` (tipo, cantidad, nota, quién, cuándo), igual estilo que
-  `getRecentInventoryMovements` ya usado en `/admin`.
+  `WarehouseMovement` ordenados **`createdAt DESC`** (tipo, origen→destino, cantidad,
+  nota, quién, fuente, cuándo), igual estilo que `getRecentInventoryMovements` ya usado en
+  `/admin`. Filtro opcional por `source` (manual / Odoo / sistema).
 - Vista de solo lectura para ADMIN/INGENIERIA: misma tabla, sin poder abrir el modal de
   ajuste (botones deshabilitados, igual patrón que `mobileLocked`/`disabled` en
   `/panel/banners`).
 
 ## API
 
+Endpoints separados por intención en vez de uno genérico — más claro de leer y de
+validar (una transferencia y un ajuste simple no comparten reglas de negocio):
+
 - `GET /api/panel/bodegas` — lista productos con sus 3 cantidades + total. Requiere
   `MODULE_BODEGAS` view.
-- `POST /api/panel/bodegas/movimiento` — body `{ productId, warehouseId, type, quantity,
-  note?, toWarehouseId? }`. Requiere `MODULE_BODEGAS` edit (solo BODEGA). Transacción:
-  valida no-negativo, crea movimiento(s), actualiza `ProductWarehouseStock`, recalcula
-  `Product.stock`.
-- `GET /api/panel/bodegas/[productId]/historial` — movimientos de un producto.
+- `POST /api/panel/bodegas/ajuste` — body `{ productId, warehouseId, type: "ENTRADA" |
+  "SALIDA", quantity, note? }`. Requiere `MODULE_BODEGAS` edit (solo BODEGA). Crea el
+  `WarehouseMovement` (`fromWarehouseId`/`toWarehouseId` según type), actualiza
+  `ProductWarehouseStock`, llama `recalculateProductStock`.
+- `POST /api/panel/bodegas/transferir` — body `{ productId, fromWarehouseId,
+  toWarehouseId, quantity, note? }`. Requiere `MODULE_BODEGAS` edit. Un único
+  `WarehouseMovement` tipo `TRANSFERENCIA`, resta/suma en la misma transacción, llama
+  `recalculateProductStock`.
+- `GET /api/panel/bodegas/[productId]/historial` — movimientos de un producto,
+  `orderBy createdAt desc`.
 
 ## Migración de datos existente
 
 Al aplicar el `db push`/seed:
 - Seed de las 3 filas `Warehouse`.
+- Seed de un `User` técnico (`system@kliniu.internal`, sin acceso al panel) para poblar
+  `userId` en movimientos `source = SYSTEM`/`ODOO` donde no hay una persona real detrás
+  — así `userId` puede ser NOT NULL sin excepciones.
 - Para cada `Product` existente: crear `ProductWarehouseStock` para la bodega
   "Producto terminado" con `quantity = Product.stock` actual (todo el stock legado se
-  asume producto terminado), y `quantity = 0` para las otras 2 bodegas.
+  asume producto terminado), y `quantity = 0` para las otras 2 bodegas. Se registra un
+  `WarehouseMovement` inicial `source = SYSTEM`, nota `"Migración inicial de stock legado"`.
 - No se pierde ningún dato: el total inicial coincide con el `stock` actual.
 
 ## Fuera de alcance (fase 2, no se construye ahora)
