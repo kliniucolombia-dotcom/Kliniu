@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Figtree } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { CartProvider } from "./components/cart-provider";
 import { ProductsProvider } from "./components/products-provider";
@@ -65,6 +66,7 @@ export default async function RootLayout({
             </ConditionalShell>
           </CartProvider>
         </ProductsProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
