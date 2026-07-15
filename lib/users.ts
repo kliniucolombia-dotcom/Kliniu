@@ -222,6 +222,19 @@ export async function updateUserProfile(
   return user;
 }
 
+export async function resetUserPassword(userId: string, newPassword: string) {
+  if (!prisma) {
+    throw new Error("DATABASE_NOT_CONFIGURED");
+  }
+
+  const passwordHash = await hash(newPassword.trim(), 10);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash },
+  });
+}
+
 export async function getUserByEmail(email: string) {
   if (!prisma) {
     throw new Error("DATABASE_NOT_CONFIGURED");

@@ -11,6 +11,11 @@ type Props = {
   productoNombre: string;
   productoPrecio: string;
   productoImagen: string;
+  productoCodigo?: string;
+  cantidadSeleccionada?: number;
+  productSlug?: string;
+  productSku?: string;
+  preciosPorCantidad?: { cantidad: number; precioUnitario: number }[];
   addItem: (item: { id: string; nombre: string; precio: string; precioOriginal?: string; imagen: string; cantidad: number }) => void;
 };
 
@@ -20,19 +25,28 @@ type Msg = {
   cartAction?: { qty: number; precio: string; totalLabel: string };
 };
 
-function buildReply(qty: number, nombre: string, precio: string): { text: string; cartAction: Msg["cartAction"] } {
-  const pricing = getVolumePricing(precio, qty);
+function buildReply(
+  qty: number,
+  nombre: string,
+  precio: string,
+  codigo?: string,
+  productSlug?: string,
+  preciosPorCantidad?: { cantidad: number; precioUnitario: number }[],
+  productSku?: string,
+): { text: string; cartAction: Msg["cartAction"] } {
+  const pricing = getVolumePricing(precio, qty, productSlug, preciosPorCantidad, productSku);
   const { tier, unitPriceLabel, totalLabel } = pricing;
+  const codigoLine = codigo ? `Código: ${codigo}\n` : "";
 
   let text = "";
   if (tier.pct === 0) {
-    text = `Para ${qty.toLocaleString("es-CO")} unidad${qty > 1 ? "es" : ""} aplica precio de lista sin descuento. Cada unidad te queda en ${unitPriceLabel}.\nTotal: ${totalLabel} 😊\n\n¿Quieres agregar esta orden al carrito?`;
+    text = `${codigoLine}Para ${qty.toLocaleString("es-CO")} unidad${qty > 1 ? "es" : ""} aplica precio de lista sin descuento. Cada unidad te queda en ${unitPriceLabel}.\nTotal: ${totalLabel} 😊\n\n¿Quieres agregar esta orden al carrito?`;
   } else if (tier.pct <= 6) {
-    text = `¡Claro que sí! Para ${qty.toLocaleString("es-CO")} unidades te hago un **${tier.pct}% de descuento** 👌\n\nPrecio por unidad: ${unitPriceLabel}\nTotal: ${totalLabel}\n\n¿Agrego esta orden al carrito?`;
+    text = `${codigoLine}¡Claro que sí! Para ${qty.toLocaleString("es-CO")} unidades te hago un **${tier.pct}% de descuento** 👌\n\nPrecio por unidad: ${unitPriceLabel}\nTotal: ${totalLabel}\n\n¿Agrego esta orden al carrito?`;
   } else if (tier.pct === 8) {
-    text = `¡Excelente cantidad! Para ${qty.toLocaleString("es-CO")} unidades te aplico el **${tier.pct}% de descuento** 🎉\n\nPrecio por unidad: ${unitPriceLabel}\nTotal: ${totalLabel}\n\n¡Es una muy buena inversión! ¿Lo agrego al carrito con ese precio?`;
+    text = `${codigoLine}¡Excelente cantidad! Para ${qty.toLocaleString("es-CO")} unidades te aplico el **${tier.pct}% de descuento** 🎉\n\nPrecio por unidad: ${unitPriceLabel}\nTotal: ${totalLabel}\n\n¡Es una muy buena inversión! ¿Lo agrego al carrito con ese precio?`;
   } else {
-    text = `¡Wow, eso es un pedido grande! 💪 Para ${qty.toLocaleString("es-CO")} unidades te doy nuestro mejor descuento: **${tier.pct}%**.\n\nPrecio por unidad: ${unitPriceLabel}\nTotal: ${totalLabel}\n\nCon ese volumen tenemos condiciones especiales. ¿Agrego al carrito?`;
+    text = `${codigoLine}¡Wow, eso es un pedido grande! 💪 Para ${qty.toLocaleString("es-CO")} unidades te doy nuestro mejor descuento: **${tier.pct}%**.\n\nPrecio por unidad: ${unitPriceLabel}\nTotal: ${totalLabel}\n\nCon ese volumen tenemos condiciones especiales. ¿Agrego al carrito?`;
   }
 
   return {
@@ -41,7 +55,7 @@ function buildReply(qty: number, nombre: string, precio: string): { text: string
   };
 }
 
-export default function QuoteModal({ open, onClose, productoId, productoNombre, productoPrecio, productoImagen, addItem }: Props) {
+export default function QuoteModal({ open, onClose, productoId, productoNombre, productoPrecio, productoImagen, productoCodigo, cantidadSeleccionada, productSlug, productSku, preciosPorCantidad, addItem }: Props) {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
@@ -54,13 +68,23 @@ export default function QuoteModal({ open, onClose, productoId, productoNombre, 
       setInput("");
       setTyping(false);
       setAddedQty(null);
-      setMsgs([{
-        from: "asesor",
-        text: `¡Hola! 👋 Soy tu asesor Kliniu.\n\n¿Cuántas unidades de **${productoNombre}** necesitas? Según la cantidad te consigo el mejor precio.`,
-      }]);
+      const qty = cantidadSeleccionada && cantidadSeleccionada > 0 ? cantidadSeleccionada : undefined;
+      if (qty) {
+        const { text, cartAction } = buildReply(qty, productoNombre, productoPrecio, productoCodigo, productSlug, preciosPorCantidad, productSku);
+        setMsgs([{
+          from: "asesor",
+          text: `¡Hola! 👋 Soy tu asesor Kliniu.\n\nVeo que tienes seleccionadas **${qty.toLocaleString("es-CO")} unidad${qty > 1 ? "es" : ""}** de **${productoNombre}**.\n\n${text}`,
+          cartAction,
+        }]);
+      } else {
+        setMsgs([{
+          from: "asesor",
+          text: `¡Hola! 👋 Soy tu asesor Kliniu.\n\n¿Cuántas unidades de **${productoNombre}** necesitas? Según la cantidad te consigo el mejor precio.`,
+        }]);
+      }
       setTimeout(() => inputRef.current?.focus(), 200);
     }
-  }, [open, productoNombre]);
+  }, [open, productoNombre, productoPrecio, productoCodigo, cantidadSeleccionada, productSlug, productSku, preciosPorCantidad]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -98,7 +122,7 @@ export default function QuoteModal({ open, onClose, productoId, productoNombre, 
     // Número detectado — va primero para que "hola quiero 6 unidades" calcule el descuento
     const qty = parseInt(raw.replace(/[^\d]/g, ""), 10);
     if (!isNaN(qty) && qty > 0 && /\d/.test(raw)) {
-      return buildReply(qty, productoNombre, productoPrecio);
+      return buildReply(qty, productoNombre, productoPrecio, productoCodigo, productSlug, preciosPorCantidad, productSku);
     }
 
     // Saludos

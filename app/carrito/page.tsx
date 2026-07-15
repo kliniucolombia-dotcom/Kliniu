@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCart } from "../components/cart-provider";
 import { useProducts } from "../components/products-provider";
 import SiteFooter from "../components/site-footer";
@@ -65,9 +65,18 @@ const datoKlinBenefits = [
 ];
 
 export default function CarritoPage() {
-  const [cotizarOpen, setCotizarOpen] = useState(false);
   const { items, incrementItem, decrementItem, removeItem, clearCart } = useCart();
   const { products } = useProducts();
+  const [loginRequiredOpen, setLoginRequiredOpen] = useState(false);
+
+  useEffect(() => {
+    if (items.length === 0) return;
+    fetch("/api/account")
+      .then((r) => {
+        if (r.status === 401) setLoginRequiredOpen(true);
+      })
+      .catch(() => {});
+  }, [items.length]);
 
   const subtotal = items.reduce(
     (acc, item) => acc + parsePrecio(item.precio) * item.cantidad,
@@ -342,14 +351,6 @@ export default function CarritoPage() {
                 Finalizar compra
               </Link>
 
-              <button
-                type="button"
-                onClick={() => setCotizarOpen(true)}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-[#0C535B] px-5 py-3 text-sm font-bold text-[#0C535B] transition-colors hover:bg-[#f0f8f8]"
-              >
-                Cotizar este pedido
-              </button>
-
               <div className="mt-4 flex items-center gap-2 rounded-xl bg-[#f8fafa] px-4 py-3 text-xs text-[#555]">
                 <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-[#27B1B8]" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -408,140 +409,38 @@ export default function CarritoPage() {
 
       <SiteFooter />
 
-      {/* Modal cotización */}
-      {cotizarOpen && (
+      {loginRequiredOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center sm:items-center bg-black/50 p-0 sm:p-4 backdrop-blur-sm"
-          onClick={() => setCotizarOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          onClick={() => setLoginRequiredOpen(false)}
         >
           <div
-            className="relative w-full max-w-lg rounded-t-3xl sm:rounded-3xl bg-white shadow-2xl overflow-hidden"
+            className="relative w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Franja superior teal */}
-            <div className="bg-gradient-to-r from-[#0C535B] to-[#27B1B8] px-6 pt-6 pb-8">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-widest text-white/60">Kliniu</p>
-                  <h2 className="mt-1 text-xl font-extrabold text-white">Confirmar pedido</h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setCotizarOpen(false)}
-                  className="rounded-full bg-white/15 p-1.5 text-white hover:bg-white/25 transition-colors"
-                  aria-label="Cerrar"
-                >
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M18 6L6 18M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Badge descuento si aplica */}
-              {discountPct > 0 && (
-                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1.5 text-sm font-bold text-white">
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                  </svg>
-                  Descuento {discountPct}% por variedad aplicado
-                </div>
-              )}
-              {discountPct === 0 && differentProducts > 0 && (
-                <div className="mt-4 w-full rounded-2xl overflow-hidden">
-                  <div className="relative flex items-center gap-3 bg-gradient-to-r from-[#FF6B00] via-[#FF9500] to-[#FFD000] px-4 py-3 shadow-lg">
-                    {/* Pulso animado */}
-                    <span className="relative flex h-8 w-8 shrink-0 items-center justify-center">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-30" />
-                      <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-white/25 text-lg">
-                        🔥
-                      </span>
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[11px] font-bold uppercase tracking-widest text-white/80">
-                        ¡Casi lo tienes!
-                      </p>
-                      <p className="text-sm font-extrabold text-white leading-tight">
-                        {differentProducts <= 4
-                          ? <>Agrega <span className="underline decoration-dotted">{5 - differentProducts} producto{5 - differentProducts !== 1 ? "s" : ""} más</span> y obtén <span className="text-base">5% OFF</span></>
-                          : <>Agrega <span className="underline decoration-dotted">{11 - differentProducts} producto{11 - differentProducts !== 1 ? "s" : ""} más</span> y obtén <span className="text-base">10% OFF</span></>}
-                      </p>
-                    </div>
-                    <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-extrabold text-[#FF6B00] shadow">
-                      {differentProducts <= 4 ? "5%" : "10%"} OFF
-                    </span>
-                  </div>
-                </div>
-              )}
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#f0fbfc] text-[#0C535B]">
+              <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+              </svg>
             </div>
-
-            {/* Card de totales superpuesta */}
-            <div className="-mt-4 mx-4 rounded-2xl bg-white border border-black/8 shadow-md px-5 py-4">
-              {/* Lista productos */}
-              <div className="max-h-44 overflow-y-auto space-y-2.5 pr-1">
-                {items.map((item) => (
-                  <div key={item.id} className="flex items-center gap-3">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={item.imagen}
-                      alt={item.nombre}
-                      className="h-9 w-9 rounded-lg object-contain bg-[#f8f8f7] p-0.5 shrink-0"
-                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
-                    />
-                    <span className="flex-1 text-xs font-medium text-[#222] leading-tight line-clamp-2">{item.nombre}</span>
-                    <span className="text-[11px] text-[#999] mr-1">×{item.cantidad}</span>
-                    <span className="text-xs font-bold text-[#0C535B] whitespace-nowrap">
-                      {formatPrecio(parsePrecio(item.precio) * item.cantidad)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Separador */}
-              <div className="my-3 border-t border-dashed border-black/10" />
-
-              {/* Desglose financiero */}
-              <div className="space-y-1.5 text-sm">
-                <div className="flex justify-between text-[#555]">
-                  <span>Subtotal</span>
-                  <span className="font-semibold">{formatPrecio(subtotal)}</span>
-                </div>
-                {discountPct > 0 && (
-                  <div className="flex justify-between text-[#2a8a5e] font-semibold">
-                    <span>Descuento {discountPct}% ({differentProducts} productos)</span>
-                    <span>−{formatPrecio(discountAmount)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-[#555]">
-                  <span>Envío</span>
-                  <span className="font-semibold text-[#27B1B8]">Gratis</span>
-                </div>
-              </div>
-
-              <div className="mt-3 flex items-center justify-between rounded-xl bg-[#f0fbfc] px-4 py-3">
-                <span className="font-extrabold text-[#0C535B]">Total a pagar</span>
-                <span className="text-2xl font-extrabold text-[#0C535B]">{formatPrecio(total)}</span>
-              </div>
-            </div>
-
-            {/* Botones */}
-            <div className="px-4 py-5 space-y-2.5">
+            <h2 className="mt-4 text-lg font-extrabold text-[#111]">Inicia sesión para comprar</h2>
+            <p className="mt-2 text-sm text-[#6e7379]">
+              Necesitas iniciar sesión para poder finalizar la compra de tus productos.
+            </p>
+            <div className="mt-5 space-y-2.5">
               <Link
-                href="/checkout"
-                onClick={() => setCotizarOpen(false)}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-[#0C535B] px-5 py-3.5 text-sm font-extrabold text-white transition-opacity hover:opacity-90"
+                href="/login?next=/carrito"
+                className="flex w-full items-center justify-center rounded-full bg-[#0C535B] px-5 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
               >
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2">
-                  <rect x="3" y="11" width="18" height="11" rx="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-                Confirmar y pagar
+                Iniciar sesión
               </Link>
               <button
                 type="button"
-                onClick={() => setCotizarOpen(false)}
+                onClick={() => setLoginRequiredOpen(false)}
                 className="flex w-full items-center justify-center rounded-full border border-black/12 px-5 py-3 text-sm font-semibold text-[#555] hover:bg-[#f5f5f5] transition-colors"
               >
-                Seguir comprando
+                Seguir viendo el carrito
               </button>
             </div>
           </div>

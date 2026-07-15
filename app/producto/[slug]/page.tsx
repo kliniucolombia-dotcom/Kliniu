@@ -879,8 +879,9 @@ export default function ProductoDetallePage() {
                 </button>
                 <button
                   type="button"
+                  disabled={producto.puedeComprar === false}
                   onClick={() => setQuoteOpen(true)}
-                  className="flex min-h-[50px] items-center justify-center gap-2 rounded-full px-4 py-2.5 text-center text-[13px] font-bold leading-tight text-white transition-opacity hover:opacity-90 sm:text-sm"
+                  className="flex min-h-[50px] items-center justify-center gap-2 rounded-full px-4 py-2.5 text-center text-[13px] font-bold leading-tight text-white transition-opacity hover:opacity-90 sm:text-sm disabled:cursor-not-allowed disabled:opacity-40"
                   style={{ background: "#1a1a2e" }}
                 >
                   Cotiza ahora
@@ -1029,6 +1030,11 @@ export default function ProductoDetallePage() {
         productoNombre={producto.nombre}
         productoPrecio={producto.precio}
         productoImagen={producto.imagen}
+        productoCodigo={codigoMostrado}
+        cantidadSeleccionada={cantidad}
+        productSlug={effectiveSlug}
+        productSku={producto.sku}
+        preciosPorCantidad={preciosBase}
         addItem={addItem}
       />
       <SiteFooter />

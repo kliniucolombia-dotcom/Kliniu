@@ -75,6 +75,11 @@ export default function LoginPage() {
   const [invalidFields, setInvalidFields] = useState<string[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [logoAnimationKey, setLogoAnimationKey] = useState(0);
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSubmitting, setForgotSubmitting] = useState(false);
+  const [forgotMessage, setForgotMessage] = useState("");
+  const [forgotError, setForgotError] = useState("");
 
   useEffect(() => {
     fetch("/api/account")
@@ -266,6 +271,33 @@ export default function LoginPage() {
     await completeLogin(payload);
   };
 
+  const handleForgotSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setForgotError("");
+    setForgotMessage("");
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(forgotEmail.trim())) {
+      setForgotError("Ingresa un correo válido.");
+      return;
+    }
+
+    setForgotSubmitting(true);
+    const response = await fetch("/api/auth/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: forgotEmail.trim() }),
+    });
+    const payload = (await response.json()) as { error?: string; message?: string };
+    setForgotSubmitting(false);
+
+    if (!response.ok) {
+      setForgotError(payload.error || "No fue posible procesar la solicitud.");
+      return;
+    }
+
+    setForgotMessage(payload.message || "Si el correo está registrado, te enviamos un enlace para restablecer tu contraseña.");
+  };
+
   return (
     <main className="flex min-h-[calc(100vh-88px)] bg-white">
       {isEnteringAccount && (
@@ -329,6 +361,76 @@ export default function LoginPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showForgotModal && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#0f172a]/45 px-6 backdrop-blur-[2px]">
+          <div className="w-full max-w-md rounded-[1.8rem] border border-black/8 bg-white p-7 shadow-[0_30px_80px_rgba(15,23,42,0.28)]">
+            <h2 className="text-2xl font-bold text-[#0C535B]">
+              Recupera tu contraseña
+            </h2>
+
+            {forgotMessage ? (
+              <>
+                <p className="mt-3 text-sm leading-7 text-slate-600">{forgotMessage}</p>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(false)}
+                  className="mt-6 w-full rounded-xl bg-[#27B1B8] px-4 py-3 font-semibold text-white transition-colors duration-200 hover:bg-[#1E969B]"
+                >
+                  Cerrar
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="mt-3 text-sm leading-7 text-slate-600">
+                  Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.
+                </p>
+
+                <form onSubmit={handleForgotSubmit} className="mt-6 space-y-4">
+                  <div>
+                    <label htmlFor="forgotEmail" className="mb-2 block text-sm font-medium text-slate-700">
+                      Correo electrónico
+                    </label>
+                    <input
+                      id="forgotEmail"
+                      type="email"
+                      value={forgotEmail}
+                      onChange={(event) => setForgotEmail(event.target.value)}
+                      placeholder="tucorreo@ejemplo.com"
+                      autoFocus
+                      required
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none transition-colors duration-200 focus:border-[#27B1B8]"
+                    />
+                  </div>
+
+                  {forgotError && (
+                    <p className="rounded-xl border border-[#27B1B8]/20 bg-[#EAF8F6] px-4 py-3 text-sm font-medium text-[#0C535B]">
+                      {forgotError}
+                    </p>
+                  )}
+
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotModal(false)}
+                      className="flex-1 rounded-xl border border-[#0C535B]/20 px-4 py-3 font-semibold text-[#0C535B] transition-colors duration-200 hover:bg-[#0C535B] hover:text-white"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={forgotSubmitting}
+                      className="flex-1 rounded-xl bg-[#27B1B8] px-4 py-3 font-semibold text-white transition-colors duration-200 hover:bg-[#1E969B] disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      {forgotSubmitting ? "Enviando..." : "Enviar enlace"}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -423,14 +525,18 @@ export default function LoginPage() {
                 <label htmlFor="password" className="text-sm font-medium text-[#333]">
                   Contraseña
                 </label>
-                <Link
-                  href="https://wa.me/573208905307?text=Hola%2C%20olvid%C3%A9%20mi%20contrase%C3%B1a%20de%20Kliniu%20y%20necesito%20ayuda%20para%20recuperarla."
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotEmail(form.email);
+                    setForgotMessage("");
+                    setForgotError("");
+                    setShowForgotModal(true);
+                  }}
                   className="text-xs text-[#27B1B8] hover:underline"
                 >
                   ¿Olvidaste tu contraseña?
-                </Link>
+                </button>
               </div>
               <div className="relative">
                 <input

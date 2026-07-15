@@ -44,6 +44,31 @@ export async function setSessionCookie(payload: SessionPayload) {
   });
 }
 
+export type ResetPasswordPayload = {
+  userId: string;
+  email: string;
+  purpose: "password-reset";
+};
+
+export async function createResetPasswordToken(userId: string, email: string) {
+  return await new SignJWT({ userId, email, purpose: "password-reset" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("30m")
+    .sign(getSessionKey());
+}
+
+export async function readResetPasswordToken(token: string) {
+  const verified = await jwtVerify(token, getSessionKey());
+  const payload = verified.payload as Partial<ResetPasswordPayload>;
+
+  if (payload.purpose !== "password-reset" || !payload.userId || !payload.email) {
+    throw new Error("INVALID_RESET_TOKEN");
+  }
+
+  return payload as ResetPasswordPayload;
+}
+
 export async function clearSessionCookie() {
   const cookieStore = await cookies();
   cookieStore.delete(SESSION_COOKIE_NAME);

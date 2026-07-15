@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRef } from "react";
 import { useCart } from "./cart-provider";
+import WhatsAppAsesor from "./whatsapp-asesor";
 
 type Combo = {
   id: string;
@@ -120,12 +121,13 @@ export default function ComboCarousel({ combos }: { combos: Combo[] }) {
               className="image-lift h-auto w-full object-contain"
             />
           </div>
-          <Link
-            href="/contacto"
+          <WhatsAppAsesor
+            randomAsesor
+            message="Hola, quiero armar un combo a la medida de mis espacios"
             className="shine-sweep relative z-10 mt-6 inline-flex rounded-full bg-[#0C535B] px-7 py-2.5 text-[14px] font-extrabold leading-none text-white transition-opacity hover:opacity-90"
           >
             Cotizar ahora
-          </Link>
+          </WhatsAppAsesor>
         </div>
       </div>
 
