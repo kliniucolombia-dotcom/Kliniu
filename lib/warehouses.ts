@@ -46,8 +46,9 @@ export async function getSystemUserId(): Promise<string> {
   return user.id;
 }
 
+// Nunca devuelve "Agotado": la compra nunca se bloquea por falta de stock,
+// el producto queda "Disponible por pedido" en vez de marcarse agotado.
 function computeAvailability(stock: number, minimumStock: number): string {
-  if (stock <= 0) return "Agotado";
   if (stock <= minimumStock) return "Disponible por pedido";
   return "Entrega inmediata";
 }

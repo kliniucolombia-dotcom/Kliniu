@@ -761,19 +761,23 @@ export async function syncStockFromOdoo(): Promise<StockSyncResult> {
     }
 
     const nextStock = Math.max(Math.trunc(odooQty), 0);
-    if (nextStock === product.stock) {
-      result.unchanged++;
-      continue;
-    }
 
+    // No comparamos contra `product.stock` (suma de las 3 bodegas) — solo
+    // nos interesa si cambió la bodega "Producto terminado" puntual, y
+    // `setWarehouseStockAbsolute` ya evita escrituras/movimientos si esa
+    // bodega no cambió. Contamos updated/unchanged según el total resultante.
     try {
-      await setWarehouseStockAbsolute({
+      const newTotal = await setWarehouseStockAbsolute({
         productId: product.id,
         warehouseKey: WAREHOUSE_KEYS.PRODUCTO_TERMINADO,
         quantity: nextStock,
         source: "ODOO",
         note: "Sincronización automática de stock desde Odoo",
       });
+      if (newTotal === product.stock) {
+        result.unchanged++;
+        continue;
+      }
     } catch (writeError) {
       // Un producto con error puntual (ej. bodega mal configurada) no debe
       // abortar la sync del resto del batch — se marca como no sincronizado
