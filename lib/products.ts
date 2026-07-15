@@ -756,10 +756,11 @@ export async function syncStockFromOdoo(): Promise<StockSyncResult> {
         source: "ODOO",
         note: "Sincronización automática de stock desde Odoo",
       });
-    } catch {
+    } catch (writeError) {
       // Un producto con error puntual (ej. bodega mal configurada) no debe
       // abortar la sync del resto del batch — se marca como no sincronizado
       // y se continúa, igual que el código legado con `if (updateError) continue`.
+      console.error(`syncStockFromOdoo: fallo al escribir stock de ${product.sku}`, writeError);
       result.unmatched.push(product.sku);
       continue;
     }
