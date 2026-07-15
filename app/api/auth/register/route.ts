@@ -1,4 +1,5 @@
 import { registerUser } from "@/lib/users";
+import { setSessionCookie } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
@@ -71,9 +72,16 @@ export async function POST(request: Request) {
       password,
     });
 
+    await setSessionCookie({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
     return Response.json(
       {
         user,
+        redirectTo: "/mi-cuenta",
         message: "Cuenta creada correctamente.",
       },
       { status: 201 },

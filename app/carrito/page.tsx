@@ -19,7 +19,6 @@ function formatPrecio(value: number) {
 
 const trustItems = [
   { icon: "📦", label: "Envíos a todos\nColombia" },
-  { icon: "🛡️", label: "Garantía 2\naños" },
   { icon: "↩️", label: "Devoluciones\nfáciles" },
   { icon: "🎧", label: "Asesoría\nexperta" },
 ];

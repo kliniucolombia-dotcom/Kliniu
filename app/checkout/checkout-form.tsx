@@ -57,7 +57,6 @@ const steps = [
 
 const trustItems = [
   { label: "Compra\n100% segura" },
-  { label: "Garantía\n2 años" },
   { label: "Devoluciones\nfáciles" },
   { label: "Soporte\nexperto" },
 ];

@@ -97,11 +97,11 @@ export default function RegistroPage() {
     const payload = (await response.json()) as {
       error?: string;
       message?: string;
+      redirectTo?: string;
     };
 
-    setIsSubmitting(false);
-
     if (!response.ok) {
+      setIsSubmitting(false);
       const message = payload.error || "No fue posible crear la cuenta.";
       setInlineError(message);
       setToast({ tone: "error", message });
@@ -114,6 +114,8 @@ export default function RegistroPage() {
       tone: "success",
       message: payload.message || "Cuenta creada correctamente.",
     });
+
+    window.location.href = payload.redirectTo || "/mi-cuenta";
   };
 
   return (
