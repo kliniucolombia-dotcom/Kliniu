@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requirePermission } from "@/lib/permissions";
+import { requirePermissionWithFallback } from "@/lib/permissions";
 import { getOdooApps } from "@/lib/odoo";
 import { getOdooErrorMessage, OdooErrorPanel } from "../odoo-error-panel";
 
@@ -9,9 +9,9 @@ export const metadata = { title: "Aplicaciones Odoo — Panel Comercial" };
 const fallbackIcons = ["◒", "31", "▥", "▣", "◆", "▦", "▤", "◈", "⬢", "▰", "◉", "⌕"];
 
 export default async function OdooApplicationsPage() {
-  const access = await requirePermission("MODULE_ODOO", "view");
+  const access = await requirePermissionWithFallback("MODULE_ODOO", "view");
   if (!access.ok) {
-    redirect("/login");
+    redirect(access.redirectTo);
   }
 
   const appsResult = await getOdooApps().catch((error) => ({

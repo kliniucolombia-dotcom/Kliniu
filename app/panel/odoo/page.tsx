@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { requirePermission } from "@/lib/permissions";
+import { requirePermissionWithFallback } from "@/lib/permissions";
 import { getOdooConnectionStatus, getOdooProducts } from "@/lib/odoo";
 import { getOdooErrorMessage, OdooErrorPanel } from "./odoo-error-panel";
 
@@ -23,9 +23,9 @@ function getOdooCategoryName(category: [number, string] | false | undefined) {
 }
 
 export default async function OdooPanelPage() {
-  const access = await requirePermission("MODULE_ODOO", "view");
+  const access = await requirePermissionWithFallback("MODULE_ODOO", "view");
   if (!access.ok) {
-    redirect("/login");
+    redirect(access.redirectTo);
   }
 
   const result = await Promise.all([

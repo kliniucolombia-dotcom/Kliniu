@@ -1,6 +1,7 @@
-import { authenticateUser } from "@/lib/users";
+import { authenticateUser, getUserById } from "@/lib/users";
 import { setSessionCookie } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { getPanelLandingPath } from "@/lib/permissions";
 
 export async function POST(request: Request) {
   try {
@@ -58,12 +59,14 @@ export async function POST(request: Request) {
       role: user.role,
     });
 
+    const fullUser = (user.role === "SELLER" || user.role === "RRHH") ? await getUserById(user.id) : null;
+
     const redirectTo =
       user.role === "ADMIN"      ? "/admin"      :
       user.role === "SUPERADMIN" ? "/panel"      :
-      user.role === "SELLER"     ? "/panel"      :
+      user.role === "SELLER"     ? await getPanelLandingPath(fullUser!) :
       user.role === "PACKING"    ? "/empaque"    :
-      user.role === "RRHH"       ? "/panel/rrhh" :
+      user.role === "RRHH"       ? await getPanelLandingPath(fullUser!) :
       user.role === "EMPLOYEE"   ? "/empleado"   :
       "/mi-cuenta";
 

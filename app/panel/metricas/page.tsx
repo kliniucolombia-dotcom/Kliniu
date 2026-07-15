@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requirePermission } from "@/lib/permissions";
+import { requirePermissionWithFallback } from "@/lib/permissions";
 import { getMetrics, getDashboardStats } from "@/lib/panel";
 
 export const dynamic = "force-dynamic";
@@ -11,8 +11,8 @@ const fmtUSD = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 export default async function MetricasPanel() {
-  const access = await requirePermission("MODULE_METRICAS", "view");
-  if (!access.ok) redirect("/login");
+  const access = await requirePermissionWithFallback("MODULE_METRICAS", "view");
+  if (!access.ok) redirect(access.redirectTo);
   const { session } = access;
 
   const [metrics, stats] = await Promise.all([

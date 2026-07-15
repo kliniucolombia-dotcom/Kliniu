@@ -84,15 +84,19 @@ export default function LoginPage() {
   useEffect(() => {
     fetch("/api/account")
       .then((r) => r.ok ? r.json() : null)
-      .then((data) => {
+      .then(async (data) => {
         if (!data?.user) return;
         const role = data.user.role;
-        if (role === "ADMIN") router.replace("/admin");
-        else if (role === "SELLER" || role === "SUPERADMIN") router.replace("/panel");
-        else if (role === "PACKING") router.replace("/empaque");
-        else if (role === "RRHH") router.replace("/panel/rrhh");
-        else if (role === "EMPLOYEE") router.replace("/empleado");
-        else router.replace("/mi-cuenta");
+        if (role === "ADMIN") { router.replace("/admin"); return; }
+        if (role === "PACKING") { router.replace("/empaque"); return; }
+        if (role === "EMPLOYEE") { router.replace("/empleado"); return; }
+        if (role === "CUSTOMER") { router.replace("/mi-cuenta"); return; }
+        if (role === "SUPERADMIN") { router.replace("/panel"); return; }
+        // SELLER y RRHH: aterrizar en el primer módulo que sí puedan ver,
+        // nunca en una ruta fija (evita loop si el rol tiene permisos parciales).
+        const res = await fetch("/api/panel/landing").catch(() => null);
+        const landing = res?.ok ? await res.json() : null;
+        router.replace(landing?.path ?? "/panel/sin-acceso");
       })
       .catch(() => {});
   }, [router]);

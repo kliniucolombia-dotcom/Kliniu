@@ -1,14 +1,14 @@
 import { redirect } from "next/navigation";
-import { requirePermission } from "@/lib/permissions";
+import { requirePermissionWithFallback } from "@/lib/permissions";
 import { OdooSalesChat } from "./odoo-sales-chat";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Asistente Odoo — Panel Comercial" };
 
 export default async function OdooAssistantPage() {
-  const access = await requirePermission("MODULE_ODOO", "view");
+  const access = await requirePermissionWithFallback("MODULE_ODOO", "view");
   if (!access.ok) {
-    redirect("/login");
+    redirect(access.redirectTo);
   }
 
   return (

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { requirePermission } from "@/lib/permissions";
+import { requirePermissionWithFallback } from "@/lib/permissions";
 import { getOdooSalesReport, type OdooReportPeriod } from "@/lib/odoo";
 import { getOdooErrorMessage } from "../odoo-error-panel";
 
@@ -68,9 +68,9 @@ export default async function OdooReportsPage({
 }: {
   searchParams?: Promise<{ period?: string }>;
 }) {
-  const access = await requirePermission("MODULE_ODOO", "view");
+  const access = await requirePermissionWithFallback("MODULE_ODOO", "view");
   if (!access.ok) {
-    redirect("/login");
+    redirect(access.redirectTo);
   }
 
   const query = await searchParams;

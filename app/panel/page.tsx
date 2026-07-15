@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requirePermission } from "@/lib/permissions";
+import { requirePermissionWithFallback } from "@/lib/permissions";
 import { getDashboardStats, getSellerStats, calcROAS, getCampaignStatus, STATUS_META } from "@/lib/panel";
 
 export const dynamic = "force-dynamic";
@@ -12,9 +12,9 @@ const fmtUSD = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 export default async function PanelDashboard() {
-  const access = await requirePermission("MODULE_DASHBOARD", "view");
+  const access = await requirePermissionWithFallback("MODULE_DASHBOARD", "view");
   if (!access.ok) {
-    redirect("/login");
+    redirect(access.redirectTo);
   }
   const { session } = access;
 

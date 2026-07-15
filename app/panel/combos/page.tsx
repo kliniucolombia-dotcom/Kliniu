@@ -53,7 +53,7 @@ export default function CombosPanel() {
     ]);
     if (rCombos.status === 401 || rCombos.status === 403) { router.push("/login"); return; }
     setCombos(await rCombos.json());
-    setProducts(await rProducts.json());
+    setProducts(rProducts.ok ? await rProducts.json() : []);
     setLoading(false);
   }, [router]);
 
