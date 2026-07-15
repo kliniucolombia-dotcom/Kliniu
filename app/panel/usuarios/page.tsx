@@ -309,6 +309,11 @@ export default function UsuariosPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<Role | "ALL">("ALL");
   const [statusFilter, setStatusFilter] = useState<Status | "ALL">("ALL");
+  const [emailTarget, setEmailTarget] = useState<UserRow | null>(null);
+  const [emailValue, setEmailValue] = useState("");
+  const [passwordTarget, setPasswordTarget] = useState<UserRow | null>(null);
+  const [passwordValue, setPasswordValue] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
 
   const loadUsers = async () => {
     setLoading(true);
@@ -367,13 +372,28 @@ export default function UsuariosPage() {
   };
 
   const editEmail = (u: UserRow) => {
-    const value = window.prompt("Nuevo correo", u.email);
-    if (value && value.trim() && value.trim() !== u.email) updateUser(u.id, { email: value.trim() });
+    setEmailTarget(u);
+    setEmailValue(u.email);
+  };
+
+  const confirmEditEmail = () => {
+    if (!emailTarget) return;
+    const value = emailValue.trim();
+    if (value && value !== emailTarget.email) updateUser(emailTarget.id, { email: value });
+    setEmailTarget(null);
   };
 
   const editPassword = (u: UserRow) => {
-    const value = window.prompt(`Nueva contraseña para ${u.email}`);
-    if (value && value.trim()) updateUser(u.id, { newPassword: value.trim() });
+    setPasswordTarget(u);
+    setPasswordValue("");
+    setShowNewPassword(false);
+  };
+
+  const confirmEditPassword = () => {
+    if (!passwordTarget) return;
+    const value = passwordValue.trim();
+    if (value) updateUser(passwordTarget.id, { newPassword: value });
+    setPasswordTarget(null);
   };
 
   const confirmDeleteUser = async (force = false) => {
@@ -837,6 +857,90 @@ export default function UsuariosPage() {
                 className="rounded-lg bg-red-500 px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
               >
                 {deleting ? "Eliminando…" : "Sí, eliminar todo"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {emailTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-5">
+            <div className="mb-4 flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#D9F2F3] text-[#0E7C82]">
+                <IconMail />
+              </span>
+              <div>
+                <h2 className="text-sm font-black text-[#1A1A1A]">Editar correo</h2>
+                <p className="text-xs text-[#94A3B8]">{emailTarget.fullName}</p>
+              </div>
+            </div>
+            <label className="mb-1 block text-xs font-semibold text-[#64748B]">Nuevo correo</label>
+            <input
+              autoFocus
+              type="email"
+              value={emailValue}
+              onChange={(e) => setEmailValue(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && confirmEditEmail()}
+              className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#27B1B8] focus:outline-none"
+            />
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setEmailTarget(null)} className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-xs font-bold text-[#64748B]">
+                Cancelar
+              </button>
+              <button onClick={confirmEditEmail} className="rounded-lg bg-[#27B1B8] px-3 py-2 text-xs font-bold text-white">
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {passwordTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-5">
+            <div className="mb-4 flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#D9F2F3] text-[#0E7C82]">
+                <IconKey />
+              </span>
+              <div>
+                <h2 className="text-sm font-black text-[#1A1A1A]">Cambiar contraseña</h2>
+                <p className="text-xs text-[#94A3B8]">{passwordTarget.email}</p>
+              </div>
+            </div>
+            <label className="mb-1 block text-xs font-semibold text-[#64748B]">Nueva contraseña</label>
+            <div className="relative">
+              <input
+                autoFocus
+                type={showNewPassword ? "text" : "password"}
+                value={passwordValue}
+                onChange={(e) => setPasswordValue(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && confirmEditPassword()}
+                className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2 pr-9 text-sm focus:border-[#27B1B8] focus:outline-none"
+              />
+              <button type="button" onClick={() => setShowNewPassword((v) => !v)}
+                aria-label={showNewPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#27B1B8]">
+                {showNewPassword ? (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M3 3l18 18" />
+                    <path d="M10.6 5.2A10.6 10.6 0 0112 5c6 0 10 7 10 7a17.7 17.7 0 01-3.2 4M6.5 6.6C3.9 8.3 2 12 2 12s4 7 10 7a9.9 9.9 0 004.4-1" />
+                    <path d="M9.9 9.9a3 3 0 004.2 4.2" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setPasswordTarget(null)} className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-xs font-bold text-[#64748B]">
+                Cancelar
+              </button>
+              <button onClick={confirmEditPassword} disabled={!passwordValue.trim()} className="rounded-lg bg-[#27B1B8] px-3 py-2 text-xs font-bold text-white disabled:opacity-50">
+                Guardar
               </button>
             </div>
           </div>
