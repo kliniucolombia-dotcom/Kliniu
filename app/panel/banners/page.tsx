@@ -60,6 +60,12 @@ const CATEGORY_SLOTS: Slot[] = categoriasData
 
 const ALL_SLOTS = [...FIXED_SLOTS, ...CATEGORY_SLOTS];
 
+const DIMS: Record<Slot["preview"], { desktop: string; mobile: string }> = {
+  hero: { desktop: "1680×480 px", mobile: "800×1000 px" },
+  wide: { desktop: "1200×400 px", mobile: "800×800 px" },
+  card: { desktop: "800×1000 px", mobile: "800×1000 px" },
+};
+
 function UploadIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -229,7 +235,8 @@ export default function BannersPanel() {
                         <span className="text-xs text-[#CBD5E1]">Sin imagen</span>
                       )}
                     </div>
-                    <p className="mb-2 text-xs font-bold text-[#1A1A1A]">{slot.label}</p>
+                    <p className="text-xs font-bold text-[#1A1A1A]">{slot.label}</p>
+                    <p className="mb-2 text-[10px] font-semibold text-[#94A3B8]">Medida: {view === "desktop" ? DIMS[slot.preview].desktop : DIMS[slot.preview].mobile}</p>
                     <input
                       ref={(el) => { fileInputs.current[slot.key] = el; }}
                       type="file"

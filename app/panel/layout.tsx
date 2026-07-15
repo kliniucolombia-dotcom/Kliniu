@@ -25,7 +25,7 @@ const NAV: NavItem[] = [
   { href: "/panel/pedidos",   label: "Pedidos",   icon: <MdInventory2 size={18} />, module: "MODULE_PEDIDOS" },
   { href: "/panel/productos", label: "Productos", icon: <MdCategory size={18} />, module: "MODULE_PRODUCTOS" },
   { href: "/panel/outlet", label: "Outlet", icon: <MdLocalOffer size={18} />, module: "MODULE_OUTLET" },
-  { href: "/panel/banners",   label: "Banners",   icon: <MdImage size={18} />, module: "MODULE_BANNERS" },
+  { href: "/panel/banners",   label: "Diseño",   icon: <MdImage size={18} />, module: "MODULE_BANNERS" },
   { href: "/panel/combos",    label: "Combos",    icon: <MdCardGiftcard size={18} />, module: "MODULE_COMBOS" },
   { href: "/panel/metricas",  label: "Métricas",  icon: <MdBarChart size={18} />, module: "MODULE_METRICAS" },
   { href: "/panel/campanas",  label: "Campañas",  icon: <MdCampaign size={18} />, module: "MODULE_CAMPANAS" },
@@ -87,12 +87,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   const router   = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [user, setUser] = useState<{ fullName?: string; email?: string; role?: string } | null>(null);
   const [visibleModules, setVisibleModules] = useState<Set<string> | null>(null);
-
-  useEffect(() => {
-    fetch("/api/account").then((r) => r.json()).then((d) => setUser(d)).catch(() => {});
-  }, []);
 
   useEffect(() => {
     fetch("/api/panel/permissions")
@@ -251,13 +246,6 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
         {/* User + logout + collapse */}
         <div className="border-t border-[#E2E8F0] p-3 space-y-2">
-          {!collapsed && user && (
-            <div className="rounded-xl bg-[#F8FAFC] p-2.5">
-              <p className="truncate text-xs font-bold text-[#1A1A1A]">{user.fullName ?? "—"}</p>
-              <p className="truncate text-[10px] text-[#94A3B8]">{user.role ?? ""}</p>
-            </div>
-          )}
-
           {/* Logout */}
           <button
             onClick={logout}
