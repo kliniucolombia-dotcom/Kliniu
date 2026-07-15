@@ -748,13 +748,21 @@ export async function syncStockFromOdoo(): Promise<StockSyncResult> {
       continue;
     }
 
-    await setWarehouseStockAbsolute({
-      productId: product.id,
-      warehouseKey: WAREHOUSE_KEYS.PRODUCTO_TERMINADO,
-      quantity: nextStock,
-      source: "ODOO",
-      note: "Sincronización automática de stock desde Odoo",
-    });
+    try {
+      await setWarehouseStockAbsolute({
+        productId: product.id,
+        warehouseKey: WAREHOUSE_KEYS.PRODUCTO_TERMINADO,
+        quantity: nextStock,
+        source: "ODOO",
+        note: "Sincronización automática de stock desde Odoo",
+      });
+    } catch {
+      // Un producto con error puntual (ej. bodega mal configurada) no debe
+      // abortar la sync del resto del batch — se marca como no sincronizado
+      // y se continúa, igual que el código legado con `if (updateError) continue`.
+      result.unmatched.push(product.sku);
+      continue;
+    }
 
     // No se repite el update de `availability` vía supabaseDb: setWarehouseStockAbsolute
     // ya deja `Product.stock` y `Product.availability` correctos vía recalculateProductStock
