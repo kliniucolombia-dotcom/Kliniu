@@ -392,6 +392,7 @@ enum PanelModule {
   MODULE_BANNERS
   MODULE_COMBOS
   MODULE_RRHH
+  MODULE_OUTLET
 }
 
 enum BannerType {

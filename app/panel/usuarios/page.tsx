@@ -47,6 +47,26 @@ const MODULE_LABELS: Record<string, string> = {
   MODULE_USUARIOS: "Usuarios",
   MODULE_BANNERS: "Banners",
   MODULE_COMBOS: "Combos",
+  MODULE_RRHH: "Recursos Humanos",
+  MODULE_OUTLET: "Outlet",
+};
+
+const SELLER_DEFAULT_PERMS: Record<string, Omit<ModulePermission, "module" | "isOverride">> = {
+  MODULE_DASHBOARD: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  MODULE_PEDIDOS: { canView: true, canCreate: false, canEdit: true, canDelete: false },
+  MODULE_PRODUCTOS: { canView: true, canCreate: false, canEdit: true, canDelete: false },
+  MODULE_METRICAS: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  MODULE_CAMPANAS: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+  MODULE_COSTOS: { canView: true, canCreate: true, canEdit: true, canDelete: false },
+  MODULE_CALCULADORA_PRECIO: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+  MODULE_COTIZACIONES: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+  MODULE_PRODUCCION: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+  MODULE_ODOO: { canView: false, canCreate: false, canEdit: false, canDelete: false },
+  MODULE_USUARIOS: { canView: false, canCreate: false, canEdit: false, canDelete: false },
+  MODULE_BANNERS: { canView: false, canCreate: false, canEdit: false, canDelete: false },
+  MODULE_COMBOS: { canView: true, canCreate: true, canEdit: true, canDelete: false },
+  MODULE_RRHH: { canView: false, canCreate: false, canEdit: false, canDelete: false },
+  MODULE_OUTLET: { canView: true, canCreate: true, canEdit: true, canDelete: false },
 };
 
 const ROLES: Role[] = ["CUSTOMER", "ADMIN", "SELLER", "PACKING", "SUPERADMIN", "RRHH"];
@@ -102,22 +122,48 @@ export default function UsuariosPage() {
       body: JSON.stringify(form),
     });
     if (res.ok) {
+      const newUser = await res.json();
       setForm({ fullName: "", email: "", password: "", role: "SELLER" });
       setCreating(false);
       loadUsers();
+      setPermUserId(newUser.id);
+      const defaults = form.role === "SELLER" ? SELLER_DEFAULT_PERMS : {};
+      setPerms(Object.keys(MODULE_LABELS).map((module) => ({
+        module,
+        isOverride: true,
+        canView: defaults[module]?.canView ?? false,
+        canCreate: defaults[module]?.canCreate ?? false,
+        canEdit: defaults[module]?.canEdit ?? false,
+        canDelete: defaults[module]?.canDelete ?? false,
+      })));
     } else {
       const data = await res.json().catch(() => ({}));
       setError(data.error ?? "Error al crear usuario");
     }
   };
 
-  const updateUser = async (id: string, patch: Partial<Pick<UserRow, "role" | "status">>) => {
+  const updateUser = async (id: string, patch: Partial<Pick<UserRow, "role" | "status" | "email">> & { newPassword?: string }) => {
     const res = await fetch(`/api/panel/users/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
     });
-    if (res.ok) loadUsers();
+    if (res.ok) {
+      loadUsers();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Error al actualizar usuario");
+    }
+  };
+
+  const editEmail = (u: UserRow) => {
+    const value = window.prompt("Nuevo correo", u.email);
+    if (value && value.trim() && value.trim() !== u.email) updateUser(u.id, { email: value.trim() });
+  };
+
+  const editPassword = (u: UserRow) => {
+    const value = window.prompt(`Nueva contraseña para ${u.email}`);
+    if (value && value.trim()) updateUser(u.id, { newPassword: value.trim() });
   };
 
   const confirmDeleteUser = async (force = false) => {
@@ -260,6 +306,12 @@ export default function UsuariosPage() {
                 <div className="flex flex-col gap-1">
                   <button onClick={() => openPermissions(u.id)} className="text-xs font-bold text-[#27B1B8]">
                     Editar permisos
+                  </button>
+                  <button onClick={() => editEmail(u)} className="text-xs font-bold text-[#27B1B8]">
+                    Editar correo
+                  </button>
+                  <button onClick={() => editPassword(u)} className="text-xs font-bold text-[#27B1B8]">
+                    Cambiar contraseña
                   </button>
                   <button onClick={() => { setDeleteTarget(u); setDeleteImpact(null); }} className="text-xs font-bold text-red-500">
                     Eliminar
