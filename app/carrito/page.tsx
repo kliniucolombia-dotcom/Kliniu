@@ -368,12 +368,6 @@ export default function CarritoPage() {
         )}
       </section>
 
-      {/* Trust bar */}
-      <section className="mx-auto max-w-[1440px] px-6 py-5">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/banners-web/BANNER FINALES.png" alt="Kliniu" className="hidden sm:block w-full object-cover" />
-      </section>
-
       {/* Productos recomendados */}
       {recommended.length > 0 && (
         <section className="mx-auto max-w-[1440px] px-6 py-12">
