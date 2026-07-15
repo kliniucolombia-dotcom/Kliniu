@@ -198,7 +198,10 @@ export default function QuoteModal({ open, onClose, productoId, productoNombre, 
       >
         {/* Header */}
         <div className="flex shrink-0 items-center gap-3 px-4 py-3" style={{ background: "#0C535B" }}>
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-lg">🦭</div>
+          <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-white/20">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/foca-saludando.webp" alt="Asesor Kliniu" className="h-full w-full object-cover" />
+          </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-white">Asesor Kliniu</p>
             <p className="text-[10px] text-white/60">En línea ahora</p>
