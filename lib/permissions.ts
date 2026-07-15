@@ -83,6 +83,7 @@ const PANEL_LANDING_ROUTES: Array<{ module: PanelModule; path: string }> = [
   { module: "MODULE_PEDIDOS", path: "/panel/pedidos" },
   { module: "MODULE_PRODUCTOS", path: "/panel/productos" },
   { module: "MODULE_OUTLET", path: "/panel/outlet" },
+  { module: "MODULE_BODEGAS", path: "/panel/bodegas" },
   { module: "MODULE_BANNERS", path: "/panel/banners" },
   { module: "MODULE_COMBOS", path: "/panel/combos" },
   { module: "MODULE_METRICAS", path: "/panel/metricas" },

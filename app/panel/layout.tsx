@@ -7,7 +7,7 @@ import {
   MdCalculate, MdDescription, MdPrecisionManufacturing, MdAssignment, MdPeople, MdImage,
   MdCardGiftcard, MdLocalOffer, MdWork, MdHome, MdSearch, MdNotificationsNone, MdPersonOutline,
   MdApartment, MdAccessTime, MdBeachAccess, MdRemoveCircleOutline, MdSwapHoriz, MdHandshake,
-  MdCreditCard, MdHelpOutline, MdGroup,
+  MdCreditCard, MdHelpOutline, MdGroup, MdWarehouse,
 } from "react-icons/md";
 
 type NavChild = { href: string; label: string; group?: string; groupIcon?: React.ReactNode; icon?: React.ReactNode };
@@ -25,6 +25,7 @@ const NAV: NavItem[] = [
   { href: "/panel/pedidos",   label: "Pedidos",   icon: <MdInventory2 size={18} />, module: "MODULE_PEDIDOS" },
   { href: "/panel/productos", label: "Productos", icon: <MdCategory size={18} />, module: "MODULE_PRODUCTOS" },
   { href: "/panel/outlet", label: "Outlet", icon: <MdLocalOffer size={18} />, module: "MODULE_OUTLET" },
+  { href: "/panel/bodegas", label: "Bodegas", icon: <MdWarehouse size={18} />, module: "MODULE_BODEGAS" },
   { href: "/panel/banners",   label: "Diseño",   icon: <MdImage size={18} />, module: "MODULE_BANNERS" },
   { href: "/panel/combos",    label: "Combos",    icon: <MdCardGiftcard size={18} />, module: "MODULE_COMBOS" },
   { href: "/panel/metricas",  label: "Métricas",  icon: <MdBarChart size={18} />, module: "MODULE_METRICAS" },
