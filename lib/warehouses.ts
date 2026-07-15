@@ -104,6 +104,47 @@ async function currentQuantity(
   return row?.quantity ?? 0;
 }
 
+async function ensureStockRow(
+  tx: Prisma.TransactionClient,
+  productId: string,
+  warehouseId: string,
+) {
+  await tx.productWarehouseStock.upsert({
+    where: { productId_warehouseId: { productId, warehouseId } },
+    update: {},
+    create: { productId, warehouseId, quantity: 0 },
+  });
+}
+
+async function incrementStock(
+  tx: Prisma.TransactionClient,
+  productId: string,
+  warehouseId: string,
+  delta: number,
+) {
+  await ensureStockRow(tx, productId, warehouseId);
+  await tx.productWarehouseStock.update({
+    where: { productId_warehouseId: { productId, warehouseId } },
+    data: { quantity: { increment: delta } },
+  });
+}
+
+async function decrementStockIfSufficient(
+  tx: Prisma.TransactionClient,
+  productId: string,
+  warehouseId: string,
+  amount: number,
+) {
+  await ensureStockRow(tx, productId, warehouseId);
+  const result = await tx.productWarehouseStock.updateMany({
+    where: { productId, warehouseId, quantity: { gte: amount } },
+    data: { quantity: { decrement: amount } },
+  });
+  if (result.count === 0) {
+    throw new Error("INSUFFICIENT_STOCK");
+  }
+}
+
 export async function setWarehouseStockAbsolute(input: {
   productId: string;
   warehouseKey: WarehouseKey;
@@ -154,11 +195,10 @@ export async function adjustWarehouseStock(input: {
   if (quantity <= 0) throw new Error("INVALID_QUANTITY");
 
   return db.$transaction(async (tx) => {
-    const current = await currentQuantity(tx, input.productId, input.warehouseId);
-    const nextQuantity = input.type === "ENTRADA" ? current + quantity : current - quantity;
-
-    if (nextQuantity < 0) {
-      throw new Error("INSUFFICIENT_STOCK");
+    if (input.type === "ENTRADA") {
+      await incrementStock(tx, input.productId, input.warehouseId, quantity);
+    } else {
+      await decrementStockIfSufficient(tx, input.productId, input.warehouseId, quantity);
     }
 
     await tx.warehouseMovement.create({
@@ -173,7 +213,6 @@ export async function adjustWarehouseStock(input: {
         userId: input.userId,
       },
     });
-    await upsertStockRow(tx, input.productId, input.warehouseId, nextQuantity);
 
     return recalculateProductStock(tx, input.productId);
   });
@@ -196,11 +235,8 @@ export async function transferWarehouseStock(input: {
   if (quantity <= 0) throw new Error("INVALID_QUANTITY");
 
   return db.$transaction(async (tx) => {
-    const fromCurrent = await currentQuantity(tx, input.productId, input.fromWarehouseId);
-    const nextFrom = fromCurrent - quantity;
-    if (nextFrom < 0) throw new Error("INSUFFICIENT_STOCK");
-
-    const toCurrent = await currentQuantity(tx, input.productId, input.toWarehouseId);
+    await decrementStockIfSufficient(tx, input.productId, input.fromWarehouseId, quantity);
+    await incrementStock(tx, input.productId, input.toWarehouseId, quantity);
 
     await tx.warehouseMovement.create({
       data: {
@@ -214,8 +250,6 @@ export async function transferWarehouseStock(input: {
         userId: input.userId,
       },
     });
-    await upsertStockRow(tx, input.productId, input.fromWarehouseId, nextFrom);
-    await upsertStockRow(tx, input.productId, input.toWarehouseId, toCurrent + quantity);
 
     return recalculateProductStock(tx, input.productId);
   });
