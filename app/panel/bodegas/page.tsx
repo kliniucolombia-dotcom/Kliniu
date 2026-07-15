@@ -194,7 +194,14 @@ function MovementModalView({
             </label>
             <select
               value={warehouseId}
-              onChange={(e) => setWarehouseId(e.target.value)}
+              onChange={(e) => {
+                const nextWarehouseId = e.target.value;
+                setWarehouseId(nextWarehouseId);
+                if (modal.mode === "transferir" && nextWarehouseId === toWarehouseId) {
+                  const fallback = warehouses.find((w) => w.id !== nextWarehouseId);
+                  if (fallback) setToWarehouseId(fallback.id);
+                }
+              }}
               className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm"
             >
               {warehouses.map((w) => (
