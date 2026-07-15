@@ -68,15 +68,20 @@ export default function CarritoPage() {
   const { items, incrementItem, decrementItem, removeItem, clearCart } = useCart();
   const { products } = useProducts();
   const [loginRequiredOpen, setLoginRequiredOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (items.length === 0) return;
     fetch("/api/account")
-      .then((r) => {
-        if (r.status === 401) setLoginRequiredOpen(true);
-      })
-      .catch(() => {});
-  }, [items.length]);
+      .then((r) => setIsLoggedIn(r.ok))
+      .catch(() => setIsLoggedIn(false));
+  }, []);
+
+  const handleCheckoutClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (isLoggedIn === false) {
+      event.preventDefault();
+      setLoginRequiredOpen(true);
+    }
+  };
 
   const subtotal = items.reduce(
     (acc, item) => acc + parsePrecio(item.precio) * item.cantidad,
@@ -342,6 +347,7 @@ export default function CarritoPage() {
 
               <Link
                 href="/checkout"
+                onClick={handleCheckoutClick}
                 className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[#0C535B] px-5 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
               >
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
@@ -430,7 +436,7 @@ export default function CarritoPage() {
             </p>
             <div className="mt-5 space-y-2.5">
               <Link
-                href="/login?next=/carrito"
+                href="/login?next=/checkout"
                 className="flex w-full items-center justify-center rounded-full bg-[#0C535B] px-5 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
               >
                 Iniciar sesión
