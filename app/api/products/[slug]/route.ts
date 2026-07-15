@@ -44,10 +44,10 @@ export async function PATCH(
   context: { params: Promise<{ slug: string }> },
 ) {
   try {
-    await requireAdminOrSeller();
+    const user = await requireAdminOrSeller();
     const { slug } = await context.params;
     const body = await request.json();
-    const product = await updateProduct(slug, body);
+    const product = await updateProduct(slug, body, user.id);
 
     return Response.json({ product });
   } catch (error) {

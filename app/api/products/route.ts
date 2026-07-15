@@ -41,9 +41,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    await requireAdminOrSeller();
+    const user = await requireAdminOrSeller();
     const body = await request.json();
-    const product = await createProduct(body);
+    const product = await createProduct(body, user.id);
 
     return Response.json({ product }, { status: 201 });
   } catch (error) {

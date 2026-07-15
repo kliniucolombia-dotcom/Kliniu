@@ -376,7 +376,7 @@ export async function getFeaturedProducts() {
   return [...bestsellers, ...onlyFeatured, ...rest].slice(0, 5);
 }
 
-export async function createProduct(input: ProductMutationInput) {
+export async function createProduct(input: ProductMutationInput, actorUserId: string) {
   if (!supabaseDb) {
     throw new Error("DATABASE_NOT_CONFIGURED");
   }
@@ -471,10 +471,19 @@ export async function createProduct(input: ProductMutationInput) {
     note: "Inventario inicial del producto",
   });
 
+  await setWarehouseStockAbsolute({
+    productId: created.id,
+    warehouseKey: WAREHOUSE_KEYS.PRODUCTO_TERMINADO,
+    quantity: stock,
+    source: "USER",
+    userId: actorUserId,
+    note: "Inventario inicial del producto",
+  });
+
   return toStoreProduct(created as ProductRecord);
 }
 
-export async function updateProduct(slug: string, input: ProductMutationInput) {
+export async function updateProduct(slug: string, input: ProductMutationInput, actorUserId: string) {
   if (!supabaseDb) {
     throw new Error("DATABASE_NOT_CONFIGURED");
   }
@@ -591,6 +600,15 @@ export async function updateProduct(slug: string, input: ProductMutationInput) {
       note: "Ajuste manual desde el panel admin",
     });
   }
+
+  await setWarehouseStockAbsolute({
+    productId: existingRecord.id,
+    warehouseKey: WAREHOUSE_KEYS.PRODUCTO_TERMINADO,
+    quantity: stock,
+    source: "USER",
+    userId: actorUserId,
+    note: "Ajuste manual desde el panel admin",
+  });
 
   return toStoreProduct(updated as ProductRecord);
 }
