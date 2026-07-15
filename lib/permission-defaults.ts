@@ -34,6 +34,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_COMBOS: NONE,
     MODULE_RRHH: NONE,
     MODULE_OUTLET: NONE,
+    MODULE_BODEGAS: NONE,
   },
   SELLER: {
     MODULE_DASHBOARD: VIEW_ONLY,
@@ -51,6 +52,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_COMBOS: FULL,
     MODULE_RRHH: NONE,
     MODULE_OUTLET: VIEW_ONLY,
+    MODULE_BODEGAS: NONE,
   },
   PACKING: {
     MODULE_DASHBOARD: NONE,
@@ -68,6 +70,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_COMBOS: NONE,
     MODULE_RRHH: NONE,
     MODULE_OUTLET: NONE,
+    MODULE_BODEGAS: NONE,
   },
   CUSTOMER: {
     MODULE_DASHBOARD: NONE,
@@ -85,6 +88,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_COMBOS: NONE,
     MODULE_RRHH: NONE,
     MODULE_OUTLET: NONE,
+    MODULE_BODEGAS: NONE,
   },
   RRHH: {
     MODULE_DASHBOARD: NONE,
@@ -102,6 +106,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_COMBOS: NONE,
     MODULE_RRHH: FULL,
     MODULE_OUTLET: NONE,
+    MODULE_BODEGAS: NONE,
   },
   EMPLOYEE: {
     MODULE_DASHBOARD: NONE,
@@ -119,6 +124,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_COMBOS: NONE,
     MODULE_RRHH: NONE,
     MODULE_OUTLET: NONE,
+    MODULE_BODEGAS: NONE,
   },
   BODEGA: {
     MODULE_DASHBOARD: NONE,
@@ -136,6 +142,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_COMBOS: NONE,
     MODULE_RRHH: NONE,
     MODULE_OUTLET: NONE,
+    MODULE_BODEGAS: NONE,
   },
   DISENO: {
     MODULE_DASHBOARD: NONE,
@@ -153,6 +160,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_COMBOS: VIEW_EDIT_DELETE,
     MODULE_RRHH: NONE,
     MODULE_OUTLET: VIEW_EDIT_DELETE,
+    MODULE_BODEGAS: NONE,
   },
   MARKETING: {
     MODULE_DASHBOARD: NONE,
@@ -170,6 +178,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_COMBOS: NONE,
     MODULE_RRHH: NONE,
     MODULE_OUTLET: FULL,
+    MODULE_BODEGAS: NONE,
   },
   JEFE_VENTAS: {
     MODULE_DASHBOARD: NONE,
@@ -187,6 +196,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_COMBOS: FULL,
     MODULE_RRHH: VIEW_ONLY,
     MODULE_OUTLET: FULL,
+    MODULE_BODEGAS: NONE,
   },
   TESORERIA: {
     MODULE_DASHBOARD: NONE,
@@ -204,6 +214,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_COMBOS: NONE,
     MODULE_RRHH: FULL,
     MODULE_OUTLET: NONE,
+    MODULE_BODEGAS: NONE,
   },
   INGENIERIA: {
     MODULE_DASHBOARD: NONE,
@@ -221,6 +232,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_COMBOS: NONE,
     MODULE_RRHH: VIEW_ONLY,
     MODULE_OUTLET: NONE,
+    MODULE_BODEGAS: NONE,
   },
 };
 
@@ -240,4 +252,5 @@ export const ALL_MODULES: PanelModule[] = [
   "MODULE_COMBOS",
   "MODULE_RRHH",
   "MODULE_OUTLET",
+  "MODULE_BODEGAS",
 ];
