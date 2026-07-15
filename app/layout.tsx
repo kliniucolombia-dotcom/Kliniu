@@ -8,6 +8,7 @@ import { getProducts } from "@/lib/products";
 import { getSessionFromCookies } from "@/lib/auth";
 import { getUserById } from "@/lib/users";
 import { getCartItemsForUser } from "@/lib/cart";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const figtree = Figtree({
   subsets: ["latin"],
@@ -65,6 +66,7 @@ export default async function RootLayout({
             </ConditionalShell>
           </CartProvider>
         </ProductsProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
