@@ -753,11 +753,12 @@ export default function CategoriasPage({
     startTransition(() => router.replace(`${pathname}?${params.toString()}`));
   };
 
-  // Si hay búsqueda activa, usar la categoría dominante en resultados para el banner
+  // Si hay búsqueda activa, usar la categoría dominante entre los mejores resultados para el banner
   const catMetaBanner = (() => {
-    if (!queryActiva || productosPorCategoria.length === 0) return catMeta;
+    if (!queryActiva || productosFiltrados.length === 0) return catMeta;
+    const topResultados = productosFiltrados.slice(0, ITEMS_PER_PAGE);
     const conteo: Record<string, number> = {};
-    for (const p of productosPorCategoria) conteo[p.categoria] = (conteo[p.categoria] ?? 0) + 1;
+    for (const p of topResultados) conteo[p.categoria] = (conteo[p.categoria] ?? 0) + 1;
     const catDominante = Object.entries(conteo).sort((a, b) => b[1] - a[1])[0][0];
     const meta = categoriaMeta(catDominante);
     return meta.bannerImagen ? meta : catMeta;
@@ -851,7 +852,7 @@ export default function CategoriasPage({
             {tituloLinea2}<span className="text-[#27B1B8]">{tituloDestacado}</span>
           </h1>
           <p className={`mt-2 max-w-md text-xs leading-5 sm:mt-3 sm:text-sm sm:leading-6 ${dark ? "text-[#3a4a4b]" : "text-white/70"}`}>
-            {catMeta.bannerCopy}
+            {catMetaBanner.bannerCopy}
           </p>
           </>
           )}
