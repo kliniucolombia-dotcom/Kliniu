@@ -21,10 +21,14 @@ export async function POST(request: Request) {
     return Response.json({ error: "Fecha de producción requerida" }, { status: 400 });
   }
 
-  const created = await createProductionOrder({
-    createdById: session.userId,
-    productionDate: new Date(body.productionDate),
-    notes: body.notes,
-  });
-  return Response.json(created);
+  try {
+    const created = await createProductionOrder({
+      createdById: session.userId,
+      productionDate: new Date(body.productionDate),
+      notes: body.notes,
+    });
+    return Response.json(created);
+  } catch {
+    return Response.json({ error: "No se pudo crear la orden" }, { status: 500 });
+  }
 }

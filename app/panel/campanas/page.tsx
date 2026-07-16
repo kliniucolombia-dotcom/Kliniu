@@ -162,12 +162,14 @@ export default function CampanasPanel() {
 
       {/* Modal form */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="mb-4 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
+          <div className="flex w-full max-w-lg max-h-[85dvh] flex-col rounded-2xl bg-white shadow-2xl my-auto">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] p-6 pb-4">
               <h3 className="font-black text-[#1A1A1A]">{editing ? "Editar campaña" : "Nueva campaña"}</h3>
               <button onClick={() => setShowForm(false)} className="text-[#94A3B8] hover:text-[#1A1A1A]">✕</button>
             </div>
+
+            <div className="overflow-y-auto p-6 pt-4">
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="sm:col-span-2">
@@ -258,8 +260,9 @@ export default function CampanasPanel() {
                 {alert.msg}
               </div>
             )}
+            </div>
 
-            <div className="mt-4 flex gap-2">
+            <div className="flex gap-2 border-t border-[#E2E8F0] p-6 pt-4">
               <button onClick={() => setShowForm(false)} className="flex-1 rounded-xl border border-[#E2E8F0] py-2.5 text-sm font-bold text-[#64748B]">Cancelar</button>
               <button onClick={save} disabled={saving} className="flex-1 rounded-xl bg-[#27B1B8] py-2.5 text-sm font-bold text-white disabled:opacity-50">
                 {saving ? "Guardando…" : editing ? "Actualizar" : "Crear campaña"}

@@ -46,7 +46,7 @@ export function SimpleSelect({
         {!hideChevron && <span className="text-[#94A3B8]">▾</span>}
       </button>
       {open && (
-        <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-xl border border-[#E2E8F0] bg-white py-1 shadow-lg">
+        <div className="absolute left-0 top-full z-10 mt-1 max-h-48 w-max min-w-full max-w-[280px] overflow-y-auto rounded-xl border border-[#E2E8F0] bg-white py-1 shadow-lg">
           {options.map((o) => (
             <button
               key={o.value}

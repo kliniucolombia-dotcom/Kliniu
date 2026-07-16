@@ -237,7 +237,7 @@ export default function SaleCalculatorEditorPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Bloque 1: Productos */}
-        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-6 lg:col-span-2">
+        <div className="min-w-0 rounded-2xl border border-[#E2E8F0] bg-white p-6 lg:col-span-2">
           <h2 className="mb-4 text-sm font-black uppercase tracking-widest text-[#64748B]">Productos</h2>
           <div className="overflow-x-auto rounded-xl border border-[#E2E8F0]">
             <table className="w-full border-collapse text-sm">

@@ -42,17 +42,77 @@ export async function getDashboardStats() {
   const now = new Date();
   const startOfDay   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const dayOfWeek    = now.getDay() === 0 ? 6 : now.getDay() - 1; // Monday = 0
   const startOfWeek  = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
 
-  const [todayOrders, weekOrders, monthOrders, campaigns, products, newCustomers] = await Promise.all([
+  const [todayOrders, weekOrders, monthOrders, prevMonthOrders, campaigns, products, newCustomers, recentOrders, newCustomerRows] = await Promise.all([
     prisma.order.findMany({ where: { createdAt: { gte: startOfDay }, status: "PAID" }, select: { subtotal: true } }),
     prisma.order.findMany({ where: { createdAt: { gte: startOfWeek }, status: "PAID" }, select: { subtotal: true } }),
-    prisma.order.findMany({ where: { createdAt: { gte: startOfMonth }, status: "PAID" }, select: { subtotal: true, userId: true } }),
-    prisma.campaign.findMany({ include: { seller: { select: { id: true, fullName: true } }, product: { select: { name: true, image: true } } } }),
+    prisma.order.findMany({ where: { createdAt: { gte: startOfMonth }, status: "PAID" }, select: { subtotal: true, userId: true, createdAt: true, channel: true } }),
+    prisma.order.findMany({ where: { createdAt: { gte: startOfPrevMonth, lt: startOfMonth }, status: "PAID" }, select: { subtotal: true } }),
+    prisma.campaign.findMany({ include: { seller: { select: { id: true, fullName: true } }, product: { select: { name: true, image: true } } }, orderBy: { createdAt: "asc" } }),
     prisma.product.count({ where: { active: true } }),
     prisma.user.count({ where: { role: "CUSTOMER", createdAt: { gte: startOfMonth } } }),
+    prisma.order.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 3,
+      select: { id: true, customerName: true, subtotal: true, shippingStatus: true, status: true, createdAt: true },
+    }),
+    prisma.user.findMany({ where: { role: "CUSTOMER", createdAt: { gte: startOfMonth } }, select: { createdAt: true } }),
   ]);
+
+  // Serie diaria de ventas del mes (día 1 → hoy), para el gráfico de área
+  const dailyMap: Record<string, number> = {};
+  for (const o of monthOrders) {
+    const key = o.createdAt.toISOString().slice(0, 10);
+    dailyMap[key] = (dailyMap[key] ?? 0) + o.subtotal;
+  }
+  const dailySales: { date: string; total: number }[] = [];
+  for (let d = new Date(startOfMonth); d <= now; d.setDate(d.getDate() + 1)) {
+    const key = d.toISOString().slice(0, 10);
+    dailySales.push({ date: key, total: dailyMap[key] ?? 0 });
+  }
+  const prevMonthTotal = prevMonthOrders.reduce((s, o) => s + o.subtotal, 0);
+
+  // Serie diaria de clientes nuevos y ticket promedio del mes
+  const dailyCountMap: Record<string, number> = {};
+  for (const o of monthOrders) {
+    const key = o.createdAt.toISOString().slice(0, 10);
+    dailyCountMap[key] = (dailyCountMap[key] ?? 0) + 1;
+  }
+  const dailyCustomerMap: Record<string, number> = {};
+  for (const u of newCustomerRows) {
+    const key = u.createdAt.toISOString().slice(0, 10);
+    dailyCustomerMap[key] = (dailyCustomerMap[key] ?? 0) + 1;
+  }
+  const dailyAvgTicket: number[] = [];
+  const dailyNewCustomers: number[] = [];
+  for (let d = new Date(startOfMonth); d <= now; d.setDate(d.getDate() + 1)) {
+    const key = d.toISOString().slice(0, 10);
+    const count = dailyCountMap[key] ?? 0;
+    dailyAvgTicket.push(count > 0 ? Math.round((dailyMap[key] ?? 0) / count) : 0);
+    dailyNewCustomers.push(dailyCustomerMap[key] ?? 0);
+  }
+
+  // Serie acumulada de campañas (en orden de creación) para inversión/retorno/ROAS/riesgo
+  let cumInvestment = 0;
+  let cumSales = 0;
+  let cumRisk = 0;
+  const investmentTrend: number[] = [];
+  const salesTrend: number[] = [];
+  const roasTrend: number[] = [];
+  const riskTrend: number[] = [];
+  for (const c of campaigns) {
+    cumInvestment += c.investment;
+    cumSales += c.sales;
+    const r = calcROAS(c.sales, c.investment);
+    if (r > 0 && r < 7) cumRisk += 1;
+    investmentTrend.push(cumInvestment);
+    salesTrend.push(cumSales);
+    roasTrend.push(calcROAS(cumSales, cumInvestment));
+    riskTrend.push(cumRisk);
+  }
 
   const todayTotal  = todayOrders.reduce((s, o) => s + o.subtotal, 0);
   const weekTotal   = weekOrders.reduce((s, o) => s + o.subtotal, 0);
@@ -66,15 +126,26 @@ export async function getDashboardStats() {
     return r > 0 && r < 7;
   }).length;
 
+  const CHANNEL_LABELS: Record<string, string> = {
+    ONLINE: "Tienda online", WHATSAPP: "WhatsApp", MARKETPLACE: "Marketplaces", OTHER: "Otros",
+  };
+  const channelTotals: Record<string, number> = {};
+  for (const o of monthOrders) {
+    channelTotals[o.channel] = (channelTotals[o.channel] ?? 0) + o.subtotal;
+  }
+  const salesByChannel = Object.entries(channelTotals)
+    .map(([channel, total]) => ({ channel, label: CHANNEL_LABELS[channel] ?? channel, total }))
+    .sort((a, b) => b.total - a.total);
+
   // Top product from orders this month
-  const itemCounts: Record<string, { name: string; qty: number }> = {};
+  const itemCounts: Record<string, { name: string; qty: number; image: string }> = {};
   const monthOrderItems = await prisma.orderItem.findMany({
     where: { order: { createdAt: { gte: startOfMonth }, status: "PAID" } },
-    select: { productId: true, name: true, quantity: true },
+    select: { productId: true, name: true, quantity: true, image: true },
   });
   for (const item of monthOrderItems) {
     if (!item.productId) continue;
-    if (!itemCounts[item.productId]) itemCounts[item.productId] = { name: item.name, qty: 0 };
+    if (!itemCounts[item.productId]) itemCounts[item.productId] = { name: item.name, qty: 0, image: item.image };
     itemCounts[item.productId].qty += item.quantity;
   }
   const topProduct = Object.values(itemCounts).sort((a, b) => b.qty - a.qty)[0] ?? null;
@@ -108,6 +179,20 @@ export async function getDashboardStats() {
     uniqueCustomers,
     avgTicket,
     monthOrderCount: monthOrders.length,
+    dailySales,
+    dailyAvgTicket,
+    dailyNewCustomers,
+    campaignTrends: { investment: investmentTrend, sales: salesTrend, roas: roasTrend, risk: riskTrend },
+    salesByChannel,
+    monthChangePercent: prevMonthTotal > 0 ? Math.round(((monthTotal - prevMonthTotal) / prevMonthTotal) * 1000) / 10 : null,
+    recentOrders: recentOrders.map((o) => ({
+      id: o.id,
+      customerName: o.customerName,
+      subtotal: o.subtotal,
+      shippingStatus: o.shippingStatus,
+      status: o.status,
+      createdAt: o.createdAt.toISOString(),
+    })),
   };
 }
 
@@ -159,7 +244,6 @@ export async function getSellerStats() {
 export async function getProductsForPanel(sellerId?: string) {
   if (!prisma) return [];
   return prisma.product.findMany({
-    where: { active: true },
     include: {
       priceHistory: {
         orderBy: { createdAt: "desc" },
@@ -755,6 +839,7 @@ export async function convertQuotationToOrder(id: string) {
         addressLine2: quotation.client.addressLine2,
         subtotal,
         totalItems,
+        channel: "OTHER",
         assignedSellerId: quotation.sellerId,
         items: {
           create: quotation.items.map((i) => ({
@@ -979,8 +1064,13 @@ type ProductionOrderTx = Parameters<Parameters<NonNullable<typeof prisma>["$tran
 async function generateProductionOrderNumber(tx: ProductionOrderTx): Promise<string> {
   const year = new Date().getFullYear();
   const prefix = `OP-${year}-`;
-  const count = await tx.productionOrder.count({ where: { number: { startsWith: prefix } } });
-  return `${prefix}${String(count + 1).padStart(6, "0")}`;
+  const last = await tx.productionOrder.findFirst({
+    where: { number: { startsWith: prefix } },
+    orderBy: { number: "desc" },
+    select: { number: true },
+  });
+  const lastSeq = last ? parseInt(last.number.slice(prefix.length), 10) || 0 : 0;
+  return `${prefix}${String(lastSeq + 1).padStart(6, "0")}`;
 }
 
 export async function getProductionOrders(filters?: { status?: string }) {
@@ -1042,17 +1132,25 @@ export async function getProductionOrderWithItems(id: string) {
 
 export async function createProductionOrder(data: { createdById: string; productionDate: Date; notes?: string | null }) {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
-  return prisma.$transaction(async (tx) => {
-    const number = await generateProductionOrderNumber(tx);
-    return tx.productionOrder.create({
-      data: {
-        number,
-        createdById: data.createdById,
-        productionDate: data.productionDate,
-        notes: data.notes ?? null,
-      },
-    });
-  });
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const number = await generateProductionOrderNumber(tx);
+        return tx.productionOrder.create({
+          data: {
+            number,
+            createdById: data.createdById,
+            productionDate: data.productionDate,
+            notes: data.notes ?? null,
+          },
+        });
+      });
+    } catch (err) {
+      const isUniqueClash = typeof err === "object" && err !== null && "code" in err && (err as { code?: string }).code === "P2002";
+      if (!isUniqueClash || attempt === 2) throw err;
+    }
+  }
+  throw new Error("PRODUCTION_ORDER_NUMBER_CONFLICT");
 }
 
 async function assertProductionOrderDraft(id: string) {

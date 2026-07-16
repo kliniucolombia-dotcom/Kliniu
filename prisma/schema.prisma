@@ -112,6 +112,7 @@ model Order {
   status             OrderStatus    @default(PENDING)
   paymentStatus      PaymentStatus  @default(PENDING)
   shippingStatus     ShippingStatus @default(PENDING)
+  channel            OrderChannel   @default(ONLINE)
   customerName       String
   customerEmail      String
   customerPhone      String
@@ -148,6 +149,13 @@ enum OdooSyncStatus {
   NOT_SYNCED
   SYNCED
   FAILED
+}
+
+enum OrderChannel {
+  ONLINE
+  WHATSAPP
+  MARKETPLACE
+  OTHER
 }
 
 model OrderItem {

@@ -249,10 +249,10 @@ export default function QuotationEditorPage() {
       {error && <div className="mb-4 rounded-xl bg-[#FEE2E2] px-3 py-2 text-xs font-semibold text-[#DC2626]">{error}</div>}
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-6 lg:col-span-2">
+        <div className="min-w-0 rounded-2xl border border-[#E2E8F0] bg-white p-6 lg:col-span-2">
           <h2 className="mb-4 text-sm font-black uppercase tracking-widest text-[#64748B]">Ítems</h2>
           <div className="overflow-x-auto rounded-xl border border-[#E2E8F0]">
-            <table className="w-full border-collapse text-sm">
+            <table className="w-full min-w-[640px] border-collapse text-sm">
               <thead className="bg-[#F8FAFC]">
                 <tr>
                   {["Producto", "Cantidad", "Vr. Unit", "Total", ""].map((h) => (

@@ -530,10 +530,10 @@ export default function UsuariosPage() {
           </div>
         </div>
         <button
-          onClick={() => setCreating((c) => !c)}
+          onClick={() => setCreating(true)}
           className="shrink-0 rounded-xl bg-[#27B1B8] px-4 py-2 text-sm font-bold text-white"
         >
-          {creating ? "Cancelar" : "+ Nuevo usuario"}
+          + Nuevo usuario
         </button>
       </div>
 
@@ -556,42 +556,55 @@ export default function UsuariosPage() {
       </div>
 
       {creating && (
-        <div className="grid grid-cols-1 gap-3 rounded-xl border border-[#E2E8F0] bg-white p-4 md:grid-cols-4">
-          <input placeholder="Nombre completo" value={form.fullName}
-            onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-            className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
-          <input placeholder="Correo" value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
-          <div className="relative">
-            <input placeholder="Contraseña" type={showPassword ? "text" : "password"} value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2 pr-9 text-sm" />
-            <button type="button" onClick={() => setShowPassword((v) => !v)}
-              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#27B1B8]">
-              {showPassword ? (
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              ) : (
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M3 3l18 18" />
-                  <path d="M10.6 5.2A10.6 10.6 0 0112 5c6 0 10 7 10 7a17.7 17.7 0 01-3.2 4M6.5 6.6C3.9 8.3 2 12 2 12s4 7 10 7a9.9 9.9 0 004.4-1" />
-                  <path d="M9.9 9.9a3 3 0 004.2 4.2" />
-                </svg>
-              )}
-            </button>
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 p-4">
+          <div className="flex min-h-full items-center justify-center">
+            <div className="flex max-h-[85dvh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white">
+              <div className="flex items-center justify-between border-b border-[#E2E8F0] p-5">
+                <h3 className="font-black text-[#1A1A1A]">Nuevo usuario</h3>
+                <button onClick={() => setCreating(false)} className="text-[#94A3B8] hover:text-[#1A1A1A]">✕</button>
+              </div>
+              <div className="grid grid-cols-1 gap-3 overflow-y-auto p-5">
+                <input placeholder="Nombre completo" value={form.fullName}
+                  onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                  className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
+                <input placeholder="Correo" value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
+                <div className="relative">
+                  <input placeholder="Contraseña" type={showPassword ? "text" : "password"} value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2 pr-9 text-sm" />
+                  <button type="button" onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#27B1B8]">
+                    {showPassword ? (
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <path d="M3 3l18 18" />
+                        <path d="M10.6 5.2A10.6 10.6 0 0112 5c6 0 10 7 10 7a17.7 17.7 0 01-3.2 4M6.5 6.6C3.9 8.3 2 12 2 12s4 7 10 7a9.9 9.9 0 004.4-1" />
+                        <path d="M9.9 9.9a3 3 0 004.2 4.2" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                <SimpleSelect
+                  value={form.role}
+                  options={ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
+                  onChange={(v) => setForm({ ...form, role: v as Role })}
+                />
+              </div>
+              <div className="flex gap-2 border-t border-[#E2E8F0] p-5">
+                <button onClick={() => setCreating(false)} className="flex-1 rounded-lg border border-[#E2E8F0] py-2.5 text-sm font-bold text-[#64748B]">Cancelar</button>
+                <button onClick={createUser} className="flex-1 rounded-lg bg-[#27B1B8] py-2.5 text-sm font-bold text-white">
+                  Crear
+                </button>
+              </div>
+            </div>
           </div>
-          <SimpleSelect
-            value={form.role}
-            options={ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
-            onChange={(v) => setForm({ ...form, role: v as Role })}
-          />
-          <button onClick={createUser} className="col-span-full rounded-lg bg-[#27B1B8] px-3 py-2 text-sm font-bold text-white">
-            Crear
-          </button>
         </div>
       )}
 
@@ -704,7 +717,7 @@ export default function UsuariosPage() {
       {permUserId && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 p-4">
           <div className="flex min-h-full items-center justify-center">
-          <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white">
+          <div className="flex max-h-[85dvh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white">
             <div className="flex items-start justify-between gap-4 border-b border-[#E2E8F0] p-5">
               <div className="flex items-start gap-3">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#D9F2F3] text-[#0E7C82]">
