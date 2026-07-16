@@ -782,6 +782,7 @@ export default function PedidosPage() {
             options={[{ value: "10", label: "10 por página" }, { value: "20", label: "20 por página" }, { value: "50", label: "50 por página" }]}
             onChange={(v) => setPerPage(Number(v))}
             className="w-40"
+            openUp
           />
         </div>
       </div>

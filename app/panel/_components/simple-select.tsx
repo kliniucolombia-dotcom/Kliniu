@@ -9,6 +9,7 @@ export function SimpleSelect({
   triggerClassName,
   placeholder,
   hideChevron,
+  openUp,
 }: {
   value: string;
   options: { value: string; label: string }[];
@@ -17,6 +18,7 @@ export function SimpleSelect({
   triggerClassName?: string;
   placeholder?: string;
   hideChevron?: boolean;
+  openUp?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -46,7 +48,11 @@ export function SimpleSelect({
         {!hideChevron && <span className="text-[#94A3B8]">▾</span>}
       </button>
       {open && (
-        <div className="absolute left-0 top-full z-10 mt-1 max-h-48 w-max min-w-full max-w-[280px] overflow-y-auto rounded-xl border border-[#E2E8F0] bg-white py-1 shadow-lg">
+        <div
+          className={`absolute left-0 z-10 max-h-48 w-max min-w-full max-w-[280px] overflow-y-auto rounded-xl border border-[#E2E8F0] bg-white py-1 shadow-lg ${
+            openUp ? "bottom-full mb-1" : "top-full mt-1"
+          }`}
+        >
           {options.map((o) => (
             <button
               key={o.value}

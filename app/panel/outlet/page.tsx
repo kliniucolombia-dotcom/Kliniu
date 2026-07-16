@@ -438,6 +438,7 @@ export default function OutletPanel() {
                 options={[{ value: "10", label: "10 por página" }, { value: "20", label: "20 por página" }, { value: "50", label: "50 por página" }]}
                 onChange={(v) => setOutletPerPage(Number(v))}
                 className="w-40"
+                openUp
               />
             </div>
           </div>
@@ -546,6 +547,7 @@ export default function OutletPanel() {
                 options={[{ value: "10", label: "10 por página" }, { value: "20", label: "20 por página" }, { value: "50", label: "50 por página" }]}
                 onChange={(v) => setAddPerPage(Number(v))}
                 className="w-40"
+                openUp
               />
             </div>
           </div>
