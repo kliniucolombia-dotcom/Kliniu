@@ -770,7 +770,7 @@ export default function ProductoDetallePage() {
                 {/* Unidad */}
                 <button
                   type="button"
-                  onClick={() => { setEsUnidad(true); setCantidad(1); setShowComboTip(false); }}
+                  onClick={() => { setEsUnidad(true); setCantidad(1); setShowComboTip(false); setSinSello(false); }}
                   className={`relative rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-150 ${
                     esUnidad
                       ? "border-[#F07826] bg-[#F07826] text-white shadow-sm"
@@ -795,6 +795,7 @@ export default function ProductoDetallePage() {
                         setEsUnidad(false);
                         setCantidad(pack.qty);
                         setShowComboTip(false);
+                        if (pack.qty !== 100) setSinSello(false);
                       }}
                       className={`relative rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-150 ${
                         isActive
@@ -820,8 +821,8 @@ export default function ProductoDetallePage() {
               )}
 
 
-              {/* Toggle sin tampografía (predeterminado: con tampografía) */}
-              {codigoConSello && (
+              {/* Toggle sin tampografía (predeterminado: con tampografía), solo visible en pack x100 */}
+              {codigoConSello && cantidad === 100 && (
                 <button
                   type="button"
                   onClick={() => setSinSello(!sinSello)}

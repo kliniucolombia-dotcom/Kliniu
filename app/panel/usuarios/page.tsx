@@ -732,8 +732,8 @@ export default function UsuariosPage() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4">
-              <table className="w-full text-sm">
+            <div className="flex-1 overflow-auto p-4">
+              <table className="w-full min-w-[480px] text-sm">
                 <thead>
                   <tr className="text-left text-xs font-bold uppercase text-[#94A3B8]">
                     <th className="p-2">Módulo</th>

@@ -57,16 +57,16 @@ export default function VideoModal({ videos }: { videos: Video[] }) {
 
   return (
     <>
-      <div className="motion-list scrollbar-hidden flex justify-center gap-4 overflow-x-auto px-2 pb-2">
+      <div className="motion-list scrollbar-hidden flex justify-start gap-3 overflow-x-auto px-2 pb-2 sm:justify-center sm:gap-4">
         {videos.map((v) => (
           <button
             key={v.id}
             type="button"
             onClick={() => setActiveHref(v.href)}
-            className="interactive-lift group flex h-44 w-40 shrink-0 cursor-pointer flex-col items-center justify-end overflow-hidden rounded-[14px] border border-[#e2e8e8] bg-white transition-all duration-300 hover:-translate-y-1 hover:border-[#9bdddf] hover:shadow-[0_18px_36px_rgba(10,92,99,0.08)]"
+            className="interactive-lift group flex w-32 shrink-0 cursor-pointer flex-col overflow-hidden rounded-[14px] border border-[#e2e8e8] bg-white transition-all duration-300 hover:-translate-y-1 hover:border-[#9bdddf] hover:shadow-[0_18px_36px_rgba(10,92,99,0.08)] sm:w-40"
           >
             {v.thumb ? (
-              <div className="relative flex flex-1 w-full items-center justify-center overflow-hidden">
+              <div className="relative aspect-square w-full shrink-0 overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={v.thumb}
@@ -74,23 +74,23 @@ export default function VideoModal({ videos }: { videos: Video[] }) {
                   className="image-lift h-full w-full object-cover object-center"
                 />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/15 transition-colors group-hover:bg-black/25">
-                  <div className="pulse-ring flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-[#27B1B8] shadow-md transition-transform group-hover:scale-110">
-                    <svg viewBox="0 0 24 24" className="h-5 w-5 translate-x-0.5" fill="currentColor">
+                  <div className="pulse-ring flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-[#27B1B8] shadow-md transition-transform group-hover:scale-110 sm:h-12 sm:w-12">
+                    <svg viewBox="0 0 24 24" className="h-4 w-4 translate-x-0.5 sm:h-5 sm:w-5" fill="currentColor">
                       <polygon points="5 3 19 12 5 21 5 3" />
                     </svg>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-1 items-center justify-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#27B1B8] text-[#27B1B8]">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 translate-x-0.5" fill="currentColor">
+              <div className="flex aspect-square w-full shrink-0 items-center justify-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#27B1B8] text-[#27B1B8] sm:h-12 sm:w-12">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 translate-x-0.5 sm:h-5 sm:w-5" fill="currentColor">
                     <polygon points="5 3 19 12 5 21 5 3" />
                   </svg>
                 </div>
               </div>
             )}
-            <p className="flex h-11 w-full items-center justify-center bg-white px-2 text-center text-xs font-bold leading-[1.25] text-[#064f59]">{v.titulo}</p>
+            <p className="flex min-h-11 w-full flex-1 items-center justify-center bg-white px-2 py-1.5 text-center text-[11px] font-bold leading-[1.25] text-[#064f59] sm:text-xs">{v.titulo}</p>
           </button>
         ))}
       </div>

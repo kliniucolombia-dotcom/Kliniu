@@ -37,8 +37,8 @@ export default function VendedoresPage() {
       )}
 
       {vendedores && vendedores.length > 0 && (
-        <div className="mt-6 overflow-hidden rounded-xl border border-[#E2E8F0] bg-white">
-          <table className="w-full text-left text-sm">
+        <div className="mt-6 overflow-x-auto rounded-xl border border-[#E2E8F0] bg-white">
+          <table className="w-full min-w-[560px] text-left text-sm">
             <thead className="bg-[#F8FAFC] text-xs font-bold text-[#64748B]">
               <tr>
                 <th className="px-4 py-3">Nombre</th>

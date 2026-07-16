@@ -118,8 +118,8 @@ function OrderProgress({ order }: { order: Order }) {
       </div>
 
       <div className="mt-5 overflow-x-auto">
-        <div className="relative min-w-[560px] px-1 py-2">
-          <div className="pointer-events-none absolute left-[12.5%] right-[12.5%] top-6 z-0">
+        <div className="relative min-w-[300px] px-1 py-2 sm:min-w-[560px]">
+          <div className="pointer-events-none absolute left-[12.5%] right-[12.5%] top-4 z-0 sm:top-6">
             <span className="block h-[6px] rounded-full bg-[#d9dde4] shadow-[inset_0_1px_2px_rgba(15,23,42,0.08)]" />
             <span
               className="absolute left-0 top-0 h-[6px] rounded-full bg-gradient-to-r from-[#27B1B8] to-[#f4a261] shadow-[0_6px_16px_rgba(237,132,53,0.25)] transition-all duration-300"
@@ -131,13 +131,13 @@ function OrderProgress({ order }: { order: Order }) {
               const isCompleted = activeStep >= 0 && index <= activeStep;
               const isCurrent = index === activeStep;
               return (
-                <div key={step.label} className="relative flex min-w-[120px] flex-1 flex-col items-center text-center">
-                  <span className={`relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border ${isCompleted ? "border-[#27B1B8] bg-[#27B1B8] text-white" : "border-black/10 bg-[#f8f8f7] text-[#8b8d91]"} ${isCurrent ? "shadow-[0_10px_24px_rgba(237,132,53,0.2)]" : ""}`}>
+                <div key={step.label} className="relative flex min-w-0 flex-1 flex-col items-center text-center sm:min-w-[120px]">
+                  <span className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border sm:h-12 sm:w-12 ${isCompleted ? "border-[#27B1B8] bg-[#27B1B8] text-white" : "border-black/10 bg-[#f8f8f7] text-[#8b8d91]"} ${isCurrent ? "shadow-[0_10px_24px_rgba(237,132,53,0.2)]" : ""}`}>
                     {step.icon}
                   </span>
-                  <div className="mt-3">
-                    <p className={`text-sm font-semibold ${isCompleted ? "text-[#0C535B]" : "text-[#8b8d91]"}`}>{step.label}</p>
-                    {isCurrent && <p className="mt-1 text-xs font-medium uppercase tracking-[0.14em] text-[#27B1B8]">Actual</p>}
+                  <div className="mt-2 px-0.5 sm:mt-3">
+                    <p className={`text-[11px] font-semibold leading-tight sm:text-sm ${isCompleted ? "text-[#0C535B]" : "text-[#8b8d91]"}`}>{step.label}</p>
+                    {isCurrent && <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.1em] text-[#27B1B8] sm:text-xs sm:tracking-[0.14em]">Actual</p>}
                   </div>
                 </div>
               );
