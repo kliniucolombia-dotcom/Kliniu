@@ -573,7 +573,7 @@ function InsumosRepuestosPage({
             {Object.entries(opcionesFiltros).filter(([, opts]) => opts.length > 0).map(([label, opciones]) => (
               <DropdownFiltro
                 key={label}
-                label={label}
+                label={label === "Color" ? "Fragancia" : label}
                 opciones={opciones}
                 activos={filtros[label] ?? []}
                 onChange={(vals) => setFiltros((prev) => ({ ...prev, [label]: vals }))}

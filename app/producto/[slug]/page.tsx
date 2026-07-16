@@ -11,7 +11,7 @@ import { useProducts } from "../../components/products-provider";
 import SiteFooter from "../../components/site-footer";
 import QuoteModal from "../../components/quote-modal";
 import ProductosCarousel from "../../components/productos-carousel";
-import { getVolumePricing, TIPO_VARIANTES, INSUMO_PACK_TIERS_BY_SKU, NO_PACK_SKUS } from "@/lib/volume-discounts";
+import { getVolumePricing, TIPO_VARIANTES, INSUMO_PACK_TIERS_BY_SKU, NO_PACK_SKUS, NO_UNIT_SALE_SKUS } from "@/lib/volume-discounts";
 import type { ProductoEspecificacion } from "../../data/catalog";
 
 const esInox = (nombre: string, categoria: string, descripcion?: string) =>
@@ -469,6 +469,16 @@ export default function ProductoDetallePage() {
   const slug = params.slug;
   const producto = products.find((p) => p.slug === slug);
 
+  // Insumos sin venta por unidad: seleccionar el paquete mínimo (x6) por defecto
+  useEffect(() => {
+    if (!producto?.sku || !NO_UNIT_SALE_SKUS.has(producto.sku)) return;
+    const minPack = INSUMO_PACK_TIERS_BY_SKU[producto.sku]?.[0];
+    if (!minPack) return;
+    setEsUnidad(false);
+    setCantidad(minPack.qty);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [producto?.sku]);
+
   const tiposVariantes = producto ? TIPO_VARIANTES[producto.slug] : undefined;
   const tipoVarianteActiva = tiposVariantes?.[tipoActivo];
 
@@ -768,17 +778,19 @@ export default function ProductoDetallePage() {
               {/* Pack selector */}
               <div className="flex flex-wrap gap-2">
                 {/* Unidad */}
-                <button
-                  type="button"
-                  onClick={() => { setEsUnidad(true); setCantidad(1); setShowComboTip(false); setSinSello(false); }}
-                  className={`relative rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-150 ${
-                    esUnidad
-                      ? "border-[#F07826] bg-[#F07826] text-white shadow-sm"
-                      : "border-black/12 bg-white text-[#444] hover:border-[#F07826]/60 hover:text-[#F07826]"
-                  }`}
-                >
-                  Unidad
-                </button>
+                {!NO_UNIT_SALE_SKUS.has(producto.sku ?? "") && (
+                  <button
+                    type="button"
+                    onClick={() => { setEsUnidad(true); setCantidad(1); setShowComboTip(false); setSinSello(false); }}
+                    className={`relative rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-150 ${
+                      esUnidad
+                        ? "border-[#F07826] bg-[#F07826] text-white shadow-sm"
+                        : "border-black/12 bg-white text-[#444] hover:border-[#F07826]/60 hover:text-[#F07826]"
+                    }`}
+                  >
+                    Unidad
+                  </button>
+                )}
 
                 {/* Packs fijos */}
                 {(INSUMO_PACK_TIERS_BY_SKU[producto.sku ?? ""]?.map((p) => ({ label: p.label, qty: p.qty })) ?? (NO_PACK_SKUS.has(producto.sku ?? "") ? [] : [

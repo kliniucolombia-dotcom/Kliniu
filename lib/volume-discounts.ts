@@ -60,41 +60,86 @@ export const PRODUCT_VOLUME_PRICES: Record<
 // formulario completo. El SKU solo cambia si se edita explícitamente ese campo.
 export const INSUMO_PACK_TIERS_BY_SKU: Record<string, { label: string; qty: number; totalPrice: number }[]> = {
   "PTZ - 118": [
+    { label: "Paquete x6", qty: 6, totalPrice: 45000 },
     { label: "Paquete x24", qty: 24, totalPrice: 130000 },
     { label: "Paquete x48", qty: 48, totalPrice: 220000 },
   ],
   "RPFC - 055": [
     { label: "Paquete x4", qty: 4, totalPrice: 100000 },
+    { label: "Paquete x8", qty: 8, totalPrice: 184000 },
   ],
   "RPH - 067": [
+    { label: "Paquete x6", qty: 6, totalPrice: 78000 },
     { label: "Paquete x8", qty: 8, totalPrice: 84900 },
     { label: "Paquete x16", qty: 16, totalPrice: 136000 },
   ],
   "RPHH - 276": [
+    { label: "Paquete x6", qty: 6, totalPrice: 12600 },
     { label: "Paquete x18", qty: 18, totalPrice: 33000 },
+    { label: "Paquete x36", qty: 36, totalPrice: 61200 },
   ],
   "RTX100 - 261": [
     { label: "Paquete x3", qty: 3, totalPrice: 67500 },
+    { label: "Paquete x6", qty: 6, totalPrice: 123000 },
+  ],
+  "RTPCP - 066": [
+    { label: "Paquete x2", qty: 2, totalPrice: 34000 },
   ],
   "SV.CN. - 033": [
+    { label: "Paquete x6", qty: 6, totalPrice: 18600 },
     { label: "Caja x30", qty: 30, totalPrice: 100000 },
+    { label: "Caja x60", qty: 60, totalPrice: 150000 },
   ],
   "SV.RN. - 037": [
+    { label: "Paquete x6", qty: 6, totalPrice: 15000 },
     { label: "Caja x60", qty: 60, totalPrice: 130000 },
+  ],
+  "TJER - 131": [
+    { label: "Paquete x6", qty: 6, totalPrice: 90000 },
+    { label: "Paquete x12", qty: 12, totalPrice: 162000 },
+  ],
+  "TJEV - 132": [
+    { label: "Paquete x6", qty: 6, totalPrice: 90000 },
+    { label: "Paquete x12", qty: 12, totalPrice: 162000 },
+  ],
+  "TJLA - 128": [
+    { label: "Paquete x6", qty: 6, totalPrice: 60000 },
+    { label: "Paquete x12", qty: 12, totalPrice: 108000 },
+  ],
+  "TJLR - 129": [
+    { label: "Paquete x6", qty: 6, totalPrice: 60000 },
+    { label: "Paquete x12", qty: 12, totalPrice: 108000 },
+  ],
+  "TJLV - 130": [
+    { label: "Paquete x6", qty: 6, totalPrice: 60000 },
+    { label: "Paquete x12", qty: 12, totalPrice: 108000 },
   ],
   "TPMR - 119": [
     { label: "Paquete x2", qty: 2, totalPrice: 79600 },
     { label: "Paquete x6", qty: 6, totalPrice: 166000 },
+    { label: "Paquete x12", qty: 12, totalPrice: 276000 },
   ],
 };
 
-export const NO_PACK_SKUS = new Set([
-  "TJER - 131", // Insumo De Jabon Espuma Frutos Rojos 1000 ml
-  "TJEV - 132", // Insumo De Jabon Espuma Frutos Verdes 1000 ml
-  "TJLA - 128", // Insumo De Jabon Líquido Avena 1000 ml
-  "TJLR - 129", // Insumo De Jabon Líquido Frutos Rojos 1000 ml
-  "TJLV - 130", // Insumo De Jabon Líquido Frutos Verdes 1000 ml
-  "RTPCP - 066", // Insumo De Toalla Natural En Rollo Precortado x 100 Mts (sin precio de paquete en excel)
+export const NO_PACK_SKUS = new Set<string>([]);
+
+// Insumos que no se venden "por unidad" — el mínimo de venta es el paquete
+// más chico definido en INSUMO_PACK_TIERS_BY_SKU. Se oculta el botón "Unidad".
+export const NO_UNIT_SALE_SKUS = new Set([
+  "TJER - 131",
+  "TJEV - 132",
+  "TJLA - 128",
+  "TJLR - 129",
+  "TJLV - 130",
+  "RPHH - 276",
+  "RPH - 067",
+  "SV.CN. - 033",
+  "SV.RN. - 037",
+  "PTZ - 118",
+  "RPFC - 055",
+  "RTX100 - 261",
+  "RTPCP - 066",
+  "TPMR - 119",
 ]);
 
 const BASE = "https://yotsdpjfnsrejtoufkuu.supabase.co/storage/v1/object/public/product-images/products";
