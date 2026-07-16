@@ -19,19 +19,16 @@ type MovementModal = {
   mode: "ajuste" | "transferir";
 };
 
-const WAREHOUSE_META: Record<string, { icon: string; description: string; color: string }> = {
+const WAREHOUSE_META: Record<string, { description: string; color: string }> = {
   MATERIA_PRIMA_MOLDES: {
-    icon: "📦",
     description: "Materias primas y moldes utilizados en producción",
     color: "#27B1B8",
   },
   PIEZAS_IMPORTADAS: {
-    icon: "🧩",
     description: "Piezas inyectadas e importadas para ensamblaje",
     color: "#F0A73C",
   },
   PRODUCTO_TERMINADO: {
-    icon: "🎁",
     description: "Productos listos para venta",
     color: "#7C6CE0",
   },
@@ -108,7 +105,7 @@ export default function BodegasPanel() {
           {/* Módulos de bodega */}
           <div className="mb-6 grid grid-cols-3 gap-2 sm:gap-4">
             {warehouses.map((w) => {
-              const meta = WAREHOUSE_META[w.key] ?? { icon: "📦", description: "", color: "#27B1B8" };
+              const meta = WAREHOUSE_META[w.key] ?? { description: "", color: "#27B1B8" };
               const stats = warehouseStats[w.id] ?? { skuCount: 0, totalUnits: 0 };
               const active = w.id === selectedWarehouseId;
               return (
@@ -129,17 +126,9 @@ export default function BodegasPanel() {
                       ✓
                     </span>
                   )}
-                  <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-3">
-                    <span
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-base sm:h-12 sm:w-12 sm:rounded-xl sm:text-2xl"
-                      style={{ background: `${meta.color}1A` }}
-                    >
-                      {meta.icon}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[9px] font-bold uppercase tracking-widest text-[#94A3B8] sm:text-[10px]">Bodega {w.order}</p>
-                      <p className="text-[13px] font-black leading-tight text-[#1A1A1A] sm:text-base">{w.name}</p>
-                    </div>
+                  <div className="min-w-0">
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-[#94A3B8] sm:text-[10px]">Bodega {w.order}</p>
+                    <p className="text-[13px] font-black leading-tight text-[#1A1A1A] sm:text-base">{w.name}</p>
                   </div>
                   <p className="hidden text-xs leading-snug text-[#64748B] sm:block">{meta.description}</p>
                   <div className="flex flex-col gap-1.5 sm:flex-row sm:items-end sm:justify-between sm:gap-2">
@@ -160,15 +149,7 @@ export default function BodegasPanel() {
           {selectedWarehouse && (
             <>
               <div className="mb-4 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-lg"
-                    style={{ background: `${(WAREHOUSE_META[selectedWarehouse.key] ?? WAREHOUSE_META.MATERIA_PRIMA_MOLDES).color}1A` }}
-                  >
-                    {(WAREHOUSE_META[selectedWarehouse.key] ?? WAREHOUSE_META.MATERIA_PRIMA_MOLDES).icon}
-                  </span>
-                  <h2 className="text-base font-black text-[#1A1A1A] sm:text-lg">Inventario — {selectedWarehouse.name}</h2>
-                </div>
+                <h2 className="text-base font-black text-[#1A1A1A] sm:text-lg">Inventario — {selectedWarehouse.name}</h2>
               </div>
 
               <input
