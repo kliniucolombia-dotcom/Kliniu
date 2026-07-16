@@ -290,35 +290,35 @@ export default function OutletPanel() {
       ) : (
         <>
           {/* KPI cards */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
             <div className="flex items-center gap-3 rounded-[1.4rem] border border-black/8 bg-white px-5 py-4 shadow-[0_10px_20px_rgba(15,23,42,0.04)]">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EAF8F6] text-[#27B1B8]"><IconBox /></span>
-              <div>
-                <p className="text-xl font-bold text-[#1f2328]">{outletProducts.length}</p>
+              <div className="min-w-0">
+                <p className="truncate text-xl font-bold text-[#1f2328]">{outletProducts.length}</p>
                 <p className="text-xs text-[#8b8d91]">Productos en outlet</p>
                 <p className="text-[11px] text-[#8b8d91]">{kpis.activeCount} activos</p>
               </div>
             </div>
             <div className="flex items-center gap-3 rounded-[1.4rem] border border-black/8 bg-white px-5 py-4 shadow-[0_10px_20px_rgba(15,23,42,0.04)]">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F0FDF4] text-[#15803D]"><IconLayers /></span>
-              <div>
-                <p className="text-xl font-bold text-[#1f2328]">{kpis.totalUnits.toLocaleString("es-CO")}</p>
+              <div className="min-w-0">
+                <p className="truncate text-xl font-bold text-[#1f2328]">{kpis.totalUnits.toLocaleString("es-CO")}</p>
                 <p className="text-xs text-[#8b8d91]">Unidades en stock</p>
                 <p className="text-[11px] text-[#8b8d91]">Total disponible</p>
               </div>
             </div>
             <div className="flex items-center gap-3 rounded-[1.4rem] border border-black/8 bg-white px-5 py-4 shadow-[0_10px_20px_rgba(15,23,42,0.04)]">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FFF7ED] text-[#C2410C]"><IconCoin /></span>
-              <div>
-                <p className="text-xl font-bold text-[#1f2328]">{fmt(kpis.inventoryValue)}</p>
+              <div className="min-w-0">
+                <p className="truncate text-xl font-bold text-[#1f2328]">{fmt(kpis.inventoryValue)}</p>
                 <p className="text-xs text-[#8b8d91]">Valor inventario outlet</p>
                 <p className="text-[11px] text-[#8b8d91]">Precio actual</p>
               </div>
             </div>
             <div className="flex items-center gap-3 rounded-[1.4rem] border border-black/8 bg-white px-5 py-4 shadow-[0_10px_20px_rgba(15,23,42,0.04)]">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F5F3FF] text-[#6D28D9]"><IconTrend /></span>
-              <div>
-                <p className="text-xl font-bold text-[#1f2328]">{kpis.available}</p>
+              <div className="min-w-0">
+                <p className="truncate text-xl font-bold text-[#1f2328]">{kpis.available}</p>
                 <p className="text-xs text-[#8b8d91]">Productos disponibles</p>
                 <p className="text-[11px] text-[#8b8d91]">Para agregar</p>
               </div>
