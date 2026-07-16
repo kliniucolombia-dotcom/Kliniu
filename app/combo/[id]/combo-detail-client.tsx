@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useCart } from "../../components/cart-provider";
 
@@ -33,6 +33,31 @@ export default function ComboDetailClient({
   const [active, setActive] = useState(0);
   const [added, setAdded] = useState(false);
   const mobileScrollRef = useRef<HTMLDivElement>(null);
+
+  const [lightbox, setLightbox] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [zoom, setZoom] = useState(1);
+
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index);
+    setLightbox(true);
+    setZoom(1);
+  };
+  const closeLightbox = () => setLightbox(false);
+  const goPrev = () => { setLightboxIndex((i) => (i - 1 + galleryImages.length) % galleryImages.length); setZoom(1); };
+  const goNext = () => { setLightboxIndex((i) => (i + 1) % galleryImages.length); setZoom(1); };
+
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowLeft") goPrev();
+      if (e.key === "ArrowRight") goNext();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lightbox, galleryImages.length]);
 
   const selectMobileImage = (index: number) => {
     setActive(index);
@@ -99,15 +124,20 @@ export default function ComboDetailClient({
                 ))}
               </div>
 
-              <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-black/8 bg-white p-6">
+              <button
+                type="button"
+                onClick={() => openLightbox(active)}
+                className="group relative aspect-square w-full overflow-hidden rounded-2xl border border-black/8 bg-white p-6"
+                aria-label="Ver imagen ampliada"
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={galleryImages[active]}
                   alt={combo.nombre}
-                  className="h-full w-full object-contain"
+                  className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.03]"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
                 />
-              </div>
+              </button>
             </div>
 
             {/* Mobile gallery */}
@@ -125,9 +155,12 @@ export default function ComboDetailClient({
                   style={{ scrollbarWidth: "none" }}
                 >
                   {galleryImages.map((src, i) => (
-                    <div
+                    <button
                       key={`mobile-image-${i}`}
+                      type="button"
+                      onClick={() => openLightbox(i)}
                       className="flex min-w-full shrink-0 snap-center items-center justify-center p-4"
+                      aria-label={`Ver imagen ${i + 1} ampliada`}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -136,7 +169,7 @@ export default function ComboDetailClient({
                         className="h-full w-full object-contain"
                         onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
                       />
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -203,6 +236,103 @@ export default function ComboDetailClient({
           </div>
         </div>
       </section>
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 backdrop-blur-sm"
+          onClick={closeLightbox}
+        >
+          <button
+            type="button"
+            onClick={closeLightbox}
+            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+            aria-label="Cerrar"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
+            </svg>
+          </button>
+
+          {galleryImages.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); goPrev(); }}
+              className="absolute left-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+              aria-label="Anterior"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
+
+          <div
+            className="mx-16 flex max-h-[88vh] max-w-[88vw] items-center justify-center overflow-hidden rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={galleryImages[lightboxIndex] || "/product-placeholder.png"}
+              alt={`${combo.nombre} ${lightboxIndex + 1}`}
+              className="max-h-[88vh] max-w-[88vw] select-none object-contain shadow-[0_32px_80px_rgba(0,0,0,0.5)]"
+              style={{ transform: `scale(${zoom})`, transition: "transform 0.15s ease" }}
+              draggable={false}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
+            />
+          </div>
+
+          <div className="absolute bottom-14 right-4 flex flex-col items-center gap-1.5">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setZoom((z) => Math.min(4, z + 0.5)); }}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25"
+              aria-label="Acercar"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35M11 8v6M8 11h6" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setZoom((z) => Math.max(1, z - 0.5)); }}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25"
+              aria-label="Alejar"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35M8 11h6" />
+              </svg>
+            </button>
+          </div>
+
+          {galleryImages.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); goNext(); }}
+              className="absolute right-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+              aria-label="Siguiente"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
+
+          {galleryImages.length > 1 && (
+            <div className="absolute bottom-5 flex gap-2">
+              {galleryImages.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setLightboxIndex(i); setZoom(1); }}
+                  className={`h-2 w-2 rounded-full transition-all ${i === lightboxIndex ? "w-5 bg-white" : "bg-white/40"}`}
+                  aria-label={`Imagen ${i + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </main>
   );
 }

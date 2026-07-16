@@ -2,16 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { useCart } from "./cart-provider";
 import WhatsAppAsesor from "./whatsapp-asesor";
-
-type ComboProducto = {
-  nombre: string;
-  cantidad: number;
-  imagen: string;
-  precio: string;
-};
 
 type Combo = {
   id: string;
@@ -19,7 +12,6 @@ type Combo = {
   imagen: string;
   destacado: boolean;
   items: string[];
-  productos: ComboProducto[];
   precio: string;
   precioNumero: number;
   sku: string;
@@ -28,34 +20,6 @@ type Combo = {
 export default function ComboCarousel({ combos }: { combos: Combo[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { addItem } = useCart();
-  const [lightboxCombo, setLightboxCombo] = useState<Combo | null>(null);
-  const [lightboxIndex, setLightboxIndex] = useState(0);
-  const [zoom, setZoom] = useState(1);
-
-  const lightboxImages = lightboxCombo
-    ? [lightboxCombo.imagen, ...lightboxCombo.productos.map((p) => p.imagen)]
-    : [];
-
-  const openLightbox = (combo: Combo) => {
-    setLightboxCombo(combo);
-    setLightboxIndex(0);
-    setZoom(1);
-  };
-  const closeLightbox = () => setLightboxCombo(null);
-  const goPrev = () => { setLightboxIndex((i) => (i - 1 + lightboxImages.length) % lightboxImages.length); setZoom(1); };
-  const goNext = () => { setLightboxIndex((i) => (i + 1) % lightboxImages.length); setZoom(1); };
-
-  useEffect(() => {
-    if (!lightboxCombo) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeLightbox();
-      if (e.key === "ArrowLeft") goPrev();
-      if (e.key === "ArrowRight") goNext();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lightboxCombo, lightboxImages.length]);
 
   const handleAdd = (combo: Combo) =>
     addItem({
@@ -108,15 +72,10 @@ export default function ComboCarousel({ combos }: { combos: Combo[] }) {
                 Más vendido
               </span>
             )}
-            <button
-              type="button"
-              onClick={() => openLightbox(combo)}
-              aria-label={`Ver imágenes de ${combo.nombre}`}
-              className="flex h-36 w-full items-center justify-center bg-[#f8f8f7] p-3"
-            >
+            <div className="flex h-36 items-center justify-center bg-[#f8f8f7] p-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={combo.imagen} alt={combo.nombre} className="image-lift h-full w-full object-contain" />
-            </button>
+            </div>
             <div className="flex flex-col gap-2 p-4">
               <p className="font-semibold text-[#111]">{combo.nombre}</p>
               <ul className="space-y-1">
@@ -180,115 +139,6 @@ export default function ComboCarousel({ combos }: { combos: Combo[] }) {
       >
         ›
       </button>
-
-      {/* Lightbox combo */}
-      {lightboxCombo && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 backdrop-blur-sm"
-          onClick={closeLightbox}
-        >
-          {/* Header: nombre + precio */}
-          <div className="absolute left-4 top-4 max-w-[70%] text-white">
-            <p className="text-sm font-bold leading-tight">{lightboxCombo.nombre}</p>
-            <p className="text-xs text-white/70">{lightboxCombo.precio}</p>
-          </div>
-
-          {/* Close */}
-          <button
-            type="button"
-            onClick={closeLightbox}
-            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
-            aria-label="Cerrar"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
-            </svg>
-          </button>
-
-          {/* Prev */}
-          {lightboxImages.length > 1 && (
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); goPrev(); }}
-              className="absolute left-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
-              aria-label="Anterior"
-            >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          )}
-
-          {/* Imagen */}
-          <div
-            className="mx-16 flex max-h-[70vh] max-w-[88vw] items-center justify-center overflow-hidden rounded-2xl bg-white p-8"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={lightboxImages[lightboxIndex] || "/product-placeholder.png"}
-              alt={`${lightboxCombo.nombre} ${lightboxIndex + 1}`}
-              className="max-h-[60vh] max-w-[76vw] select-none object-contain"
-              style={{ transform: `scale(${zoom})`, transition: "transform 0.15s ease" }}
-              draggable={false}
-              onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
-            />
-          </div>
-
-          {/* Zoom controls */}
-          <div className="absolute bottom-14 right-4 flex flex-col items-center gap-1.5">
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setZoom((z) => Math.min(3, z + 0.5)); }}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25"
-              aria-label="Acercar"
-            >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2">
-                <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35M11 8v6M8 11h6" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setZoom((z) => Math.max(1, z - 0.5)); }}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25"
-              aria-label="Alejar"
-            >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2">
-                <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35M8 11h6" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Next */}
-          {lightboxImages.length > 1 && (
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); goNext(); }}
-              className="absolute right-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
-              aria-label="Siguiente"
-            >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          )}
-
-          {/* Dots */}
-          {lightboxImages.length > 1 && (
-            <div className="absolute bottom-5 flex gap-2">
-              {lightboxImages.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setLightboxIndex(i); setZoom(1); }}
-                  className={`h-2 w-2 rounded-full transition-all ${i === lightboxIndex ? "w-5 bg-white" : "bg-white/40"}`}
-                  aria-label={`Imagen ${i + 1}`}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
