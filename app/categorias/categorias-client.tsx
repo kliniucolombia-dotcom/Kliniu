@@ -440,15 +440,45 @@ function getColores(p: ProductoCatalogo): string[] {
   return [...new Set([...explicit, ...inferred, ...variants].filter(Boolean))];
 }
 
-function derivarOpcionesFiltros(productos: ProductoCatalogo[]) {
-  const am = [...new Set(productos.map(getAutoManual).filter(Boolean) as string[])].sort();
+const FRAGANCIA_MATCHERS: Array<[string, RegExp]> = [
+  ["Avena", /\bavena\b/i],
+  ["Frutos Rojos", /\bfrutos\s+rojos\b/i],
+  ["Frutos Verdes", /\bfrutos\s+verdes\b/i],
+];
+
+function getFragancias(p: ProductoCatalogo): string[] {
+  const inferred = FRAGANCIA_MATCHERS.filter(([, matcher]) => matcher.test(p.nombre)).map(
+    ([label]) => label,
+  );
+  return [...new Set(inferred)];
+}
+
+const TIPO_INSUMO_MATCHERS: Array<[string, RegExp]> = [
+  ["Jabón", /\bjab[oó]n\b/i],
+  ["Papel Higiénico", /\bpapel\s+higi[eé]nico\b/i],
+  ["Servilletas", /\bservilletas?\b/i],
+  ["Toalla", /\btoallas?\b/i],
+];
+
+function getTipoInsumo(p: ProductoCatalogo): string | null {
+  const match = TIPO_INSUMO_MATCHERS.find(([, matcher]) => matcher.test(p.nombre));
+  return match ? match[0] : null;
+}
+
+function derivarOpcionesFiltros(productos: ProductoCatalogo[], esInsumos = false): Record<string, string[]> {
   const cap = [...new Set(productos.map(getCapacidad).filter(Boolean))].sort();
   const mat = [...new Set(productos.flatMap(getMateriales).filter(Boolean))].sort();
+  if (esInsumos) {
+    const tipo = [...new Set(productos.map(getTipoInsumo).filter(Boolean) as string[])].sort();
+    const frag = [...new Set(productos.flatMap(getFragancias).filter(Boolean))].sort();
+    return { Tipo: tipo, Capacidad: cap, Material: mat, Fragancia: frag };
+  }
+  const am = [...new Set(productos.map(getAutoManual).filter(Boolean) as string[])].sort();
   const col = [...new Set(productos.flatMap(getColores).filter(Boolean))].sort();
   return { "Automático / Manual": am, Capacidad: cap, Material: mat, Color: col };
 }
 
-function aplicarFiltros(productos: ProductoCatalogo[], filtros: FiltrosState) {
+function aplicarFiltros(productos: ProductoCatalogo[], filtros: FiltrosState, esInsumos = false) {
   return productos.filter((p) => {
     if (filtros["Automático / Manual"]?.length > 0) {
       const val = getAutoManual(p);
@@ -462,7 +492,16 @@ function aplicarFiltros(productos: ProductoCatalogo[], filtros: FiltrosState) {
       const materiales = getMateriales(p);
       if (!filtros["Material"].some((m) => materiales.includes(m))) return false;
     }
-    if (filtros["Color"]?.length > 0) {
+    if (esInsumos) {
+      if (filtros["Tipo"]?.length > 0) {
+        const tipo = getTipoInsumo(p);
+        if (!tipo || !filtros["Tipo"].includes(tipo)) return false;
+      }
+      if (filtros["Fragancia"]?.length > 0) {
+        const fragancias = getFragancias(p);
+        if (!filtros["Fragancia"].some((f) => fragancias.includes(f))) return false;
+      }
+    } else if (filtros["Color"]?.length > 0) {
       const colores = getColores(p);
       if (!filtros["Color"].some((c) => colores.includes(c))) return false;
     }
@@ -573,7 +612,7 @@ function InsumosRepuestosPage({
             {Object.entries(opcionesFiltros).filter(([, opts]) => opts.length > 0).map(([label, opciones]) => (
               <DropdownFiltro
                 key={label}
-                label={label === "Color" ? "Fragancia" : label}
+                label={label}
                 opciones={opciones}
                 activos={filtros[label] ?? []}
                 onChange={(vals) => setFiltros((prev) => ({ ...prev, [label]: vals }))}
@@ -732,8 +771,9 @@ export default function CategoriasPage({
     return coincideCategoria && coincideBusqueda;
   });
 
-  const opcionesFiltros = derivarOpcionesFiltros(productosPorCategoria);
-  const productosFiltradosBase = aplicarFiltros(productosPorCategoria, filtros);
+  const esInsumos = tipoActivo === "insumos";
+  const opcionesFiltros = derivarOpcionesFiltros(productosPorCategoria, esInsumos);
+  const productosFiltradosBase = aplicarFiltros(productosPorCategoria, filtros, esInsumos);
   const productosFiltrados = queryActiva
     ? [...productosFiltradosBase].sort((a, b) => scoreProducto(b, queryTerms) - scoreProducto(a, queryTerms))
     : productosFiltradosBase;

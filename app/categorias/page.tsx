@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   title: "Categorías",
 };
 
+export const dynamic = "force-dynamic";
+
 async function getCategoryBanners(): Promise<Record<string, CategoryBannerData>> {
   if (!prisma) return {};
 
