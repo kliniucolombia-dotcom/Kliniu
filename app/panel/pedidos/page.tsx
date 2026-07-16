@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
+import { SimpleSelect } from "../_components/simple-select";
 import Image from "next/image";
 
 type OrderItem = {
@@ -376,15 +377,11 @@ export default function PedidosPage() {
           <div className="mt-6 grid gap-5 md:grid-cols-2">
             <label className="space-y-2">
               <span className="text-sm font-medium text-[#4f545a]">Estado de envío</span>
-              <select
+              <SimpleSelect
                 value={form.shippingStatus}
-                onChange={(e) => setForm((f) => ({ ...f, shippingStatus: e.target.value }))}
-                className="w-full rounded-2xl border border-black/10 bg-[#fafaf9] px-4 py-3 text-sm text-[#1f2328] outline-none transition-colors duration-200 focus:border-[#27B1B8]"
-              >
-                {SHIPPING_STATUSES.map((s) => (
-                  <option key={s} value={s}>{getShippingStatusLabel(s)}</option>
-                ))}
-              </select>
+                options={SHIPPING_STATUSES.map((s) => ({ value: s, label: getShippingStatusLabel(s) }))}
+                onChange={(v) => setForm((f) => ({ ...f, shippingStatus: v }))}
+              />
             </label>
 
             <label className="space-y-2">

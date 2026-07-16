@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { SimpleSelect } from "../_components/simple-select";
 
 type Warehouse = { id: string; key: string; name: string; order: number };
 type Product = {
@@ -341,8 +342,9 @@ function MovementModalView({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-      <div className="my-8 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40">
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
         <div className="mb-4 flex items-start justify-between">
           <h3 className="font-black text-[#1A1A1A]">
             {modal.mode === "ajuste" ? "Ajustar stock" : "Transferir stock"} — {modal.product.name}
@@ -355,48 +357,39 @@ function MovementModalView({
             <label className="mb-1 block text-xs font-bold text-[#64748B]">
               {modal.mode === "ajuste" ? "Bodega" : "Bodega origen"}
             </label>
-            <select
+            <SimpleSelect
               value={warehouseId}
-              onChange={(e) => {
-                const nextWarehouseId = e.target.value;
+              options={warehouses.map((w) => ({ value: w.id, label: w.name }))}
+              onChange={(nextWarehouseId) => {
                 setWarehouseId(nextWarehouseId);
                 if (modal.mode === "transferir" && nextWarehouseId === toWarehouseId) {
                   const fallback = warehouses.find((w) => w.id !== nextWarehouseId);
                   if (fallback) setToWarehouseId(fallback.id);
                 }
               }}
-              className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm"
-            >
-              {warehouses.map((w) => (
-                <option key={w.id} value={w.id}>{w.name}</option>
-              ))}
-            </select>
+            />
           </div>
 
           {modal.mode === "ajuste" ? (
             <div>
               <label className="mb-1 block text-xs font-bold text-[#64748B]">Tipo</label>
-              <select
+              <SimpleSelect
                 value={type}
-                onChange={(e) => setType(e.target.value as "ENTRADA" | "SALIDA")}
-                className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm"
-              >
-                <option value="ENTRADA">Entrada</option>
-                <option value="SALIDA">Salida</option>
-              </select>
+                options={[
+                  { value: "ENTRADA", label: "Entrada" },
+                  { value: "SALIDA", label: "Salida" },
+                ]}
+                onChange={(v) => setType(v as "ENTRADA" | "SALIDA")}
+              />
             </div>
           ) : (
             <div>
               <label className="mb-1 block text-xs font-bold text-[#64748B]">Bodega destino</label>
-              <select
+              <SimpleSelect
                 value={toWarehouseId}
-                onChange={(e) => setToWarehouseId(e.target.value)}
-                className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm"
-              >
-                {warehouses.filter((w) => w.id !== warehouseId).map((w) => (
-                  <option key={w.id} value={w.id}>{w.name}</option>
-                ))}
-              </select>
+                options={warehouses.filter((w) => w.id !== warehouseId).map((w) => ({ value: w.id, label: w.name }))}
+                onChange={setToWarehouseId}
+              />
             </div>
           )}
 
@@ -432,6 +425,7 @@ function MovementModalView({
           >
             {submitting ? "Guardando…" : "Confirmar"}
           </button>
+        </div>
         </div>
       </div>
     </div>

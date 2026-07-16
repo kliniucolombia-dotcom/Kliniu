@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { buildQuotationSummary, calcLineTotal, type QuotationTaxConfigInput } from "@/lib/quotation-calculator";
+import { SimpleSelect } from "../../_components/simple-select";
 
 const fmt = (n: number) =>
   (n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -267,14 +268,15 @@ export default function QuotationEditorPage() {
                         {item.imageUrl && <img src={item.imageUrl} alt="" className="h-10 w-10 rounded-lg object-cover" />}
                         <div className="flex flex-1 flex-col gap-1">
                           {isDraft ? (
-                            <select
+                            <SimpleSelect
                               value={item.productId ?? ""}
-                              onChange={(e) => selectProduct(item.id, e.target.value)}
-                              className={`${inputClass} cursor-pointer text-xs transition-all duration-200 hover:border-[#27B1B8] hover:bg-[#F0FAFA] hover:shadow-sm`}
-                            >
-                              <option value="">— Ítem manual —</option>
-                              {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                            </select>
+                              options={[
+                                { value: "", label: "— Ítem manual —" },
+                                ...products.map((p) => ({ value: p.id, label: p.name })),
+                              ]}
+                              onChange={(v) => selectProduct(item.id, v)}
+                              className="text-xs"
+                            />
                           ) : (
                             <span className="text-sm font-semibold text-[#1A1A1A]">{item.name}</span>
                           )}

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { SimpleSelect } from "../../_components/simple-select";
 
 type EmployeeOption = { id: string; employeeCode: string; user: { fullName: string } };
 
@@ -119,19 +120,19 @@ export default function AusenciasPage() {
 
       {creating && (
         <div className="grid grid-cols-1 gap-3 rounded-xl border border-[#E2E8F0] bg-white p-4 md:grid-cols-3">
-          <select value={form.employeeId}
-            onChange={(e) => setForm({ ...form, employeeId: e.target.value })}
-            className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm">
-            <option value="">Selecciona empleado…</option>
-            {employees.map((e) => (
-              <option key={e.id} value={e.id}>{e.user.fullName} ({e.employeeCode})</option>
-            ))}
-          </select>
-          <select value={form.type}
-            onChange={(e) => setForm({ ...form, type: e.target.value as typeof form.type })}
-            className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm">
-            {ABSENCE_TYPES.map((t) => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
-          </select>
+          <SimpleSelect
+            value={form.employeeId}
+            options={[
+              { value: "", label: "Selecciona empleado…" },
+              ...employees.map((e) => ({ value: e.id, label: `${e.user.fullName} (${e.employeeCode})` })),
+            ]}
+            onChange={(v) => setForm({ ...form, employeeId: v })}
+          />
+          <SimpleSelect
+            value={form.type}
+            options={ABSENCE_TYPES.map((t) => ({ value: t, label: TYPE_LABELS[t] }))}
+            onChange={(v) => setForm({ ...form, type: v as typeof form.type })}
+          />
           <input type="date" value={form.startDate}
             onChange={(e) => setForm({ ...form, startDate: e.target.value })}
             className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />

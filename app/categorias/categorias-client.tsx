@@ -595,7 +595,7 @@ function InsumosRepuestosPage({
         )}
 
         {totalPaginas > 1 && (
-          <div className="mt-10 flex justify-end gap-1.5">
+          <div className="mt-10 flex justify-center gap-2">
             {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((p) => (
               <button
                 key={p}
@@ -604,10 +604,10 @@ function InsumosRepuestosPage({
                   setPagina(p);
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                className={`flex h-7 min-w-7 items-center justify-center rounded-md border px-2 text-xs font-black transition-colors ${
+                className={`flex h-9 min-w-[2.25rem] items-center justify-center rounded-full px-3 text-sm font-medium transition-colors ${
                   pagina === p
-                    ? "border-[#073F43] bg-[#073F43] text-white"
-                    : "border-[#073F43] bg-white text-[#073F43] hover:bg-[#EAF8F7]"
+                    ? "bg-[#27B1B8] text-white"
+                    : "border border-black/10 bg-white text-[#5d6167] hover:border-[#27B1B8]/50 hover:text-[#27B1B8]"
                 }`}
               >
                 {p}

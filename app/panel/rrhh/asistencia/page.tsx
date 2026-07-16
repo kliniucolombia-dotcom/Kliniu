@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { SimpleSelect } from "../../_components/simple-select";
 
 type EmployeeOption = { id: string; employeeCode: string; user: { fullName: string } };
 
@@ -91,22 +92,22 @@ export default function AsistenciaPage() {
 
       {creating && (
         <div className="grid grid-cols-1 gap-3 rounded-xl border border-[#E2E8F0] bg-white p-4 md:grid-cols-4">
-          <select value={form.employeeId}
-            onChange={(e) => setForm({ ...form, employeeId: e.target.value })}
-            className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm">
-            <option value="">Selecciona empleado…</option>
-            {employees.map((e) => (
-              <option key={e.id} value={e.id}>{e.user.fullName} ({e.employeeCode})</option>
-            ))}
-          </select>
+          <SimpleSelect
+            value={form.employeeId}
+            options={[
+              { value: "", label: "Selecciona empleado…" },
+              ...employees.map((e) => ({ value: e.id, label: `${e.user.fullName} (${e.employeeCode})` })),
+            ]}
+            onChange={(v) => setForm({ ...form, employeeId: v })}
+          />
           <input type="date" value={form.date}
             onChange={(e) => setForm({ ...form, date: e.target.value })}
             className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
-          <select value={form.status}
-            onChange={(e) => setForm({ ...form, status: e.target.value as typeof form.status })}
-            className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm">
-            {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
-          </select>
+          <SimpleSelect
+            value={form.status}
+            options={STATUS_OPTIONS.map((s) => ({ value: s, label: STATUS_LABELS[s] }))}
+            onChange={(v) => setForm({ ...form, status: v as typeof form.status })}
+          />
           <input placeholder="Nota (opcional)" value={form.note}
             onChange={(e) => setForm({ ...form, note: e.target.value })}
             className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />

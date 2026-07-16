@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { SimpleSelect } from "../_components/simple-select";
 
 const fmt = (n: number) =>
   n.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -154,16 +155,16 @@ export default function CotizacionesListPage() {
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
             <h3 className="font-black text-[#1A1A1A]">Nueva cotización</h3>
             <p className="mt-2 text-sm text-[#64748B]">Selecciona el cliente para esta cotización.</p>
-            <select
-              value={selectedClientId}
-              onChange={(e) => setSelectedClientId(e.target.value)}
-              className="mt-4 w-full cursor-pointer rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm outline-none transition-all duration-200 hover:border-[#27B1B8] hover:shadow-sm focus:border-[#27B1B8]"
-            >
-              <option value="">— Selecciona un cliente —</option>
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>{c.company || c.fullName}</option>
-              ))}
-            </select>
+            <div className="mt-4">
+              <SimpleSelect
+                value={selectedClientId}
+                options={[
+                  { value: "", label: "— Selecciona un cliente —" },
+                  ...clients.map((c) => ({ value: c.id, label: c.company || c.fullName })),
+                ]}
+                onChange={setSelectedClientId}
+              />
+            </div>
             {error && <p className="mt-2 text-xs font-semibold text-[#DC2626]">{error}</p>}
             <div className="mt-5 flex justify-end gap-2">
               <button

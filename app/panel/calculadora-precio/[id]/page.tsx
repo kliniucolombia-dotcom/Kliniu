@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { buildSaleCalculatorSummary, type SaleCalcConfig, type SaleCalcItemInput } from "@/lib/sale-calculator";
+import { SimpleSelect } from "../../_components/simple-select";
 
 const fmt = (n: number) =>
   (n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -263,14 +264,15 @@ export default function SaleCalculatorEditorPage() {
                           />
                         )}
                         <div className="flex flex-1 flex-col gap-1">
-                          <select
+                          <SimpleSelect
                             value={item.productId ?? ""}
-                            onChange={(e) => e.target.value ? selectProduct(item.id, e.target.value) : updateItem(item.id, { productId: null })}
-                            className={`${inputClass} cursor-pointer transition-all duration-200 hover:border-[#27B1B8] hover:bg-[#F0FAFA] hover:shadow-sm text-xs`}
-                          >
-                            <option value="">— Producto manual —</option>
-                            {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                          </select>
+                            options={[
+                              { value: "", label: "— Producto manual —" },
+                              ...products.map((p) => ({ value: p.id, label: p.name })),
+                            ]}
+                            onChange={(v) => v ? selectProduct(item.id, v) : updateItem(item.id, { productId: null })}
+                            className="text-xs"
+                          />
                           {!item.productId && (
                             <input
                               value={item.nombreProducto}

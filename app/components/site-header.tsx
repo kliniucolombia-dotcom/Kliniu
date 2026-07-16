@@ -83,11 +83,9 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
     event.preventDefault();
     const q = searchQuery.trim();
     setSearchFocused(false);
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams();
     if (q) {
       params.set("q", q);
-    } else {
-      params.delete("q");
     }
     const targetUrl = params.toString()
       ? `/categorias?${params.toString()}`
@@ -99,13 +97,18 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
     router.push(targetUrl);
   };
 
+  const normalizeText = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+
   const searchSuggestions = searchQuery.trim().length >= 2
-    ? products
-        .filter((p) =>
-          p.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (p.descripcion || "").toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        .slice(0, 6)
+    ? (() => {
+        const q = normalizeText(searchQuery.trim());
+        return products
+          .filter((p) =>
+            normalizeText(p.nombre).includes(q) ||
+            normalizeText(p.descripcion || "").includes(q)
+          )
+          .slice(0, 6);
+      })()
     : [];
 
   const showSuggestions = searchFocused && searchSuggestions.length > 0;

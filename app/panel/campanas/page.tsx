@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { calcROAS, getCampaignStatus, STATUS_META } from "@/lib/panel-utils";
+import { SimpleSelect } from "../_components/simple-select";
 import DailyMatrix from "./DailyMatrix";
 
 type Campaign = {
@@ -176,18 +177,20 @@ export default function CampanasPanel() {
 
               <div>
                 <label className="mb-1 block text-xs font-bold text-[#64748B]">Vendedor</label>
-                <select value={form.sellerId} onChange={(e) => setForm({ ...form, sellerId: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]">
-                  <option value="">Sin asignar</option>
-                  {sellers.map((s) => <option key={s.id} value={s.id}>{s.fullName}</option>)}
-                </select>
+                <SimpleSelect
+                  value={form.sellerId}
+                  options={[{ value: "", label: "Sin asignar" }, ...sellers.map((s) => ({ value: s.id, label: s.fullName }))]}
+                  onChange={(v) => setForm({ ...form, sellerId: v })}
+                />
               </div>
 
               <div>
                 <label className="mb-1 block text-xs font-bold text-[#64748B]">Producto (opcional)</label>
-                <select value={form.productId} onChange={(e) => setForm({ ...form, productId: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]">
-                  <option value="">Sin producto</option>
-                  {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
+                <SimpleSelect
+                  value={form.productId}
+                  options={[{ value: "", label: "Sin producto" }, ...products.map((p) => ({ value: p.id, label: p.name }))]}
+                  onChange={(v) => setForm({ ...form, productId: v })}
+                />
               </div>
 
               <div>
@@ -212,9 +215,11 @@ export default function CampanasPanel() {
 
               <div>
                 <label className="mb-1 block text-xs font-bold text-[#64748B]">Plataforma</label>
-                <select value={form.platform} onChange={(e) => setForm({ ...form, platform: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]">
-                  {["Meta Ads","Google Ads","TikTok Ads","LinkedIn Ads","Otro"].map((p) => <option key={p}>{p}</option>)}
-                </select>
+                <SimpleSelect
+                  value={form.platform}
+                  options={["Meta Ads","Google Ads","TikTok Ads","LinkedIn Ads","Otro"].map((p) => ({ value: p, label: p }))}
+                  onChange={(v) => setForm({ ...form, platform: v })}
+                />
               </div>
 
               {/* Preview ROAS en tiempo real */}

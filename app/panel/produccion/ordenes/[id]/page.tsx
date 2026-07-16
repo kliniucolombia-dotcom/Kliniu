@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { SimpleSelect } from "../../../_components/simple-select";
 
 type ProductionOrderStatus = "DRAFT" | "APPROVED" | "IN_PRODUCTION" | "COMPLETED" | "CANCELLED";
 
@@ -278,10 +279,16 @@ export default function ProductionOrderDetailPage() {
                         <img src={selected.image} alt={selected.name} className="h-9 w-9 shrink-0 rounded-lg border border-[#E2E8F0] object-cover" />
                       ) : null;
                     })()}
-                    <select value={newItem.productId} onChange={(e) => setNewItem((f) => ({ ...f, productId: e.target.value }))} className={`${inputClass} cursor-pointer`}>
-                      <option value="">— Seleccionar —</option>
-                      {products.map((p) => <option key={p.id} value={p.id}>{p.name}{p.sku ? ` (${p.sku})` : ""}</option>)}
-                    </select>
+                    <div className="flex-1">
+                      <SimpleSelect
+                        value={newItem.productId}
+                        options={[
+                          { value: "", label: "— Seleccionar —" },
+                          ...products.map((p) => ({ value: p.id, label: `${p.name}${p.sku ? ` (${p.sku})` : ""}` })),
+                        ]}
+                        onChange={(v) => setNewItem((f) => ({ ...f, productId: v }))}
+                      />
+                    </div>
                   </div>
                 </div>
                 <div>

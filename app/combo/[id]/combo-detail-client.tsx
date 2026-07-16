@@ -107,24 +107,17 @@ export default function ComboDetailClient({
                 />
               </div>
               {galleryImages.length > 1 && (
-                <div className="mt-3 flex items-center justify-center gap-2 overflow-x-auto px-2">
-                  {galleryImages.map((src, i) => (
+                <div className="mt-3 flex items-center justify-center gap-2">
+                  {galleryImages.map((_, i) => (
                     <button
-                      key={`mobile-thumb-${i}`}
+                      key={`mobile-dot-${i}`}
                       type="button"
                       onClick={() => setActive(i)}
-                      className={`h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 bg-white p-1 ${
-                        active === i ? "border-[#27B1B8]" : "border-black/8"
+                      className={`h-2.5 rounded-full transition-all ${
+                        active === i ? "w-2.5 bg-[#2E8BFF]" : "w-2.5 bg-black/12"
                       }`}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={src}
-                        alt={`${combo.nombre} ${i + 1}`}
-                        className="h-full w-full object-contain"
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
-                      />
-                    </button>
+                      aria-label={`Imagen ${i + 1}`}
+                    />
                   ))}
                 </div>
               )}

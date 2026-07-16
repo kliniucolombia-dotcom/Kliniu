@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { buildProductionSummary, type ProductionRunInput } from "@/lib/production-calculator";
+import { SimpleSelect } from "../_components/simple-select";
 
 const MAX_NUM = 999_999_999;
 
@@ -192,10 +193,14 @@ export default function ProduccionPage() {
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               <div>
                 <label className={labelClass}>Máquina</label>
-                <select value={form.machineId} onChange={(e) => set("machineId", e.target.value)} className={`${inputClass} cursor-pointer`}>
-                  <option value="">— Seleccionar —</option>
-                  {machines.map((m) => <option key={m.id} value={m.id}>{m.code} · {m.name}</option>)}
-                </select>
+                <SimpleSelect
+                  value={form.machineId}
+                  options={[
+                    { value: "", label: "— Seleccionar —" },
+                    ...machines.map((m) => ({ value: m.id, label: `${m.code} · ${m.name}` })),
+                  ]}
+                  onChange={(v) => set("machineId", v)}
+                />
               </div>
               <div>
                 <label className={labelClass}>Marca</label>
@@ -203,10 +208,14 @@ export default function ProduccionPage() {
               </div>
               <div>
                 <label className={labelClass}>Operario</label>
-                <select value={form.operatorId} onChange={(e) => set("operatorId", e.target.value)} className={`${inputClass} cursor-pointer`}>
-                  <option value="">— Seleccionar —</option>
-                  {operators.map((o) => <option key={o.id} value={o.id}>{o.fullName}</option>)}
-                </select>
+                <SimpleSelect
+                  value={form.operatorId}
+                  options={[
+                    { value: "", label: "— Seleccionar —" },
+                    ...operators.map((o) => ({ value: o.id, label: o.fullName })),
+                  ]}
+                  onChange={(v) => set("operatorId", v)}
+                />
               </div>
               <div>
                 <label className={labelClass}>Fecha</label>
@@ -236,10 +245,14 @@ export default function ProduccionPage() {
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               <div className="col-span-2 sm:col-span-3">
                 <label className={labelClass}>Producto (catálogo, opcional)</label>
-                <select value={form.productId} onChange={(e) => selectProduct(e.target.value)} className={`${inputClass} cursor-pointer`}>
-                  <option value="">— Producto manual —</option>
-                  {products.map((p) => <option key={p.id} value={p.id}>{p.name}{p.sku ? ` (${p.sku})` : ""}</option>)}
-                </select>
+                <SimpleSelect
+                  value={form.productId}
+                  options={[
+                    { value: "", label: "— Producto manual —" },
+                    ...products.map((p) => ({ value: p.id, label: `${p.name}${p.sku ? ` (${p.sku})` : ""}` })),
+                  ]}
+                  onChange={selectProduct}
+                />
               </div>
               <div className="col-span-2 sm:col-span-3">
                 <label className={labelClass}>Material</label>

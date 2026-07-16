@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { categorias } from "../../data/catalog";
+import { SimpleSelect } from "../_components/simple-select";
 
 const nonOutletCategorias = categorias.filter((c) => c !== "Outlet");
 
@@ -309,15 +310,13 @@ export default function OutletPanel() {
               <button onClick={() => setRemoveTarget(null)} className="text-[#94A3B8] hover:text-[#1A1A1A]">✕</button>
             </div>
             <p className="mb-3 text-xs text-[#64748B]">El producto no se elimina, solo se saca de la categoría Outlet. Elige a qué categoría vuelve:</p>
-            <select
-              value={removeCategoria}
-              onChange={(e) => setRemoveCategoria(e.target.value)}
-              className="mb-4 w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]"
-            >
-              {nonOutletCategorias.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
+            <div className="mb-4">
+              <SimpleSelect
+                value={removeCategoria}
+                options={nonOutletCategorias.map((c) => ({ value: c, label: c }))}
+                onChange={setRemoveCategoria}
+              />
+            </div>
             <div className="flex gap-2">
               <button onClick={() => setRemoveTarget(null)} className="flex-1 rounded-xl border border-[#E2E8F0] py-2.5 text-sm font-bold text-[#64748B] hover:bg-[#F8FAFC]">
                 Cancelar

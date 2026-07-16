@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { DEFAULT_PERMISSIONS } from "@/lib/permission-defaults";
+import { SimpleSelect } from "../_components/simple-select";
 
 type Role = "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "BODEGA" | "DISENO" | "MARKETING" | "JEFE_VENTAS" | "TESORERIA" | "INGENIERIA";
 type Status = "ACTIVE" | "INACTIVE" | "SUSPENDED";
@@ -583,10 +584,11 @@ export default function UsuariosPage() {
               )}
             </button>
           </div>
-          <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
-            className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm">
-            {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-          </select>
+          <SimpleSelect
+            value={form.role}
+            options={ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
+            onChange={(v) => setForm({ ...form, role: v as Role })}
+          />
           <button onClick={createUser} className="col-span-full rounded-lg bg-[#27B1B8] px-3 py-2 text-sm font-bold text-white">
             Crear
           </button>
@@ -605,16 +607,18 @@ export default function UsuariosPage() {
                 className="w-full rounded-lg border border-[#E2E8F0] py-2 pl-9 pr-3 text-sm"
               />
             </div>
-            <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value as Role | "ALL")}
-              className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm text-[#64748B]">
-              <option value="ALL">Rol: Todos</option>
-              {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-            </select>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as Status | "ALL")}
-              className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm text-[#64748B]">
-              <option value="ALL">Estado: Todos</option>
-              {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
-            </select>
+            <SimpleSelect
+              value={roleFilter}
+              options={[{ value: "ALL", label: "Rol: Todos" }, ...ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))]}
+              onChange={(v) => setRoleFilter(v as Role | "ALL")}
+              className="text-[#64748B]"
+            />
+            <SimpleSelect
+              value={statusFilter}
+              options={[{ value: "ALL", label: "Estado: Todos" }, ...STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))]}
+              onChange={(v) => setStatusFilter(v as Status | "ALL")}
+              className="text-[#64748B]"
+            />
           </div>
           <button onClick={exportCsv}
             className="flex shrink-0 items-center justify-center gap-2 rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm font-bold text-[#64748B] hover:text-[#27B1B8]">
@@ -649,17 +653,23 @@ export default function UsuariosPage() {
                 </td>
                 <td className="p-3 text-[#64748B]">{u.email}</td>
                 <td className="p-3">
-                  <select value={u.role} onChange={(e) => updateUser(u.id, { role: e.target.value as Role }, "Rol actualizado correctamente")}
-                    className={`rounded-full border-0 px-3 py-1 text-xs font-bold ${ROLE_BADGE[u.role]}`}>
-                    {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-                  </select>
+                  <SimpleSelect
+                    value={u.role}
+                    options={ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
+                    onChange={(v) => updateUser(u.id, { role: v as Role }, "Rol actualizado correctamente")}
+                    triggerClassName={`flex items-center gap-1 rounded-full border-0 px-3 py-1 text-xs font-bold ${ROLE_BADGE[u.role]}`}
+                    hideChevron
+                  />
                 </td>
                 <td className="p-3">
                   <div className="flex items-center gap-2">
-                    <select value={u.status} onChange={(e) => updateUser(u.id, { status: e.target.value as Status }, "Estado actualizado correctamente")}
-                      className={`rounded-full border-0 bg-transparent px-1 py-1 text-xs font-bold ${STATUS_TEXT[u.status]}`}>
-                      {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
-                    </select>
+                    <SimpleSelect
+                      value={u.status}
+                      options={STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))}
+                      onChange={(v) => updateUser(u.id, { status: v as Status }, "Estado actualizado correctamente")}
+                      triggerClassName={`flex items-center gap-1 rounded-full border-0 bg-transparent px-1 py-1 text-xs font-bold ${STATUS_TEXT[u.status]}`}
+                      hideChevron
+                    />
                     <span className={`h-2 w-2 rounded-full ${STATUS_DOT[u.status]}`} />
                   </div>
                 </td>
@@ -692,7 +702,8 @@ export default function UsuariosPage() {
       </div>
 
       {permUserId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 p-4">
+          <div className="flex min-h-full items-center justify-center">
           <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white">
             <div className="flex items-start justify-between gap-4 border-b border-[#E2E8F0] p-5">
               <div className="flex items-start gap-3">
@@ -810,11 +821,13 @@ export default function UsuariosPage() {
               </div>
             </div>
           </div>
+          </div>
         </div>
       )}
 
       {deleteTarget && !deleteImpact && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 p-4">
+          <div className="flex min-h-full items-center justify-center">
           <div className="w-full max-w-sm rounded-xl bg-white p-5">
             <h2 className="mb-2 text-sm font-black text-[#1A1A1A]">Eliminar usuario</h2>
             <p className="text-sm text-[#64748B]">
@@ -838,11 +851,13 @@ export default function UsuariosPage() {
               </button>
             </div>
           </div>
+          </div>
         </div>
       )}
 
       {deleteTarget && deleteImpact && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 p-4">
+          <div className="flex min-h-full items-center justify-center">
           <div className="w-full max-w-sm rounded-xl bg-white p-5">
             <h2 className="mb-2 text-sm font-black text-[#DC2626]">Este usuario tiene historial</h2>
             <p className="mb-2 text-sm text-[#64748B]">
@@ -877,11 +892,13 @@ export default function UsuariosPage() {
               </button>
             </div>
           </div>
+          </div>
         </div>
       )}
 
       {emailTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 p-4">
+          <div className="flex min-h-full items-center justify-center">
           <div className="w-full max-w-sm rounded-2xl bg-white p-5">
             <div className="mb-4 flex items-center gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#D9F2F3] text-[#0E7C82]">
@@ -910,11 +927,13 @@ export default function UsuariosPage() {
               </button>
             </div>
           </div>
+          </div>
         </div>
       )}
 
       {passwordTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 p-4">
+          <div className="flex min-h-full items-center justify-center">
           <div className="w-full max-w-sm rounded-2xl bg-white p-5">
             <div className="mb-4 flex items-center gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#D9F2F3] text-[#0E7C82]">
@@ -960,6 +979,7 @@ export default function UsuariosPage() {
                 Guardar
               </button>
             </div>
+          </div>
           </div>
         </div>
       )}

@@ -61,11 +61,11 @@ export default function ComboCarousel({ combos }: { combos: Combo[] }) {
         ‹
       </button>
 
-      <div ref={scrollRef} className="motion-list scrollbar-hidden flex gap-4 overflow-x-auto pb-2">
+      <div ref={scrollRef} className="motion-list scrollbar-hidden flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2">
         {combos.map((combo) => (
           <div
             key={combo.id}
-            className="interactive-lift relative w-[210px] min-w-[210px] shrink-0 overflow-hidden rounded-2xl border border-black/8 bg-white"
+            className="interactive-lift relative w-[210px] min-w-[210px] shrink-0 snap-start overflow-hidden rounded-2xl border border-black/8 bg-white"
           >
             {combo.destacado && (
               <span className="absolute left-3 top-3 z-10 rounded-lg bg-[#f5a623] px-2.5 py-1 text-[10px] font-bold text-white">
@@ -105,7 +105,7 @@ export default function ComboCarousel({ combos }: { combos: Combo[] }) {
         ))}
 
         {/* CTA card */}
-        <div className="interactive-lift relative flex w-[260px] min-w-[260px] shrink-0 flex-col items-center overflow-hidden rounded-[8px] bg-[#b9e5dc] px-8 pb-5 pt-7 text-center text-[#0C535B]">
+        <div className="interactive-lift relative flex w-[260px] min-w-[260px] shrink-0 snap-start flex-col items-center overflow-hidden rounded-[8px] bg-[#b9e5dc] px-8 pb-5 pt-7 text-center text-[#0C535B]">
           <div className="relative z-10">
             <p className="text-[20px] font-extrabold leading-tight text-[#0A5560]">Arma tu combo</p>
             <p className="mx-auto mt-3 max-w-[13rem] text-[14px] font-bold leading-[1.15] text-[#0A5560]">

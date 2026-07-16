@@ -94,14 +94,14 @@ export default function ProductosCarousel({
 
       <div
         ref={scrollRef}
-        className={`motion-list scrollbar-hidden flex gap-4 overflow-x-auto px-1 py-3 2xl:gap-5 ${canScroll ? "mx-11" : "mx-0"}`}
+        className={`motion-list scrollbar-hidden flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 py-3 2xl:gap-5 ${canScroll ? "mx-11" : "mx-0"}`}
       >
         {products.map((p) => {
           const added = addedSlugs.has(p.slug);
           return (
             <div
               key={p.slug}
-              className="interactive-lift flex h-[370px] w-[200px] min-w-[200px] shrink-0 flex-col overflow-hidden rounded-2xl border border-black/8 bg-white 2xl:w-[190px] 2xl:min-w-[190px]"
+              className="interactive-lift flex h-[370px] w-[200px] min-w-[200px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-black/8 bg-white 2xl:w-[190px] 2xl:min-w-[190px]"
             >
               <div className="flex h-40 items-center justify-center bg-white p-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}

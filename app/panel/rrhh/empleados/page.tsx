@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { SimpleSelect } from "../../_components/simple-select";
 
 type EmployeeRow = {
   id: string;
@@ -158,30 +159,30 @@ export default function EmpleadosPage() {
           <input placeholder="Cargo" value={form.jobTitle}
             onChange={(e) => setForm({ ...form, jobTitle: e.target.value })}
             className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
-          <select value={form.departmentId}
-            onChange={(e) => setForm({ ...form, departmentId: e.target.value })}
-            className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm">
-            <option value="">Sin departamento</option>
-            {departments.map((d) => (
-              <option key={d.id} value={d.id}>{d.name}</option>
-            ))}
-          </select>
-          <select value={form.contractType}
-            onChange={(e) => setForm({ ...form, contractType: e.target.value as typeof form.contractType })}
-            className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm">
-            {CONTRACT_TYPES.map((c) => <option key={c} value={c}>{CONTRACT_LABELS[c]}</option>)}
-          </select>
+          <SimpleSelect
+            value={form.departmentId}
+            options={[
+              { value: "", label: "Sin departamento" },
+              ...departments.map((d) => ({ value: d.id, label: d.name })),
+            ]}
+            onChange={(v) => setForm({ ...form, departmentId: v })}
+          />
+          <SimpleSelect
+            value={form.contractType}
+            options={CONTRACT_TYPES.map((c) => ({ value: c, label: CONTRACT_LABELS[c] }))}
+            onChange={(v) => setForm({ ...form, contractType: v as typeof form.contractType })}
+          />
           <input type="date" value={form.hireDate}
             onChange={(e) => setForm({ ...form, hireDate: e.target.value })}
             className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
           <input placeholder="Salario (COP)" type="number" value={form.salaryAmount}
             onChange={(e) => setForm({ ...form, salaryAmount: e.target.value })}
             className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
-          <select value={form.salaryPeriod}
-            onChange={(e) => setForm({ ...form, salaryPeriod: e.target.value as typeof form.salaryPeriod })}
-            className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm">
-            {SALARY_PERIODS.map((p) => <option key={p} value={p}>{PERIOD_LABELS[p]}</option>)}
-          </select>
+          <SimpleSelect
+            value={form.salaryPeriod}
+            options={SALARY_PERIODS.map((p) => ({ value: p, label: PERIOD_LABELS[p] }))}
+            onChange={(v) => setForm({ ...form, salaryPeriod: v as typeof form.salaryPeriod })}
+          />
           <input placeholder="EPS" value={form.eps}
             onChange={(e) => setForm({ ...form, eps: e.target.value })}
             className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
