@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useCart } from "../../components/cart-provider";
 
@@ -32,6 +32,21 @@ export default function ComboDetailClient({
   const { addItem } = useCart();
   const [active, setActive] = useState(0);
   const [added, setAdded] = useState(false);
+  const mobileScrollRef = useRef<HTMLDivElement>(null);
+
+  const selectMobileImage = (index: number) => {
+    setActive(index);
+    const scroller = mobileScrollRef.current;
+    if (!scroller) return;
+    scroller.scrollTo({ left: scroller.clientWidth * index, behavior: "smooth" });
+  };
+
+  const updateActiveFromScroll = () => {
+    const scroller = mobileScrollRef.current;
+    if (!scroller) return;
+    const nextIndex = Math.round(scroller.scrollLeft / Math.max(scroller.clientWidth, 1));
+    setActive(Math.min(Math.max(nextIndex, 0), galleryImages.length - 1));
+  };
 
   const handleAdd = () => {
     addItem({
@@ -97,14 +112,33 @@ export default function ComboDetailClient({
 
             {/* Mobile gallery */}
             <div className="md:hidden">
-              <div className="relative aspect-square w-full overflow-hidden bg-white p-4">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={galleryImages[active]}
-                  alt={combo.nombre}
-                  className="h-full w-full object-contain"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
-                />
+              <div className="relative">
+                {galleryImages.length > 1 && (
+                  <span className="absolute left-3 top-3 z-10 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-[#111] shadow-sm">
+                    {active + 1}/{galleryImages.length}
+                  </span>
+                )}
+                <div
+                  ref={mobileScrollRef}
+                  onScroll={updateActiveFromScroll}
+                  className="flex aspect-square w-full snap-x snap-mandatory overflow-x-auto scroll-smooth bg-white"
+                  style={{ scrollbarWidth: "none" }}
+                >
+                  {galleryImages.map((src, i) => (
+                    <div
+                      key={`mobile-image-${i}`}
+                      className="flex min-w-full shrink-0 snap-center items-center justify-center p-4"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={src}
+                        alt={`${combo.nombre} ${i + 1}`}
+                        className="h-full w-full object-contain"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
               {galleryImages.length > 1 && (
                 <div className="mt-3 flex items-center justify-center gap-2">
@@ -112,7 +146,7 @@ export default function ComboDetailClient({
                     <button
                       key={`mobile-dot-${i}`}
                       type="button"
-                      onClick={() => setActive(i)}
+                      onClick={() => selectMobileImage(i)}
                       className={`h-2.5 rounded-full transition-all ${
                         active === i ? "w-2.5 bg-[#2E8BFF]" : "w-2.5 bg-black/12"
                       }`}
