@@ -260,6 +260,7 @@ export type ProductWithWarehouseStocks = {
   id: string;
   name: string;
   sku: string | null;
+  image: string;
   minimumStock: number;
   stock: number;
   stocksByWarehouseId: Record<string, number>;
@@ -273,6 +274,7 @@ export async function listProductsWithWarehouseStock(): Promise<ProductWithWareh
       id: true,
       name: true,
       sku: true,
+      image: true,
       minimumStock: true,
       stock: true,
       warehouseStocks: { select: { warehouseId: true, quantity: true } },
@@ -284,6 +286,7 @@ export async function listProductsWithWarehouseStock(): Promise<ProductWithWareh
     id: p.id,
     name: p.name,
     sku: p.sku,
+    image: p.image,
     minimumStock: p.minimumStock,
     stock: p.stock,
     stocksByWarehouseId: Object.fromEntries(

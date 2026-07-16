@@ -36,7 +36,7 @@ export default function ContactBar({ items }: { items: ContactItem[] }) {
   });
 
   return (
-    <div className="grid grid-cols-2 divide-x divide-black/8 md:grid-cols-4">
+    <div className="grid grid-cols-2 [&>a]:border-b [&>a]:border-r [&>a]:border-black/8 [&>a:nth-child(2n)]:border-r-0 [&>a:nth-child(n+3)]:border-b-0 md:grid-cols-4 md:[&>a]:border-b-0 md:[&>a:nth-child(2n)]:border-r md:[&>a:nth-child(4n)]:border-r-0">
       {resolved.map((item) => (
         <a
           key={item.label}
