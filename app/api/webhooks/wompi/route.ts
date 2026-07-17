@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { markOrderPaidByWompiReference } from "@/lib/orders";
 import { verifyWompiEventSignature, type WompiEventPayload } from "@/lib/wompi";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function POST(request: Request) {
   const payload = (await request.json()) as WompiEventPayload;
@@ -16,6 +17,7 @@ export async function POST(request: Request) {
       await markOrderPaidByWompiReference(reference, id, status as "APPROVED" | "DECLINED" | "VOIDED" | "ERROR");
       revalidatePath("/mi-cuenta");
       revalidatePath("/admin");
+      await broadcastPanelUpdate("orders");
     } catch {
       // Referencia no encontrada u otro error: Wompi reintenta, respondemos 200 igual.
     }

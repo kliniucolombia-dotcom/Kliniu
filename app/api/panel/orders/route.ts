@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import type { ShippingStatus } from "@/generated/prisma/client";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET() {
   const access = await requirePermission("MODULE_PEDIDOS", "view");
@@ -44,5 +45,6 @@ export async function PATCH(request: Request) {
   }
 
   const updated = await prisma.order.update({ where: { id }, data });
+  await broadcastPanelUpdate("orders");
   return Response.json(updated);
 }

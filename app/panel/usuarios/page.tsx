@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { DEFAULT_PERMISSIONS } from "@/lib/permission-defaults";
 import { SimpleSelect } from "../_components/simple-select";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type Role = "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "BODEGA" | "DISENO" | "MARKETING" | "JEFE_VENTAS" | "TESORERIA" | "INGENIERIA";
 type Status = "ACTIVE" | "INACTIVE" | "SUSPENDED";
@@ -325,6 +326,7 @@ export default function UsuariosPage() {
   };
 
   useEffect(() => { loadUsers(); }, []);
+  useRealtimeRefresh(["users", "permissions"], loadUsers);
 
   const showToast = (msg: string) => {
     setToast(msg);

@@ -3,6 +3,7 @@ import { getUserById } from "@/lib/users";
 import { prisma } from "@/lib/prisma";
 import { ALL_MODULES, type Permission } from "@/lib/permission-defaults";
 import type { PanelModule } from "@/generated/prisma/client";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requireSuperAdmin();
@@ -70,5 +71,6 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     ),
   );
 
+  await broadcastPanelUpdate("permissions");
   return Response.json({ ok: true });
 }

@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { getCombosForPanel, createCombo, updateCombo, deleteCombo } from "@/lib/combos";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET() {
   const access = await requirePermission("MODULE_COMBOS", "view");
@@ -39,6 +40,7 @@ export async function POST(request: Request) {
       items: body.items,
       createdByName: body.createdByName || access.user.fullName,
     });
+    await broadcastPanelUpdate("combos");
     return Response.json(combo);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error al crear combo";
@@ -75,6 +77,7 @@ export async function PATCH(request: Request) {
       items: body.items,
       createdByName: body.createdByName,
     });
+    await broadcastPanelUpdate("combos");
     return Response.json(combo);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error al actualizar combo";
@@ -91,5 +94,6 @@ export async function DELETE(request: Request) {
   if (!id) return Response.json({ error: "Falta id" }, { status: 400 });
 
   await deleteCombo(id);
+  await broadcastPanelUpdate("combos");
   return Response.json({ ok: true });
 }

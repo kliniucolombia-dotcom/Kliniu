@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { requirePermissionWithFallback } from "@/lib/permissions";
 import { getDashboardStats, getSellerStats, calcROAS, getCampaignStatus, STATUS_META } from "@/lib/panel";
 import { Sparkline, AreaChart, DonutChart } from "./_components/mini-charts";
+import { DashboardLiveRefresher } from "./_components/dashboard-live-refresher";
 import {
   MdAccountBalanceWallet, MdShoppingCart, MdTrendingUp, MdCampaign,
   MdGpsFixed, MdWarningAmber, MdPeopleOutline, MdReceiptLong, MdRefresh,
@@ -66,6 +67,7 @@ export default async function PanelDashboard() {
 
   return (
     <div className="p-6 lg:p-8">
+      <DashboardLiveRefresher />
       {/* Header */}
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>

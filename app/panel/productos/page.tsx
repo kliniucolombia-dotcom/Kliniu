@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { SimpleSelect } from "../_components/simple-select";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type Product = {
   id: string; slug: string; sku: string | null; name: string; brand: string; category: string;
@@ -74,6 +75,7 @@ export default function ProductosPanel() {
   }, [router]);
 
   useEffect(() => { load(); }, [load]);
+  useRealtimeRefresh(["products"], load);
 
   const categories = useMemo(() => {
     const map = new Map<string, { count: number; image: string }>();

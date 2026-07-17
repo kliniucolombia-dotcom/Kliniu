@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { categorias } from "../../data/catalog";
 import { SimpleSelect } from "../_components/simple-select";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 const nonOutletCategorias = categorias.filter((c) => c !== "Outlet");
 
@@ -118,6 +119,7 @@ export default function OutletPanel() {
   }, [router]);
 
   useEffect(() => { load(); }, [load]);
+  useRealtimeRefresh(["products"], load);
 
   const outletProducts = useMemo(() => products.filter((p) => p.category === "Outlet"), [products]);
   const filteredOutlet = useMemo(() => {

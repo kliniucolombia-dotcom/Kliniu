@@ -1,7 +1,8 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { SimpleSelect } from "../_components/simple-select";
 import Image from "next/image";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type OrderItem = {
   id: string; name: string; image?: string | null; quantity: number; unitPrice: number; lineTotal: number; sku?: string | null;
@@ -216,12 +217,15 @@ export default function PedidosPage() {
   const [form, setForm] = useState<OrderForm>({ shippingStatus: "", carrier: "", trackingNumber: "", adminNotes: "" });
   const [isRetryingOdoo, setIsRetryingOdoo] = useState(false);
 
-  useEffect(() => {
+  const loadOrders = useCallback(() => {
     fetch("/api/panel/orders")
       .then((r) => r.json())
       .then((d) => setOrders(Array.isArray(d) ? d : []))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { loadOrders(); }, [loadOrders]);
+  useRealtimeRefresh(["orders"], loadOrders);
 
   const customers = useMemo(() => {
     const names = Array.from(new Set(orders.map((o) => o.customerName))).sort();

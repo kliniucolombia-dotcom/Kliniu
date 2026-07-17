@@ -1,5 +1,6 @@
 import { requireSuperAdmin } from "@/lib/permissions";
 import { deleteUserByAdmin, getUserDeletionImpact, hasDeletionImpact, updateUserByAdmin } from "@/lib/users";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requireSuperAdmin();
@@ -15,6 +16,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
   try {
     const user = await updateUserByAdmin(id, body);
+    await broadcastPanelUpdate("users");
     return Response.json(user);
   } catch (e) {
     if (e instanceof Error && e.message === "EMAIL_ALREADY_EXISTS") {
@@ -45,6 +47,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
   try {
     await deleteUserByAdmin(id, { force });
+    await broadcastPanelUpdate("users");
     return Response.json({ ok: true });
   } catch (e) {
     if (e && typeof e === "object" && "code" in e && e.code === "P2003") {

@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { getProductsForPanel, updateProductPrice } from "@/lib/panel";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET(request: Request) {
   const access = await requirePermission("MODULE_PRODUCTOS", "view");
@@ -25,5 +26,6 @@ export async function PATCH(request: Request) {
     return Response.json({ error: "Faltan datos" }, { status: 400 });
   }
   await updateProductPrice(body.productId, body.newPrice, session.userId, body.note);
+  await broadcastPanelUpdate("products");
   return Response.json({ ok: true });
 }

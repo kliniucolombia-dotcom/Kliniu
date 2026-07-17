@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { SimpleSelect } from "../_components/simple-select";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type MiniProduct = { id: string; name: string; price: number; image: string; sku: string | null };
 
@@ -147,6 +148,7 @@ export default function CombosPanel() {
   }, [router]);
 
   useEffect(() => { load(); }, [load]);
+  useRealtimeRefresh(["combos", "products"], load);
 
   const combosWithSavings = useMemo(() => {
     return combos.map((c) => {
