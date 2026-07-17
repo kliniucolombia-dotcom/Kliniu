@@ -17,9 +17,11 @@ export async function POST(request: Request) {
     name?: string;
     description?: string;
     image?: string;
+    galleryImages?: string[];
     price?: number;
     active?: boolean;
     items?: { productId: string; quantity: number }[];
+    createdByName?: string;
   };
 
   if (!body.name || !body.price || !body.items || body.items.length === 0) {
@@ -31,9 +33,11 @@ export async function POST(request: Request) {
       name: body.name,
       description: body.description,
       image: body.image,
+      galleryImages: body.galleryImages,
       price: body.price,
       active: body.active,
       items: body.items,
+      createdByName: body.createdByName || access.user.fullName,
     });
     return Response.json(combo);
   } catch (error) {
@@ -51,9 +55,11 @@ export async function PATCH(request: Request) {
     name?: string;
     description?: string;
     image?: string;
+    galleryImages?: string[];
     price?: number;
     active?: boolean;
     items?: { productId: string; quantity: number }[];
+    createdByName?: string;
   };
 
   if (!body.id) return Response.json({ error: "Falta id" }, { status: 400 });
@@ -63,9 +69,11 @@ export async function PATCH(request: Request) {
       name: body.name,
       description: body.description,
       image: body.image,
+      galleryImages: body.galleryImages,
       price: body.price,
       active: body.active,
       items: body.items,
+      createdByName: body.createdByName,
     });
     return Response.json(combo);
   } catch (error) {

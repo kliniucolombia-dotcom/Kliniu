@@ -20,6 +20,7 @@ export default async function ComboPage({ params }: { params: Promise<{ id: stri
     new Set(
       [
         combo.image,
+        ...(combo.galleryImages || []),
         ...productos.flatMap((p) => [p.imagen, ...p.galeria]),
       ].filter((src): src is string => Boolean(src))
     )

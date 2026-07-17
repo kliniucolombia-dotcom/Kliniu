@@ -10,9 +10,11 @@ export type ComboInput = {
   name: string;
   description?: string | null;
   image?: string | null;
+  galleryImages?: string[];
   price: number;
   active?: boolean;
   items: ComboItemInput[];
+  createdByName?: string | null;
 };
 
 async function generateUniqueSlugAndSku(name: string) {
@@ -74,8 +76,10 @@ export async function createCombo(input: ComboInput) {
       name: input.name,
       description: input.description ?? null,
       image: input.image ?? null,
+      galleryImages: input.galleryImages ?? [],
       price: input.price,
       active: input.active ?? true,
+      createdByName: input.createdByName ?? null,
       items: {
         create: input.items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
       },
@@ -102,8 +106,10 @@ export async function updateCombo(id: string, input: Partial<ComboInput>) {
         ...(input.name !== undefined ? { name: input.name } : {}),
         ...(input.description !== undefined ? { description: input.description } : {}),
         ...(input.image !== undefined ? { image: input.image } : {}),
+        ...(input.galleryImages !== undefined ? { galleryImages: input.galleryImages } : {}),
         ...(input.price !== undefined ? { price: input.price } : {}),
         ...(input.active !== undefined ? { active: input.active } : {}),
+        ...(input.createdByName !== undefined ? { createdByName: input.createdByName } : {}),
       },
       include: { items: { include: { product: true } } },
     });

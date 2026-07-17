@@ -440,8 +440,10 @@ model Combo {
   name        String
   description String?
   image       String?
+  galleryImages String[]  @default([])
   price       Int
   active      Boolean     @default(true)
+  createdByName String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   items       ComboItem[]
