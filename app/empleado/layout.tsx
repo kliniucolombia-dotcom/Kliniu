@@ -1,9 +1,23 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+import {
+  MdHome, MdPerson, MdBeachAccess, MdEventNote, MdHealthAndSafety, MdFolder, MdLogout,
+} from "react-icons/md";
+
+const NAV = [
+  { href: "/empleado", label: "Inicio", Icon: MdHome },
+  { href: "/empleado/perfil", label: "Mi perfil", Icon: MdPerson },
+  { href: "/empleado/vacaciones", label: "Vacaciones", Icon: MdBeachAccess },
+  { href: "/empleado/permisos", label: "Permisos", Icon: MdEventNote },
+  { href: "/empleado/incapacidades", label: "Incapacidades", Icon: MdHealthAndSafety },
+  { href: "/empleado/solicitudes", label: "Mis solicitudes", Icon: MdFolder },
+];
 
 export default function EmpleadoLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState<{ fullName?: string; role?: string } | null>(null);
 
   useEffect(() => {
@@ -26,9 +40,9 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F6F8] font-sans">
-      <header className="flex items-center justify-between border-b border-[#E2E8F0] bg-white px-5 py-4">
-        <div className="flex items-center gap-2">
+    <div className="flex min-h-screen bg-[#F4F6F8] font-sans">
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-[#E2E8F0] bg-white md:flex">
+        <div className="flex items-center gap-2 border-b border-[#E2E8F0] px-5 py-4">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#27B1B8] text-sm font-black text-white">
             K
           </div>
@@ -37,17 +51,61 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
             <p className="text-[10px] font-semibold text-[#27B1B8]">Kliniu</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          {user && <p className="text-xs font-bold text-[#1A1A1A]">{user.fullName ?? "—"}</p>}
-          <button
-            onClick={logout}
-            className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs font-semibold text-red-500 transition-colors hover:bg-red-100"
-          >
+        <nav className="flex-1 space-y-1 p-3">
+          {NAV.map((item) => {
+            const active = pathname === item.href;
+            return (
+              <Link key={item.href} href={item.href}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+                  active ? "bg-[#E6FAFB] text-[#27B1B8]" : "text-[#64748B] hover:bg-[#F4F6F8]"
+                }`}>
+                <item.Icon size={18} />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+        <div className="border-t border-[#E2E8F0] p-3">
+          <button onClick={logout}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-red-500 transition-colors hover:bg-red-50">
+            <MdLogout size={18} />
             Cerrar sesión
           </button>
         </div>
-      </header>
-      <div>{children}</div>
+      </aside>
+
+      <div className="flex-1">
+        <header className="flex items-center justify-between border-b border-[#E2E8F0] bg-white px-5 py-4 md:hidden">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#27B1B8] text-sm font-black text-white">
+              K
+            </div>
+            <p className="text-xs font-black leading-none text-[#1A1A1A]">Portal Empleado</p>
+          </div>
+          <button onClick={logout}
+            className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs font-semibold text-red-500 transition-colors hover:bg-red-100">
+            Cerrar sesión
+          </button>
+        </header>
+        <nav className="flex gap-1 overflow-x-auto border-b border-[#E2E8F0] bg-white px-3 py-2 md:hidden">
+          {NAV.map((item) => {
+            const active = pathname === item.href;
+            return (
+              <Link key={item.href} href={item.href}
+                className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  active ? "bg-[#E6FAFB] text-[#27B1B8]" : "text-[#64748B]"
+                }`}>
+                <item.Icon size={14} />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+        <header className="hidden items-center justify-end gap-3 border-b border-[#E2E8F0] bg-white px-6 py-4 md:flex">
+          {user && <p className="text-sm font-bold text-[#1A1A1A]">{user.fullName ?? "—"}</p>}
+        </header>
+        {children}
+      </div>
     </div>
   );
 }

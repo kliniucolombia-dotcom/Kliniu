@@ -1,135 +1,150 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  MdBeachAccess, MdEventNote, MdHealthAndSafety, MdFolder,
+  MdPayments, MdAccessTime, MdCardGiftcard, MdDescription, MdArticle, MdAccountTree,
+} from "react-icons/md";
 
 type TimeOffRequestRow = {
   id: string;
+  type: string;
   status: string;
   startDate: string;
   endDate: string;
   durationDays: number;
-  reason: string | null;
-  reviewNote: string | null;
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  PENDING: "Pendiente",
-  APPROVED: "Aprobada",
-  REJECTED: "Rechazada",
+type MeResponse = {
+  fullName: string;
+  jobTitle: string;
+  vacationBalance: { earnedDays: number; takenDays: number; availableDays: number };
+  nextVacation: { startDate: string; endDate: string; durationDays: number } | null;
+};
+
+const TYPE_LABELS: Record<string, string> = {
+  VACATION: "Vacaciones", PERMIT: "Permiso", LEAVE: "Licencia", INCAPACITY: "Incapacidad", UNPAID: "No remunerado",
+};
+const STATUS_LABELS: Record<string, string> = { PENDING: "Pendiente", APPROVED: "Aprobada", REJECTED: "Rechazada" };
+const STATUS_STYLE: Record<string, string> = {
+  PENDING: "bg-[#FEF3C7] text-[#B45309]",
+  APPROVED: "bg-[#DCFCE7] text-[#16A34A]",
+  REJECTED: "bg-[#FEE2E2] text-[#DC2626]",
 };
 
 function fmt(d: string) {
-  return new Date(d).toLocaleDateString("es-CO");
+  return new Date(d).toLocaleDateString("es-CO", { day: "numeric", month: "short" });
 }
 
-export default function EmpleadoVacacionesPage() {
-  const [requests, setRequests] = useState<TimeOffRequestRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ startDate: "", endDate: "", reason: "" });
+const ACTIONS = [
+  { href: "/empleado/vacaciones", label: "Solicitar vacaciones", desc: "Elige tus fechas de descanso", Icon: MdBeachAccess },
+  { href: "/empleado/permisos", label: "Solicitar permiso", desc: "Solicita un permiso personal", Icon: MdEventNote },
+  { href: "/empleado/incapacidades", label: "Registrar incapacidad", desc: "Reporta una incapacidad médica", Icon: MdHealthAndSafety },
+  { href: "/empleado/solicitudes", label: "Mis solicitudes", desc: "Revisa el estado de todas tus solicitudes", Icon: MdFolder },
+];
 
-  const load = async () => {
-    setLoading(true);
-    const res = await fetch("/api/rrhh-local/time-off");
-    if (res.ok) setRequests(await res.json());
-    else setError("No fue posible cargar tus solicitudes");
-    setLoading(false);
-  };
+const COMING_SOON = [
+  { label: "Nómina", Icon: MdPayments },
+  { label: "Horas extras", Icon: MdAccessTime },
+  { label: "Beneficios", Icon: MdCardGiftcard },
+  { label: "Documentos", Icon: MdDescription },
+  { label: "Noticias", Icon: MdArticle },
+  { label: "Organigrama", Icon: MdAccountTree },
+];
+
+export default function EmpleadoHomePage() {
+  const [me, setMe] = useState<MeResponse | null>(null);
+  const [recent, setRecent] = useState<TimeOffRequestRow[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    load();
+    Promise.all([
+      fetch("/api/empleado/me").then((r) => (r.ok ? r.json() : null)),
+      fetch("/api/rrhh-local/time-off").then((r) => (r.ok ? r.json() : [])),
+    ]).then(([meData, requests]) => {
+      setMe(meData);
+      setRecent((requests as TimeOffRequestRow[]).slice(0, 5));
+      setLoading(false);
+    });
   }, []);
 
-  const submit = async () => {
-    setError("");
-    setSaving(true);
-    const res = await fetch("/api/rrhh-local/time-off", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, type: "VACATION" }),
-    });
-    if (res.ok) {
-      setForm({ startDate: "", endDate: "", reason: "" });
-      setCreating(false);
-      await load();
-    } else {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error || "No fue posible crear la solicitud");
-    }
-    setSaving(false);
-  };
+  if (loading) return <div className="p-6 text-sm text-[#64748B]">Cargando…</div>;
 
-  if (loading) return <div className="p-6">Cargando…</div>;
+  const firstName = me?.fullName?.split(" ")[0] ?? "";
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-black text-[#1A1A1A]">Mis vacaciones</h1>
-        <button
-          onClick={() => setCreating((c) => !c)}
-          className="rounded-xl bg-[#27B1B8] px-4 py-2 text-sm font-bold text-white"
-        >
-          {creating ? "Cancelar" : "Nueva solicitud"}
-        </button>
+      <div>
+        <h1 className="text-2xl font-black text-[#1A1A1A]">¡Hola, {firstName}! 👋</h1>
+        <p className="mt-0.5 text-sm text-[#64748B]">Bienvenido a tu portal. Aquí puedes gestionar tus solicitudes.</p>
       </div>
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {ACTIONS.map((a) => (
+          <Link key={a.href} href={a.href}
+            className="flex items-start gap-3 rounded-xl border border-[#E2E8F0] bg-white p-4 transition-colors hover:border-[#27B1B8]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#E6FAFB] text-[#27B1B8]">
+              <a.Icon size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-[#1A1A1A]">{a.label}</p>
+              <p className="mt-0.5 text-xs text-[#64748B]">{a.desc}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
 
-      {creating && (
-        <div className="grid grid-cols-1 gap-3 rounded-xl border border-[#E2E8F0] bg-white p-4 md:grid-cols-3">
-          <input type="date" value={form.startDate}
-            onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-            className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
-          <input type="date" value={form.endDate}
-            onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-            className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
-          <input placeholder="Motivo (opcional)" value={form.reason}
-            onChange={(e) => setForm({ ...form, reason: e.target.value })}
-            className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
-          <button
-            onClick={submit}
-            disabled={saving || !form.startDate || !form.endDate}
-            className="col-span-full rounded-lg bg-[#27B1B8] px-3 py-2 text-sm font-bold text-white disabled:opacity-50"
-          >
-            {saving ? "Guardando…" : "Enviar solicitud"}
-          </button>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="rounded-xl border border-[#E2E8F0] bg-white p-5">
+          <h2 className="text-sm font-black text-[#1A1A1A]">Próximas vacaciones</h2>
+          {me?.nextVacation ? (
+            <p className="mt-3 text-sm text-[#1A1A1A]">
+              Del <strong>{fmt(me.nextVacation.startDate)}</strong> al <strong>{fmt(me.nextVacation.endDate)}</strong>
+              {" "}({me.nextVacation.durationDays} días)
+            </p>
+          ) : (
+            <p className="mt-3 text-sm text-[#94A3B8]">Aún no tienes vacaciones aprobadas programadas.</p>
+          )}
         </div>
-      )}
 
-      <div className="overflow-x-auto rounded-xl border border-[#E2E8F0] bg-white">
-        <table className="w-full min-w-[600px] text-sm">
-          <thead>
-            <tr className="border-b border-[#E2E8F0] text-left text-xs font-bold text-[#64748B]">
-              <th className="p-3">Desde</th>
-              <th className="p-3">Hasta</th>
-              <th className="p-3">Días</th>
-              <th className="p-3">Motivo</th>
-              <th className="p-3">Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {requests.map((r) => (
-              <tr key={r.id} className="border-b border-[#F1F5F9]">
-                <td className="p-3">{fmt(r.startDate)}</td>
-                <td className="p-3">{fmt(r.endDate)}</td>
-                <td className="p-3">{r.durationDays}</td>
-                <td className="p-3">{r.reason ?? "—"}</td>
-                <td className="p-3">
+        <div className="rounded-xl border border-[#E2E8F0] bg-white p-5">
+          <h2 className="text-sm font-black text-[#1A1A1A]">Mis días disponibles</h2>
+          <p className="mt-2 text-3xl font-black text-[#27B1B8]">{me?.vacationBalance.availableDays ?? 0}</p>
+          <p className="text-xs text-[#94A3B8]">
+            días disponibles (estimado) · {me?.vacationBalance.takenDays ?? 0} tomados de {me?.vacationBalance.earnedDays ?? 0} causados
+          </p>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-[#E2E8F0] bg-white p-5">
+        <h2 className="mb-3 text-sm font-black text-[#1A1A1A]">Mis solicitudes recientes</h2>
+        {recent.length === 0 ? (
+          <p className="text-sm text-[#94A3B8]">Sin solicitudes todavía.</p>
+        ) : (
+          <div className="space-y-2">
+            {recent.map((r) => (
+              <div key={r.id} className="flex items-center justify-between border-b border-[#F1F5F9] pb-2 text-sm last:border-b-0 last:pb-0">
+                <span className="font-semibold text-[#1A1A1A]">{TYPE_LABELS[r.type] ?? r.type}</span>
+                <span className="text-[#64748B]">{fmt(r.startDate)} – {fmt(r.endDate)}</span>
+                <span className={`rounded-full px-2 py-1 text-xs font-bold ${STATUS_STYLE[r.status] ?? ""}`}>
                   {STATUS_LABELS[r.status] ?? r.status}
-                  {r.status === "REJECTED" && r.reviewNote && (
-                    <span className="block text-xs text-red-500">Motivo: {r.reviewNote}</span>
-                  )}
-                </td>
-              </tr>
+                </span>
+              </div>
             ))}
-            {requests.length === 0 && (
-              <tr>
-                <td className="p-3 text-[#94A3B8]" colSpan={5}>Sin solicitudes todavía.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-dashed border-[#E2E8F0] bg-white p-5">
+        <h2 className="mb-3 text-sm font-black text-[#94A3B8]">Próximamente</h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {COMING_SOON.map((c) => (
+            <div key={c.label} className="flex flex-col items-center gap-1.5 rounded-xl bg-[#F8FAFC] py-4 text-center opacity-60">
+              <c.Icon size={20} className="text-[#94A3B8]" />
+              <span className="text-xs font-semibold text-[#64748B]">{c.label}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
