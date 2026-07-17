@@ -24,12 +24,14 @@ const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendiente",
   APPROVED: "Aprobada",
   REJECTED: "Rechazada",
+  CANCELLED: "Cancelada",
 };
 
 const STATUS_STYLE: Record<string, string> = {
   PENDING: "bg-[#FEF3C7] text-[#B45309]",
   APPROVED: "bg-[#DCFCE7] text-[#16A34A]",
   REJECTED: "bg-[#FEE2E2] text-[#DC2626]",
+  CANCELLED: "bg-[#F1F5F9] text-[#64748B]",
 };
 
 function fmt(d: string) {

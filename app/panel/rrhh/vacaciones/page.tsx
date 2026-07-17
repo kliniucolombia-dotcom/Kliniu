@@ -17,6 +17,14 @@ const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendiente",
   APPROVED: "Aprobada",
   REJECTED: "Rechazada",
+  CANCELLED: "Cancelada",
+};
+
+const STATUS_STYLE: Record<string, string> = {
+  PENDING: "bg-[#FEF3C7] text-[#B45309]",
+  APPROVED: "bg-[#DCFCE7] text-[#16A34A]",
+  REJECTED: "bg-[#FEE2E2] text-[#DC2626]",
+  CANCELLED: "bg-[#F1F5F9] text-[#64748B]",
 };
 
 function fmt(d: string) {
@@ -79,6 +87,16 @@ export default function VacacionesPage() {
 
   if (loading) return <div className="p-6">Cargando…</div>;
 
+  const now = new Date();
+  const pending = requests.filter((r) => r.status === "PENDING");
+  const active = requests.filter(
+    (r) => r.status === "APPROVED" && new Date(r.startDate) <= now && new Date(r.endDate) >= now,
+  );
+  const upcoming = requests
+    .filter((r) => r.status === "APPROVED" && new Date(r.startDate) > now)
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+    .slice(0, 5);
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -87,8 +105,33 @@ export default function VacacionesPage() {
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-4">
+          <p className="text-xs font-bold text-[#B45309]">Pendientes de aprobar</p>
+          <p className="mt-1 text-2xl font-black text-[#1A1A1A]">{pending.length}</p>
+        </div>
+        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-4">
+          <p className="text-xs font-bold text-[#16A34A]">En vacaciones ahora</p>
+          <p className="mt-1 text-2xl font-black text-[#1A1A1A]">{active.length}</p>
+        </div>
+        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-4">
+          <p className="text-xs font-bold text-[#2563EB]">Próximas vacaciones</p>
+          {upcoming.length === 0 ? (
+            <p className="mt-1 text-sm text-[#94A3B8]">Ninguna programada.</p>
+          ) : (
+            <ul className="mt-1 space-y-1 text-xs text-[#1A1A1A]">
+              {upcoming.map((r) => (
+                <li key={r.id}>
+                  {r.employee.user.fullName} — {fmt(r.startDate)}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
       {rejectingId && (
-        <div className="grid grid-cols-1 gap-3 rounded-xl border border-red-200 bg-red-50 p-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 md:grid-cols-3">
           <input
             placeholder="Motivo del rechazo"
             value={rejectReason}
@@ -113,10 +156,10 @@ export default function VacacionesPage() {
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-[#E2E8F0] bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-[#E2E8F0] bg-white">
         <table className="w-full min-w-[760px] text-sm">
           <thead>
-            <tr className="border-b border-[#E2E8F0] text-left text-xs font-bold text-[#64748B]">
+            <tr className="border-b border-[#E2E8F0] text-left text-[11px] font-bold uppercase tracking-wide text-[#94A3B8]">
               <th className="p-3">Empleado</th>
               <th className="p-3">Desde</th>
               <th className="p-3">Hasta</th>
@@ -138,7 +181,11 @@ export default function VacacionesPage() {
                     ? <span className="text-red-500">Rechazada: {r.reviewNote}</span>
                     : r.reason ?? "—"}
                 </td>
-                <td className="p-3">{STATUS_LABELS[r.status] ?? r.status}</td>
+                <td className="p-3">
+                  <span className={`rounded-full px-2 py-1 text-xs font-bold ${STATUS_STYLE[r.status] ?? ""}`}>
+                    {STATUS_LABELS[r.status] ?? r.status}
+                  </span>
+                </td>
                 <td className="p-3">
                   {r.status === "PENDING" ? (
                     <div className="flex gap-2">

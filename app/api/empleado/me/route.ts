@@ -1,8 +1,6 @@
 import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
-
-/** Colombia: 15 días hábiles de vacaciones por año trabajado ≈ 1.25 días por mes. */
-const VACATION_DAYS_PER_MONTH = 15 / 12;
+import { calcVacationBalance } from "@/lib/vacation";
 
 export async function GET() {
   const access = await requireActiveUser();
@@ -20,15 +18,7 @@ export async function GET() {
   if (!employee) return Response.json({ error: "No tienes un perfil de empleado" }, { status: 403 });
 
   const now = new Date();
-  const monthsWorked = Math.max(
-    0,
-    (now.getFullYear() - employee.hireDate.getFullYear()) * 12 + (now.getMonth() - employee.hireDate.getMonth()),
-  );
-  const earnedDays = Math.floor(monthsWorked * VACATION_DAYS_PER_MONTH);
-  const takenDays = employee.timeOffRequests
-    .filter((r) => r.type === "VACATION" && r.status === "APPROVED")
-    .reduce((sum, r) => sum + r.durationDays, 0);
-  const availableDays = Math.max(0, earnedDays - takenDays);
+  const balance = calcVacationBalance(employee.hireDate, employee.timeOffRequests);
 
   const nextVacation = employee.timeOffRequests.find(
     (r) => r.type === "VACATION" && r.status === "APPROVED" && r.startDate > now,
@@ -42,9 +32,25 @@ export async function GET() {
     employeeCode: employee.employeeCode,
     hireDate: employee.hireDate,
     contractType: employee.contractType,
-    vacationBalance: { earnedDays, takenDays, availableDays },
+    vacationBalance: {
+      earnedDays: balance.diasCausados,
+      takenDays: balance.diasTomados,
+      pendingDays: balance.diasPendientes,
+      availableDays: balance.diasDisponibles,
+    },
     nextVacation: nextVacation
       ? { startDate: nextVacation.startDate, endDate: nextVacation.endDate, durationDays: nextVacation.durationDays }
       : null,
+    vacationRequests: employee.timeOffRequests
+      .filter((r) => r.type === "VACATION")
+      .map((r) => ({
+        id: r.id,
+        status: r.status,
+        startDate: r.startDate,
+        endDate: r.endDate,
+        durationDays: r.durationDays,
+        reason: r.reason,
+        reviewNote: r.reviewNote,
+      })),
   });
 }

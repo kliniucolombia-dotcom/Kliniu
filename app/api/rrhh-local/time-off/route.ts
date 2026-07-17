@@ -1,6 +1,7 @@
 import { isRRHH } from "@/lib/roles";
 import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { calcVacationBalance } from "@/lib/vacation";
 
 export async function GET() {
   const access = await requireActiveUser();
@@ -59,7 +60,45 @@ export async function POST(request: Request) {
 
   const start = new Date(startDate);
   const end = new Date(endDate);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
+    return Response.json({ error: "Rango de fechas inválido" }, { status: 400 });
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (start < today) {
+    return Response.json({ error: "No puedes solicitar fechas pasadas" }, { status: 400 });
+  }
+
   const durationDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+
+  if (type === "VACATION") {
+    const employee = await prisma.employee.findUnique({
+      where: { id: finalEmployeeId },
+      include: { timeOffRequests: true },
+    });
+    if (!employee) return Response.json({ error: "Empleado no encontrado" }, { status: 404 });
+
+    const overlaps = employee.timeOffRequests.some(
+      (r) =>
+        r.type === "VACATION" &&
+        (r.status === "APPROVED" || r.status === "PENDING") &&
+        start <= r.endDate &&
+        end >= r.startDate,
+    );
+    if (overlaps) {
+      return Response.json({ error: "Ya tienes vacaciones en ese rango de fechas" }, { status: 400 });
+    }
+
+    const balance = calcVacationBalance(employee.hireDate, employee.timeOffRequests);
+    if (durationDays > balance.diasDisponibles) {
+      return Response.json(
+        { error: `No tienes suficientes días disponibles (disponibles: ${balance.diasDisponibles})` },
+        { status: 400 },
+      );
+    }
+  }
 
   const timeOffRequest = await prisma.timeOffRequest.create({
     data: {

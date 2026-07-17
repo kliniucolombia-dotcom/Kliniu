@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   MdHome, MdPerson, MdBeachAccess, MdEventNote, MdHealthAndSafety, MdFolder, MdLogout,
 } from "react-icons/md";
@@ -43,9 +44,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
     <div className="flex min-h-screen bg-[#F4F6F8] font-sans">
       <aside className="hidden w-60 shrink-0 flex-col border-r border-[#E2E8F0] bg-white md:flex">
         <div className="flex items-center gap-2 border-b border-[#E2E8F0] px-5 py-4">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#27B1B8] text-sm font-black text-white">
-            K
-          </div>
+          <Image src="/foca-icono-redondo.png" alt="Kliniu" width={32} height={32} className="h-8 w-8 shrink-0 rounded-full" />
           <div>
             <p className="text-xs font-black leading-none text-[#1A1A1A]">Portal Empleado</p>
             <p className="text-[10px] font-semibold text-[#27B1B8]">Kliniu</p>
@@ -77,9 +76,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
       <div className="flex-1">
         <header className="flex items-center justify-between border-b border-[#E2E8F0] bg-white px-5 py-4 md:hidden">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#27B1B8] text-sm font-black text-white">
-              K
-            </div>
+            <Image src="/foca-icono-redondo.png" alt="Kliniu" width={32} height={32} className="h-8 w-8 shrink-0 rounded-full" />
             <p className="text-xs font-black leading-none text-[#1A1A1A]">Portal Empleado</p>
           </div>
           <button onClick={logout}

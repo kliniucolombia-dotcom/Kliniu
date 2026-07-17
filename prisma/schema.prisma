@@ -726,6 +726,7 @@ enum TimeOffStatus {
   PENDING
   APPROVED
   REJECTED
+  CANCELLED
 }
 
 model AttendanceRecord {

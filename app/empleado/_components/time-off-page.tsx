@@ -17,16 +17,24 @@ const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendiente",
   APPROVED: "Aprobada",
   REJECTED: "Rechazada",
+  CANCELLED: "Cancelada",
 };
 
 const STATUS_STYLE: Record<string, string> = {
   PENDING: "bg-[#FEF3C7] text-[#B45309]",
   APPROVED: "bg-[#DCFCE7] text-[#16A34A]",
   REJECTED: "bg-[#FEE2E2] text-[#DC2626]",
+  CANCELLED: "bg-[#F1F5F9] text-[#64748B]",
 };
+
+type VacationBalance = { earnedDays: number; takenDays: number; pendingDays: number; availableDays: number };
 
 function fmt(d: string) {
   return new Date(d).toLocaleDateString("es-CO");
+}
+
+function round2(n: number) {
+  return Math.round(n * 100) / 100;
 }
 
 export function TimeOffPage({
@@ -41,20 +49,28 @@ export function TimeOffPage({
   Icon: IconType;
 }) {
   const [requests, setRequests] = useState<TimeOffRequestRow[]>([]);
+  const [balance, setBalance] = useState<VacationBalance | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
   const [form, setForm] = useState({ startDate: "", endDate: "", reason: "" });
 
   const load = async () => {
     setLoading(true);
-    const res = await fetch("/api/rrhh-local/time-off");
+    const calls: Promise<Response>[] = [fetch("/api/rrhh-local/time-off")];
+    if (type === "VACATION") calls.push(fetch("/api/empleado/me"));
+    const [res, meRes] = await Promise.all(calls);
     if (res.ok) {
       const all = (await res.json()) as TimeOffRequestRow[];
       setRequests(all.filter((r) => r.type === type));
     } else {
       setError("No fue posible cargar tus solicitudes");
+    }
+    if (meRes?.ok) {
+      const me = await meRes.json();
+      setBalance(me.vacationBalance);
     }
     setLoading(false);
   };
@@ -63,6 +79,12 @@ export function TimeOffPage({
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type]);
+
+  const requestedDays =
+    form.startDate && form.endDate
+      ? Math.max(1, Math.round((new Date(form.endDate).getTime() - new Date(form.startDate).getTime()) / 86400000) + 1)
+      : 0;
+  const saldoDespues = balance ? round2(balance.availableDays - requestedDays) : null;
 
   const submit = async () => {
     setError("");
@@ -81,6 +103,18 @@ export function TimeOffPage({
       setError(data.error || "No fue posible crear la solicitud");
     }
     setSaving(false);
+  };
+
+  const cancel = async (id: string) => {
+    setCancelingId(id);
+    const res = await fetch(`/api/rrhh-local/time-off/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "CANCELLED" }),
+    });
+    if (res.ok) await load();
+    else setError("No fue posible cancelar la solicitud");
+    setCancelingId(null);
   };
 
   if (loading) return <div className="p-6 text-sm text-[#64748B]">Cargando…</div>;
@@ -107,6 +141,13 @@ export function TimeOffPage({
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
+      {type === "VACATION" && balance && (
+        <div className="rounded-xl border border-[#E2E8F0] bg-white p-4">
+          <p className="text-xs font-bold text-[#64748B]">Días disponibles</p>
+          <p className="text-2xl font-black text-[#16A34A]">{balance.availableDays.toFixed(2)}</p>
+        </div>
+      )}
+
       {creating && (
         <div className="grid grid-cols-1 gap-3 rounded-xl border border-[#E2E8F0] bg-white p-4 md:grid-cols-3">
           <input type="date" value={form.startDate}
@@ -118,9 +159,21 @@ export function TimeOffPage({
           <input placeholder="Motivo (opcional)" value={form.reason}
             onChange={(e) => setForm({ ...form, reason: e.target.value })}
             className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
+
+          {type === "VACATION" && requestedDays > 0 && (
+            <div className="col-span-full flex flex-wrap items-center gap-4 rounded-lg bg-[#F8FAFC] p-3 text-sm">
+              <span><strong>{requestedDays}</strong> días solicitados</span>
+              {saldoDespues !== null && (
+                <span className={saldoDespues < 0 ? "font-bold text-[#DC2626]" : "font-bold text-[#16A34A]"}>
+                  Saldo después de aprobar: {saldoDespues.toFixed(2)} días
+                </span>
+              )}
+            </div>
+          )}
+
           <button
             onClick={submit}
-            disabled={saving || !form.startDate || !form.endDate}
+            disabled={saving || !form.startDate || !form.endDate || (type === "VACATION" && saldoDespues !== null && saldoDespues < 0)}
             className="col-span-full rounded-lg bg-[#27B1B8] px-3 py-2 text-sm font-bold text-white disabled:opacity-50"
           >
             {saving ? "Guardando…" : "Enviar solicitud"}
@@ -137,6 +190,7 @@ export function TimeOffPage({
               <th className="p-3">Días</th>
               <th className="p-3">Motivo</th>
               <th className="p-3">Estado</th>
+              <th className="p-3"></th>
             </tr>
           </thead>
           <tbody>
@@ -154,11 +208,22 @@ export function TimeOffPage({
                     <span className="mt-1 block text-xs text-red-500">Motivo: {r.reviewNote}</span>
                   )}
                 </td>
+                <td className="p-3">
+                  {r.status === "PENDING" && (
+                    <button
+                      onClick={() => cancel(r.id)}
+                      disabled={cancelingId === r.id}
+                      className="text-xs font-bold text-[#DC2626] hover:underline disabled:opacity-50"
+                    >
+                      {cancelingId === r.id ? "Cancelando…" : "Cancelar"}
+                    </button>
+                  )}
+                </td>
               </tr>
             ))}
             {requests.length === 0 && (
               <tr>
-                <td className="p-3 text-[#94A3B8]" colSpan={5}>Sin solicitudes todavía.</td>
+                <td className="p-3 text-[#94A3B8]" colSpan={6}>Sin solicitudes todavía.</td>
               </tr>
             )}
           </tbody>

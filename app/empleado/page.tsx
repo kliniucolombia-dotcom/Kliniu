@@ -18,18 +18,19 @@ type TimeOffRequestRow = {
 type MeResponse = {
   fullName: string;
   jobTitle: string;
-  vacationBalance: { earnedDays: number; takenDays: number; availableDays: number };
+  vacationBalance: { earnedDays: number; takenDays: number; pendingDays: number; availableDays: number };
   nextVacation: { startDate: string; endDate: string; durationDays: number } | null;
 };
 
 const TYPE_LABELS: Record<string, string> = {
   VACATION: "Vacaciones", PERMIT: "Permiso", LEAVE: "Licencia", INCAPACITY: "Incapacidad", UNPAID: "No remunerado",
 };
-const STATUS_LABELS: Record<string, string> = { PENDING: "Pendiente", APPROVED: "Aprobada", REJECTED: "Rechazada" };
+const STATUS_LABELS: Record<string, string> = { PENDING: "Pendiente", APPROVED: "Aprobada", REJECTED: "Rechazada", CANCELLED: "Cancelada" };
 const STATUS_STYLE: Record<string, string> = {
   PENDING: "bg-[#FEF3C7] text-[#B45309]",
   APPROVED: "bg-[#DCFCE7] text-[#16A34A]",
   REJECTED: "bg-[#FEE2E2] text-[#DC2626]",
+  CANCELLED: "bg-[#F1F5F9] text-[#64748B]",
 };
 
 function fmt(d: string) {
@@ -108,11 +109,38 @@ export default function EmpleadoHomePage() {
         </div>
 
         <div className="rounded-xl border border-[#E2E8F0] bg-white p-5">
-          <h2 className="text-sm font-black text-[#1A1A1A]">Mis días disponibles</h2>
-          <p className="mt-2 text-3xl font-black text-[#27B1B8]">{me?.vacationBalance.availableDays ?? 0}</p>
-          <p className="text-xs text-[#94A3B8]">
-            días disponibles (estimado) · {me?.vacationBalance.takenDays ?? 0} tomados de {me?.vacationBalance.earnedDays ?? 0} causados
+          <div className="flex items-center gap-2">
+            <MdBeachAccess className="text-[#27B1B8]" size={18} />
+            <h2 className="text-sm font-black text-[#1A1A1A]">Mis vacaciones</h2>
+          </div>
+          <p className="mt-2 text-3xl font-black text-[#16A34A]">
+            {(me?.vacationBalance.availableDays ?? 0).toFixed(2)} <span className="text-sm font-bold text-[#64748B]">días disponibles</span>
           </p>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="rounded-lg bg-[#E6F7FF] p-2">
+              <p className="font-black text-[#1A1A1A]">{(me?.vacationBalance.earnedDays ?? 0).toFixed(2)}</p>
+              <p className="text-[#64748B]">causados</p>
+            </div>
+            <div className="rounded-lg bg-[#DCFCE7] p-2">
+              <p className="font-black text-[#1A1A1A]">{(me?.vacationBalance.takenDays ?? 0).toFixed(2)}</p>
+              <p className="text-[#64748B]">disfrutados</p>
+            </div>
+            <div className="rounded-lg bg-[#FEF3C7] p-2">
+              <p className="font-black text-[#1A1A1A]">{(me?.vacationBalance.pendingDays ?? 0).toFixed(2)}</p>
+              <p className="text-[#64748B]">pendientes</p>
+            </div>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#E2E8F0]">
+            <div
+              className="h-full rounded-full bg-[#27B1B8]"
+              style={{
+                width: `${me && me.vacationBalance.earnedDays > 0 ? Math.min(100, (me.vacationBalance.availableDays / me.vacationBalance.earnedDays) * 100) : 0}%`,
+              }}
+            />
+          </div>
+          <Link href="/empleado/vacaciones" className="mt-3 inline-block text-xs font-bold text-[#27B1B8] hover:underline">
+            Solicitar vacaciones →
+          </Link>
         </div>
       </div>
 
