@@ -1,17 +1,28 @@
 "use client";
 import { useEffect, useState } from "react";
+import { MdDownload } from "react-icons/md";
 import { SimpleSelect } from "../../_components/simple-select";
+import { fmtDateOnly } from "@/lib/date";
 
 type EmployeeOption = { id: string; employeeCode: string; user: { fullName: string } };
 
 type TimeOffRequestRow = {
   id: string;
   type: string;
+  subType: string | null;
   status: string;
   startDate: string;
   endDate: string;
   durationDays: number;
+  hours: number | null;
   reason: string | null;
+  attachmentUrl: string | null;
+  attachmentName: string | null;
+  incapacityNumber: string | null;
+  incapacityType: string | null;
+  epsName: string | null;
+  diagnosis: string | null;
+  diagnosisCode: string | null;
   employee: { employeeCode: string; user: { fullName: string } };
 };
 
@@ -28,10 +39,34 @@ const TYPE_LABELS: Record<string, string> = {
   UNPAID: "No remunerado",
 };
 
+const SUBTYPE_LABELS: Record<string, string> = {
+  CITA_MEDICA: "Cita médica",
+  CALAMIDAD_DOMESTICA: "Calamidad doméstica",
+  LUTO: "Licencia por luto",
+  MATERNIDAD: "Licencia de maternidad",
+  PATERNIDAD: "Licencia de paternidad",
+  DILIGENCIA_JUDICIAL: "Diligencia judicial",
+  SINDICAL: "Permiso sindical",
+  ESTUDIO: "Estudio o capacitación",
+  PERSONAL: "Permiso personal",
+  NO_REMUNERADO: "Permiso no remunerado",
+  MEDIO_DIA: "Medio día",
+  HORAS: "Salida por horas",
+  OTRO: "Otro permiso",
+};
+
+const INCAPACITY_TYPE_LABELS: Record<string, string> = {
+  ENFERMEDAD_GENERAL: "Enfermedad general",
+  ACCIDENTE_LABORAL: "Accidente laboral",
+  ENFERMEDAD_LABORAL: "Enfermedad laboral",
+  MATERNIDAD: "Licencia de maternidad",
+  PATERNIDAD: "Licencia de paternidad",
+};
+
 const ABSENCE_TYPES = ["PERMIT", "LEAVE", "INCAPACITY", "UNPAID"] as const;
 
 function fmt(d: string) {
-  return new Date(d).toLocaleDateString("es-CO");
+  return fmtDateOnly(d);
 }
 
 export default function AusenciasPage() {
@@ -80,6 +115,13 @@ export default function AusenciasPage() {
     if (res.ok) await load();
     else setError("No fue posible resolver la solicitud");
     setBusyId(null);
+  };
+
+  const viewAttachment = async (path: string) => {
+    const res = await fetch(`/api/rrhh-local/time-off/upload?path=${encodeURIComponent(path)}`);
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.url) window.open(data.url, "_blank");
+    else setError(data.error || "No fue posible abrir el soporte");
   };
 
   const submit = async () => {
@@ -158,10 +200,12 @@ export default function AusenciasPage() {
             <tr className="border-b border-[#E2E8F0] text-left text-xs font-bold text-[#64748B]">
               <th className="p-3">Empleado</th>
               <th className="p-3">Tipo</th>
+              <th className="p-3">Detalle</th>
               <th className="p-3">Desde</th>
               <th className="p-3">Hasta</th>
               <th className="p-3">Días</th>
               <th className="p-3">Motivo</th>
+              <th className="p-3">Soporte</th>
               <th className="p-3">Estado</th>
               <th className="p-3">Acciones</th>
             </tr>
@@ -170,11 +214,40 @@ export default function AusenciasPage() {
             {requests.map((r) => (
               <tr key={r.id} className="border-b border-[#F1F5F9]">
                 <td className="p-3">{r.employee.user.fullName}</td>
-                <td className="p-3">{TYPE_LABELS[r.type] ?? r.type}</td>
+                <td className="p-3">
+                  {TYPE_LABELS[r.type] ?? r.type}
+                  {r.subType && (
+                    <p className="text-xs text-[#94A3B8]">{SUBTYPE_LABELS[r.subType] ?? r.subType}</p>
+                  )}
+                  {r.incapacityType && (
+                    <p className="text-xs text-[#94A3B8]">{INCAPACITY_TYPE_LABELS[r.incapacityType] ?? r.incapacityType}</p>
+                  )}
+                </td>
+                <td className="p-3">
+                  {r.type === "INCAPACITY" ? (
+                    <>
+                      <p className="font-bold text-[#1A1A1A]">{r.incapacityNumber ?? "—"}</p>
+                      <p className="text-xs text-[#94A3B8]">{r.epsName ?? "—"}</p>
+                      {(r.diagnosis || r.diagnosisCode) && (
+                        <p className="text-xs text-[#94A3B8]">
+                          {r.diagnosisCode ? `${r.diagnosisCode} — ` : ""}{r.diagnosis ?? ""}
+                        </p>
+                      )}
+                    </>
+                  ) : "—"}
+                </td>
                 <td className="p-3">{fmt(r.startDate)}</td>
                 <td className="p-3">{fmt(r.endDate)}</td>
-                <td className="p-3">{r.durationDays}</td>
+                <td className="p-3">{r.hours ? `${r.hours}h` : r.durationDays}</td>
                 <td className="p-3">{r.reason ?? "—"}</td>
+                <td className="p-3">
+                  {r.attachmentUrl ? (
+                    <button onClick={() => viewAttachment(r.attachmentUrl!)}
+                      className="flex items-center gap-1 text-xs font-bold text-[#27B1B8] hover:underline">
+                      <MdDownload size={14} /> Ver
+                    </button>
+                  ) : "—"}
+                </td>
                 <td className="p-3">{STATUS_LABELS[r.status] ?? r.status}</td>
                 <td className="p-3">
                   {r.status === "PENDING" ? (
@@ -202,7 +275,7 @@ export default function AusenciasPage() {
             ))}
             {requests.length === 0 && (
               <tr>
-                <td className="p-3 text-[#94A3B8]" colSpan={8}>Sin ausencias registradas.</td>
+                <td className="p-3 text-[#94A3B8]" colSpan={10}>Sin ausencias registradas.</td>
               </tr>
             )}
           </tbody>

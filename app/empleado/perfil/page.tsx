@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { MdPerson } from "react-icons/md";
+import { fmtDateOnly } from "@/lib/date";
 
 type MeResponse = {
   fullName: string;
@@ -18,7 +19,7 @@ const CONTRACT_LABELS: Record<string, string> = {
 };
 
 function fmt(d: string) {
-  return new Date(d).toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" });
+  return fmtDateOnly(d, { day: "numeric", month: "long", year: "numeric" });
 }
 
 export default function PerfilPage() {

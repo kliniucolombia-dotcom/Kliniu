@@ -692,22 +692,38 @@ model Employee {
 
   timeOffRequests   TimeOffRequest[]
   attendanceRecords AttendanceRecord[]
+  documents         EmployeeDocument[]
+  overtimeRequests  OvertimeRequest[]
+  payslips          Payslip[]
 
   @@index([departmentId])
 }
 
 model TimeOffRequest {
-  id           String        @id @default(cuid())
-  employeeId   String
-  type         TimeOffType
-  startDate    DateTime
-  endDate      DateTime
-  durationDays Int
-  reason       String?
-  status       TimeOffStatus @default(PENDING)
-  reviewNote   String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id               String          @id @default(cuid())
+  employeeId       String
+  type             TimeOffType
+  subType          PermitSubType?
+  startDate        DateTime
+  endDate          DateTime
+  durationDays     Int
+  hours            Float?
+  startTime        String?
+  endTime          String?
+  reason           String?
+  attachmentUrl    String?
+  attachmentName   String?
+  status           TimeOffStatus   @default(PENDING)
+  reviewNote       String?
+  incapacityNumber String?
+  incapacityType   IncapacityType?
+  epsName          String?
+  treatingDoctor   String?
+  diagnosis        String?
+  diagnosisCode    String?
+  issueDate        DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
@@ -720,6 +736,30 @@ enum TimeOffType {
   LEAVE
   INCAPACITY
   UNPAID
+}
+
+enum IncapacityType {
+  ENFERMEDAD_GENERAL
+  ACCIDENTE_LABORAL
+  ENFERMEDAD_LABORAL
+  MATERNIDAD
+  PATERNIDAD
+}
+
+enum PermitSubType {
+  CITA_MEDICA
+  CALAMIDAD_DOMESTICA
+  LUTO
+  MATERNIDAD
+  PATERNIDAD
+  DILIGENCIA_JUDICIAL
+  SINDICAL
+  ESTUDIO
+  PERSONAL
+  NO_REMUNERADO
+  MEDIO_DIA
+  HORAS
+  OTRO
 }
 
 enum TimeOffStatus {
@@ -825,4 +865,87 @@ model WarehouseMovement {
   @@index([productId])
   @@index([fromWarehouseId])
   @@index([toWarehouseId])
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  authorName String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EmployeeDocument {
+  id         String               @id @default(cuid())
+  employeeId String
+  category   EmployeeDocumentType
+  name       String
+  fileUrl    String
+  fileName   String
+  createdAt  DateTime             @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+}
+
+enum EmployeeDocumentType {
+  CONTRATO
+  CERTIFICADO
+  COMPROBANTE_PAGO
+  OTRO
+}
+
+model OvertimeRequest {
+  id           String        @id @default(cuid())
+  employeeId   String
+  date         DateTime
+  startTime    String
+  endTime      String
+  hours        Float
+  overtimeType OvertimeType
+  reason       String?
+  status       TimeOffStatus @default(PENDING)
+  reviewNote   String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+}
+
+enum OvertimeType {
+  DIURNA
+  NOCTURNA
+  DOMINICAL_FESTIVA_DIURNA
+  DOMINICAL_FESTIVA_NOCTURNA
+}
+
+model Payslip {
+  id            String   @id @default(cuid())
+  employeeId    String
+  period        String
+  grossAmount   Int
+  deductions    Int
+  netAmount     Int
+  fileUrl       String?
+  fileName      String?
+  createdAt     DateTime @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+}
+
+model Benefit {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

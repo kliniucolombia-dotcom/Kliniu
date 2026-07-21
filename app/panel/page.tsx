@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requirePermissionWithFallback } from "@/lib/permissions";
 import { getDashboardStats, getSellerStats, calcROAS, getCampaignStatus, STATUS_META } from "@/lib/panel";
+import { fmtDateOnly } from "@/lib/date";
 import { Sparkline, AreaChart, DonutChart } from "./_components/mini-charts";
 import { DashboardLiveRefresher } from "./_components/dashboard-live-refresher";
 import {
@@ -210,7 +211,7 @@ export default async function PanelDashboard() {
             </div>
             <AreaChart
               values={stats.dailySales.map((d) => d.total)}
-              labels={stats.dailySales.map((d) => new Date(d.date).toLocaleDateString("es-CO", { day: "numeric", month: "short" }))}
+              labels={stats.dailySales.map((d) => fmtDateOnly(d.date, { day: "numeric", month: "short" }))}
               color="#27B1B8"
               gradientId="ventasMesGradient"
             />

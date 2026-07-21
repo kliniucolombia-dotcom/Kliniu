@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { SimpleSelect } from "../../_components/simple-select";
+import { fmtDateOnly } from "@/lib/date";
 
 type EmployeeOption = { id: string; employeeCode: string; user: { fullName: string } };
 
@@ -21,7 +22,7 @@ const STATUS_LABELS: Record<string, string> = {
 const STATUS_OPTIONS = ["PRESENT", "ABSENT", "LATE"] as const;
 
 function fmt(d: string) {
-  return new Date(d).toLocaleDateString("es-CO");
+  return fmtDateOnly(d);
 }
 
 export default function AsistenciaPage() {

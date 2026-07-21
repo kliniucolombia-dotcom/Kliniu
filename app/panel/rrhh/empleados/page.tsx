@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { SimpleSelect } from "../../_components/simple-select";
+import { fmtDateOnly } from "@/lib/date";
 
 type EmployeeRow = {
   id: string;
@@ -229,7 +230,7 @@ export default function EmpleadosPage() {
                     <span className="text-xs text-[#94A3B8]"> / {PERIOD_LABELS[e.salaryPeriod] ?? e.salaryPeriod}</span>
                   )}
                 </td>
-                <td className="p-3">{new Date(e.hireDate).toLocaleDateString("es-CO")}</td>
+                <td className="p-3">{fmtDateOnly(e.hireDate)}</td>
               </tr>
             ))}
             {employees.length === 0 && (

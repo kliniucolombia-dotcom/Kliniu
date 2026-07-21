@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { buildProductionSummary, type ProductionRunInput } from "@/lib/production-calculator";
+import { fmtDateOnly } from "@/lib/date";
 import { SimpleSelect } from "../_components/simple-select";
 
 const MAX_NUM = 999_999_999;
@@ -365,7 +366,7 @@ export default function ProduccionPage() {
             <tbody>
               {runs.map((run) => (
                 <tr key={run.id} className="hover:bg-[#F8FAFC]">
-                  <td className="border border-[#E2E8F0] px-2 py-1.5">{new Date(run.productionDate).toLocaleDateString("es-CO")}</td>
+                  <td className="border border-[#E2E8F0] px-2 py-1.5">{fmtDateOnly(run.productionDate)}</td>
                   <td className="border border-[#E2E8F0] px-2 py-1.5">{run.machine.code} · {run.machine.name}</td>
                   <td className="border border-[#E2E8F0] px-2 py-1.5">{run.machine.brand}</td>
                   <td className="border border-[#E2E8F0] px-2 py-1.5">{run.operator.fullName}</td>

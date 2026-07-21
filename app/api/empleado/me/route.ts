@@ -32,6 +32,8 @@ export async function GET() {
     employeeCode: employee.employeeCode,
     hireDate: employee.hireDate,
     contractType: employee.contractType,
+    salaryAmount: employee.salaryAmount,
+    eps: employee.eps,
     vacationBalance: {
       earnedDays: balance.diasCausados,
       takenDays: balance.diasTomados,

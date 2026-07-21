@@ -7,7 +7,7 @@ import {
   MdCalculate, MdDescription, MdPrecisionManufacturing, MdAssignment, MdPeople, MdImage,
   MdCardGiftcard, MdLocalOffer, MdWork, MdHome, MdSearch, MdNotificationsNone, MdPersonOutline,
   MdApartment, MdAccessTime, MdBeachAccess, MdRemoveCircleOutline, MdSwapHoriz, MdHandshake,
-  MdCreditCard, MdHelpOutline, MdGroup, MdWarehouse,
+  MdCreditCard, MdHelpOutline, MdGroup, MdWarehouse, MdArticle,
 } from "react-icons/md";
 
 type NavChild = { href: string; label: string; group?: string; groupIcon?: React.ReactNode; icon?: React.ReactNode };
@@ -65,9 +65,12 @@ const NAV: NavItem[] = [
       { href: "/panel/rrhh/asistencia", label: "Asistencia", icon: <MdAccessTime size={17} /> },
       { href: "/panel/rrhh/vacaciones", label: "Vacaciones", icon: <MdBeachAccess size={17} /> },
       { href: "/panel/rrhh/ausencias", label: "Ausencias", icon: <MdRemoveCircleOutline size={17} /> },
+      { href: "/panel/rrhh/horas-extras", label: "Horas Extras", icon: <MdAccessTime size={17} /> },
       { href: "/panel/rrhh/nomina", label: "Nómina", icon: <MdAttachMoney size={17} /> },
+      { href: "/panel/rrhh/beneficios", label: "Beneficios", icon: <MdCardGiftcard size={17} /> },
 
       { href: "/panel/rrhh/documentos", label: "Documentos", group: "Operación", groupIcon: <MdAssignment size={14} />, icon: <MdDescription size={17} /> },
+      { href: "/panel/rrhh/noticias", label: "Noticias", icon: <MdArticle size={17} /> },
       { href: "/panel/rrhh/flujos", label: "Flujos", icon: <MdSwapHoriz size={17} /> },
       { href: "/panel/rrhh/inventario", label: "Inventario", icon: <MdInventory2 size={17} /> },
       { href: "/panel/rrhh/crm", label: "CRM", icon: <MdHandshake size={17} /> },

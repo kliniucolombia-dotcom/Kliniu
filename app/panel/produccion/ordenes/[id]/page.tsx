@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { SimpleSelect } from "../../../_components/simple-select";
+import { fmtDateOnly } from "@/lib/date";
 
 type ProductionOrderStatus = "DRAFT" | "APPROVED" | "IN_PRODUCTION" | "COMPLETED" | "CANCELLED";
 
@@ -188,7 +189,7 @@ export default function ProductionOrderDetailPage() {
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               <div>
                 <label className={labelClass}>Fecha de producción</label>
-                <input value={new Date(order.productionDate).toLocaleDateString("es-CO")} disabled className={`${inputClass} bg-[#F8FAFC] text-[#94A3B8]`} />
+                <input value={fmtDateOnly(order.productionDate)} disabled className={`${inputClass} bg-[#F8FAFC] text-[#94A3B8]`} />
               </div>
               <div>
                 <label className={labelClass}>Responsable</label>

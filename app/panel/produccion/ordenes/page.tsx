@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { fmtDateOnly } from "@/lib/date";
 
 type ProductionOrderStatus = "DRAFT" | "APPROVED" | "IN_PRODUCTION" | "COMPLETED" | "CANCELLED";
 
@@ -107,7 +108,7 @@ export default function ProductionOrdersListPage() {
                         {o.number}
                       </button>
                     </td>
-                    <td className="border-b border-[#F1F5F9] px-4 py-3 text-[#64748B]">{new Date(o.productionDate).toLocaleDateString("es-CO")}</td>
+                    <td className="border-b border-[#F1F5F9] px-4 py-3 text-[#64748B]">{fmtDateOnly(o.productionDate)}</td>
                     <td className="border-b border-[#F1F5F9] px-4 py-3 text-[#1A1A1A]">{o.createdByName}</td>
                     <td className="border-b border-[#F1F5F9] px-4 py-3">
                       <span className="rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest" style={{ color: meta.color, background: meta.bg }}>

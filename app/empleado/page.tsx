@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { fmtDateOnly } from "@/lib/date";
 import {
   MdBeachAccess, MdEventNote, MdHealthAndSafety, MdFolder,
   MdPayments, MdAccessTime, MdCardGiftcard, MdDescription, MdArticle, MdAccountTree,
@@ -34,7 +35,7 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 function fmt(d: string) {
-  return new Date(d).toLocaleDateString("es-CO", { day: "numeric", month: "short" });
+  return fmtDateOnly(d, { day: "numeric", month: "short" });
 }
 
 const ACTIONS = [
@@ -44,13 +45,13 @@ const ACTIONS = [
   { href: "/empleado/solicitudes", label: "Mis solicitudes", desc: "Revisa el estado de todas tus solicitudes", Icon: MdFolder },
 ];
 
-const COMING_SOON = [
-  { label: "Nómina", Icon: MdPayments },
-  { label: "Horas extras", Icon: MdAccessTime },
-  { label: "Beneficios", Icon: MdCardGiftcard },
-  { label: "Documentos", Icon: MdDescription },
-  { label: "Noticias", Icon: MdArticle },
-  { label: "Organigrama", Icon: MdAccountTree },
+const MORE_LINKS = [
+  { href: "/empleado/nomina", label: "Nómina", Icon: MdPayments },
+  { href: "/empleado/horas-extras", label: "Horas extras", Icon: MdAccessTime },
+  { href: "/empleado/beneficios", label: "Beneficios", Icon: MdCardGiftcard },
+  { href: "/empleado/documentos", label: "Documentos", Icon: MdDescription },
+  { href: "/empleado/noticias", label: "Noticias", Icon: MdArticle },
+  { href: "/empleado/organigrama", label: "Organigrama", Icon: MdAccountTree },
 ];
 
 export default function EmpleadoHomePage() {
@@ -163,14 +164,15 @@ export default function EmpleadoHomePage() {
         )}
       </div>
 
-      <div className="rounded-xl border border-dashed border-[#E2E8F0] bg-white p-5">
-        <h2 className="mb-3 text-sm font-black text-[#94A3B8]">Próximamente</h2>
+      <div className="rounded-xl border border-[#E2E8F0] bg-white p-5">
+        <h2 className="mb-3 text-sm font-black text-[#1A1A1A]">Más para ti</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {COMING_SOON.map((c) => (
-            <div key={c.label} className="flex flex-col items-center gap-1.5 rounded-xl bg-[#F8FAFC] py-4 text-center opacity-60">
-              <c.Icon size={20} className="text-[#94A3B8]" />
-              <span className="text-xs font-semibold text-[#64748B]">{c.label}</span>
-            </div>
+          {MORE_LINKS.map((c) => (
+            <Link key={c.href} href={c.href}
+              className="flex flex-col items-center gap-1.5 rounded-xl bg-[#F8FAFC] py-4 text-center transition-colors hover:bg-[#E6FAFB]">
+              <c.Icon size={20} className="text-[#27B1B8]" />
+              <span className="text-xs font-semibold text-[#1A1A1A]">{c.label}</span>
+            </Link>
           ))}
         </div>
       </div>

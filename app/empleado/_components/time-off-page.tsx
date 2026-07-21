@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import type { IconType } from "react-icons";
+import { fmtDateOnly } from "@/lib/date";
 
 type TimeOffRequestRow = {
   id: string;
@@ -30,7 +31,7 @@ const STATUS_STYLE: Record<string, string> = {
 type VacationBalance = { earnedDays: number; takenDays: number; pendingDays: number; availableDays: number };
 
 function fmt(d: string) {
-  return new Date(d).toLocaleDateString("es-CO");
+  return fmtDateOnly(d);
 }
 
 function round2(n: number) {

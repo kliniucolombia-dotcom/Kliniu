@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { fmtDateOnly } from "@/lib/date";
 
 type TimeOffRequestRow = {
   id: string;
@@ -28,7 +29,7 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 function fmt(d: string) {
-  return new Date(d).toLocaleDateString("es-CO");
+  return fmtDateOnly(d);
 }
 
 export default function VacacionesPage() {

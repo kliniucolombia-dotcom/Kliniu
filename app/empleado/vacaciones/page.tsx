@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { fmtDateOnly } from "@/lib/date";
 import Link from "next/link";
 import {
   MdBeachAccess, MdCalendarToday, MdInfoOutline, MdArrowForward, MdClose,
@@ -41,7 +42,7 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 function fmt(d: string) {
-  return new Date(d).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" });
+  return fmtDateOnly(d, { day: "numeric", month: "short", year: "numeric" });
 }
 
 function round2(n: number) {

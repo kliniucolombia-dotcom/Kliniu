@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   MdHome, MdPerson, MdBeachAccess, MdEventNote, MdHealthAndSafety, MdFolder, MdLogout,
+  MdPayments, MdAccessTime, MdCardGiftcard, MdDescription, MdArticle, MdAccountTree,
 } from "react-icons/md";
 
 const NAV = [
@@ -13,7 +14,13 @@ const NAV = [
   { href: "/empleado/vacaciones", label: "Vacaciones", Icon: MdBeachAccess },
   { href: "/empleado/permisos", label: "Permisos", Icon: MdEventNote },
   { href: "/empleado/incapacidades", label: "Incapacidades", Icon: MdHealthAndSafety },
+  { href: "/empleado/horas-extras", label: "Horas extras", Icon: MdAccessTime },
   { href: "/empleado/solicitudes", label: "Mis solicitudes", Icon: MdFolder },
+  { href: "/empleado/nomina", label: "Nómina", Icon: MdPayments },
+  { href: "/empleado/beneficios", label: "Beneficios", Icon: MdCardGiftcard },
+  { href: "/empleado/documentos", label: "Documentos", Icon: MdDescription },
+  { href: "/empleado/noticias", label: "Noticias", Icon: MdArticle },
+  { href: "/empleado/organigrama", label: "Organigrama", Icon: MdAccountTree },
 ];
 
 export default function EmpleadoLayout({ children }: { children: React.ReactNode }) {

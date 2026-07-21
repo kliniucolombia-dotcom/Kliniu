@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getSessionFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getQuotationTaxConfig, getQuotationWithItems } from "@/lib/panel";
+import { fmtDateOnly } from "@/lib/date";
 import { calcLineTotal } from "@/lib/quotation-calculator";
 
 const fmt = (n: number) =>
@@ -54,7 +55,7 @@ export default async function QuotationPrintPage({ params }: { params: Promise<{
           <p><span className="font-bold">Vendedor:</span> {quotation.seller.fullName}</p>
           <p><span className="font-bold">Condiciones:</span> {quotation.paymentTerms || "—"}</p>
           {quotation.validUntil && (
-            <p><span className="font-bold">Válida hasta:</span> {new Date(quotation.validUntil).toLocaleDateString("es-CO")}</p>
+            <p><span className="font-bold">Válida hasta:</span> {fmtDateOnly(quotation.validUntil)}</p>
           )}
         </div>
       </div>
