@@ -53,6 +53,13 @@ export async function POST(request: Request) {
     if (!employee) return Response.json({ error: "No tienes un perfil de empleado" }, { status: 403 });
     targetEmployeeId = employee.id;
     uploadedBySelf = true;
+
+    // El empleado solo puede registrar archivos que él mismo subió: /api/rrhh-local/time-off/upload
+    // los guarda en `${userId}/...`. Sin esta validación podría apuntar la fila al archivo privado
+    // de otra persona y RRHH lo abriría desde el panel bajo su nombre.
+    if (!fileUrl?.startsWith(`${access.user.id}/`) || fileUrl.includes("..")) {
+      return Response.json({ error: "El archivo no corresponde a una carga tuya" }, { status: 403 });
+    }
   }
 
   if (!targetEmployeeId || !category || !name?.trim() || !fileUrl || !fileName) {
