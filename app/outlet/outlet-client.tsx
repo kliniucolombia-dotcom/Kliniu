@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCart } from "../components/cart-provider";
 import { useProducts } from "../components/products-provider";
 import type { ProductoCatalogo } from "../data/catalog";
@@ -48,6 +48,11 @@ function AddOutletButton({ product, featured = false }: { product: ProductoCatal
 
 function ProductImage({ product, maxHeight }: { product: ProductoCatalogo; maxHeight?: number }) {
   const [src, setSrc] = useState(product.imagen);
+
+  useEffect(() => {
+    setSrc(product.imagen);
+  }, [product.imagen]);
+
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
