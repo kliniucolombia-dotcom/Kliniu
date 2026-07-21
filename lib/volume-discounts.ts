@@ -157,12 +157,12 @@ export const TIPO_VARIANTES: Record<string, { label: string; slugSuffix: string;
   "dispensador-xpert-professional-para-jabon-espuma": [
     { label: "Bolsa", slugSuffix: "", image: XPERT_IMG_BOLSA },
     { label: "Contenedor", slugSuffix: "--frasco", image: XPERT_IMG_FRASCO },
-    { label: "Botella", slugSuffix: "--botella", sku: "DXP.BT.EP - 092", skuSello: "XP.BEP.TK - 139" },
+    { label: "Botella", slugSuffix: "--botella", image: XPERT_IMG_FRASCO, sku: "DXP.BT.EP - 092", skuSello: "XP.BEP.TK - 139" },
   ],
   "dispensador-xpert-professional-para-jabon-liquido": [
     { label: "Bolsa", slugSuffix: "", image: XPERT_IMG_BOLSA },
     { label: "Contenedor", slugSuffix: "--frasco", image: XPERT_IMG_FRASCO },
-    { label: "Botella", slugSuffix: "--botella", sku: "DXP.BT.LQ - 091", skuSello: "XP.BT.LQ.TK - 140" },
+    { label: "Botella", slugSuffix: "--botella", image: XPERT_IMG_FRASCO, sku: "DXP.BT.LQ - 091", skuSello: "XP.BT.LQ.TK - 140" },
   ],
   "dispensador-papel-higienico-institucional": [
     { label: "Cierre Plástico", slugSuffix: "", image: PAPEL_INST_BLANCO_PLASTICO },
