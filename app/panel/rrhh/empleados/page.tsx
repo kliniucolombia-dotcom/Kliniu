@@ -12,6 +12,8 @@ type EmployeeRow = {
   salaryAmount: number | null;
   salaryCurrency: string;
   salaryPeriod: string;
+  managerId: string | null;
+  site: string | null;
   user: { fullName: string; email: string };
   department: { name: string } | null;
 };
@@ -130,6 +132,21 @@ export default function EmpleadosPage() {
     }
   };
 
+  /** Asigna jefe inmediato o sede; alimenta el organigrama del portal empleado. */
+  const updateEmployee = async (id: string, data: { managerId?: string | null; site?: string | null }) => {
+    setError("");
+    const res = await fetch(`/api/rrhh-local/employees/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) await load();
+    else {
+      const payload = await res.json().catch(() => ({}));
+      setError(payload.error || "No fue posible actualizar el empleado");
+    }
+  };
+
   if (loading) return <div className="p-6">Cargando…</div>;
 
   return (
@@ -204,13 +221,15 @@ export default function EmpleadosPage() {
       )}
 
       <div className="overflow-x-auto rounded-xl border border-[#E2E8F0] bg-white">
-        <table className="w-full min-w-[820px] text-sm">
+        <table className="w-full min-w-[1100px] text-sm">
           <thead>
             <tr className="border-b border-[#E2E8F0] text-left text-xs font-bold text-[#64748B]">
               <th className="p-3">Código</th>
               <th className="p-3">Nombre</th>
               <th className="p-3">Cargo</th>
               <th className="p-3">Departamento</th>
+              <th className="p-3">Jefe inmediato</th>
+              <th className="p-3">Sede</th>
               <th className="p-3">Estado</th>
               <th className="p-3">Salario</th>
               <th className="p-3">Fecha de ingreso</th>
@@ -223,6 +242,30 @@ export default function EmpleadosPage() {
                 <td className="p-3">{e.user.fullName}</td>
                 <td className="p-3">{e.jobTitle}</td>
                 <td className="p-3">{e.department?.name ?? "—"}</td>
+                <td className="p-3">
+                  <SimpleSelect
+                    value={e.managerId ?? ""}
+                    onChange={(v) => updateEmployee(e.id, { managerId: v || null })}
+                    options={[
+                      { value: "", label: "Sin jefe" },
+                      ...employees
+                        .filter((o) => o.id !== e.id)
+                        .map((o) => ({ value: o.id, label: o.user.fullName })),
+                    ]}
+                    triggerClassName="flex w-full min-w-[150px] items-center justify-between rounded-lg border border-[#E2E8F0] px-2 py-1.5 text-left text-xs text-[#1A1A1A]"
+                  />
+                </td>
+                <td className="p-3">
+                  <input
+                    defaultValue={e.site ?? ""}
+                    placeholder="Sede"
+                    onBlur={(ev) => {
+                      const value = ev.target.value.trim();
+                      if (value !== (e.site ?? "")) updateEmployee(e.id, { site: value });
+                    }}
+                    className="w-28 rounded-lg border border-[#E2E8F0] px-2 py-1.5 text-xs"
+                  />
+                </td>
                 <td className="p-3">{STATUS_LABELS[e.status] ?? e.status}</td>
                 <td className="p-3">
                   {e.salaryAmount != null ? formatMoney(e.salaryAmount, e.salaryCurrency) : "—"}
@@ -235,7 +278,7 @@ export default function EmpleadosPage() {
             ))}
             {employees.length === 0 && (
               <tr>
-                <td className="p-3 text-[#94A3B8]" colSpan={7}>Sin empleados registrados todavía.</td>
+                <td className="p-3 text-[#94A3B8]" colSpan={9}>Sin empleados registrados todavía.</td>
               </tr>
             )}
           </tbody>

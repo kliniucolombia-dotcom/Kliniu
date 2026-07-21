@@ -24,6 +24,7 @@ export type PublicUser = {
   city: string | null;
   addressLine1: string | null;
   addressLine2: string | null;
+  avatarUrl: string | null;
   role: UserRole;
   status: "ACTIVE" | "INACTIVE" | "SUSPENDED";
   createdAt: Date;
@@ -131,6 +132,7 @@ export async function getUserById(userId: string) {
       city: true,
       addressLine1: true,
       addressLine2: true,
+      avatarUrl: true,
       role: true,
       status: true,
       createdAt: true,
@@ -253,6 +255,7 @@ export async function getUserByEmail(email: string) {
       city: true,
       addressLine1: true,
       addressLine2: true,
+      avatarUrl: true,
       role: true,
       status: true,
       createdAt: true,
@@ -295,7 +298,7 @@ export async function createUserByAdmin(input: CreateUserByAdminInput): Promise<
     },
     select: {
       id: true, fullName: true, company: true, email: true, phone: true,
-      department: true, city: true, addressLine1: true, addressLine2: true,
+      department: true, city: true, addressLine1: true, addressLine2: true, avatarUrl: true,
       role: true, status: true, createdAt: true,
     },
   });
@@ -313,7 +316,7 @@ export async function listUsers(): Promise<PublicUser[]> {
     orderBy: { createdAt: "desc" },
     select: {
       id: true, fullName: true, company: true, email: true, phone: true,
-      department: true, city: true, addressLine1: true, addressLine2: true,
+      department: true, city: true, addressLine1: true, addressLine2: true, avatarUrl: true,
       role: true, status: true, createdAt: true,
     },
   });
@@ -437,7 +440,7 @@ export async function updateUserByAdmin(userId: string, input: UpdateUserByAdmin
     data,
     select: {
       id: true, fullName: true, company: true, email: true, phone: true,
-      department: true, city: true, addressLine1: true, addressLine2: true,
+      department: true, city: true, addressLine1: true, addressLine2: true, avatarUrl: true,
       role: true, status: true, createdAt: true,
     },
   });

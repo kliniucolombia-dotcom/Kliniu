@@ -1,5 +1,5 @@
 import { isRRHH } from "@/lib/roles";
-import { requireActiveUser, requireRRHH } from "@/lib/permissions";
+import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: Request) {
@@ -29,25 +29,47 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const access = await requireRRHH();
+  const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
 
   const body = await request.json();
-  const { employeeId, category, name, fileUrl, fileName } = body as {
+  const { employeeId, category, name, fileUrl, fileName, fileSize, expiresAt } = body as {
     employeeId?: string;
     category?: string;
     name?: string;
     fileUrl?: string;
     fileName?: string;
+    fileSize?: number;
+    expiresAt?: string;
   };
 
-  if (!employeeId || !category || !name?.trim() || !fileUrl || !fileName) {
+  // RRHH puede cargar documentos a cualquier empleado; el empleado solo a sí mismo.
+  let targetEmployeeId = employeeId;
+  let uploadedBySelf = false;
+
+  if (!isRRHH(access.user)) {
+    const employee = await prisma.employee.findUnique({ where: { userId: access.user.id } });
+    if (!employee) return Response.json({ error: "No tienes un perfil de empleado" }, { status: 403 });
+    targetEmployeeId = employee.id;
+    uploadedBySelf = true;
+  }
+
+  if (!targetEmployeeId || !category || !name?.trim() || !fileUrl || !fileName) {
     return Response.json({ error: "employeeId, category, name y el archivo son obligatorios" }, { status: 400 });
   }
 
   const document = await prisma.employeeDocument.create({
-    data: { employeeId, category: category as never, name: name.trim(), fileUrl, fileName },
+    data: {
+      employeeId: targetEmployeeId,
+      category: category as never,
+      name: name.trim(),
+      fileUrl,
+      fileName,
+      fileSize: typeof fileSize === "number" ? fileSize : null,
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
+      uploadedBySelf,
+    },
   });
   return Response.json(document, { status: 201 });
 }

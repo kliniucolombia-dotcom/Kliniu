@@ -10,8 +10,20 @@ export async function GET() {
   const announcements = await prisma.announcement.findMany({
     where: isRRHH(access.user) ? undefined : { isActive: true },
     orderBy: { createdAt: "desc" },
+    include: {
+      // readByMe: si el usuario actual ya la leyó. _count: total de lecturas (para "más leídas").
+      reads: { where: { userId: access.user.id }, select: { readAt: true } },
+      _count: { select: { reads: true } },
+    },
   });
-  return Response.json(announcements);
+
+  return Response.json(
+    announcements.map(({ reads, _count, ...a }) => ({
+      ...a,
+      readByMe: reads.length > 0,
+      readCount: _count.reads,
+    })),
+  );
 }
 
 export async function POST(request: Request) {
@@ -20,14 +32,28 @@ export async function POST(request: Request) {
   if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
 
   const body = await request.json();
-  const { title, body: content, authorName } = body as { title?: string; body?: string; authorName?: string };
+  const { title, body: content, authorName, category, imageUrl, isImportant } = body as {
+    title?: string;
+    body?: string;
+    authorName?: string;
+    category?: string;
+    imageUrl?: string;
+    isImportant?: boolean;
+  };
 
   if (!title?.trim() || !content?.trim()) {
     return Response.json({ error: "title y body son obligatorios" }, { status: 400 });
   }
 
   const announcement = await prisma.announcement.create({
-    data: { title: title.trim(), body: content.trim(), authorName: authorName?.trim() || null },
+    data: {
+      title: title.trim(),
+      body: content.trim(),
+      authorName: authorName?.trim() || null,
+      category: (category as never) ?? "GENERAL",
+      imageUrl: imageUrl?.trim() || null,
+      isImportant: Boolean(isImportant),
+    },
   });
   return Response.json(announcement, { status: 201 });
 }

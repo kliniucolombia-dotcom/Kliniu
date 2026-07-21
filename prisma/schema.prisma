@@ -54,6 +54,7 @@ model User {
   phone                    String?
   department               String?
   city                     String?
+  avatarUrl                String?
   addressLine1             String?
   addressLine2             String?
   passwordHash             String
@@ -84,6 +85,7 @@ model User {
   productionOrdersCreated  ProductionOrder[]  @relation("ProductionOrderCreatedBy")
   productionOrdersApproved ProductionOrder[]  @relation("ProductionOrderApprovedBy")
   employee                 Employee?
+  announcementReads        AnnouncementRead[]
 }
 
 model CartItem {
@@ -128,6 +130,7 @@ model Order {
   shippedAt          DateTime?
   deliveredAt        DateTime?
   subtotal           Int
+  shippingCost       Int            @default(0)
   totalItems         Int
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
@@ -676,6 +679,8 @@ model Employee {
   departmentId    String?
   contractType    ContractType   @default(INDEFINITE)
   status          EmployeeStatus @default(ACTIVE)
+  managerId       String?
+  site            String?
   hireDate        DateTime
   terminationDate DateTime?
   salaryAmount    Int?
@@ -690,13 +695,18 @@ model Employee {
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   department Department? @relation(fields: [departmentId], references: [id])
 
+  manager      Employee?  @relation("EmployeeManager", fields: [managerId], references: [id], onDelete: SetNull)
+  directReports Employee[] @relation("EmployeeManager")
+
   timeOffRequests   TimeOffRequest[]
   attendanceRecords AttendanceRecord[]
   documents         EmployeeDocument[]
   overtimeRequests  OvertimeRequest[]
   payslips          Payslip[]
+  benefitRequests   BenefitRequest[]
 
   @@index([departmentId])
+  @@index([managerId])
 }
 
 model TimeOffRequest {
@@ -868,23 +878,55 @@ model WarehouseMovement {
 }
 
 model Announcement {
-  id        String   @id @default(cuid())
-  title     String
-  body      String
-  authorName String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String               @id @default(cuid())
+  title       String
+  body        String
+  authorName  String?
+  category    AnnouncementCategory @default(GENERAL)
+  imageUrl    String?
+  isImportant Boolean              @default(false)
+  isActive    Boolean              @default(true)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  reads AnnouncementRead[]
+}
+
+enum AnnouncementCategory {
+  GENERAL
+  RRHH
+  EVENTOS
+  BIENESTAR
+  TECNOLOGIA
+  SST
+  COMERCIAL
+  PRODUCCION
+}
+
+model AnnouncementRead {
+  id             String   @id @default(cuid())
+  announcementId String
+  userId         String
+  readAt         DateTime @default(now())
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+  @@index([userId])
 }
 
 model EmployeeDocument {
-  id         String               @id @default(cuid())
-  employeeId String
-  category   EmployeeDocumentType
-  name       String
-  fileUrl    String
-  fileName   String
-  createdAt  DateTime             @default(now())
+  id           String               @id @default(cuid())
+  employeeId   String
+  category     EmployeeDocumentType
+  name         String
+  fileUrl      String
+  fileName     String
+  fileSize     Int?
+  expiresAt    DateTime?
+  uploadedBySelf Boolean            @default(false)
+  createdAt    DateTime             @default(now())
 
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
@@ -941,11 +983,45 @@ model Payslip {
 }
 
 model Benefit {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   title       String
   description String
-  isActive    Boolean  @default(true)
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  detail      String?
+  category    BenefitCategory @default(OTRO)
+  imageUrl    String?
+  frequency   String?
+  isFeatured  Boolean      @default(false)
+  isActive    Boolean      @default(true)
+  order       Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  requests BenefitRequest[]
+}
+
+enum BenefitCategory {
+  SALUD
+  EDUCACION
+  BIENESTAR
+  CONVENIOS
+  BONIFICACIONES
+  RECONOCIMIENTOS
+  OTRO
+}
+
+model BenefitRequest {
+  id         String        @id @default(cuid())
+  benefitId  String
+  employeeId String
+  status     TimeOffStatus @default(PENDING)
+  note       String?
+  reviewNote String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  benefit  Benefit  @relation(fields: [benefitId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([benefitId])
+  @@index([employeeId])
 }

@@ -1,12 +1,15 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
   MdHome, MdPerson, MdBeachAccess, MdEventNote, MdHealthAndSafety, MdFolder, MdLogout,
   MdPayments, MdAccessTime, MdCardGiftcard, MdDescription, MdArticle, MdAccountTree,
+  MdNotifications, MdExpandMore, MdSupportAgent,
 } from "react-icons/md";
+
+const RRHH_WHATSAPP = "573184001648";
 
 const NAV = [
   { href: "/empleado", label: "Inicio", Icon: MdHome },
@@ -27,6 +30,10 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<{ fullName?: string; role?: string } | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [announcementCount, setAnnouncementCount] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/account")
@@ -40,7 +47,29 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
         }
       })
       .catch(() => router.replace("/login"));
+
+    fetch("/api/empleado/me").then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (d?.avatarUrl) setAvatarUrl(d.avatarUrl);
+    });
+    fetch("/api/rrhh-local/announcements").then((r) => (r.ok ? r.json() : [])).then((d) => {
+      if (Array.isArray(d)) setAnnouncementCount(d.length);
+    });
   }, [router]);
+
+  useEffect(() => {
+    const onClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener("click", onClickOutside);
+    return () => document.removeEventListener("click", onClickOutside);
+  }, []);
+
+  // /empleado/perfil emite este evento al subir una foto, para refrescar el encabezado sin recargar.
+  useEffect(() => {
+    const onAvatarUpdated = (e: Event) => setAvatarUrl((e as CustomEvent<string>).detail);
+    window.addEventListener("empleado:avatar-updated", onAvatarUpdated);
+    return () => window.removeEventListener("empleado:avatar-updated", onAvatarUpdated);
+  }, []);
 
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -71,6 +100,19 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
             );
           })}
         </nav>
+        <div className="p-3">
+          <div className="space-y-2 rounded-xl bg-[#F0FDFF] p-3">
+            <p className="text-xs font-black text-[#1A1A1A]">¿Necesitas ayuda?</p>
+            <p className="text-[11px] text-[#64748B]">Contacta a Recursos Humanos</p>
+            <a
+              href={`https://wa.me/${RRHH_WHATSAPP}?text=${encodeURIComponent("Hola, necesito ayuda con Recursos Humanos.")}`}
+              target="_blank" rel="noreferrer"
+              className="flex items-center justify-center gap-2 rounded-lg bg-[#27B1B8] px-3 py-2 text-xs font-bold text-white hover:bg-[#1F9BA1]"
+            >
+              <MdSupportAgent size={16} /> Ir a contacto
+            </a>
+          </div>
+        </div>
         <div className="border-t border-[#E2E8F0] p-3">
           <button onClick={logout}
             className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-red-500 transition-colors hover:bg-red-50">
@@ -105,8 +147,40 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
             );
           })}
         </nav>
-        <header className="hidden items-center justify-end gap-3 border-b border-[#E2E8F0] bg-white px-6 py-4 md:flex">
-          {user && <p className="text-sm font-bold text-[#1A1A1A]">{user.fullName ?? "—"}</p>}
+        <header className="hidden items-center justify-end gap-4 border-b border-[#E2E8F0] bg-white px-6 py-4 md:flex">
+          <Link href="/empleado/noticias" className="relative flex h-9 w-9 items-center justify-center rounded-full text-[#64748B] hover:bg-[#F4F6F8]">
+            <MdNotifications size={20} />
+            {announcementCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                {announcementCount}
+              </span>
+            )}
+          </Link>
+          <div className="relative" ref={menuRef}>
+            <button onClick={() => setMenuOpen((o) => !o)} className="flex items-center gap-2">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="h-9 w-9 rounded-full object-cover" />
+              ) : (
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E6FAFB] text-xs font-black text-[#27B1B8]">
+                  {(user?.fullName ?? "—").split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase()}
+                </div>
+              )}
+              {user && <p className="text-sm font-bold text-[#1A1A1A]">{user.fullName ?? "—"}</p>}
+              <MdExpandMore size={18} className="text-[#64748B]" />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-full z-10 mt-2 w-44 overflow-hidden rounded-xl border border-[#E2E8F0] bg-white shadow-lg">
+                <Link href="/empleado/perfil" onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-[#1A1A1A] hover:bg-[#F4F6F8]">
+                  <MdPerson size={16} /> Mi perfil
+                </Link>
+                <button onClick={logout}
+                  className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50">
+                  <MdLogout size={16} /> Cerrar sesión
+                </button>
+              </div>
+            )}
+          </div>
         </header>
         {children}
       </div>
