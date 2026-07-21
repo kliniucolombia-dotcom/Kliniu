@@ -20,7 +20,7 @@ export async function POST(
     const origin = new URL(request.url).origin;
     const checkoutUrl = buildWompiCheckoutUrl({
       reference: order.wompiReference,
-      amountInCents: order.subtotal * 100,
+      amountInCents: (order.subtotal + order.shippingCost) * 100,
       redirectUrl: `${origin}/checkout/exito?pedido=${order.id}`,
       customerEmail: order.customerEmail,
     });

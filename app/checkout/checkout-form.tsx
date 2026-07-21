@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import Link from "next/link";
 import { departamentosColombia, getCitiesForDepartment } from "@/lib/colombia-locations";
+import { getShippingForLocation, formatShippingPrice } from "@/lib/shipping-rates";
 
 type CheckoutItem = {
   id: string;
@@ -86,7 +87,14 @@ export default function CheckoutForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inlineError, setInlineError] = useState("");
   const [toast, setToast] = useState<ToastState>(null);
+  const [cityMenuOpen, setCityMenuOpen] = useState(false);
   const cityOptions = useMemo(() => getCitiesForDepartment(form.department), [form.department]);
+  const filteredCityOptions = useMemo(() => {
+    const normalize = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+    const query = normalize(form.city.trim());
+    return cityOptions.filter((c) => normalize(c).includes(query));
+  }, [cityOptions, form.city]);
+  const shipping = useMemo(() => getShippingForLocation(form.department, form.city), [form.department, form.city]);
 
   const step1Done = Boolean(form.customerName.trim() && form.customerEmail.trim() && form.customerPhone.trim());
   const step2Done = Boolean(form.department.trim() && form.addressLine1.trim() && form.city.trim());
@@ -288,17 +296,31 @@ export default function CheckoutForm({
                     placeholder="Calle, carrera, barrio o punto de entrega"
                     className="h-11 w-full rounded-xl border border-black/10 px-4 text-sm outline-none transition focus:border-[#27B1B8]" />
                 </div>
-                <div>
+                <div className="relative">
                   <label htmlFor="city" className="mb-1.5 block text-sm font-medium text-[#333]">
                     Ciudad*
                   </label>
-                  <input id="city" value={form.city} onChange={handleChange} required list="checkout-cities"
+                  <input id="city" value={form.city} onChange={handleChange} required
+                    autoComplete="off"
                     disabled={!form.department}
+                    onFocus={() => setCityMenuOpen(true)}
+                    onBlur={() => window.setTimeout(() => setCityMenuOpen(false), 150)}
                     placeholder={form.department ? "Busca o escribe tu ciudad" : "Selecciona departamento primero"}
                     className="h-11 w-full rounded-xl border border-black/10 px-4 text-sm outline-none transition focus:border-[#27B1B8] disabled:bg-[#f8f8f7]" />
-                  <datalist id="checkout-cities">
-                    {cityOptions.map((c) => <option key={c} value={c} />)}
-                  </datalist>
+                  {cityMenuOpen && filteredCityOptions.length > 0 && (
+                    <ul className="absolute z-20 mt-1 max-h-52 w-full overflow-auto rounded-xl border border-black/10 bg-white py-1 shadow-lg">
+                      {filteredCityOptions.map((c) => (
+                        <li key={c}>
+                          <button type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => { setForm((f) => ({ ...f, city: c })); setCityMenuOpen(false); }}
+                            className="block w-full px-4 py-2 text-left text-sm text-[#333] hover:bg-[#f0fbfc]">
+                            {c}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
                 <div>
                   <label htmlFor="addressLine2" className="mb-1.5 block text-sm font-medium text-[#333]">
@@ -415,12 +437,14 @@ export default function CheckoutForm({
               </div>
               <div className="mt-4 space-y-2 border-t border-black/8 pt-3 text-sm">
                 <div className="flex justify-between text-[#555]">
-                  <span>Envío</span>
-                  <span className="font-semibold text-green-600">Gratis 🎉</span>
+                  <span>Envío{form.city ? "" : " (según tu ciudad)"}</span>
+                  <span className={`font-semibold ${shipping.price === 0 ? "text-green-600" : "text-[#111]"}`}>
+                    {formatShippingPrice(shipping.price)}
+                  </span>
                 </div>
                 <div className="flex justify-between border-t border-black/8 pt-2 font-bold">
                   <span>Total</span>
-                  <span className="text-[#27B1B8]">{formatCurrency(subtotal)}</span>
+                  <span className="text-[#27B1B8]">{formatCurrency(subtotal + shipping.price)}</span>
                 </div>
               </div>
             </div>

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { pushOrderToOdoo } from "@/lib/odoo";
+import { getShippingForLocation } from "@/lib/shipping-rates";
 
 export type CheckoutInput = {
   customerName: string;
@@ -71,6 +72,7 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
     0,
   );
   const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0);
+  const shippingCost = getShippingForLocation(department, city).price;
 
   const order = await prisma.$transaction(async (tx) => {
     const productCartItems = cartItems.filter((item) => item.productId);
@@ -167,6 +169,7 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
         addressLine2,
         notes,
         subtotal,
+        shippingCost,
         totalItems,
         assignedSellerId,
         items: {
@@ -441,7 +444,7 @@ export async function setOrderWompiReference(orderId: string, userId: string) {
 
   const order = await prisma.order.findFirst({
     where: { id: orderId, userId },
-    select: { id: true, subtotal: true, customerEmail: true, wompiReference: true },
+    select: { id: true, subtotal: true, shippingCost: true, customerEmail: true, wompiReference: true },
   });
 
   if (!order) {

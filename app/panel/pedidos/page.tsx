@@ -27,6 +27,7 @@ type Order = {
   trackingNumber?: string | null;
   adminNotes?: string | null;
   subtotal: number;
+  shippingCost: number;
   totalItems: number;
   items: OrderItem[];
   assignedSeller?: { fullName: string } | null;
@@ -462,7 +463,12 @@ export default function PedidosPage() {
             <div className="grid gap-3 content-start">
               <div className="rounded-[1.4rem] border border-black/8 bg-[#fafaf9] px-5 py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8d91]">Total del pedido</p>
-                <p className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-[#27B1B8]">{formatCurrency(selectedOrder.subtotal)}</p>
+                <p className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-[#27B1B8]">
+                  {formatCurrency(selectedOrder.subtotal + selectedOrder.shippingCost)}
+                </p>
+                {selectedOrder.shippingCost > 0 && (
+                  <p className="mt-1 text-xs text-[#8b8d91]">Incluye envío: {formatCurrency(selectedOrder.shippingCost)}</p>
+                )}
               </div>
               <div className="rounded-[1.4rem] border border-black/8 bg-[#fafaf9] px-5 py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8d91]">Transportadora actual</p>

@@ -70,6 +70,7 @@ export async function POST(request: Request) {
         paymentStatus: order.paymentStatus,
         totalItems: order.totalItems,
         subtotal: order.subtotal,
+        shippingCost: order.shippingCost,
         createdAt: order.createdAt,
       },
       message: "Pedido creado correctamente.",

@@ -315,9 +315,12 @@ export default function CarritoPage() {
                     <span className="font-bold">-{formatPrecio(ahorroTotal)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-[#333]">
-                  <span>Envío estimado</span>
-                  <span className="font-semibold text-[#27B1B8]">Envío gratis</span>
+                <div className="flex flex-col gap-0.5 text-[#333]">
+                  <div className="flex justify-between">
+                    <span>Envío</span>
+                    <span className="font-semibold text-[#27B1B8]">Se calcula en el checkout</span>
+                  </div>
+                  <span className="text-xs text-[#888]">Gratis en Bogotá · $12.000 resto del país</span>
                 </div>
               </div>
 
