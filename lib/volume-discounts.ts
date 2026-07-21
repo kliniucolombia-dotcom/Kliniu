@@ -166,15 +166,15 @@ export const TIPO_VARIANTES: Record<string, { label: string; slugSuffix: string;
   ],
   "dispensador-papel-higienico-institucional": [
     { label: "Cierre Plástico", slugSuffix: "", image: PAPEL_INST_BLANCO_PLASTICO },
-    { label: "Cierre Metálico", slugSuffix: "--metalico", image: PAPEL_INST_BLANCO_METALICO },
+    { label: "Cierre Metálico", slugSuffix: "--metalico", image: PAPEL_INST_BLANCO_METALICO, sku: "DPI.CM - 065" },
   ],
   "dispensador-de-papel-higienico-institucional": [
     { label: "Cierre Plástico", slugSuffix: "", image: PAPEL_INST_BLANCO_PLASTICO },
-    { label: "Cierre Metálico", slugSuffix: "--metalico", image: PAPEL_INST_BLANCO_METALICO },
+    { label: "Cierre Metálico", slugSuffix: "--metalico", image: PAPEL_INST_BLANCO_METALICO, sku: "DPI.CM - 065" },
   ],
   "dispensador-de-toalla-institucional": [
     { label: "Cierre Plástico", slugSuffix: "", image: TOALLA_CZ_BLANCO_PLASTICO },
-    { label: "Cierre Metálico", slugSuffix: "--metalico", image: TOALLA_CZ_BLANCO_METALICO },
+    { label: "Cierre Metálico", slugSuffix: "--metalico", image: TOALLA_CZ_BLANCO_METALICO, sku: "DCT.CM - 057" },
   ],
 };
 
