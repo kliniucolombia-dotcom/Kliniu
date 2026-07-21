@@ -6,8 +6,6 @@ import { categorias } from "../../data/catalog";
 import { SimpleSelect } from "../_components/simple-select";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
-const nonOutletCategorias = categorias.filter((c) => c !== "Outlet");
-
 type PanelProduct = {
   id: string; slug: string; sku: string | null; oemReference: string | null;
   alternativeReferences: string[]; category: string; name: string; brand: string;
@@ -15,6 +13,7 @@ type PanelProduct = {
   image: string; galleryImages: string[]; availability: string; description: string;
   application: string | null; compatibility: string[]; warranty: string | null;
   technicalSpecs: unknown; colorVariants: unknown; videoUrl: string | null; active: boolean;
+  isOutlet: boolean;
   updatedAt: string;
 };
 
@@ -34,7 +33,7 @@ function getPageNumbers(current: number, total: number): (number | "...")[] {
 
 const emptyForm = {
   sku: "", marca: "Kliniu", nombre: "", oemReferencia: "", referenciasAlternas: "",
-  precioValor: "", precioAnteriorValor: "", stock: "0", stockMinimo: "0",
+  precioValor: "", precioAnteriorValor: "", stock: "0", stockMinimo: "0", categoria: "",
 };
 
 function IconSearch() {
@@ -91,12 +90,11 @@ export default function OutletPanel() {
   const [products, setProducts] = useState<PanelProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(() => ({ ...emptyForm, categoria: categorias[0] }));
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [removeTarget, setRemoveTarget] = useState<PanelProduct | null>(null);
-  const [removeCategoria, setRemoveCategoria] = useState(nonOutletCategorias[0]);
   const router = useRouter();
 
   const [outletSearch, setOutletSearch] = useState("");
@@ -121,7 +119,7 @@ export default function OutletPanel() {
   useEffect(() => { load(); }, [load]);
   useRealtimeRefresh(["products"], load);
 
-  const outletProducts = useMemo(() => products.filter((p) => p.category === "Outlet"), [products]);
+  const outletProducts = useMemo(() => products.filter((p) => p.isOutlet), [products]);
   const filteredOutlet = useMemo(() => {
     const q = outletSearch.trim().toLowerCase();
     return outletProducts.filter((p) => !q || p.name.toLowerCase().includes(q) || (p.sku ?? "").toLowerCase().includes(q));
@@ -130,7 +128,7 @@ export default function OutletPanel() {
   const outletPageCount = Math.max(1, Math.ceil(filteredOutlet.length / outletPerPage));
   const pagedOutlet = filteredOutlet.slice((outletPage - 1) * outletPerPage, outletPage * outletPerPage);
 
-  const otherProducts = useMemo(() => products.filter((p) => p.category !== "Outlet"), [products]);
+  const otherProducts = useMemo(() => products.filter((p) => !p.isOutlet), [products]);
   const filteredOther = useMemo(() => {
     const q = addSearch.trim().toLowerCase();
     return otherProducts.filter((p) => {
@@ -189,7 +187,8 @@ export default function OutletPanel() {
       const imagen = await uploadImage(file, form.nombre);
       const payload = {
         sku: form.sku || undefined,
-        categoria: "Outlet",
+        categoria: form.categoria,
+        isOutlet: true,
         nombre: form.nombre.trim(),
         marca: form.marca.trim() || "Kliniu",
         precioValor,
@@ -210,7 +209,7 @@ export default function OutletPanel() {
       const d = await r.json() as { error?: string; details?: string };
       if (!r.ok) { setAlert({ type: "err", msg: d.error || "Error al crear producto" }); setSaving(false); return; }
       setAlert({ type: "ok", msg: "Producto outlet creado" });
-      setForm(emptyForm);
+      setForm({ ...emptyForm, categoria: categorias[0] });
       setFile(null);
       await load();
       setShowCreate(false);
@@ -220,37 +219,17 @@ export default function OutletPanel() {
     setSaving(false);
   };
 
-  const setProductCategory = async (p: PanelProduct, categoria: string) => {
+  const setProductOutlet = async (p: PanelProduct, isOutlet: boolean) => {
     setSaving(true);
     setAlert(null);
-    const payload = {
-      sku: p.sku ?? undefined,
-      categoria,
-      nombre: p.name,
-      marca: p.brand,
-      precioValor: p.price,
-      precioAnteriorValor: p.previousPrice,
-      stock: p.stock,
-      stockMinimo: p.minimumStock,
-      imagen: p.image,
-      imagenesExtra: p.galleryImages,
-      disponibilidad: p.availability,
-      descripcion: p.description,
-      oemReferencia: p.oemReference ?? undefined,
-      referenciasAlternas: p.alternativeReferences,
-      compatibilidad: p.compatibility,
-      aplicacion: p.application ?? undefined,
-      garantia: p.warranty ?? undefined,
-      videoUrl: p.videoUrl ?? undefined,
-    };
     const r = await fetch(`/api/products/${p.slug}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ isOutlet }),
     });
     const d = await r.json() as { error?: string };
     if (!r.ok) { setAlert({ type: "err", msg: d.error || "Error al actualizar" }); setSaving(false); return; }
-    setAlert({ type: "ok", msg: categoria === "Outlet" ? "Producto agregado a Outlet" : "Producto quitado de Outlet" });
+    setAlert({ type: "ok", msg: isOutlet ? "Producto agregado a Outlet" : "Producto quitado de Outlet" });
     await load();
     setSaving(false);
   };
@@ -399,7 +378,7 @@ export default function OutletPanel() {
                           <td className="p-4 text-right">
                             <button
                               disabled={saving}
-                              onClick={() => { setRemoveTarget(p); setRemoveCategoria(nonOutletCategorias[0]); }}
+                              onClick={() => setRemoveTarget(p)}
                               className="rounded-full border border-[#DC2626]/25 bg-[#FEF2F2] px-3 py-1.5 text-xs font-semibold text-[#DC2626] transition-colors duration-200 hover:bg-[#DC2626] hover:text-white disabled:opacity-50"
                             >
                               Quitar
@@ -461,7 +440,7 @@ export default function OutletPanel() {
                 </div>
                 <SimpleSelect
                   value={addCategory}
-                  options={[{ value: "all", label: "Todas las categorías" }, ...nonOutletCategorias.map((c) => ({ value: c, label: c }))]}
+                  options={[{ value: "all", label: "Todas las categorías" }, ...categorias.map((c) => ({ value: c, label: c }))]}
                   onChange={setAddCategory}
                 />
                 <SimpleSelect
@@ -511,7 +490,7 @@ export default function OutletPanel() {
                         <td className="p-4 font-semibold text-[#1f2328]">{fmt(p.price)}</td>
                         <td className={`p-4 font-semibold ${p.stock === 0 ? "text-[#DC2626]" : "text-[#16A34A]"}`}>{p.stock.toLocaleString("es-CO")} unidades</td>
                         <td className="p-4 text-right">
-                          <button disabled={saving} onClick={() => setProductCategory(p, "Outlet")} className="rounded-full bg-[#27B1B8] px-4 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:opacity-90 disabled:opacity-50">
+                          <button disabled={saving} onClick={() => setProductOutlet(p, true)} className="rounded-full bg-[#27B1B8] px-4 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:opacity-90 disabled:opacity-50">
                             Agregar a Outlet
                           </button>
                         </td>
@@ -563,7 +542,7 @@ export default function OutletPanel() {
             <div className="mb-4 flex items-start justify-between">
               <div>
                 <h3 className="font-black text-[#1A1A1A]">Crear producto outlet</h3>
-                <p className="mt-0.5 text-xs text-[#64748B]">Este producto quedará marcado en la categoría Outlet.</p>
+                <p className="mt-0.5 text-xs text-[#64748B]">Este producto quedará marcado como Outlet, visible también en su categoría real.</p>
               </div>
               <button onClick={() => setShowCreate(false)} className="text-[#94A3B8] hover:text-[#1A1A1A]">✕</button>
             </div>
@@ -575,6 +554,15 @@ export default function OutletPanel() {
               <div>
                 <label className="mb-1 block text-xs font-bold text-[#64748B]">Marca</label>
                 <input value={form.marca} onChange={(e) => setForm({ ...form, marca: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs font-bold text-[#64748B]">Categoría real del producto</label>
+                <SimpleSelect
+                  value={form.categoria}
+                  options={categorias.map((c) => ({ value: c, label: c }))}
+                  onChange={(v) => setForm({ ...form, categoria: v })}
+                />
+                <p className="mt-1 text-[10px] text-[#94A3B8]">El producto se marcará como Outlet pero seguirá visible en esta categoría.</p>
               </div>
               <div className="sm:col-span-2">
                 <label className="mb-1 block text-xs font-bold text-[#64748B]">Nombre del producto</label>
@@ -632,14 +620,7 @@ export default function OutletPanel() {
               </div>
               <button onClick={() => setRemoveTarget(null)} className="text-[#94A3B8] hover:text-[#1A1A1A]">✕</button>
             </div>
-            <p className="mb-3 text-xs text-[#64748B]">El producto no se elimina, solo se saca de la categoría Outlet. Elige a qué categoría vuelve:</p>
-            <div className="mb-4">
-              <SimpleSelect
-                value={removeCategoria}
-                options={nonOutletCategorias.map((c) => ({ value: c, label: c }))}
-                onChange={setRemoveCategoria}
-              />
-            </div>
+            <p className="mb-4 text-xs text-[#64748B]">El producto no se elimina, solo deja de mostrarse en Outlet. Sigue visible en su categoría real ({removeTarget.category}).</p>
             <div className="flex gap-2">
               <button onClick={() => setRemoveTarget(null)} className="flex-1 rounded-xl border border-[#E2E8F0] py-2.5 text-sm font-bold text-[#64748B] hover:bg-[#F8FAFC]">
                 Cancelar
@@ -648,7 +629,7 @@ export default function OutletPanel() {
                 onClick={async () => {
                   const p = removeTarget;
                   setRemoveTarget(null);
-                  await setProductCategory(p, removeCategoria);
+                  await setProductOutlet(p, false);
                 }}
                 disabled={saving}
                 className="flex-1 rounded-xl bg-[#DC2626] py-2.5 text-sm font-bold text-white hover:opacity-80 disabled:opacity-50"

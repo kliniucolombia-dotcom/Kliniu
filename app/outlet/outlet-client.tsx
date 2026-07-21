@@ -8,7 +8,7 @@ import type { ProductoCatalogo } from "../data/catalog";
 import SiteFooter from "../components/site-footer";
 
 function isOutletProduct(product: ProductoCatalogo) {
-  return product.categoria === "Outlet";
+  return product.esOutlet === true;
 }
 
 function hasVisibleDiscount(product: ProductoCatalogo) {

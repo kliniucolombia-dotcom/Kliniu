@@ -285,6 +285,7 @@ export type ProductoCatalogo = {
   variacionesColor?: VariacionColor[];
   videoUrl?: string;
   destacado?: boolean;
+  esOutlet?: boolean;
   preciosPorCantidad?: { cantidad: number; precioUnitario: number }[];
 };
 

@@ -1,4 +1,4 @@
-import { deleteProduct, updateProduct } from "@/lib/products";
+import { deleteProduct, setProductOutletFlag, updateProduct } from "@/lib/products";
 import { requireAdminOrSeller } from "@/lib/admin";
 
 function getProductErrorResponse(
@@ -47,6 +47,12 @@ export async function PATCH(
     const user = await requireAdminOrSeller();
     const { slug } = await context.params;
     const body = await request.json();
+
+    if (typeof body.isOutlet === "boolean" && Object.keys(body).length === 1) {
+      const product = await setProductOutletFlag(slug, body.isOutlet);
+      return Response.json({ product });
+    }
+
     const product = await updateProduct(slug, body, user.id);
 
     return Response.json({ product });

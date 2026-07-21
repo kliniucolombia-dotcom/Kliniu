@@ -41,6 +41,7 @@ type ProductRecord = {
   videoUrl?: string | null;
   featured: boolean;
   active: boolean;
+  isOutlet: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -48,6 +49,7 @@ type ProductRecord = {
 export type StoreProduct = ProductoCatalogo & {
   descripcion: string;
   destacado: boolean;
+  esOutlet: boolean;
 };
 
 export type InventoryMovementSummary = {
@@ -83,6 +85,7 @@ export type ProductMutationInput = {
   especificacionesTecnicas?: ProductoEspecificacion[];
   variacionesColor?: VariacionColor[];
   videoUrl?: string;
+  isOutlet?: boolean;
 };
 
 function createSkuFromName(name: string) {
@@ -272,6 +275,7 @@ function toStoreProduct(product: ProductRecord): StoreProduct {
     variacionesColor: Array.isArray(product.colorVariants) ? (product.colorVariants as VariacionColor[]) : [],
     videoUrl: product.videoUrl?.trim() || undefined,
     destacado: product.featured,
+    esOutlet: product.isOutlet,
   };
 }
 
@@ -323,6 +327,7 @@ function getFallbackProducts(): StoreProduct[] {
       },
     ),
     destacado: producto.destacado ?? index < 5,
+    esOutlet: producto.esOutlet ?? false,
   }));
 }
 
@@ -453,6 +458,7 @@ export async function createProduct(input: ProductMutationInput, actorUserId: st
       videoUrl: input.videoUrl?.trim() || null,
       featured: false,
       active: true,
+      isOutlet: input.isOutlet ?? false,
     })
     .select()
     .single();
@@ -579,6 +585,7 @@ export async function updateProduct(slug: string, input: ProductMutationInput, a
       technicalSpecs: normalizeTechnicalSpecs(input.especificacionesTecnicas),
       colorVariants: input.variacionesColor ?? [],
       videoUrl: input.videoUrl?.trim() || null,
+      isOutlet: input.isOutlet ?? existingRecord.isOutlet,
       updatedAt: new Date().toISOString(),
     })
     .eq("slug", slug)
@@ -609,6 +616,25 @@ export async function updateProduct(slug: string, input: ProductMutationInput, a
     userId: actorUserId,
     note: "Ajuste manual desde el panel admin",
   });
+
+  return toStoreProduct(updated as ProductRecord);
+}
+
+export async function setProductOutletFlag(slug: string, isOutlet: boolean) {
+  if (!supabaseDb) {
+    throw new Error("DATABASE_NOT_CONFIGURED");
+  }
+
+  const { data: updated, error } = await supabaseDb
+    .from("Product")
+    .update({ isOutlet, updatedAt: new Date().toISOString() })
+    .eq("slug", slug)
+    .select()
+    .single();
+
+  if (error || !updated) {
+    throw new Error(error?.message || "Error al actualizar Outlet");
+  }
 
   return toStoreProduct(updated as ProductRecord);
 }

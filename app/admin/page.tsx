@@ -39,6 +39,7 @@ type FormState = {
   compatibilidad: string;
   garantia: string;
   videoUrl: string;
+  isOutlet: boolean;
 };
 
 type TechnicalSpecFormItem = {
@@ -64,6 +65,7 @@ const initialState: FormState = {
   compatibilidad: "",
   garantia: "1 año de garantía del fabricante",
   videoUrl: "",
+  isOutlet: false,
 };
 
 const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024; // 15 MB hard limit — se comprime antes de subir
@@ -1031,7 +1033,7 @@ export default function AdminPage() {
   }, [orderSearch, orderShippingFilter, orders]);
 
   const productCountLabel = `${adminProducts.length} producto${adminProducts.length === 1 ? "" : "s"} en catálogo`;
-  const isOutletForm = form.categoria === "Outlet";
+  const isOutletForm = form.isOutlet;
 
   useEffect(() => {
     if (previewImageUrl?.startsWith("blob:")) {
@@ -1288,6 +1290,7 @@ export default function AdminPage() {
         especificacionesTecnicas: normalizeTechnicalSpecFormItems(technicalSpecs),
         variacionesColor: colorVariants,
         videoUrl: form.videoUrl,
+        isOutlet: form.isOutlet,
       };
       const result = editingSlug
         ? await updateProduct(editingSlug, payload)
@@ -1358,6 +1361,7 @@ export default function AdminPage() {
       garantia: product.garantia || initialState.garantia,
       descripcion: product.descripcion || "",
       videoUrl: product.videoUrl || "",
+      isOutlet: product.esOutlet === true,
     });
     setTechnicalSpecs(
       (product.especificacionesTecnicas || []).length > 0
@@ -1494,12 +1498,11 @@ export default function AdminPage() {
   };
 
   const openCreateOutletView = () => {
-    setForm({ ...initialState, categoria: "Outlet" as Categoria });
+    setForm({ ...initialState, isOutlet: true });
     setSelectedImage(null);
     setSelectedExtraImages(Array.from({ length: EXTRA_IMAGE_SLOTS }, () => null));
     setPrimaryImageIndex(0);
     setEditingSlug(null);
-    setEditCategoryFilter("Outlet" as Categoria);
     setRequestError("");
     setFileInputKey((current) => current + 1);
     setActiveTab("create");
@@ -1770,7 +1773,7 @@ export default function AdminPage() {
                   </h2>
                   {isOutletForm && (
                     <p className="mt-2 text-sm leading-6 text-[#6e7379]">
-                      Este producto quedará marcado en la categoría Outlet y será el único tipo que aparece en /outlet.
+                      Este producto quedará marcado como Outlet, además de visible en su categoría real.
                     </p>
                   )}
                 </div>
