@@ -95,6 +95,8 @@ export default function OutletPanel() {
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [removeTarget, setRemoveTarget] = useState<PanelProduct | null>(null);
+  const [editTarget, setEditTarget] = useState<PanelProduct | null>(null);
+  const [editForm, setEditForm] = useState({ precioNormal: "", precioOutlet: "", stock: "", stockMinimo: "" });
   const router = useRouter();
 
   const [outletSearch, setOutletSearch] = useState("");
@@ -216,6 +218,58 @@ export default function OutletPanel() {
     } catch (e) {
       setAlert({ type: "err", msg: e instanceof Error ? e.message : "Error al crear producto" });
     }
+    setSaving(false);
+  };
+
+  const openEdit = (p: PanelProduct) => {
+    setEditTarget(p);
+    setEditForm({
+      precioNormal: String(p.previousPrice),
+      precioOutlet: String(p.price),
+      stock: String(p.stock),
+      stockMinimo: String(p.minimumStock),
+    });
+  };
+
+  const submitEdit = async () => {
+    if (!editTarget) return;
+    const p = editTarget;
+    const precioOutlet = Number(editForm.precioOutlet);
+    const precioNormal = Number(editForm.precioNormal);
+    if (!precioOutlet || precioOutlet <= 0) { setAlert({ type: "err", msg: "Precio outlet inválido" }); return; }
+
+    setSaving(true);
+    setAlert(null);
+    const payload = {
+      sku: p.sku ?? undefined,
+      categoria: p.category,
+      nombre: p.name,
+      marca: p.brand,
+      precioValor: precioOutlet,
+      precioAnteriorValor: precioNormal || precioOutlet,
+      stock: Number(editForm.stock || 0),
+      stockMinimo: Number(editForm.stockMinimo || 0),
+      imagen: p.image,
+      imagenesExtra: p.galleryImages,
+      disponibilidad: p.availability,
+      descripcion: p.description,
+      oemReferencia: p.oemReference ?? undefined,
+      referenciasAlternas: p.alternativeReferences,
+      compatibilidad: p.compatibility,
+      aplicacion: p.application ?? undefined,
+      garantia: p.warranty ?? undefined,
+      videoUrl: p.videoUrl ?? undefined,
+    };
+    const r = await fetch(`/api/products/${p.slug}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const d = await r.json() as { error?: string };
+    if (!r.ok) { setAlert({ type: "err", msg: d.error || "Error al actualizar" }); setSaving(false); return; }
+    setAlert({ type: "ok", msg: "Producto outlet actualizado" });
+    setEditTarget(null);
+    await load();
     setSaving(false);
   };
 
@@ -358,7 +412,12 @@ export default function OutletPanel() {
                             <span className="rounded-full bg-[#EAF8F6] px-2.5 py-0.5 text-xs font-semibold text-[#0C535B]">{p.category}</span>
                           </td>
                           <td className="p-4">
-                            <span className="font-semibold text-[#1f2328]">{fmt(p.price)}</span>
+                            <div className="flex items-baseline gap-1.5">
+                              <span className="font-semibold text-[#1f2328]">{fmt(p.price)}</span>
+                              {p.previousPrice > p.price && (
+                                <span className="text-xs text-[#8b8d91] line-through">{fmt(p.previousPrice)}</span>
+                              )}
+                            </div>
                             {priceDiff !== 0 && (
                               <p className={`text-xs font-bold ${priceDiff > 0 ? "text-[#16A34A]" : "text-[#DC2626]"}`}>
                                 {priceDiff > 0 ? "▲" : "▼"}{Math.abs(priceDiff).toFixed(0)}% vs precio normal
@@ -376,13 +435,22 @@ export default function OutletPanel() {
                             </span>
                           </td>
                           <td className="p-4 text-right">
-                            <button
-                              disabled={saving}
-                              onClick={() => setRemoveTarget(p)}
-                              className="rounded-full border border-[#DC2626]/25 bg-[#FEF2F2] px-3 py-1.5 text-xs font-semibold text-[#DC2626] transition-colors duration-200 hover:bg-[#DC2626] hover:text-white disabled:opacity-50"
-                            >
-                              Quitar
-                            </button>
+                            <div className="flex justify-end gap-2">
+                              <button
+                                disabled={saving}
+                                onClick={() => openEdit(p)}
+                                className="rounded-full border border-[#27B1B8]/30 bg-[#EAF8F6] px-3 py-1.5 text-xs font-semibold text-[#0C535B] transition-colors duration-200 hover:bg-[#27B1B8] hover:text-white disabled:opacity-50"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                disabled={saving}
+                                onClick={() => setRemoveTarget(p)}
+                                className="rounded-full border border-[#DC2626]/25 bg-[#FEF2F2] px-3 py-1.5 text-xs font-semibold text-[#DC2626] transition-colors duration-200 hover:bg-[#DC2626] hover:text-white disabled:opacity-50"
+                              >
+                                Quitar
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -635,6 +703,51 @@ export default function OutletPanel() {
                 className="flex-1 rounded-xl bg-[#DC2626] py-2.5 text-sm font-bold text-white hover:opacity-80 disabled:opacity-50"
               >
                 Quitar de Outlet
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-4 flex items-start justify-between">
+              <div>
+                <h3 className="font-black text-[#1A1A1A]">Editar precio y stock</h3>
+                <p className="mt-0.5 text-sm text-[#64748B]">{editTarget.name}</p>
+              </div>
+              <button onClick={() => setEditTarget(null)} className="text-[#94A3B8] hover:text-[#1A1A1A]">✕</button>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-bold text-[#64748B]">Precio normal (sin descuento)</label>
+                <input type="number" value={editForm.precioNormal} onChange={(e) => setEditForm({ ...editForm, precioNormal: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-bold text-[#64748B]">Precio outlet (con descuento)</label>
+                <input type="number" value={editForm.precioOutlet} onChange={(e) => setEditForm({ ...editForm, precioOutlet: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-bold text-[#64748B]">Stock disponible</label>
+                <input type="number" value={editForm.stock} onChange={(e) => setEditForm({ ...editForm, stock: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-bold text-[#64748B]">Stock mínimo</label>
+                <input type="number" value={editForm.stockMinimo} onChange={(e) => setEditForm({ ...editForm, stockMinimo: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]" />
+              </div>
+            </div>
+            {Number(editForm.precioNormal) > Number(editForm.precioOutlet) && Number(editForm.precioOutlet) > 0 && (
+              <p className="mt-3 text-xs font-semibold text-[#16A34A]">
+                Descuento: {Math.round((1 - Number(editForm.precioOutlet) / Number(editForm.precioNormal)) * 100)}% vs precio normal
+              </p>
+            )}
+            <div className="mt-5 flex gap-2">
+              <button onClick={() => setEditTarget(null)} className="flex-1 rounded-xl border border-[#E2E8F0] py-2.5 text-sm font-bold text-[#64748B] hover:bg-[#F8FAFC]">
+                Cancelar
+              </button>
+              <button onClick={submitEdit} disabled={saving} className="flex-1 rounded-xl bg-[#27B1B8] py-2.5 text-sm font-bold text-white hover:opacity-80 disabled:opacity-50">
+                {saving ? "Guardando…" : "Guardar cambios"}
               </button>
             </div>
           </div>
