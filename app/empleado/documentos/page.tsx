@@ -6,6 +6,7 @@ import {
 } from "react-icons/md";
 import { SimpleSelect } from "@/app/panel/_components/simple-select";
 import { fmtDateOnly } from "@/lib/date";
+import CertificadoLaboral from "./certificado-laboral";
 
 type EmployeeDocument = {
   id: string;
@@ -411,6 +412,8 @@ export default function DocumentosPage() {
           </div>
         </div>
       </div>
+
+      <CertificadoLaboral />
 
       {showBanner && (
         <div className="flex items-center justify-between gap-4 rounded-xl bg-[#F0FDFF] p-4">

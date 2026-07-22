@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   MdAccountTree, MdApartment, MdSearch, MdGroups, MdPlace, MdSupervisorAccount,
   MdClose, MdEmail, MdPhone, MdBadge, MdExpandMore, MdChevronRight, MdGridView, MdViewList,
+  MdHub,
 } from "react-icons/md";
 import { SimpleSelect } from "@/app/panel/_components/simple-select";
 import { fmtDateOnly } from "@/lib/date";
@@ -16,6 +17,7 @@ type DirectoryEmployee = {
   contractType: string;
   departmentId: string | null;
   directReports: number;
+  isRRHH: boolean;
   user: { fullName: string; email: string; phone: string | null; city: string | null; avatarUrl: string | null };
 };
 
@@ -60,7 +62,7 @@ export default function OrganigramaPage() {
   const [deptFilter, setDeptFilter] = useState("");
   const [siteFilter, setSiteFilter] = useState("");
   const [jobFilter, setJobFilter] = useState("");
-  const [view, setView] = useState<"cards" | "tree">("cards");
+  const [view, setView] = useState<"radial" | "cards" | "tree">("radial");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<DirectoryEmployee | null>(null);
 
@@ -173,6 +175,10 @@ export default function OrganigramaPage() {
             triggerClassName="flex w-full items-center justify-between rounded-lg border border-[#E2E8F0] px-3 py-2 text-left text-sm text-[#1A1A1A]" />
         </div>
         <div className="flex gap-1 rounded-lg border border-[#E2E8F0] p-1">
+          <button onClick={() => setView("radial")} title="Mi organigrama"
+            className={`flex h-8 w-8 items-center justify-center rounded ${view === "radial" ? "bg-[#E6FAFB] text-[#27B1B8]" : "text-[#64748B]"}`}>
+            <MdHub size={18} />
+          </button>
           <button onClick={() => setView("cards")} title="Tarjetas"
             className={`flex h-8 w-8 items-center justify-center rounded ${view === "cards" ? "bg-[#E6FAFB] text-[#27B1B8]" : "text-[#64748B]"}`}>
             <MdGridView size={18} />
@@ -186,6 +192,14 @@ export default function OrganigramaPage() {
 
       {filtered.length === 0 && (
         <p className="text-sm text-[#94A3B8]">Ningún colaborador coincide con los filtros.</p>
+      )}
+
+      {view === "radial" && (
+        <TreeOrgChart
+          me={byId.get(data.meId) ?? null}
+          employees={filtered}
+          onSelect={setSelected}
+        />
       )}
 
       {view === "cards" && (
@@ -354,6 +368,174 @@ export default function OrganigramaPage() {
         </div>
       )}
     </div>
+  );
+}
+
+const TREE_COLORS = {
+  me: "#27B1B8",
+  jefe: "#2563EB",
+  superior: "#7C3AED",
+  companero: "#16A34A",
+  rrhh: "#EA580C",
+} as const;
+
+const LINE_COLOR = "#CBD5E1";
+
+const TreeNodeCard = ({ employee, color, highlight, onSelect, cardRef }: {
+  employee: DirectoryEmployee;
+  color: string;
+  highlight?: boolean;
+  onSelect: (e: DirectoryEmployee) => void;
+  cardRef?: (el: HTMLButtonElement | null) => void;
+}) => (
+  <button
+    ref={cardRef}
+    onClick={() => onSelect(employee)}
+    title={`${employee.user.fullName} — ${employee.jobTitle}`}
+    className="relative z-[1] flex w-36 flex-col items-center gap-2 rounded-xl border border-[#E2E8F0] bg-white px-3 py-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+    style={{ borderTopWidth: 3, borderTopColor: color }}
+  >
+    <span className="relative">
+      <Avatar employee={employee} size={highlight ? 64 : 56} />
+      <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-[#16A34A]" title="Activo" />
+    </span>
+    <div className="min-w-0">
+      <p className="truncate text-xs font-black text-[#1A1A1A]">{employee.user.fullName.split(" ").slice(0, 2).join(" ")}</p>
+      <p className="truncate text-[11px] text-[#64748B]">{employee.jobTitle}</p>
+    </div>
+  </button>
+);
+
+type TreeLine = { x1: number; y1: number; x2: number; y2: number };
+
+/** Árbol jerárquico: jefe de tu jefe (si existe) → tu jefe → compañeros del mismo depto (incluyéndote). RRHH aparte, sin líneas. */
+function TreeOrgChart({ me, employees, onSelect }: {
+  me: DirectoryEmployee | null;
+  employees: DirectoryEmployee[];
+  onSelect: (e: DirectoryEmployee) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const superiorRef = useRef<HTMLButtonElement | null>(null);
+  const jefeRef = useRef<HTMLButtonElement | null>(null);
+  const companeroRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const [lines, setLines] = useState<TreeLine[]>([]);
+
+  const jefe = me ? employees.find((e) => e.id === me.managerId) ?? null : null;
+  const superior = jefe ? employees.find((e) => e.id === jefe.managerId) ?? null : null;
+  const companeros = me ? employees.filter((e) => e.departmentId === me.departmentId && e.id !== jefe?.id) : [];
+  const rrhh = me
+    ? employees.filter((e) => e.isRRHH && e.id !== me.id && e.id !== jefe?.id && e.id !== superior?.id)
+    : [];
+
+  const measure = () => {
+    const container = containerRef.current;
+    if (!container) return;
+    const base = container.getBoundingClientRect();
+    const center = (el: HTMLElement) => {
+      const r = el.getBoundingClientRect();
+      return { top: { x: r.left + r.width / 2 - base.left, y: r.top - base.top }, bottom: { x: r.left + r.width / 2 - base.left, y: r.bottom - base.top } };
+    };
+    const next: TreeLine[] = [];
+    if (superiorRef.current && jefeRef.current) {
+      const a = center(superiorRef.current);
+      const b = center(jefeRef.current);
+      next.push({ x1: a.bottom.x, y1: a.bottom.y, x2: b.top.x, y2: b.top.y });
+    }
+    if (jefeRef.current) {
+      const a = center(jefeRef.current);
+      companeros.forEach((c) => {
+        const el = companeroRefs.current.get(c.id);
+        if (!el) return;
+        const b = center(el);
+        next.push({ x1: a.bottom.x, y1: a.bottom.y, x2: b.top.x, y2: b.top.y });
+      });
+    }
+    setLines(next);
+  };
+
+  useLayoutEffect(() => {
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me?.id, jefe?.id, superior?.id, companeros.length]);
+
+  if (!me) return null;
+
+  if (!jefe && companeros.length <= 1 && rrhh.length === 0) {
+    return (
+      <div className="rounded-xl border border-[#E2E8F0] bg-white p-10 text-center text-sm text-[#94A3B8]">
+        Aún no hay jefe, compañeros de departamento o RRHH visibles en tu círculo laboral.
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto rounded-xl border border-[#E2E8F0] bg-white p-8">
+      <div ref={containerRef} className="relative flex min-w-fit flex-col items-center gap-10">
+        <svg className="pointer-events-none absolute inset-0 h-full w-full" style={{ zIndex: 0 }}>
+          {lines.map((l, i) => (
+            <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke={LINE_COLOR} strokeWidth={1.5} />
+          ))}
+        </svg>
+
+        {superior && (
+          <TreeNodeCard employee={superior} color={TREE_COLORS.superior} onSelect={onSelect} cardRef={(el) => { superiorRef.current = el; }} />
+        )}
+
+        {jefe ? (
+          <TreeNodeCard employee={jefe} color={TREE_COLORS.jefe} highlight onSelect={onSelect} cardRef={(el) => { jefeRef.current = el; }} />
+        ) : (
+          <p className="rounded-lg bg-[#F8FAFC] px-3 py-2 text-xs text-[#94A3B8]">Sin jefe directo asignado</p>
+        )}
+
+        {companeros.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-6">
+            {companeros.map((c) => (
+              <TreeNodeCard
+                key={c.id}
+                employee={c}
+                color={c.id === me.id ? TREE_COLORS.me : TREE_COLORS.companero}
+                highlight={c.id === me.id}
+                onSelect={onSelect}
+                cardRef={(el) => {
+                  if (el) companeroRefs.current.set(c.id, el);
+                  else companeroRefs.current.delete(c.id);
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        {rrhh.length > 0 && (
+          <div className="w-full border-t border-dashed border-[#E2E8F0] pt-6">
+            <p className="mb-4 text-center text-[11px] font-black uppercase tracking-wide text-[#EA580C]">Recursos Humanos</p>
+            <div className="flex flex-wrap justify-center gap-4">
+              {rrhh.map((r) => (
+                <TreeNodeCard key={r.id} employee={r} color={TREE_COLORS.rrhh} onSelect={onSelect} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-8 flex flex-wrap justify-center gap-4 text-xs font-bold text-[#64748B]">
+        <Legend color={TREE_COLORS.me} label="Tú" />
+        <Legend color={TREE_COLORS.jefe} label="Jefe directo" />
+        {superior && <Legend color={TREE_COLORS.superior} label="Jefe de tu jefe" />}
+        <Legend color={TREE_COLORS.companero} label="Compañeros" />
+        <Legend color={TREE_COLORS.rrhh} label="Recursos Humanos" />
+      </div>
+    </div>
+  );
+}
+
+function Legend({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color }} />
+      {label}
+    </span>
   );
 }
 

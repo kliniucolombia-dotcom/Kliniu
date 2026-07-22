@@ -6,7 +6,7 @@ import Image from "next/image";
 import {
   MdHome, MdPerson, MdBeachAccess, MdEventNote, MdHealthAndSafety, MdFolder, MdLogout,
   MdPayments, MdAccessTime, MdCardGiftcard, MdDescription, MdArticle, MdAccountTree,
-  MdNotifications, MdExpandMore, MdSupportAgent,
+  MdNotifications, MdExpandMore, MdSupportAgent, MdGroups,
 } from "react-icons/md";
 
 const RRHH_WHATSAPP = "573184001648";
@@ -31,6 +31,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
   const pathname = usePathname();
   const [user, setUser] = useState<{ fullName?: string; role?: string } | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [isManager, setIsManager] = useState(false);
   const [announcementCount, setAnnouncementCount] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -50,6 +51,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
 
     fetch("/api/empleado/me").then((r) => (r.ok ? r.json() : null)).then((d) => {
       if (d?.avatarUrl) setAvatarUrl(d.avatarUrl);
+      setIsManager(Boolean(d?.isManager));
     });
     fetch("/api/rrhh-local/announcements").then((r) => (r.ok ? r.json() : [])).then((d) => {
       if (Array.isArray(d)) setAnnouncementCount(d.length);
@@ -76,9 +78,13 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
     window.location.href = "/login";
   };
 
+  const nav = isManager
+    ? [...NAV.slice(0, 7), { href: "/empleado/equipo", label: "Mi equipo", Icon: MdGroups }, ...NAV.slice(7)]
+    : NAV;
+
   return (
     <div className="flex min-h-screen bg-[#F4F6F8] font-sans">
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-[#E2E8F0] bg-white md:flex">
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-[#E2E8F0] bg-white md:flex print:hidden">
         <div className="flex items-center gap-2 border-b border-[#E2E8F0] px-5 py-4">
           <Image src="/foca-icono-redondo.png" alt="Kliniu" width={32} height={32} className="h-8 w-8 shrink-0 rounded-full" />
           <div>
@@ -87,7 +93,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
           </div>
         </div>
         <nav className="flex-1 space-y-1 p-3">
-          {NAV.map((item) => {
+          {nav.map((item) => {
             const active = pathname === item.href;
             return (
               <Link key={item.href} href={item.href}
@@ -123,7 +129,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
       </aside>
 
       <div className="flex-1">
-        <header className="flex items-center justify-between border-b border-[#E2E8F0] bg-white px-5 py-4 md:hidden">
+        <header className="flex items-center justify-between border-b border-[#E2E8F0] bg-white px-5 py-4 md:hidden print:hidden">
           <div className="flex items-center gap-2">
             <Image src="/foca-icono-redondo.png" alt="Kliniu" width={32} height={32} className="h-8 w-8 shrink-0 rounded-full" />
             <p className="text-xs font-black leading-none text-[#1A1A1A]">Portal Empleado</p>
@@ -133,8 +139,8 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
             Cerrar sesión
           </button>
         </header>
-        <nav className="flex gap-1 overflow-x-auto border-b border-[#E2E8F0] bg-white px-3 py-2 md:hidden">
-          {NAV.map((item) => {
+        <nav className="flex gap-1 overflow-x-auto border-b border-[#E2E8F0] bg-white px-3 py-2 md:hidden print:hidden">
+          {nav.map((item) => {
             const active = pathname === item.href;
             return (
               <Link key={item.href} href={item.href}
@@ -147,7 +153,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
             );
           })}
         </nav>
-        <header className="hidden items-center justify-end gap-4 border-b border-[#E2E8F0] bg-white px-6 py-4 md:flex">
+        <header className="hidden items-center justify-end gap-4 border-b border-[#E2E8F0] bg-white px-6 py-4 md:flex print:hidden">
           <Link href="/empleado/noticias" className="relative flex h-9 w-9 items-center justify-center rounded-full text-[#64748B] hover:bg-[#F4F6F8]">
             <MdNotifications size={20} />
             {announcementCount > 0 && (

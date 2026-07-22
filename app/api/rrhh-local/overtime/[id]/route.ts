@@ -1,4 +1,4 @@
-import { requireActiveUser, requireRRHH } from "@/lib/permissions";
+import { requireActiveUser, requireManagerOf } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -21,7 +21,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return Response.json(updated);
   }
 
-  const access = await requireRRHH();
+  const existing = await prisma.overtimeRequest.findUnique({ where: { id } });
+  if (!existing) return Response.json({ error: "Solicitud no encontrada" }, { status: 404 });
+
+  const access = await requireManagerOf(existing.employeeId);
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   if (status !== "APPROVED" && status !== "REJECTED") {

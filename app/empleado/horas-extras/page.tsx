@@ -227,7 +227,7 @@ export default function HorasExtrasPage() {
               onChange={(e) => setForm({ ...form, overtimeType: e.target.value })}
               className="mt-1 w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm">
               {OVERTIME_TYPES.map((t) => (
-                <option key={t.key} value={t.key}>{t.label} (+{(t.surcharge * 100).toFixed(0)}%)</option>
+                <option key={t.key} value={t.key}>{t.label}</option>
               ))}
             </select>
           </label>

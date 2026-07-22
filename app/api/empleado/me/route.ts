@@ -17,6 +17,10 @@ export async function GET() {
 
   if (!employee) return Response.json({ error: "No tienes un perfil de empleado" }, { status: 403 });
 
+  const directReportsCount = await prisma.employee.count({
+    where: { managerId: employee.id, status: "ACTIVE" },
+  });
+
   const now = new Date();
   const balance = calcVacationBalance(employee.hireDate, employee.timeOffRequests);
 
@@ -33,6 +37,7 @@ export async function GET() {
     jobTitle: employee.jobTitle,
     departmentName: employee.department?.name ?? null,
     employeeCode: employee.employeeCode,
+    isManager: directReportsCount > 0,
     hireDate: employee.hireDate,
     contractType: employee.contractType,
     status: employee.status,

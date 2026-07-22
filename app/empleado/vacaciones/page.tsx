@@ -49,6 +49,22 @@ function round2(n: number) {
   return Math.round(n * 100) / 100;
 }
 
+function antiguedad(hireDate: string) {
+  const start = new Date(hireDate);
+  const now = new Date();
+  let years = now.getFullYear() - start.getFullYear();
+  let months = now.getMonth() - start.getMonth();
+  if (now.getDate() < start.getDate()) months -= 1;
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+  const parts: string[] = [];
+  if (years > 0) parts.push(`${years} ${years === 1 ? "año" : "años"}`);
+  parts.push(`${months} ${months === 1 ? "mes" : "meses"}`);
+  return parts.join(" y ");
+}
+
 export default function VacacionesPage() {
   const [me, setMe] = useState<MeResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -185,21 +201,33 @@ export default function VacacionesPage() {
 
       {creating && (
         <div className="rounded-2xl border border-[#E2E8F0] bg-white p-4">
-          {me.vacationBalance.availableDays > 0 && (
-            <p className="mb-3 text-xs font-bold text-[#64748B]">
-              Días disponibles: <span className="text-[#16A34A]">{me.vacationBalance.availableDays.toFixed(2)}</span>
-            </p>
-          )}
+          <p className="mb-3 text-xs font-bold text-[#64748B]">
+            Antigüedad: <span className="text-[#1A1A1A]">{antiguedad(me.hireDate)}</span>
+            {me.vacationBalance.availableDays > 0 && (
+              <>
+                {" · "}Días disponibles: <span className="text-[#16A34A]">{me.vacationBalance.availableDays.toFixed(2)}</span>
+              </>
+            )}
+          </p>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <input type="date" value={form.startDate}
-              onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-              className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
-            <input type="date" value={form.endDate}
-              onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-              className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
-            <input placeholder="Motivo (opcional)" value={form.reason}
-              onChange={(e) => setForm({ ...form, reason: e.target.value })}
-              className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
+            <label className="block">
+              <span className="mb-1 block text-xs font-bold text-[#64748B]">Fecha de inicio</span>
+              <input type="date" value={form.startDate}
+                onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+                className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-bold text-[#64748B]">Fecha de regreso</span>
+              <input type="date" value={form.endDate}
+                onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+                className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-bold text-[#64748B]">Motivo (opcional)</span>
+              <input value={form.reason}
+                onChange={(e) => setForm({ ...form, reason: e.target.value })}
+                className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
+            </label>
           </div>
           {requestedDays > 0 && (
             <div className="mt-3 flex flex-wrap items-center gap-4 rounded-lg bg-[#F8FAFC] p-3 text-sm">

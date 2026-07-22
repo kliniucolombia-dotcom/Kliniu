@@ -158,3 +158,28 @@ export async function requireRRHH(): Promise<AuthResult> {
 export async function requireActiveUser(): Promise<AuthResult> {
   return resolveActiveUser();
 }
+
+// Aprueba/rechaza solicitudes de RRHH (vacaciones, permisos, incapacidades,
+// horas extra): el jefe directo del empleado (managerId) es quien gestiona.
+// Si el empleado no tiene jefe asignado, RRHH actúa como respaldo.
+export async function requireManagerOf(targetEmployeeId: string): Promise<AuthResult> {
+  const resolved = await resolveActiveUser();
+  if (!resolved.ok) return resolved;
+  if (!prisma) return { ok: false, status: 403 };
+
+  const { session, user } = resolved;
+  if (isSuperAdmin(user)) return { ok: true, session, user };
+
+  const target = await prisma.employee.findUnique({ where: { id: targetEmployeeId } });
+  if (!target) return { ok: false, status: 403 };
+
+  if (!target.managerId) {
+    if (isRRHH(user)) return { ok: true, session, user };
+    return { ok: false, status: 403 };
+  }
+
+  const manager = await prisma.employee.findUnique({ where: { id: target.managerId } });
+  if (manager && manager.userId === user.id) return { ok: true, session, user };
+
+  return { ok: false, status: 403 };
+}

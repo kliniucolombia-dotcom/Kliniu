@@ -726,6 +726,7 @@ model TimeOffRequest {
   attachmentName   String?
   status           TimeOffStatus   @default(PENDING)
   reviewNote       String?
+  isPaid           Boolean?
   incapacityNumber String?
   incapacityType   IncapacityType?
   epsName          String?

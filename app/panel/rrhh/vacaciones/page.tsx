@@ -36,55 +36,21 @@ export default function VacacionesPage() {
   const [requests, setRequests] = useState<TimeOffRequestRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [rejectingId, setRejectingId] = useState<string | null>(null);
-  const [rejectReason, setRejectReason] = useState("");
-
-  const load = async () => {
-    setLoading(true);
-    const reqRes = await fetch("/api/rrhh-local/time-off");
-    if (reqRes.ok) {
-      const all: TimeOffRequestRow[] = await reqRes.json();
-      setRequests(all.filter((r) => r.type === "VACATION"));
-    } else {
-      setError("No fue posible cargar las solicitudes de vacaciones");
-    }
-    setLoading(false);
-  };
 
   useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      const reqRes = await fetch("/api/rrhh-local/time-off");
+      if (reqRes.ok) {
+        const all: TimeOffRequestRow[] = await reqRes.json();
+        setRequests(all.filter((r) => r.type === "VACATION"));
+      } else {
+        setError("No fue posible cargar las solicitudes de vacaciones");
+      }
+      setLoading(false);
+    };
     load();
   }, []);
-
-  const approve = async (id: string) => {
-    setBusyId(id);
-    const res = await fetch(`/api/rrhh-local/time-off/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "APPROVED" }),
-    });
-    if (res.ok) await load();
-    else setError("No fue posible aprobar la solicitud");
-    setBusyId(null);
-  };
-
-  const confirmReject = async () => {
-    if (!rejectingId || !rejectReason.trim()) return;
-    setBusyId(rejectingId);
-    const res = await fetch(`/api/rrhh-local/time-off/${rejectingId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "REJECTED", reviewNote: rejectReason.trim() }),
-    });
-    if (res.ok) {
-      setRejectingId(null);
-      setRejectReason("");
-      await load();
-    } else {
-      setError("No fue posible rechazar la solicitud");
-    }
-    setBusyId(null);
-  };
 
   if (loading) return <div className="p-6">Cargando…</div>;
 
@@ -103,6 +69,9 @@ export default function VacacionesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-black text-[#1A1A1A]">Vacaciones</h1>
       </div>
+      <p className="rounded-lg bg-[#F8FAFC] px-3 py-2 text-xs text-[#64748B]">
+        Solo lectura: la aprobación la gestiona el jefe directo de cada empleado.
+      </p>
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
@@ -131,34 +100,8 @@ export default function VacacionesPage() {
         </div>
       </div>
 
-      {rejectingId && (
-        <div className="grid grid-cols-1 gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 md:grid-cols-3">
-          <input
-            placeholder="Motivo del rechazo"
-            value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
-            className="col-span-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm md:col-span-2"
-          />
-          <div className="flex gap-2">
-            <button
-              onClick={confirmReject}
-              disabled={busyId === rejectingId || !rejectReason.trim()}
-              className="flex-1 rounded-lg bg-red-500 px-3 py-2 text-sm font-bold text-white disabled:opacity-50"
-            >
-              {busyId === rejectingId ? "Guardando…" : "Confirmar rechazo"}
-            </button>
-            <button
-              onClick={() => { setRejectingId(null); setRejectReason(""); }}
-              className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm font-bold text-[#1A1A1A]"
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      )}
-
       <div className="overflow-x-auto rounded-2xl border border-[#E2E8F0] bg-white">
-        <table className="w-full min-w-[760px] text-sm">
+        <table className="w-full min-w-[650px] text-sm">
           <thead>
             <tr className="border-b border-[#E2E8F0] text-left text-[11px] font-bold uppercase tracking-wide text-[#94A3B8]">
               <th className="p-3">Empleado</th>
@@ -167,7 +110,6 @@ export default function VacacionesPage() {
               <th className="p-3">Días</th>
               <th className="p-3">Motivo</th>
               <th className="p-3">Estado</th>
-              <th className="p-3">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -187,33 +129,11 @@ export default function VacacionesPage() {
                     {STATUS_LABELS[r.status] ?? r.status}
                   </span>
                 </td>
-                <td className="p-3">
-                  {r.status === "PENDING" ? (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => approve(r.id)}
-                        disabled={busyId === r.id}
-                        className="rounded-lg bg-[#27B1B8] px-2 py-1 text-xs font-bold text-white disabled:opacity-50"
-                      >
-                        Aprobar
-                      </button>
-                      <button
-                        onClick={() => { setRejectingId(r.id); setRejectReason(""); }}
-                        disabled={busyId === r.id}
-                        className="rounded-lg bg-red-500 px-2 py-1 text-xs font-bold text-white disabled:opacity-50"
-                      >
-                        Rechazar
-                      </button>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-[#94A3B8]">—</span>
-                  )}
-                </td>
               </tr>
             ))}
             {requests.length === 0 && (
               <tr>
-                <td className="p-3 text-[#94A3B8]" colSpan={7}>Sin solicitudes de vacaciones.</td>
+                <td className="p-3 text-[#94A3B8]" colSpan={6}>Sin solicitudes de vacaciones.</td>
               </tr>
             )}
           </tbody>

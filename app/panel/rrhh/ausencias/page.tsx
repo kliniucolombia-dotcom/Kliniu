@@ -74,7 +74,6 @@ export default function AusenciasPage() {
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [busyId, setBusyId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -104,18 +103,6 @@ export default function AusenciasPage() {
   useEffect(() => {
     load();
   }, []);
-
-  const resolve = async (id: string, status: "APPROVED" | "REJECTED") => {
-    setBusyId(id);
-    const res = await fetch(`/api/rrhh-local/time-off/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    if (res.ok) await load();
-    else setError("No fue posible resolver la solicitud");
-    setBusyId(null);
-  };
 
   const viewAttachment = async (path: string) => {
     const res = await fetch(`/api/rrhh-local/time-off/upload?path=${encodeURIComponent(path)}`);
@@ -157,6 +144,9 @@ export default function AusenciasPage() {
         </button>
       </div>
       <p className="text-sm text-[#64748B]">Registro de ausencias e incapacidades del personal.</p>
+      <p className="rounded-lg bg-[#F8FAFC] px-3 py-2 text-xs text-[#64748B]">
+        Solo lectura: la aprobación de estas solicitudes la gestiona el jefe directo de cada empleado.
+      </p>
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
@@ -207,7 +197,6 @@ export default function AusenciasPage() {
               <th className="p-3">Motivo</th>
               <th className="p-3">Soporte</th>
               <th className="p-3">Estado</th>
-              <th className="p-3">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -249,33 +238,11 @@ export default function AusenciasPage() {
                   ) : "—"}
                 </td>
                 <td className="p-3">{STATUS_LABELS[r.status] ?? r.status}</td>
-                <td className="p-3">
-                  {r.status === "PENDING" ? (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => resolve(r.id, "APPROVED")}
-                        disabled={busyId === r.id}
-                        className="rounded-lg bg-[#27B1B8] px-2 py-1 text-xs font-bold text-white disabled:opacity-50"
-                      >
-                        Aprobar
-                      </button>
-                      <button
-                        onClick={() => resolve(r.id, "REJECTED")}
-                        disabled={busyId === r.id}
-                        className="rounded-lg bg-red-500 px-2 py-1 text-xs font-bold text-white disabled:opacity-50"
-                      >
-                        Rechazar
-                      </button>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-[#94A3B8]">—</span>
-                  )}
-                </td>
               </tr>
             ))}
             {requests.length === 0 && (
               <tr>
-                <td className="p-3 text-[#94A3B8]" colSpan={10}>Sin ausencias registradas.</td>
+                <td className="p-3 text-[#94A3B8]" colSpan={9}>Sin ausencias registradas.</td>
               </tr>
             )}
           </tbody>

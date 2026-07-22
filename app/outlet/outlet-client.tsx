@@ -8,7 +8,7 @@ import type { ProductoCatalogo } from "../data/catalog";
 import SiteFooter from "../components/site-footer";
 
 function isOutletProduct(product: ProductoCatalogo) {
-  return product.esOutlet === true;
+  return product.esOutlet === true && product.categoria === "Outlet";
 }
 
 function hasVisibleDiscount(product: ProductoCatalogo) {
@@ -70,30 +70,40 @@ function ProductCard({ product }: { product: ProductoCatalogo }) {
 
   return (
     <article
-      className="motion-card interactive-lift group flex min-h-[240px] flex-col overflow-hidden rounded-2xl shadow-[0_8px_28px_rgba(0,0,0,0.3)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(124,58,237,0.35)]"
+      className="motion-card interactive-lift group flex min-h-[340px] flex-col overflow-hidden rounded-2xl shadow-[0_8px_28px_rgba(0,0,0,0.3)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(124,58,237,0.35)]"
       style={{ background: "linear-gradient(160deg, #0f0c2e 0%, #1a1060 60%, #2d1080 100%)" }}
     >
-      <div className="relative flex h-[130px] items-center justify-center bg-white px-4">
+      <Link href={`/producto/${product.slug}`} className="relative flex h-[220px] items-center justify-center bg-white px-6">
         {showDiscount ? (
           <span
-            className="absolute left-3 top-3 z-10 rounded-lg px-2.5 py-1 text-[11px] font-black text-white"
+            className="absolute left-4 top-4 z-10 rounded-lg px-3 py-1.5 text-xs font-black text-white"
             style={{ background: "linear-gradient(135deg, #3b82f6, #7c3aed)" }}
           >
-            {product.descuento}
+            ★ OFERTA DESTACADA
           </span>
         ) : null}
         <div className="outlet-product-pop">
-          <ProductImage product={product} maxHeight={98} />
+          <ProductImage product={product} maxHeight={170} />
         </div>
-      </div>
+      </Link>
 
-      <div className="flex flex-1 flex-col p-4">
-        <h3 className="text-[13px] font-semibold leading-snug text-white/85">{product.nombre}</h3>
-        <div className="mt-auto flex flex-wrap items-end gap-2 pt-3">
-          <p className="text-[22px] font-black leading-none tracking-tight text-white">{product.precio}</p>
+      <div className="flex flex-1 flex-col p-5">
+        <Link href={`/producto/${product.slug}`}>
+          <h3 className="text-base font-semibold leading-snug text-white/85 hover:text-white">{product.nombre}</h3>
+        </Link>
+        <div className="mt-auto flex flex-wrap items-end gap-3 pt-4">
+          {showDiscount && (
+            <span
+              className="rounded-lg px-2.5 py-1 text-xs font-black text-white"
+              style={{ background: "linear-gradient(135deg, #3b82f6, #7c3aed)" }}
+            >
+              {product.descuento}
+            </span>
+          )}
           {product.precioAnterior ? (
-            <p className="pb-0.5 text-xs font-medium text-white/40 line-through">{product.precioAnterior}</p>
+            <p className="text-sm font-medium text-white/40 line-through">{product.precioAnterior}</p>
           ) : null}
+          <p className="w-full text-[32px] font-black leading-none tracking-tight text-white">{product.precio}</p>
         </div>
         <AddOutletButton product={product} />
       </div>
@@ -104,6 +114,15 @@ function ProductCard({ product }: { product: ProductoCatalogo }) {
 function FeaturedCarousel({ products }: { products: ProductoCatalogo[] }) {
   const [index, setIndex] = useState(0);
   const product = products[index];
+
+  useEffect(() => {
+    if (products.length <= 1) return;
+    const timer = window.setInterval(() => {
+      setIndex((i) => (i + 1) % products.length);
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [products.length]);
+
   if (!product) return null;
   const showDiscount = hasVisibleDiscount(product);
 
@@ -125,19 +144,19 @@ function FeaturedCarousel({ products }: { products: ProductoCatalogo[] }) {
             {product.descuento}
           </span>
         )}
-        <div className="outlet-product-pop">
-          <ProductImage product={product} maxHeight={190} />
-        </div>
+        <Link href={`/producto/${product.slug}`} className="outlet-product-pop">
+          <ProductImage product={product} maxHeight={260} />
+        </Link>
 
         {/* Flecha izquierda */}
         <button
           type="button"
           onClick={prev}
-          className="nav-pulse absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md transition-all hover:scale-105 hover:shadow-lg"
+          className="nav-pulse absolute left-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md transition-all hover:scale-105 hover:shadow-lg"
           style={{ border: "1px solid rgba(124,58,237,0.2)" }}
           aria-label="Anterior"
         >
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="#7c3aed" strokeWidth="2.5">
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="#7c3aed" strokeWidth="2.5">
             <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
@@ -146,24 +165,24 @@ function FeaturedCarousel({ products }: { products: ProductoCatalogo[] }) {
         <button
           type="button"
           onClick={next}
-          className="nav-pulse absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md transition-all hover:scale-105 hover:shadow-lg"
+          className="nav-pulse absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md transition-all hover:scale-105 hover:shadow-lg"
           style={{ border: "1px solid rgba(124,58,237,0.2)" }}
           aria-label="Siguiente"
         >
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="#7c3aed" strokeWidth="2.5">
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="#7c3aed" strokeWidth="2.5">
             <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
       </div>
 
       {/* Info */}
-      <div className="flex min-h-0 flex-1 flex-col px-5 pb-4 pt-3">
-        <div className="mb-2 flex items-center justify-between gap-2">
+      <div className="flex min-h-0 flex-1 flex-col px-6 pb-5 pt-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
           <div
-            className="inline-flex min-w-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-white"
+            className="inline-flex min-w-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-white"
             style={{ background: "rgba(99,102,241,0.35)", border: "1px solid rgba(139,92,246,0.4)" }}
           >
-            <svg viewBox="0 0 16 16" className="h-3 w-3 fill-[#c084fc]">
+            <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-[#c084fc]">
               <path d="M8 1.5l1.6 3.3 3.6.5-2.6 2.5.6 3.6L8 9.5l-3.2 1.9.6-3.6-2.6-2.5 3.6-.5z" />
             </svg>
             Oferta destacada
@@ -175,9 +194,9 @@ function FeaturedCarousel({ products }: { products: ProductoCatalogo[] }) {
                 key={i}
                 type="button"
                 onClick={() => setIndex(i)}
-                className={`h-1.5 rounded-full transition-all ${i === index ? "pulse-ring" : ""}`}
+                className={`h-2 rounded-full transition-all ${i === index ? "pulse-ring" : ""}`}
                 style={{
-                  width: i === index ? "18px" : "6px",
+                  width: i === index ? "20px" : "8px",
                   background: i === index ? "#c084fc" : "rgba(255,255,255,0.25)",
                 }}
                 aria-label={`Producto ${i + 1}`}
@@ -186,26 +205,28 @@ function FeaturedCarousel({ products }: { products: ProductoCatalogo[] }) {
           </div>
         </div>
 
-        <h2 className="line-clamp-2 text-[13px] font-semibold leading-snug text-white/90">
-          {product.nombre}
-        </h2>
+        <Link href={`/producto/${product.slug}`}>
+          <h2 className="line-clamp-2 text-lg font-semibold leading-snug text-white/90 hover:text-white">
+            {product.nombre}
+          </h2>
+        </Link>
 
-        <div className="mt-auto flex items-end gap-2 pt-2">
-          <p className="text-2xl font-black leading-none tracking-tight text-white">
+        <div className="mt-auto flex items-end gap-2 pt-3">
+          <p className="text-3xl font-black leading-none tracking-tight text-white">
             {product.precio}
           </p>
           {product.precioAnterior && (
-            <p className="pb-0.5 text-xs font-medium text-white/40 line-through">
+            <p className="pb-0.5 text-sm font-medium text-white/40 line-through">
               {product.precioAnterior}
             </p>
           )}
         </div>
 
-        <div className="mt-3 flex gap-2">
+        <div className="mt-4 flex gap-2">
           <AddOutletButton product={product} featured />
           <Link
             href="#ofertas"
-            className="inline-flex shrink-0 items-center justify-center rounded-full px-3 py-2 text-[11px] font-semibold text-white/80 transition-colors hover:text-white"
+            className="inline-flex shrink-0 items-center justify-center rounded-full px-4 py-2.5 text-xs font-semibold text-white/80 transition-colors hover:text-white"
             style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)" }}
           >
             Ver todas
@@ -222,10 +243,7 @@ export default function OutletClient({ heroDesktop, heroMobile, superOfertas }: 
     () => products.filter(isOutletProduct),
     [products],
   );
-  const outletProducts = useMemo(
-    () => outletCatalog.slice(0, 5),
-    [outletCatalog],
-  );
+  const outletProducts = outletCatalog;
   const carouselProducts = useMemo(
     () => outletCatalog.slice(0, 8),
     [outletCatalog],
@@ -253,10 +271,10 @@ export default function OutletClient({ heroDesktop, heroMobile, superOfertas }: 
             <div
               className="absolute hidden lg:block"
               style={{
-                right: "calc(8% + 100px)",
-                top: "42%",
+                right: "calc(4% + 40px)",
+                top: "46%",
                 transform: "translateY(-50%)",
-                width: "clamp(360px, 24vw, 420px)",
+                width: "clamp(440px, 32vw, 560px)",
               }}
             >
               <div className="outlet-featured-card-mobile">
@@ -296,7 +314,7 @@ export default function OutletClient({ heroDesktop, heroMobile, superOfertas }: 
             </div>
 
             {outletCatalog.length > 0 ? (
-              <div className="motion-list grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+              <div className="motion-list grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {outletProducts.map((product) => (
                   <ProductCard key={product.slug} product={product} />
                 ))}
