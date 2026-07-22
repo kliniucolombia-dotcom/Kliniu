@@ -591,16 +591,31 @@ function ColorVariantImageUpload({
     if (toUpload.length === 0) return;
     setUploading(true);
     const uploaded: string[] = [];
-    for (const file of toUpload) {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("productName", "color-variant");
-      const res = await fetch("/api/uploads", { method: "POST", body: fd });
-      const payload = await res.json() as { publicUrl?: string; error?: string };
-      if (payload.publicUrl) uploaded.push(payload.publicUrl);
+    try {
+      for (const file of toUpload) {
+        let toSend: File = file;
+        try {
+          toSend = await compressImage(file);
+        } catch (err) {
+          console.error(err);
+        }
+        const fd = new FormData();
+        fd.append("file", toSend);
+        fd.append("productName", "color-variant");
+        const res = await fetch("/api/uploads", { method: "POST", body: fd });
+        const payload = await res.json() as { publicUrl?: string; error?: string };
+        if (payload.publicUrl) {
+          uploaded.push(payload.publicUrl);
+        } else if (payload.error) {
+          console.error(payload.error);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      if (uploaded.length > 0) onChange([...images, ...uploaded]);
+      setUploading(false);
     }
-    if (uploaded.length > 0) onChange([...images, ...uploaded]);
-    setUploading(false);
   };
 
   const removeImage = (img: string) => onChange(images.filter((i) => i !== img));
