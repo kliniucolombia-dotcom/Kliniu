@@ -1,6 +1,6 @@
 import { kommoFetch } from "./client";
 import { getExistingKommoId } from "./idempotency";
-import { mapOrderToLead, orderTag } from "./mappers";
+import { mapOrderToLead } from "./mappers";
 import type { KommoDeal } from "./types";
 import type { OrderInput } from "./mappers";
 
@@ -29,13 +29,9 @@ export async function updateDeal(id: number, data: Partial<KommoDeal>): Promise<
   });
 }
 
-export async function findDealByTag(tag: string): Promise<(KommoDeal & { id: number }) | null> {
-  const res = await kommoFetch<KommoLeadsResponse>(
-    `/leads?filter[tags][name]=${encodeURIComponent(tag)}&limit=1`,
-  ).catch(() => null);
-  return res?._embedded?.leads?.[0] ?? null;
-}
-
+// NOTA: Kommo ignora filter[tags][name] en /leads (siempre devuelve el primer lead
+// de la cuenta sin filtrar). No usar búsqueda por tag — la idempotencia depende
+// solo del registro local (KommoSyncLog) vía getExistingKommoId.
 export async function findDealsByTag(tag: string): Promise<(KommoDeal & { id: number })[]> {
   const res = await kommoFetch<KommoLeadsResponse>(
     `/leads?filter[tags][name]=${encodeURIComponent(tag)}&limit=50`,
@@ -44,7 +40,7 @@ export async function findDealsByTag(tag: string): Promise<(KommoDeal & { id: nu
 }
 
 /**
- * Idempotent: checks sync log → searches Kommo by tag → creates if not found.
+ * Idempotent: checks local sync log → creates if not found.
  * Returns the Kommo deal ID.
  */
 export async function findOrCreateDeal(order: OrderInput, contactId: number): Promise<number> {
@@ -52,12 +48,7 @@ export async function findOrCreateDeal(order: OrderInput, contactId: number): Pr
   const cached = await getExistingKommoId(order.id, "create_deal");
   if (cached) return cached;
 
-  // 2. Search Kommo by unique tag `kliniu-order-{id}`
-  const tag = orderTag(order.id);
-  const existing = await findDealByTag(tag);
-  if (existing?.id) return existing.id;
-
-  // 3. Create new deal
+  // 2. Create new deal (no reliable server-side dedupe available — see note above)
   const deal = mapOrderToLead(order, contactId);
   return createDeal(deal);
 }

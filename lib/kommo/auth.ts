@@ -67,6 +67,8 @@ async function refreshAccessToken(refreshToken: string): Promise<KommoTokenRespo
 }
 
 export async function getValidToken(): Promise<string> {
+  if (process.env.KOMMO_ACCESS_TOKEN) return process.env.KOMMO_ACCESS_TOKEN;
+
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
 
   const record = await prisma.kommoToken.findFirst();

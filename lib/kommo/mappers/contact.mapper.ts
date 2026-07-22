@@ -24,6 +24,7 @@ function buildCustomFields(user: UserInput): KommoCustomField[] {
   };
 
   add(cfg.phone, user.phone);
+  add(cfg.email, user.email);
   add(cfg.whatsappPhone, user.whatsappPhone);
   add(cfg.company, user.company);
   add(cfg.city, user.city);

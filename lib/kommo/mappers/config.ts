@@ -27,6 +27,7 @@ export function getKommoConfig() {
     customFields: {
       contact: {
         phone: envInt("KOMMO_CF_CONTACT_PHONE_ID"),
+        email: envInt("KOMMO_CF_CONTACT_EMAIL_ID"),
         whatsappPhone: envInt("KOMMO_CF_CONTACT_WHATSAPP_ID"),
         company: envInt("KOMMO_CF_CONTACT_COMPANY_ID"),
         city: envInt("KOMMO_CF_CONTACT_CITY_ID"),
