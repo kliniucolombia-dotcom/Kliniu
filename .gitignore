@@ -92,3 +92,6 @@ next-env.d.ts
 
 # playwright mcp artifacts
 /.playwright-mcp/
+
+# claude code local settings (puede contener credenciales de sesión)
+.claude/settings.local.json
