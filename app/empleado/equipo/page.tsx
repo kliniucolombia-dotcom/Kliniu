@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { fmtDateOnly } from "@/lib/date";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type TimeOffRow = {
   id: string;
@@ -87,6 +88,8 @@ export default function EquipoPage() {
   useEffect(() => {
     load();
   }, []);
+
+  useRealtimeRefresh(["timeoff"], load);
 
   const approveTimeOff = async (r: TimeOffRow, isPaid?: boolean) => {
     setBusyId(r.id);

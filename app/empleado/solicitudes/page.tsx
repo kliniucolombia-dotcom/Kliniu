@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { fmtDateOnly } from "@/lib/date";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import {
   MdBeachAccess, MdHealthAndSafety, MdEventNote, MdLocalHospital, MdChildFriendly,
   MdGavel, MdSchool, MdEventBusy, MdHome, MdAccessTime, MdMoneyOff, MdSearch,
@@ -126,7 +127,7 @@ export default function SolicitudesPage() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
 
-  useEffect(() => {
+  const load = () => {
     Promise.all([
       fetch("/api/rrhh-local/time-off").then((r) => (r.ok ? r.json() : [])),
       fetch("/api/account").then((r) => (r.ok ? r.json() : null)),
@@ -135,7 +136,10 @@ export default function SolicitudesPage() {
       setFullName(account?.user?.fullName?.split(" ")[0] ?? "");
       setLoading(false);
     });
-  }, []);
+  };
+
+  useEffect(load, []);
+  useRealtimeRefresh(["timeoff"], load);
 
   const currentYear = new Date().getFullYear();
 

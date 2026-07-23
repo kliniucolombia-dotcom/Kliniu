@@ -7,7 +7,7 @@ import {
   MdCalculate, MdDescription, MdPrecisionManufacturing, MdAssignment, MdPeople, MdImage,
   MdCardGiftcard, MdLocalOffer, MdWork, MdHome, MdSearch, MdNotificationsNone, MdPersonOutline,
   MdApartment, MdAccessTime, MdBeachAccess, MdRemoveCircleOutline, MdSwapHoriz, MdHandshake,
-  MdCreditCard, MdHelpOutline, MdGroup, MdWarehouse, MdArticle,
+  MdCreditCard, MdHelpOutline, MdGroup, MdWarehouse, MdArticle, MdSmartToy,
 } from "react-icons/md";
 
 type NavChild = { href: string; label: string; group?: string; groupIcon?: React.ReactNode; icon?: React.ReactNode };
@@ -18,6 +18,7 @@ type NavItem = {
   icon: React.ReactNode;
   module: string;
   children?: NavChild[];
+  superAdminOnly?: boolean;
 };
 
 const NAV: NavItem[] = [
@@ -49,6 +50,7 @@ const NAV: NavItem[] = [
       { href: "/panel/odoo/inventario", label: "Inventario" },
     ],
   },
+  { href: "/panel/kommo", label: "Kommo", icon: <MdSmartToy size={18} />, module: "MODULE_KOMMO", superAdminOnly: true },
   { href: "/panel/usuarios", label: "Usuarios", icon: <MdPeople size={18} />, module: "MODULE_USUARIOS" },
   {
     href: "/panel/rrhh",
@@ -92,11 +94,13 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [visibleModules, setVisibleModules] = useState<Set<string> | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     fetch("/api/panel/permissions")
       .then((r) => r.json())
       .then((d) => {
+        setIsSuperAdmin(d.role === "SUPERADMIN");
         const perms = d.permissions as Record<string, { canView: boolean }> | undefined;
         if (!perms) {
           setVisibleModules(new Set());
@@ -172,7 +176,9 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         <nav className="flex-1 overflow-y-auto px-2 py-3">
           {(() => {
             const matches = (href: string) => pathname === href || (href !== "/panel" && pathname.startsWith(`${href}/`));
-            const items = visibleModules ? NAV.filter((n) => visibleModules.has(n.module)) : [];
+            const items = visibleModules
+              ? NAV.filter((n) => (n.superAdminOnly ? isSuperAdmin : visibleModules.has(n.module)))
+              : [];
             const activeHref = items.filter((n) => matches(n.href)).sort((a, b) => b.href.length - a.href.length)[0]?.href;
             return items.map((item) => {
               const active = item.href === activeHref;

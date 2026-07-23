@@ -5,7 +5,8 @@ export type RealtimeResource =
   | "permissions"
   | "combos"
   | "products"
-  | "orders";
+  | "orders"
+  | "timeoff";
 
 /** Notifica a los clientes suscritos al canal "panel-updates" que un recurso cambió. */
 export async function broadcastPanelUpdate(resource: RealtimeResource) {

@@ -166,18 +166,18 @@ export default function NominaPage() {
                     <span className="rounded-full bg-[#DCFCE7] px-2 py-0.5 text-xs font-bold text-[#16A34A]">Publicado</span>
                   </td>
                   <td className="p-3">
-                    {p.fileUrl ? (
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => view(p.fileUrl!)} title="Ver"
+                    <div className="flex items-center gap-2">
+                      {p.fileUrl && (
+                        <button onClick={() => view(p.fileUrl!)} title="Ver archivo"
                           className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#64748B] hover:bg-[#F8FAFC]">
                           <MdVisibility size={16} />
                         </button>
-                        <a href={`/api/rrhh-local/time-off/upload?path=${encodeURIComponent(p.fileUrl)}`} title="Descargar" target="_blank" rel="noreferrer"
-                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#27B1B8] hover:bg-[#E6FAFB]">
-                          <MdDownload size={16} />
-                        </a>
-                      </div>
-                    ) : "—"}
+                      )}
+                      <a href={`/nomina/desprendible/${p.id}`} title="Descargar desprendible" target="_blank" rel="noreferrer"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#27B1B8] hover:bg-[#E6FAFB]">
+                        <MdDownload size={16} />
+                      </a>
+                    </div>
                   </td>
                 </tr>
               ))}
