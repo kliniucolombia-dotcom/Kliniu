@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { MdPrint, MdVerified } from "react-icons/md";
+import { MdPrint, MdVerified, MdHourglassEmpty, MdCancel } from "react-icons/md";
 import { fmtDateOnly } from "@/lib/date";
 
 type Certificado = {
@@ -16,6 +16,13 @@ type Certificado = {
   salaryPeriod: string;
 };
 
+type CertificateRequest = {
+  id: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  includeSalary: boolean;
+  reviewNote: string | null;
+};
+
 const PERIOD_LABELS: Record<string, string> = {
   MONTHLY: "mensual",
   BIWEEKLY: "quincenal",
@@ -28,25 +35,104 @@ function formatMoney(amount: number, currency: string) {
 
 export default function CertificadoLaboral() {
   const [data, setData] = useState<Certificado | null>(null);
+  const [request, setRequest] = useState<CertificateRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [includeSalary, setIncludeSalary] = useState(false);
+  const [solicitando, setSolicitando] = useState(false);
   const today = fmtDateOnly(new Date().toISOString(), { day: "numeric", month: "long", year: "numeric" });
 
+  const load = async () => {
+    const res = await fetch("/api/empleado/certificado");
+    if (res.ok) {
+      const json = await res.json();
+      setRequest(json.request ?? null);
+      setData(json.data ?? null);
+    } else {
+      const d = await res.json().catch(() => ({}));
+      setError(d.error || "No fue posible cargar tu certificado laboral");
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
-    (async () => {
-      const res = await fetch("/api/empleado/certificado");
-      if (res.ok) setData(await res.json());
-      else {
-        const d = await res.json().catch(() => ({}));
-        setError(d.error || "No fue posible generar tu certificado laboral");
-      }
-      setLoading(false);
-    })();
+    load();
   }, []);
 
+  const solicitar = async () => {
+    setSolicitando(true);
+    const res = await fetch("/api/empleado/certificado", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ includeSalary }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (res.ok) {
+      setRequest(json.request);
+      setData(null);
+    } else {
+      setError(json.error || "No fue posible enviar tu solicitud");
+    }
+    setSolicitando(false);
+  };
+
   if (loading) return null;
-  if (!data) return error ? <p className="text-sm text-red-500">{error}</p> : null;
+  if (error && !request) return <p className="text-sm text-red-500">{error}</p>;
+
+  if (!request || request.status === "REJECTED") {
+    return (
+      <div className="rounded-xl border border-[#E2E8F0] bg-white p-4">
+        <div className="mb-4 flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#E6FAFB] text-[#27B1B8]">
+            <MdVerified size={20} />
+          </div>
+          <div>
+            <h2 className="text-sm font-black text-[#1A1A1A]">Certificado laboral</h2>
+            <p className="text-xs text-[#64748B]">Solicítalo y Recursos Humanos lo aprobará antes de poder descargarlo.</p>
+          </div>
+        </div>
+
+        {request?.status === "REJECTED" && (
+          <div className="mb-4 flex items-start gap-2 rounded-lg bg-[#FEE2E2] px-3 py-2 text-sm text-[#DC2626]">
+            <MdCancel size={18} className="mt-0.5 shrink-0" />
+            <span>Tu solicitud anterior fue rechazada{request.reviewNote ? `: ${request.reviewNote}` : "."} Puedes solicitar de nuevo.</span>
+          </div>
+        )}
+
+        <label className="mb-4 flex w-fit items-center gap-2 rounded-lg bg-[#F0FDFF] px-3 py-2 text-sm font-semibold text-[#1A1A1A]">
+          <input type="checkbox" checked={includeSalary} onChange={(e) => setIncludeSalary(e.target.checked)} />
+          Incluir información salarial
+        </label>
+
+        <button
+          onClick={solicitar}
+          disabled={solicitando}
+          className="flex items-center gap-1.5 rounded-xl bg-[#27B1B8] px-4 py-2 text-sm font-bold text-white hover:bg-[#1F9BA1] disabled:opacity-60"
+        >
+          {solicitando ? "Enviando..." : "Solicitar certificado"}
+        </button>
+        {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+      </div>
+    );
+  }
+
+  if (request.status === "PENDING") {
+    return (
+      <div className="rounded-xl border border-[#E2E8F0] bg-white p-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FEF3C7] text-[#B45309]">
+            <MdHourglassEmpty size={20} />
+          </div>
+          <div>
+            <h2 className="text-sm font-black text-[#1A1A1A]">Certificado laboral</h2>
+            <p className="text-xs text-[#64748B]">Tu solicitud está en revisión por Recursos Humanos.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) return null;
 
   return (
     <div className="rounded-xl border border-[#E2E8F0] bg-white p-4">
@@ -74,7 +160,7 @@ export default function CertificadoLaboral() {
           </div>
           <div>
             <h2 className="text-sm font-black text-[#1A1A1A]">Certificado laboral</h2>
-            <p className="text-xs text-[#64748B]">Genera y descarga tu certificado en PDF.</p>
+            <p className="text-xs text-[#64748B]">Aprobado por Recursos Humanos. Descarga tu certificado en PDF.</p>
           </div>
         </div>
         <button
@@ -84,11 +170,6 @@ export default function CertificadoLaboral() {
           <MdPrint size={16} /> Descargar / Imprimir
         </button>
       </div>
-
-      <label className="mb-4 flex w-fit items-center gap-2 rounded-lg bg-[#F0FDFF] px-3 py-2 text-sm font-semibold text-[#1A1A1A] print:hidden">
-        <input type="checkbox" checked={includeSalary} onChange={(e) => setIncludeSalary(e.target.checked)} />
-        Incluir información salarial
-      </label>
 
       <div id="certificado-imprimir" className="mx-auto max-w-2xl rounded-2xl border border-[#E2E8F0] bg-white p-10 print:border-0 print:p-0 print:shadow-none">
         <div className="mb-8 flex items-center gap-3">
@@ -112,7 +193,7 @@ export default function CertificadoLaboral() {
           contrato a <strong>{data.contractType.toLowerCase()}</strong>.
         </p>
 
-        {includeSalary && data.salaryAmount && (
+        {request.includeSalary && data.salaryAmount && (
           <p className="mt-4 text-sm leading-7 text-[#1A1A1A]">
             Su remuneración actual es de <strong>{formatMoney(data.salaryAmount, data.salaryCurrency)}</strong>{" "}
             de pago {PERIOD_LABELS[data.salaryPeriod] ?? data.salaryPeriod}.

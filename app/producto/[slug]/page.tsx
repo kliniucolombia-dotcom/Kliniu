@@ -846,10 +846,10 @@ export default function ProductoDetallePage() {
 
               {/* Resumen de precio */}
               {volumePricing.hasDiscount && (
-                <div className="flex items-center gap-2 rounded-xl bg-[#FFF3E8] px-3 py-2">
-                  <span className="text-sm font-bold text-[#F07826]">{volumePricing.tier.pct}% OFF</span>
-                  <span className="text-xs text-[#6e7379]">·</span>
-                  <span className="text-xs font-semibold text-[#111]">Total {volumePricing.totalLabel}</span>
+                <div className="flex items-center gap-3 rounded-xl bg-[#FFF3E8] px-4 py-3">
+                  <span className="text-base font-bold text-[#F07826] sm:text-lg">{volumePricing.tier.pct}% OFF</span>
+                  <span className="text-sm text-[#6e7379]">·</span>
+                  <span className="text-sm font-semibold text-[#111] sm:text-base">Total {volumePricing.totalLabel}</span>
                 </div>
               )}
 

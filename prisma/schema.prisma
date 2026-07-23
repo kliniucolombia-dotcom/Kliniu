@@ -705,9 +705,24 @@ model Employee {
   overtimeRequests  OvertimeRequest[]
   payslips          Payslip[]
   benefitRequests   BenefitRequest[]
+  certificateRequests CertificateRequest[]
 
   @@index([departmentId])
   @@index([managerId])
+}
+
+model CertificateRequest {
+  id            String        @id @default(cuid())
+  employeeId    String
+  includeSalary Boolean       @default(false)
+  status        TimeOffStatus @default(PENDING)
+  reviewNote    String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
 }
 
 model TimeOffRequest {

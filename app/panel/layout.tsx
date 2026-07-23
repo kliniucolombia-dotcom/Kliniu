@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   MdDashboard, MdInventory2, MdCategory, MdBarChart, MdCampaign, MdAttachMoney, MdSettings,
-  MdCalculate, MdDescription, MdPrecisionManufacturing, MdAssignment, MdPeople, MdImage,
+  MdCalculate, MdDescription, MdPrecisionManufacturing, MdAssignment, MdPeople, MdImage, MdVerified,
   MdCardGiftcard, MdLocalOffer, MdWork, MdHome, MdSearch, MdNotificationsNone, MdPersonOutline,
   MdApartment, MdAccessTime, MdBeachAccess, MdRemoveCircleOutline, MdSwapHoriz, MdHandshake,
   MdCreditCard, MdHelpOutline, MdGroup, MdWarehouse, MdArticle, MdSmartToy,
@@ -72,6 +72,7 @@ const NAV: NavItem[] = [
       { href: "/panel/rrhh/beneficios", label: "Beneficios", icon: <MdCardGiftcard size={17} /> },
 
       { href: "/panel/rrhh/documentos", label: "Documentos", group: "Operación", groupIcon: <MdAssignment size={14} />, icon: <MdDescription size={17} /> },
+      { href: "/panel/rrhh/certificados", label: "Certificados", icon: <MdVerified size={17} /> },
       { href: "/panel/rrhh/noticias", label: "Noticias", icon: <MdArticle size={17} /> },
       { href: "/panel/rrhh/flujos", label: "Flujos", icon: <MdSwapHoriz size={17} /> },
       { href: "/panel/rrhh/inventario", label: "Inventario", icon: <MdInventory2 size={17} /> },
