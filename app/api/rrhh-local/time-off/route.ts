@@ -2,6 +2,7 @@ import { isRRHH } from "@/lib/roles";
 import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { calcVacationBalance } from "@/lib/vacation";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET() {
   const access = await requireActiveUser();
@@ -164,5 +165,6 @@ export async function POST(request: Request) {
     include: { employee: { include: { user: { select: { fullName: true } } } } },
   });
 
+  await broadcastPanelUpdate("timeoff");
   return Response.json(timeOffRequest, { status: 201 });
 }

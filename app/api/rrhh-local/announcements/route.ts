@@ -8,7 +8,9 @@ export async function GET() {
   if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
 
   const announcements = await prisma.announcement.findMany({
-    where: isRRHH(access.user) ? undefined : { isActive: true },
+    where: isRRHH(access.user)
+      ? undefined
+      : { isActive: true, OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
     orderBy: { createdAt: "desc" },
     include: {
       // readByMe: si el usuario actual ya la leyó. _count: total de lecturas (para "más leídas").
@@ -32,13 +34,14 @@ export async function POST(request: Request) {
   if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
 
   const body = await request.json();
-  const { title, body: content, authorName, category, imageUrl, isImportant } = body as {
+  const { title, body: content, authorName, category, imageUrl, isImportant, scheduledAt } = body as {
     title?: string;
     body?: string;
     authorName?: string;
     category?: string;
     imageUrl?: string;
     isImportant?: boolean;
+    scheduledAt?: string;
   };
 
   if (!title?.trim() || !content?.trim()) {
@@ -53,6 +56,7 @@ export async function POST(request: Request) {
       category: (category as never) ?? "GENERAL",
       imageUrl: imageUrl?.trim() || null,
       isImportant: Boolean(isImportant),
+      scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
     },
   });
   return Response.json(announcement, { status: 201 });

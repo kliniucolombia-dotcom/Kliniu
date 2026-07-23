@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
 
   const body = await request.json();
-  const { title, description, detail, category, imageUrl, frequency, isFeatured, order } = body as {
+  const { title, description, detail, category, imageUrl, frequency, isFeatured, order, expiresAt } = body as {
     title?: string;
     description?: string;
     detail?: string;
@@ -36,6 +36,7 @@ export async function POST(request: Request) {
     frequency?: string;
     isFeatured?: boolean;
     order?: number;
+    expiresAt?: string;
   };
 
   if (!title?.trim() || !description?.trim()) {
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
       frequency: frequency?.trim() || null,
       isFeatured: Boolean(isFeatured),
       order: order ?? 0,
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
     },
   });
   return Response.json(benefit, { status: 201 });

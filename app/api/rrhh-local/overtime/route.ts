@@ -1,6 +1,7 @@
 import { isRRHH } from "@/lib/roles";
 import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 function hoursBetween(start: string, end: string) {
   const [sh, sm] = start.split(":").map(Number);
@@ -36,17 +37,25 @@ export async function POST(request: Request) {
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
 
-  const employee = await prisma.employee.findUnique({ where: { userId: access.user.id } });
-  if (!employee) return Response.json({ error: "No tienes un perfil de empleado" }, { status: 403 });
-
   const body = await request.json();
-  const { date, startTime, endTime, overtimeType, reason } = body as {
+  const { date, startTime, endTime, overtimeType, reason, employeeId } = body as {
     date?: string;
     startTime?: string;
     endTime?: string;
     overtimeType?: string;
     reason?: string;
+    employeeId?: string;
   };
+
+  let finalEmployeeId = employeeId;
+  if (!isRRHH(access.user)) {
+    const employee = await prisma.employee.findUnique({ where: { userId: access.user.id } });
+    if (!employee) return Response.json({ error: "No tienes un perfil de empleado" }, { status: 403 });
+    finalEmployeeId = employee.id;
+  }
+  if (!finalEmployeeId) {
+    return Response.json({ error: "employeeId es obligatorio" }, { status: 400 });
+  }
 
   if (!date || !startTime || !endTime || !overtimeType) {
     return Response.json({ error: "date, startTime, endTime y overtimeType son obligatorios" }, { status: 400 });
@@ -59,7 +68,7 @@ export async function POST(request: Request) {
 
   const overtime = await prisma.overtimeRequest.create({
     data: {
-      employeeId: employee.id,
+      employeeId: finalEmployeeId,
       date: new Date(date),
       startTime,
       endTime,
@@ -69,5 +78,6 @@ export async function POST(request: Request) {
     },
     include: { employee: { include: { user: { select: { fullName: true } } } } },
   });
+  await broadcastPanelUpdate("timeoff");
   return Response.json(overtime, { status: 201 });
 }

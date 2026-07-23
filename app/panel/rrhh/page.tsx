@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import {
   MdPeople,
   MdBeachAccess,
@@ -65,7 +66,7 @@ export default function RrhhResumenPage() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  const load = () => {
     (async () => {
       try {
         const [employeesRes, timeOffRes, attendanceRes] = await Promise.all([
@@ -102,7 +103,10 @@ export default function RrhhResumenPage() {
         setError("No fue posible cargar los datos reales de Kliniu");
       }
     })();
-  }, []);
+  };
+
+  useEffect(load, []);
+  useRealtimeRefresh(["timeoff"], load);
 
   const typeEntries = summary
     ? Object.entries(summary.timeOffByType).sort((a, b) => b[1] - a[1])

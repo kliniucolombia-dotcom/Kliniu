@@ -1,5 +1,6 @@
 import { requireActiveUser, requireManagerOf } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
@@ -30,6 +31,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       data: { status: "CANCELLED" },
       include: { employee: { include: { user: { select: { fullName: true } } } } },
     });
+    await broadcastPanelUpdate("timeoff");
     return Response.json(updated);
   }
 
@@ -61,5 +63,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     include: { employee: { include: { user: { select: { fullName: true } } } } },
   });
 
+  await broadcastPanelUpdate("timeoff");
   return Response.json(updated);
 }

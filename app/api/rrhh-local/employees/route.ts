@@ -39,6 +39,7 @@ export async function POST(request: Request) {
     eps,
     afp,
     arl,
+    managerId,
   } = body as {
     fullName?: string;
     email?: string;
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
     eps?: string;
     afp?: string;
     arl?: string;
+    managerId?: string;
   };
 
   const normalizedEmail = email?.trim().toLowerCase();
@@ -62,6 +64,16 @@ export async function POST(request: Request) {
       { error: "nombre, correo, cédula, cargo y fecha de ingreso son obligatorios" },
       { status: 400 },
     );
+  }
+
+  const existingEmployeeCount = await prisma.employee.count();
+  if (existingEmployeeCount > 0 && !managerId) {
+    return Response.json({ error: "El jefe inmediato es obligatorio" }, { status: 400 });
+  }
+
+  if (managerId) {
+    const manager = await prisma.employee.findUnique({ where: { id: managerId } });
+    if (!manager) return Response.json({ error: "Jefe inmediato no encontrado" }, { status: 404 });
   }
 
   const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
@@ -91,6 +103,7 @@ export async function POST(request: Request) {
       employeeCode: normalizedCedula,
       jobTitle,
       departmentId: departmentId || null,
+      managerId: managerId || null,
       contractType: (contractType as never) || "INDEFINITE",
       hireDate: new Date(hireDate),
       salaryAmount: salaryAmount ?? null,

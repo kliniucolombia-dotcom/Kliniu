@@ -786,6 +786,8 @@ model AttendanceRecord {
   employeeId String
   date       DateTime
   status     AttendanceStatus @default(PRESENT)
+  checkIn    String?
+  checkOut   String?
   note       String?
   createdAt  DateTime         @default(now())
 
@@ -888,6 +890,7 @@ model Announcement {
   imageUrl    String?
   isImportant Boolean              @default(false)
   isActive    Boolean              @default(true)
+  scheduledAt DateTime?
   createdAt   DateTime             @default(now())
   updatedAt   DateTime             @updatedAt
 
@@ -994,6 +997,7 @@ model Benefit {
   frequency   String?
   isFeatured  Boolean      @default(false)
   isActive    Boolean      @default(true)
+  expiresAt   DateTime?
   order       Int          @default(0)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt

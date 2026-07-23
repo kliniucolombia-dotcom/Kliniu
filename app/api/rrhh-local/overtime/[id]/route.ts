@@ -1,5 +1,6 @@
 import { requireActiveUser, requireManagerOf } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
@@ -18,6 +19,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (existing.status !== "PENDING") return Response.json({ error: "Solo puedes cancelar solicitudes pendientes" }, { status: 400 });
 
     const updated = await prisma.overtimeRequest.update({ where: { id }, data: { status: "CANCELLED" } });
+    await broadcastPanelUpdate("timeoff");
     return Response.json(updated);
   }
 
@@ -39,5 +41,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     data: { status, reviewNote: status === "REJECTED" ? reviewNote!.trim() : null },
     include: { employee: { include: { user: { select: { fullName: true } } } } },
   });
+  await broadcastPanelUpdate("timeoff");
   return Response.json(updated);
 }
