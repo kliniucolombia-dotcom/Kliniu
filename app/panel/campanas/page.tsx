@@ -13,6 +13,7 @@ type Campaign = {
 };
 
 const fmtUSD = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+const fmtCOP = (n: number) => `$${Math.round(n).toLocaleString("es-CO")} COP`;
 
 const TH = ({ children }: { children?: React.ReactNode }) => (
   <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">
@@ -30,6 +31,8 @@ export default function CampanasPanel() {
   const [saving, setSaving]         = useState(false);
   const [alert, setAlert]           = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [dailyCampaign, setDailyCampaign] = useState<Campaign | null>(null);
+  const [trm, setTrm] = useState(4000);
+  const [dateFilter, setDateFilter] = useState("all");
 
   const [form, setForm] = useState({
     name: "", sellerId: "", productId: "", investment: "", sales: "", leads: "",
@@ -51,6 +54,7 @@ export default function CampanasPanel() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { fetch("/api/trm").then((r) => r.json()).then((d) => d.rate && setTrm(d.rate)).catch(() => {}); }, []);
 
   const openNew = () => {
     setEditing(null);
@@ -65,6 +69,14 @@ export default function CampanasPanel() {
     setAlert(null);
     setShowForm(true);
   };
+
+  const filteredCampaigns = campaigns.filter((c) => {
+    if (dateFilter === "all") return true;
+    const days = { week: 7, month: 30, quarter: 90 }[dateFilter] ?? 0;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    return new Date(c.startDate) >= cutoff;
+  });
 
   const save = async () => {
     setSaving(true);
@@ -95,9 +107,25 @@ export default function CampanasPanel() {
         <p className="mt-0.5 text-sm font-black text-[#1A1A1A]">Meta mínima: inversión × {10} = ventas esperadas</p>
       </div>
 
+      <div className="mb-4 flex items-center gap-2">
+        <span className="text-xs font-bold text-[#64748B]">Periodo:</span>
+        <div className="w-40">
+          <SimpleSelect
+            value={dateFilter}
+            options={[
+              { value: "all", label: "Todo" },
+              { value: "week", label: "Última semana" },
+              { value: "month", label: "Último mes" },
+              { value: "quarter", label: "Último trimestre" },
+            ]}
+            onChange={setDateFilter}
+          />
+        </div>
+      </div>
+
       {loading ? (
         <div className="flex h-40 items-center justify-center text-sm text-[#94A3B8]">Cargando campañas…</div>
-      ) : campaigns.length === 0 ? (
+      ) : filteredCampaigns.length === 0 ? (
         <div className="flex h-48 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[#E2E8F0] bg-white">
           <p className="text-3xl">📢</p>
           <p className="text-sm font-semibold text-[#94A3B8]">No hay campañas todavía</p>
@@ -119,7 +147,7 @@ export default function CampanasPanel() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F1F5F9]">
-              {campaigns.map((c) => {
+              {filteredCampaigns.map((c) => {
                 const roas   = calcROAS(c.sales, c.investment);
                 const status = getCampaignStatus(roas);
                 const meta   = STATUS_META[status];
@@ -198,6 +226,9 @@ export default function CampanasPanel() {
               <div>
                 <label className="mb-1 block text-xs font-bold text-[#64748B]">Inversión (USD)</label>
                 <input type="number" value={form.investment} onChange={(e) => setForm({ ...form, investment: e.target.value })} className="no-spinner w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" placeholder="0" />
+                {form.investment && (
+                  <p className="mt-1 text-xs text-[#94A3B8]">≈ {fmtCOP(parseFloat(form.investment) * trm)} (TRM ${Math.round(trm).toLocaleString("es-CO")})</p>
+                )}
               </div>
 
               <div>

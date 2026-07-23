@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import Link from "next/link";
 import { departamentosColombia, getCitiesForDepartment } from "@/lib/colombia-locations";
-import { getShippingForLocation, formatShippingPrice } from "@/lib/shipping-rates";
+import { getShippingForLocation, getShippingOverride, formatShippingPrice } from "@/lib/shipping-rates";
 
 type CheckoutItem = {
   id: string;
@@ -94,7 +94,11 @@ export default function CheckoutForm({
     const query = normalize(form.city.trim());
     return cityOptions.filter((c) => normalize(c).includes(query));
   }, [cityOptions, form.city]);
-  const shipping = useMemo(() => getShippingForLocation(form.department, form.city), [form.department, form.city]);
+  const shipping = useMemo(() => {
+    const base = getShippingForLocation(form.department, form.city);
+    const override = getShippingOverride(items.map((i) => ({ sku: i.sku, cantidad: i.cantidad })));
+    return override !== null ? { ...base, price: override } : base;
+  }, [form.department, form.city, items]);
 
   const step1Done = Boolean(form.customerName.trim() && form.customerEmail.trim() && form.customerPhone.trim());
   const step2Done = Boolean(form.department.trim() && form.addressLine1.trim() && form.city.trim());
