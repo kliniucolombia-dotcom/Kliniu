@@ -1,9 +1,10 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client.ts";
 import { hash } from "bcryptjs";
+import { randomBytes } from "crypto";
 
 const BASE_URL = "https://kliniu.vercel.app";
-const PASSWORD = "E2ETestKliniu2026!";
+const PASSWORD = randomBytes(24).toString("base64");
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
@@ -51,7 +52,7 @@ async function main() {
     },
   });
 
-  console.log("Cuentas creadas:", { jefe: jefeUser.email, empleado: empUser.email, rrhh: rrhhUser.email, password: PASSWORD });
+  console.log("Cuentas creadas:", { jefe: jefeUser.email, empleado: empUser.email, rrhh: rrhhUser.email, password: "[REDACTED]" });
 
   try {
     // 1. Login de los 3 roles
