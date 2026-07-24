@@ -6,7 +6,7 @@ import Image from "next/image";
 import {
   MdHome, MdPerson, MdBeachAccess, MdEventNote, MdHealthAndSafety, MdFolder, MdLogout,
   MdPayments, MdAccessTime, MdCardGiftcard, MdDescription, MdArticle, MdAccountTree,
-  MdNotifications, MdExpandMore, MdSupportAgent, MdGroups,
+  MdNotifications, MdExpandMore, MdSupportAgent, MdGroups, MdConfirmationNumber,
 } from "react-icons/md";
 
 const RRHH_WHATSAPP = "573184001648";
@@ -19,6 +19,7 @@ const NAV = [
   { href: "/empleado/incapacidades", label: "Incapacidades", Icon: MdHealthAndSafety },
   { href: "/empleado/horas-extras", label: "Horas extras", Icon: MdAccessTime },
   { href: "/empleado/solicitudes", label: "Mis solicitudes", Icon: MdFolder },
+  { href: "/empleado/tickets", label: "Centro de solicitudes", Icon: MdConfirmationNumber },
   { href: "/empleado/nomina", label: "Nómina", Icon: MdPayments },
   { href: "/empleado/beneficios", label: "Beneficios", Icon: MdCardGiftcard },
   { href: "/empleado/documentos", label: "Documentos", Icon: MdDescription },

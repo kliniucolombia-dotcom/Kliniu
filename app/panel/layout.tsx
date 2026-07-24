@@ -8,7 +8,7 @@ import {
   MdCardGiftcard, MdLocalOffer, MdWork, MdHome, MdSearch, MdNotificationsNone, MdPersonOutline,
   MdApartment, MdAccessTime, MdBeachAccess, MdRemoveCircleOutline, MdSwapHoriz, MdHandshake,
   MdCreditCard, MdHelpOutline, MdGroup, MdWarehouse, MdArticle, MdSmartToy, MdShoppingCart,
-  MdInventory, MdExtension,
+  MdInventory, MdExtension, MdConfirmationNumber,
 } from "react-icons/md";
 
 type NavChild = {
@@ -67,6 +67,7 @@ const NAV: NavItem[] = [
       { href: "/panel/produccion", label: "Producción", module: "MODULE_PRODUCCION", icon: <MdPrecisionManufacturing size={17} /> },
       { href: "/panel/produccion/ordenes", label: "Órdenes de Producción", module: "MODULE_PRODUCCION", icon: <MdAssignment size={17} /> },
       { href: "/panel/bodegas", label: "Bodegas", module: "MODULE_BODEGAS", icon: <MdWarehouse size={17} /> },
+      { href: "/panel/rrhh/solicitudes", label: "Solicitudes", module: "MODULE_RRHH", icon: <MdConfirmationNumber size={17} /> },
     ],
   },
   {
@@ -81,7 +82,6 @@ const NAV: NavItem[] = [
       { href: "/panel/odoo/reportes", label: "Reportes", module: "MODULE_ODOO", icon: <MdBarChart size={17} /> },
       { href: "/panel/odoo/productos", label: "Productos", module: "MODULE_ODOO", icon: <MdCategory size={17} /> },
       { href: "/panel/odoo/inventario", label: "Inventario", module: "MODULE_ODOO", icon: <MdInventory size={17} /> },
-      { href: "/panel/kommo", label: "Kommo", module: "MODULE_KOMMO", superAdminOnly: true, group: "Kommo", groupIcon: <MdSmartToy size={14} />, icon: <MdSmartToy size={17} /> },
     ],
   },
   {
@@ -105,6 +105,7 @@ const NAV: NavItem[] = [
 
       { href: "/panel/rrhh/documentos", label: "Documentos", module: "MODULE_RRHH", group: "Operación", groupIcon: <MdAssignment size={14} />, icon: <MdDescription size={17} /> },
       { href: "/panel/rrhh/certificados", label: "Certificados", module: "MODULE_RRHH", icon: <MdVerified size={17} /> },
+      { href: "/panel/rrhh/solicitudes", label: "Solicitudes", module: "MODULE_RRHH", icon: <MdConfirmationNumber size={17} /> },
       { href: "/panel/rrhh/noticias", label: "Noticias", module: "MODULE_RRHH", icon: <MdArticle size={17} /> },
       { href: "/panel/rrhh/flujos", label: "Flujos", module: "MODULE_RRHH", icon: <MdSwapHoriz size={17} /> },
       { href: "/panel/rrhh/inventario", label: "Inventario", module: "MODULE_RRHH", icon: <MdInventory2 size={17} /> },
