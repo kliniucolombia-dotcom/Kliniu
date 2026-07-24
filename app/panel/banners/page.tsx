@@ -131,6 +131,7 @@ export default function BannersPanel() {
     const fd = new FormData();
     fd.append("file", file);
     fd.append("productName", `banner-${slot.key}`);
+    fd.append("kind", "banner");
     const up = await fetch("/api/uploads", { method: "POST", body: fd });
     if (!up.ok) {
       setUploadingKey(null);
