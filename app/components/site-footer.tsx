@@ -54,7 +54,8 @@ export default function SiteFooter() {
             </ul>
           </div>
 
-          <div className="text-left">
+          <div className="flex flex-col items-start gap-8 text-left sm:flex-row sm:items-center sm:gap-10">
+            <div>
             <p className="mb-6 text-[18px] font-extrabold leading-none text-white">
               Departamento comercial
             </p>
@@ -80,6 +81,14 @@ export default function SiteFooter() {
                 </li>
               ))}
             </ul>
+            </div>
+            <Image
+              src="/logo-ficha.png"
+              alt="FICHA"
+              width={5636}
+              height={3090}
+              className="h-auto w-[130px] shrink-0"
+            />
           </div>
         </div>
       </div>

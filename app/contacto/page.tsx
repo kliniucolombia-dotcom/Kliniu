@@ -3,6 +3,7 @@ import Image from "next/image";
 import SiteFooter from "../components/site-footer";
 import ContactForm from "./contact-form";
 import ContactBar from "./contact-bar";
+import CountryCards from "./country-cards";
 import { getBannerByKey } from "@/lib/banners";
 
 export const metadata: Metadata = {
@@ -60,20 +61,23 @@ const paises = [
     bandera: "/flag-colombia.png",
     nombre: "Colombia",
     direccion: "Av 28 No. 34-43\nBogotá, Col.",
-    telefono: "+57 (311) 2088806",
+    contacto: "Kliniu Colombia",
+    telefono: "+57 (311) 208 8806",
     wa: "https://wa.me/573112088806",
   },
   {
     bandera: "/flag-republica-dominicana.png",
     nombre: "República\nDominicana",
     direccion: "Santo Domingo\nRep. Dominicana",
-    telefono: "+1 (809) 850 7005",
+    contacto: "Juan O. Mateo R.",
+    telefono: "+1 (809) 850-7005",
     wa: "https://wa.me/18098507005",
   },
   {
     bandera: "/flag-ecuador.png",
     nombre: "Ecuador",
     direccion: "Calle B # 535-205\nVilla Del sur de Quito",
+    contacto: "Kliniu Ecuador",
     telefono: "+593 992 573302",
     wa: "https://wa.me/593992573302",
   },
@@ -81,36 +85,57 @@ const paises = [
     bandera: "/flag-usa.png",
     nombre: "U.S.A",
     direccion: "Miami\nFlorida",
-    telefono: "+1 786 501 5081",
+    contacto: "Alejo Ibarra",
+    telefono: "+1 (786) 501-5081",
     wa: "https://wa.me/17865015081",
   },
   {
     bandera: "/flag-canada.png",
     nombre: "Canada",
     direccion: "London,\nOntario.",
-    telefono: "+1 647 548 8481",
-    wa: "https://wa.me/16475488481",
+    contacto: "Raymond",
+    telefono: "+1 (289) 886-3086",
+    wa: "https://wa.me/12898863086",
   },
   {
     bandera: "/flag-nicaragua.png",
     nombre: "Nicaragua",
     direccion: "Calle principal de Altamira\nfrente a Ceca contiguo\na farmacia Praga",
-    telefono: "+505 82508359",
-    wa: "https://wa.me/50582508359",
+    contacto: "Kliniu Nicaragua (Li Nicaragua Claro)",
+    telefono: "+505 8549 4976",
+    wa: "https://wa.me/50585494976",
   },
   {
     bandera: "/flag-honduras.png",
     nombre: "Honduras",
     direccion: "Colonia Miramontes 3ra\ncalle casa 2165\nTegucigalpa, Honduras",
-    telefono: "+504 31852275",
+    contacto: "Kliniu Honduras (Li Honduras Claro)",
+    telefono: "+504 3185-2275",
     wa: "https://wa.me/50431852275",
   },
   {
     bandera: "/flag-guatemala.png",
     nombre: "Guatemala",
     direccion: "Dirección: calle 3-41\nA sector B5 Zona 8\nde Mixco",
-    telefono: "+502 3032 2650",
-    wa: "https://wa.me/50230322650",
+    contacto: "Bodega Li Guatemala",
+    telefono: "+502 5510 0279",
+    wa: "https://wa.me/50255100279",
+  },
+  {
+    bandera: "/flag-venezuela.png",
+    nombre: "Venezuela",
+    direccion: "Kliniu Venezuela\nwww.kliniu.com",
+    contacto: "Kliniu Venezuela",
+    telefono: "+58 424-8706099",
+    wa: "https://wa.me/584248706099",
+  },
+  {
+    bandera: "/flag-peru.png",
+    nombre: "Perú",
+    direccion: "Kliniu\nPerú",
+    contacto: "Kliniu Perú",
+    telefono: "+51 978 328 508",
+    wa: "https://wa.me/51978328508",
   },
 ];
 
@@ -155,12 +180,12 @@ export default async function ContactoPage() {
           <div className="grid gap-8 lg:grid-cols-[280px_1fr] lg:gap-10">
             {/* Left */}
             <div className="hidden flex-col lg:flex lg:min-h-[430px]">
-              <h2 className="text-3xl font-black leading-[0.95] tracking-tight text-[#0C535B]">
+              <h2 className="text-[32px] font-black leading-[0.95] tracking-tight text-[#0C535B] xl:text-[36px]">
                 Países donde
                 <br />
                 <span className="text-[#27B1B8]">operamos</span>
               </h2>
-              <p className="mt-5 max-w-[270px] text-[15px] font-semibold leading-[1.12] text-black">
+              <p className="mt-6 max-w-[270px] text-[17px] font-semibold leading-[1.25] text-black xl:text-[18px]">
                 Contamos con presencia y aliados estratégicos en distintos países de América para
                 brindarte soluciones de higiene de alto desempeño.
               </p>
@@ -169,37 +194,12 @@ export default async function ContactoPage() {
                 alt="Foca Kliniu señalando"
                 width={300}
                 height={275}
-                className="hidden w-[220px] object-contain lg:mt-auto lg:block"
+                className="hidden w-[260px] object-contain lg:mt-auto lg:block"
               />
             </div>
 
             {/* Grid de países */}
-            <div className="-mx-5 flex gap-4 overflow-x-auto px-5 pb-3 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 xl:grid-cols-4">
-              {paises.map((p) => (
-                <div
-                  key={p.nombre}
-                  className="interactive-lift flex min-h-[188px] w-[232px] min-w-[232px] items-center gap-4 rounded-xl border border-black/10 bg-white px-5 py-5 shadow-sm transition-shadow hover:shadow-md sm:w-auto sm:min-w-0"
-                >
-                  <div className="shrink-0">
-                    <Image
-                      src={p.bandera}
-                      alt={`Bandera ${p.nombre.replace(/\n/g, " ")}`}
-                      width={72}
-                      height={72}
-                      className="h-[72px] w-[72px] rounded-full object-cover shadow-sm"
-                    />
-                  </div>
-                  <div className="flex min-w-0 flex-col">
-                    <p className="whitespace-pre-line text-[15px] font-black leading-tight text-black">
-                      {p.nombre}
-                    </p>
-                    <p className="mt-1.5 whitespace-pre-line text-[11px] leading-[1.4] text-gray-600">
-                      {p.direccion}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <CountryCards paises={paises} />
           </div>
         </div>
       </section>
