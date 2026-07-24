@@ -3,9 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { getShippingForLocation } from "@/lib/shipping-rates";
 import { buildWompiCheckoutUrl } from "@/lib/wompi";
 
-const COMBO_NAME = "Combo Total";
+const COMBO_NAME = "Combo Premium";
 const COMBO_PRICE = 309900;
-const COMBO_SKU = "COMBO-TOTAL-WATI";
+const COMBO_SKU = "COMBO-PREMIUM-WATI";
 const WATI_SYSTEM_USER_EMAIL = "whatsapp-ia@kliniu.com";
 
 async function getWatiSystemUserId() {
