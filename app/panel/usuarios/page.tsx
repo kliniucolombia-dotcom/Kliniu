@@ -53,6 +53,7 @@ const MODULE_LABELS: Record<string, string> = {
   MODULE_COMBOS: "Combos",
   MODULE_RRHH: "Recursos Humanos",
   MODULE_OUTLET: "Outlet",
+  MODULE_WHATSAPP: "WhatsApp",
 };
 
 const ROLES: Role[] = ["CUSTOMER", "ADMIN", "SELLER", "PACKING", "SUPERADMIN", "RRHH", "BODEGA", "DISENO", "MARKETING", "JEFE_VENTAS", "TESORERIA", "INGENIERIA"];
@@ -122,6 +123,7 @@ const MODULE_ICON: Record<string, { path: string; className: string }> = {
   MODULE_COMBOS: { path: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", className: "bg-[#FEE2E2] text-[#DC2626]" },
   MODULE_RRHH: { path: "M17 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75", className: "bg-[#DCFCE7] text-[#15803D]" },
   MODULE_OUTLET: { path: "M20.6 12L12 20.6a2 2 0 01-2.8 0L3.4 14.8a2 2 0 010-2.8L12 3.4a2 2 0 012.8 0l5.8 5.8a2 2 0 010 2.8zM8.5 8.5h.01", className: "bg-[#FFEDD5] text-[#C2410C]" },
+  MODULE_WHATSAPP: { path: "M3 21l1.65-4.95A9 9 0 1112 21a9 9 0 01-6.35-1.95L3 21zM8 10a4 4 0 008 0", className: "bg-[#DCFCE7] text-[#15803D]" },
 };
 
 function ModuleIcon({ module }: { module: string }) {

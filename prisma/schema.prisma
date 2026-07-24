@@ -417,6 +417,7 @@ enum PanelModule {
   MODULE_RRHH
   MODULE_OUTLET
   MODULE_BODEGAS
+  MODULE_WHATSAPP
 }
 
 enum BannerType {
@@ -448,6 +449,7 @@ enum WatiConversationStatus {
 enum WatiMessageRole {
   USER
   ASSISTANT
+  AGENT
 }
 
 model WatiConversation {

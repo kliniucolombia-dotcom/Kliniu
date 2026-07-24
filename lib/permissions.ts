@@ -81,6 +81,7 @@ export async function requirePermission(module: PanelModule, action: PermissionA
 const PANEL_LANDING_ROUTES: Array<{ module: PanelModule; path: string }> = [
   { module: "MODULE_DASHBOARD", path: "/panel" },
   { module: "MODULE_PEDIDOS", path: "/panel/pedidos" },
+  { module: "MODULE_WHATSAPP", path: "/panel/whatsapp" },
   { module: "MODULE_PRODUCTOS", path: "/panel/productos" },
   { module: "MODULE_OUTLET", path: "/panel/outlet" },
   { module: "MODULE_BODEGAS", path: "/panel/bodegas" },

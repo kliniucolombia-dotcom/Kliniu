@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { runWatiAssistant } from "@/lib/wati-ai";
 import { sendWatiMessage } from "@/lib/wati";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function POST(request: Request) {
   const secret = request.headers.get("x-wati-webhook-secret");
@@ -54,6 +55,7 @@ export async function POST(request: Request) {
   }
 
   await sendWatiMessage(phone, reply);
+  await broadcastPanelUpdate("wati");
 
   return Response.json({ received: true });
 }

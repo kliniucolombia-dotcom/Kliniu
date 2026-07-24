@@ -8,7 +8,7 @@ import {
   MdCardGiftcard, MdLocalOffer, MdWork, MdHome, MdSearch, MdNotificationsNone, MdPersonOutline,
   MdApartment, MdAccessTime, MdBeachAccess, MdRemoveCircleOutline, MdSwapHoriz, MdHandshake,
   MdCreditCard, MdHelpOutline, MdGroup, MdWarehouse, MdArticle, MdSmartToy, MdShoppingCart,
-  MdInventory, MdExtension, MdConfirmationNumber,
+  MdInventory, MdExtension, MdConfirmationNumber, MdChat,
 } from "react-icons/md";
 
 type NavChild = {
@@ -39,6 +39,7 @@ const NAV: NavItem[] = [
     icon: <MdShoppingCart size={18} />,
     children: [
       { href: "/panel/pedidos", label: "Pedidos", module: "MODULE_PEDIDOS", group: "Ventas", groupIcon: <MdInventory2 size={14} />, icon: <MdInventory2 size={17} /> },
+      { href: "/panel/whatsapp", label: "WhatsApp", module: "MODULE_WHATSAPP", icon: <MdChat size={17} /> },
       { href: "/panel/cotizaciones", label: "Cotizaciones", module: "MODULE_COTIZACIONES", icon: <MdDescription size={17} /> },
       { href: "/panel/campanas", label: "Campañas", module: "MODULE_CAMPANAS", group: "Marketing", groupIcon: <MdCampaign size={14} />, icon: <MdCampaign size={17} /> },
       { href: "/panel/metricas", label: "Métricas", module: "MODULE_METRICAS", icon: <MdBarChart size={17} /> },
