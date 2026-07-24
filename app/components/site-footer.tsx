@@ -12,8 +12,8 @@ const colPoliticas = [
 const colContacto = [
   { label: "ventas@kliniu.com", href: "mailto:ventas@kliniu.com", icon: "/icono-correo.png" },
   {
-    label: "Av 28 No. 34-43 Barrio la Soledad\nBogotá, Colombia.",
-    href: "https://www.google.com/maps/search/?api=1&query=Av+28+No.+34-43+Bogota+Colombia",
+    label: "Cra. 28 #34-43\nBogotá, Colombia.",
+    href: "https://www.google.com/maps/search/?api=1&query=Cra.+28+%2334-43+Bogota+Colombia",
     icon: "/icono-ubicacion.png",
   },
 ];
