@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MdSend, MdSmartToy, MdPerson, MdSupportAgent } from "react-icons/md";
+import { MdSend, MdSmartToy, MdPerson, MdSupportAgent, MdChatBubbleOutline, MdShoppingBag, MdHeadsetMic } from "react-icons/md";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type ConversationSummary = {
@@ -20,8 +20,31 @@ type Message = {
   createdAt: string;
 };
 
+const AVATAR_COLORS = [
+  "bg-[#DCFCE7] text-[#15803D]",
+  "bg-[#DBEAFE] text-[#1D4ED8]",
+  "bg-[#FCE7F3] text-[#BE185D]",
+  "bg-[#FEF3C7] text-[#B45309]",
+  "bg-[#EDE9FE] text-[#6D28D9]",
+];
+
+function avatarColor(phone: string) {
+  const sum = phone.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  return AVATAR_COLORS[sum % AVATAR_COLORS.length];
+}
+
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatRelative(iso: string) {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return "ahora";
+  if (mins < 60) return `${mins} min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} h`;
+  return new Date(iso).toLocaleDateString("es-CO", { day: "2-digit", month: "short" });
 }
 
 export default function WhatsappPanelPage() {
@@ -74,6 +97,8 @@ export default function WhatsappPanelPage() {
     [conversations, selectedId],
   );
 
+  const activeCount = conversations.filter((c) => c.status === "ACTIVE").length;
+
   const handleSend = async () => {
     if (!selectedId || !draft.trim() || sending) return;
     setSending(true);
@@ -96,39 +121,90 @@ export default function WhatsappPanelPage() {
   return (
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden rounded-xl border border-[#E2E8F0] bg-white">
       <aside className="flex w-full max-w-xs shrink-0 flex-col border-r border-[#E2E8F0]">
-        <div className="border-b border-[#E2E8F0] px-4 py-3">
-          <h1 className="text-sm font-bold text-[#0F172A]">WhatsApp</h1>
-          <p className="text-xs text-[#64748B]">{conversations.length} conversaciones</p>
+        <div
+          className="px-4 py-4 text-white"
+          style={{ background: "linear-gradient(120deg, #0E7C82 0%, #27B1B8 60%, #6FC7C3 100%)" }}
+        >
+          <div className="flex items-center gap-2">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
+              <MdChatBubbleOutline size={18} />
+            </span>
+            <div>
+              <h1 className="text-sm font-bold">WhatsApp</h1>
+              <p className="text-xs text-white/80">
+                {conversations.length} conversaciones · {activeCount} activas
+              </p>
+            </div>
+          </div>
+          <p className="mt-3 rounded-lg bg-white/15 px-3 py-2 text-[11px] leading-snug text-white/90">
+            El vendedor IA responde solo. Escribe aquí cuando quieras tomar una conversación para{" "}
+            <b>ventas</b> o dar <b>soporte</b> directo.
+          </p>
         </div>
+
         <div className="flex-1 overflow-y-auto">
-          {loading && <p className="p-4 text-sm text-[#64748B]">Cargando…</p>}
-          {!loading && conversations.length === 0 && (
-            <p className="p-4 text-sm text-[#64748B]">Sin conversaciones todavía.</p>
+          {loading && (
+            <div className="flex flex-col gap-3 p-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-16 animate-pulse rounded-lg bg-[#F1F5F9]" />
+              ))}
+            </div>
           )}
+
+          {!loading && conversations.length === 0 && (
+            <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#EFFDFD] text-[#27B1B8]">
+                <MdChatBubbleOutline size={30} />
+              </span>
+              <p className="text-sm font-semibold text-[#0F172A]">Sin conversaciones todavía</p>
+              <p className="text-xs leading-relaxed text-[#64748B]">
+                En cuanto un cliente le escriba al WhatsApp de Kliniu, la conversación aparece aquí
+                automáticamente — con lo que el bot de ventas ya respondió y listo para que entres tú.
+              </p>
+              <div className="mt-2 flex w-full flex-col gap-2 text-left">
+                <div className="flex items-center gap-2 rounded-lg border border-[#E2E8F0] px-3 py-2">
+                  <MdShoppingBag size={16} className="text-[#0E7C82]" />
+                  <span className="text-xs text-[#334155]">Cierra ventas que el bot dejó a medias</span>
+                </div>
+                <div className="flex items-center gap-2 rounded-lg border border-[#E2E8F0] px-3 py-2">
+                  <MdHeadsetMic size={16} className="text-[#0E7C82]" />
+                  <span className="text-xs text-[#334155]">Da soporte postventa desde el mismo chat</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {conversations.map((c) => (
             <button
               key={c.id}
               onClick={() => setSelectedId(c.id)}
-              className={`flex w-full flex-col gap-1 border-b border-[#F1F5F9] px-4 py-3 text-left transition hover:bg-[#F8FAFC] ${
+              className={`flex w-full items-start gap-3 border-b border-[#F1F5F9] px-4 py-3 text-left transition hover:bg-[#F8FAFC] ${
                 selectedId === c.id ? "bg-[#EFFDFD]" : ""
               }`}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-[#0F172A]">{c.phone}</span>
-                {c.lastMessage && (
-                  <span className="text-[11px] text-[#94A3B8]">{formatTime(c.lastMessage.createdAt)}</span>
-                )}
-              </div>
-              <p className="line-clamp-1 text-xs text-[#64748B]">
-                {c.lastMessage?.content ?? "Sin mensajes"}
-              </p>
               <span
-                className={`w-fit rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                  c.status === "ACTIVE" ? "bg-[#DCFCE7] text-[#15803D]" : "bg-[#F1F5F9] text-[#64748B]"
-                }`}
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${avatarColor(c.phone)}`}
               >
-                {c.status === "ACTIVE" ? "Activa" : "Cerrada"}
+                {c.phone.slice(-2)}
               </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-sm font-semibold text-[#0F172A]">{c.phone}</span>
+                  {c.lastMessage && (
+                    <span className="shrink-0 text-[11px] text-[#94A3B8]">
+                      {formatRelative(c.lastMessage.createdAt)}
+                    </span>
+                  )}
+                </div>
+                <p className="line-clamp-1 text-xs text-[#64748B]">{c.lastMessage?.content ?? "Sin mensajes"}</p>
+                <span
+                  className={`mt-1 inline-block w-fit rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                    c.status === "ACTIVE" ? "bg-[#DCFCE7] text-[#15803D]" : "bg-[#F1F5F9] text-[#64748B]"
+                  }`}
+                >
+                  {c.status === "ACTIVE" ? "Activa" : c.orderId ? "Pedido generado" : "Cerrada"}
+                </span>
+              </div>
             </button>
           ))}
         </div>
@@ -136,19 +212,32 @@ export default function WhatsappPanelPage() {
 
       <section className="flex flex-1 flex-col">
         {!selected && (
-          <div className="flex flex-1 items-center justify-center text-sm text-[#94A3B8]">
-            Selecciona una conversación
+          <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
+            <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#F8FAFC] text-[#94A3B8]">
+              <MdChatBubbleOutline size={36} />
+            </span>
+            <p className="text-sm font-semibold text-[#334155]">Selecciona una conversación</p>
+            <p className="max-w-xs text-xs text-[#94A3B8]">
+              Verás el historial completo con el cliente, incluyendo lo que ya respondió la IA.
+            </p>
           </div>
         )}
 
         {selected && (
           <>
             <div className="flex items-center justify-between border-b border-[#E2E8F0] px-5 py-3">
-              <div>
-                <p className="text-sm font-bold text-[#0F172A]">{conversationPhone}</p>
-                <p className="text-xs text-[#64748B]">
-                  {conversationStatus === "ACTIVE" ? "Conversación activa" : "Pedido generado — cerrada"}
-                </p>
+              <div className="flex items-center gap-3">
+                <span
+                  className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold ${avatarColor(conversationPhone)}`}
+                >
+                  {conversationPhone.slice(-2)}
+                </span>
+                <div>
+                  <p className="text-sm font-bold text-[#0F172A]">{conversationPhone}</p>
+                  <p className="text-xs text-[#64748B]">
+                    {conversationStatus === "ACTIVE" ? "Conversación activa" : "Pedido generado — cerrada"}
+                  </p>
+                </div>
               </div>
             </div>
 
