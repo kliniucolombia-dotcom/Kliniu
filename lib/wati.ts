@@ -19,8 +19,8 @@ export async function sendWatiMessage(phone: string, message: string) {
     throw new Error(`WATI_SEND_FAILED: ${response.status} ${body}`);
   }
 
-  const data = (await response.json()) as { result?: boolean; info?: string };
-  if (data.result !== true) {
+  const data = (await response.json()) as { result?: boolean | string; ok?: boolean; info?: string };
+  if (data.result === false || data.ok === false) {
     throw new Error(`WATI_SEND_FAILED: ${data.info ?? "respuesta inesperada"}`);
   }
 }
