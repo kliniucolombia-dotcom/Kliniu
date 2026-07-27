@@ -32,7 +32,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     await broadcastPanelUpdate("wati");
     return Response.json(message);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "No fue posible enviar el mensaje";
+    const detail = error instanceof Error ? error.message : "";
+    const message = detail.startsWith("WATI_SEND_FAILED")
+      ? "La ventana de 24 horas está cerrada. Usa “Nuevo chat” y envía una plantilla aprobada."
+      : detail || "No fue posible enviar el mensaje";
     return Response.json({ error: message }, { status: 500 });
   }
 }

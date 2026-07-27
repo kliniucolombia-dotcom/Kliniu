@@ -60,13 +60,6 @@ type OdooSaleOrder = {
   invoice_status?: string | false;
 };
 
-type OdooSaleOrderLine = {
-  id: number;
-  product_id?: [number, string] | false;
-  product_uom_qty?: number;
-  price_total?: number;
-};
-
 type OdooLead = {
   id: number;
   name: string;
@@ -773,24 +766,49 @@ export type OdooOrderPushResult = {
 };
 
 async function findOrCreateOdooPartner(input: OdooOrderPushInput): Promise<number> {
-  const existing = await executeOdooKw<number[]>(
+  const isSharedWhatsappEmail = input.customerEmail === "whatsapp-ia@kliniu.com";
+  const partnerName = input.company?.trim() || input.customerName.trim();
+  const candidates = await executeOdooKw<Array<{ id: number; name: string }>>(
     "res.partner",
-    "search",
-    [[["email", "=", input.customerEmail]]],
-    { limit: 1 },
+    "search_read",
+    [[isSharedWhatsappEmail
+      ? ["phone", "=", input.customerPhone]
+      : ["email", "=", input.customerEmail]]],
+    { fields: ["id", "name"], limit: 20 },
   );
 
-  if (existing.length > 0) return existing[0];
+  const normalizeIdentity = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  const existing = isSharedWhatsappEmail
+    ? candidates.find(
+        (candidate) => normalizeIdentity(candidate.name) === normalizeIdentity(partnerName),
+      )
+    : candidates[0];
+
+  const partnerValues = {
+    name: partnerName,
+    email: input.customerEmail,
+    phone: input.customerPhone,
+    street: input.addressLine1,
+    street2: input.addressLine2 || false,
+    city: input.city,
+  };
+
+  if (existing) {
+    await executeOdooKw<boolean>("res.partner", "write", [
+      [existing.id],
+      partnerValues,
+    ]);
+    return existing.id;
+  }
 
   return executeOdooKw<number>("res.partner", "create", [
-    {
-      name: input.company?.trim() || input.customerName,
-      email: input.customerEmail,
-      phone: input.customerPhone,
-      street: input.addressLine1,
-      street2: input.addressLine2 || undefined,
-      city: input.city,
-    },
+    partnerValues,
   ]);
 }
 
@@ -818,6 +836,16 @@ export async function getOdooStockBySku(): Promise<Map<string, number>> {
 }
 
 async function findOdooProductId(sku: string | null | undefined, fallbackName: string): Promise<number | null> {
+  if (sku === "COMBO-PREMIUM-WATI") {
+    const combo = await executeOdooKw<number[]>(
+      "product.product",
+      "search",
+      [[["name", "=", "Combo Inox T 1000"]]],
+      { limit: 1 },
+    );
+    if (combo.length > 0) return combo[0];
+  }
+
   if (sku) {
     const exact = await executeOdooKw<number[]>(
       "product.product",

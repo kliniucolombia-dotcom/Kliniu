@@ -1,7 +1,5 @@
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-import { getShippingForLocation } from "@/lib/shipping-rates";
-import { buildWompiCheckoutUrl } from "@/lib/wompi";
 
 const COMBO_NAME = "Combo Premium";
 const COMBO_PRICE = 309900;
@@ -31,6 +29,7 @@ export async function createWatiOrder(input: {
   customerPhone: string;
   city: string;
   addressLine1: string;
+  addressLine2: string | null;
   quantity: number;
 }) {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
@@ -38,7 +37,7 @@ export async function createWatiOrder(input: {
 
   const userId = await getWatiSystemUserId();
   const subtotal = COMBO_PRICE * input.quantity;
-  const shippingCost = getShippingForLocation("", input.city).price;
+  const shippingCost = 0;
   const totalItems = input.quantity;
 
   const order = await prisma.order.create({
@@ -51,6 +50,8 @@ export async function createWatiOrder(input: {
       department: "",
       city: input.city,
       addressLine1: input.addressLine1,
+      addressLine2: input.addressLine2?.trim() || null,
+      notes: "Pedido generado por el asistente de WhatsApp. Pago contra entrega.",
       subtotal,
       shippingCost,
       totalItems,
@@ -69,15 +70,5 @@ export async function createWatiOrder(input: {
     },
   });
 
-  const reference = `${order.id}-${Date.now()}`;
-  await prisma.order.update({ where: { id: order.id }, data: { wompiReference: reference } });
-
-  const paymentUrl = buildWompiCheckoutUrl({
-    reference,
-    amountInCents: (subtotal + shippingCost) * 100,
-    redirectUrl: "https://kliniu.vercel.app/mi-cuenta",
-    customerEmail: input.customerPhone + "@wati.kliniu.com",
-  });
-
-  return { orderId: order.id, paymentUrl };
+  return { orderId: order.id };
 }

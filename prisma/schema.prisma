@@ -461,6 +461,13 @@ enum WatiConversationStatus {
   CLOSED
 }
 
+enum WatiSalesStage {
+  NEW
+  IN_PROGRESS
+  FOLLOW_UP
+  SOLD
+}
+
 enum WatiMessageRole {
   USER
   ASSISTANT
@@ -468,17 +475,30 @@ enum WatiMessageRole {
 }
 
 model WatiConversation {
-  id        String                 @id @default(cuid())
-  phone     String                 @unique
-  status    WatiConversationStatus @default(ACTIVE)
-  orderId   String?
-  createdAt DateTime               @default(now())
-  updatedAt DateTime               @updatedAt
-  messages  WatiMessage[]
+  id                 String                 @id @default(cuid())
+  phone              String                 @unique
+  status             WatiConversationStatus @default(ACTIVE)
+  salesStage         WatiSalesStage         @default(NEW)
+  notes              String?
+  botPaused          Boolean                @default(false)
+  lastAutoReplyAt    DateTime?
+  comboImageSentAt   DateTime?
+  comboVideoSentAt   DateTime?
+  aiContextStartedAt DateTime?
+  orderId            String?
+  followUpSentAt     DateTime?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  messages           WatiMessage[]
+
+  @@index([status, updatedAt])
+  @@index([salesStage, updatedAt])
+  @@index([followUpSentAt])
 }
 
 model WatiMessage {
   id             String           @id @default(cuid())
+  externalId     String?          @unique
   conversationId String
   role           WatiMessageRole
   content        String
