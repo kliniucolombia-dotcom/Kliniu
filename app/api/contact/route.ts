@@ -3,6 +3,8 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const DESTINATARIOS = ["ventas@kliniu.com", "david.avila@kliniu.com"];
+
 export async function POST(request: Request) {
   const { nombre, email, empresa, pais, consulta } = await request.json();
 
@@ -13,7 +15,7 @@ export async function POST(request: Request) {
   try {
     await resend.emails.send({
       from: "Kliniu Web <contacto@kliniu.com>",
-      to: "ventas@kliniu.com",
+      to: DESTINATARIOS[Math.floor(Math.random() * DESTINATARIOS.length)],
       replyTo: email,
       subject: "Consulta desde kliniu.com",
       text: [

@@ -960,6 +960,43 @@ export default function AdminPage() {
   const editFormRef = useRef<HTMLFormElement | null>(null);
   const editingProduct =
     adminProducts.find((product) => product.slug === editingSlug) ?? null;
+  const [packs, setPacks] = useState<{ label: string; qty: number; totalPrice: number }[]>([]);
+  const [packProductId, setPackProductId] = useState<string | null>(null);
+  const [packsSaving, setPacksSaving] = useState(false);
+  const [packsMsg, setPacksMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  useEffect(() => {
+    setPacksMsg(null);
+    if (!editingSlug) { setPacks([]); setPackProductId(null); return; }
+    fetch("/api/panel/products")
+      .then((r) => r.json())
+      .then((list: { id: string; slug: string; packPrices: { label: string; qty: number; totalPrice: number }[] }[]) => {
+        const match = list.find((p) => p.slug === editingSlug);
+        setPackProductId(match?.id ?? null);
+        setPacks(match?.packPrices ?? []);
+      });
+  }, [editingSlug]);
+  const addPack = () => setPacks((prev) => [...prev, { label: "", qty: 12, totalPrice: 0 }]);
+  const removePack = (i: number) => setPacks((prev) => prev.filter((_, idx) => idx !== i));
+  const updatePack = (i: number, field: "label" | "qty" | "totalPrice", value: string) => {
+    setPacks((prev) => prev.map((p, idx) => {
+      if (idx !== i) return p;
+      if (field === "label") return { ...p, label: value };
+      return { ...p, [field]: parseInt(value.replace(/\D/g, ""), 10) || 0 };
+    }));
+  };
+  const savePacks = async () => {
+    if (!packProductId) return;
+    const invalid = packs.find((p) => !p.label.trim() || p.qty <= 0 || p.totalPrice <= 0);
+    if (invalid) { setPacksMsg({ type: "err", text: "Completa etiqueta, cantidad y precio en cada presentación" }); return; }
+    setPacksSaving(true);
+    const r = await fetch("/api/panel/products", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productId: packProductId, packPrices: packs }),
+    });
+    setPacksSaving(false);
+    setPacksMsg(r.ok ? { type: "ok", text: "Presentaciones guardadas" } : { type: "err", text: "No se pudo guardar" });
+  };
   const previewImageUrl = useMemo(() => {
     if (selectedImage) {
       return URL.createObjectURL(selectedImage);
@@ -2412,7 +2449,75 @@ export default function AdminPage() {
                         Opcional. Si lo dejas vacío, se usará el precio actual.
                       </p>
                     </label>
+                  </div>
 
+                  <div className="mt-6 rounded-2xl border border-black/10 bg-[#fafaf9] p-5">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-[#0C535B]">Precios por presentación (x12, x48, x100…)</p>
+                        <p className="text-xs text-[#6e7379]">Paquetes con precio total propio, independientes del precio unitario.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={addPack}
+                        className="rounded-full border border-[#0C535B] px-3 py-1.5 text-xs font-semibold text-[#0C535B] hover:bg-[#0C535B]/5"
+                      >
+                        + Agregar
+                      </button>
+                    </div>
+                    {packs.length === 0 ? (
+                      <p className="text-xs text-[#8b8d91]">Este producto no tiene presentaciones configuradas.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {packs.map((p, i) => (
+                          <div key={i} className="grid grid-cols-[1fr_90px_1fr_auto] items-center gap-2">
+                            <input
+                              value={p.label}
+                              onChange={(e) => updatePack(i, "label", e.target.value)}
+                              placeholder="Ej. x12 und"
+                              className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-[#27B1B8]"
+                            />
+                            <input
+                              value={p.qty || ""}
+                              onChange={(e) => updatePack(i, "qty", e.target.value)}
+                              placeholder="Cant."
+                              className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-[#27B1B8]"
+                            />
+                            <input
+                              value={p.totalPrice || ""}
+                              onChange={(e) => updatePack(i, "totalPrice", e.target.value)}
+                              placeholder="Precio total"
+                              className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-[#27B1B8]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removePack(i)}
+                              className="text-xs font-semibold text-[#DC2626] hover:opacity-70"
+                            >
+                              Quitar
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="mt-3 flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={savePacks}
+                        disabled={packsSaving || !packProductId}
+                        className="rounded-full bg-[#0C535B] px-4 py-2 text-xs font-semibold text-white hover:bg-[#073D43] disabled:opacity-60"
+                      >
+                        {packsSaving ? "Guardando…" : "Guardar presentaciones"}
+                      </button>
+                      {packsMsg && (
+                        <span className={`text-xs font-semibold ${packsMsg.type === "ok" ? "text-[#16A34A]" : "text-[#DC2626]"}`}>
+                          {packsMsg.text}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-5 grid gap-5 md:grid-cols-2">
                     <label className="space-y-2">
                       <span className="text-sm font-medium text-[#4f545a]">Stock mínimo</span>
                       <input

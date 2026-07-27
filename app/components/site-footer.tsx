@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import FooterWhatsapp from "./footer-whatsapp";
+import FooterEmail from "./footer-email";
 
 const colPoliticas = [
   { label: "Políticas de privacidad", href: "/politicas/privacidad" },
@@ -10,10 +11,9 @@ const colPoliticas = [
 ];
 
 const colContacto = [
-  { label: "ventas@kliniu.com", href: "mailto:ventas@kliniu.com", icon: "/icono-correo.png" },
   {
-    label: "Cra. 28 #34-43\nBogotá, Colombia.",
-    href: "https://www.google.com/maps/search/?api=1&query=Cra.+28+%2334-43+Bogota+Colombia",
+    label: "Cra. 28 #3443, Bogotá",
+    href: "https://www.google.com/maps/search/?api=1&query=Cra.+28+%233443+Bogota+Colombia",
     icon: "/icono-ubicacion.png",
   },
 ];
@@ -61,6 +61,7 @@ export default function SiteFooter() {
             </p>
             <ul className="space-y-3">
               <FooterWhatsapp />
+              <FooterEmail />
               {colContacto.map((item) => (
                 <li key={item.label}>
                   <a

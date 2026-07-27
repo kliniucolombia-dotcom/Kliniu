@@ -10,6 +10,7 @@ type ContactItem = {
 };
 
 const ASESORES = ["573112088806", "573226556454", "573105750449"];
+const EMAILS = ["ventas@kliniu.com", "david.avila@kliniu.com"];
 
 function formatPhone(phone: string) {
   const country = phone.slice(0, 2);
@@ -19,18 +20,22 @@ function formatPhone(phone: string) {
 
 export default function ContactBar({ items }: { items: ContactItem[] }) {
   const [phone, setPhone] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
     setPhone(ASESORES[Math.floor(Math.random() * ASESORES.length)]);
+    setEmail(EMAILS[Math.floor(Math.random() * EMAILS.length)]);
   }, []);
 
   const resolved = items.map((item) => {
-    if (!phone) return item;
-    if (item.label === "Llámanos") {
+    if (item.label === "Llámanos" && phone) {
       return { ...item, value: formatPhone(phone), href: `tel:+${phone}` };
     }
-    if (item.label === "WhatsApp") {
+    if (item.label === "WhatsApp" && phone) {
       return { ...item, value: formatPhone(phone), href: `https://wa.me/${phone}` };
+    }
+    if (item.label === "Escríbenos" && email) {
+      return { ...item, value: email, href: `mailto:${email}` };
     }
     return item;
   });

@@ -31,7 +31,7 @@ const policies = {
       },
       {
         heading: "Trámites y Contacto",
-        body: "Para gestionar cualquier tipo de garantía, cambio o devolución, comuníquese con nuestro Centro de Atención al Cliente:\n\nColombia: +57(1) 3682434 / +57 3226556454 — Cra. 28 #34-43, Bogotá.\nHonduras: +504 31852275\nRepública Dominicana: +1 (809) 8507005\nNicaragua: +505 82508359\n\nCorreo: info@kliniu.com",
+        body: "Para gestionar cualquier tipo de garantía, cambio o devolución, comuníquese con nuestro Centro de Atención al Cliente:\n\nColombia: +57(1) 3682434 / +57 3226556454 — Cra. 28 #3443, Bogotá.\nHonduras: +504 31852275\nRepública Dominicana: +1 (809) 8507005\nNicaragua: +505 82508359\n\nCorreo: info@kliniu.com",
       },
       {
         heading: "1. Garantía por Defectos de Fabricación",
