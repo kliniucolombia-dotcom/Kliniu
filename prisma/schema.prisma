@@ -45,6 +45,21 @@ model Product {
   comboItems            ComboItem[]
   warehouseStocks       ProductWarehouseStock[]
   warehouseMovements    WarehouseMovement[]
+  packPrices            ProductPackPrice[]
+}
+
+model ProductPackPrice {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  label      String
+  qty        Int
+  totalPrice Int
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([productId])
 }
 
 model User {

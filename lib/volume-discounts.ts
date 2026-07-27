@@ -196,9 +196,10 @@ export function getVolumePricing(
   productSlug?: string,
   preciosPorCantidad?: { cantidad: number; precioUnitario: number }[],
   productSku?: string,
+  packTiers?: { label: string; qty: number; totalPrice: number }[],
 ) {
-  // Insumos: paquetes reales del excel, precio total fijo (no porcentaje)
-  const insumoPacks = productSku ? INSUMO_PACK_TIERS_BY_SKU[productSku] : undefined;
+  // Insumos: paquetes reales (DB si el producto los tiene configurados, si no el mapa estático), precio total fijo (no porcentaje)
+  const insumoPacks = packTiers && packTiers.length > 0 ? packTiers : (productSku ? INSUMO_PACK_TIERS_BY_SKU[productSku] : undefined);
   if (insumoPacks) {
     const baseUnitPrice = parsePriceValue(price);
     const match = insumoPacks.find((t) => quantity === t.qty);

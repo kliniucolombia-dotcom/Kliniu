@@ -16,6 +16,7 @@ type Props = {
   productSlug?: string;
   productSku?: string;
   preciosPorCantidad?: { cantidad: number; precioUnitario: number }[];
+  packTiers?: { label: string; qty: number; totalPrice: number }[];
   addItem: (item: { id: string; nombre: string; precio: string; precioOriginal?: string; imagen: string; cantidad: number }) => void;
 };
 
@@ -33,8 +34,9 @@ function buildReply(
   productSlug?: string,
   preciosPorCantidad?: { cantidad: number; precioUnitario: number }[],
   productSku?: string,
+  packTiers?: { label: string; qty: number; totalPrice: number }[],
 ): { text: string; cartAction: Msg["cartAction"] } {
-  const pricing = getVolumePricing(precio, qty, productSlug, preciosPorCantidad, productSku);
+  const pricing = getVolumePricing(precio, qty, productSlug, preciosPorCantidad, productSku, packTiers);
   const { tier, unitPriceLabel, totalLabel } = pricing;
   const codigoLine = codigo ? `Código: ${codigo}\n` : "";
 
@@ -55,7 +57,7 @@ function buildReply(
   };
 }
 
-export default function QuoteModal({ open, onClose, productoId, productoNombre, productoPrecio, productoImagen, productoCodigo, cantidadSeleccionada, productSlug, productSku, preciosPorCantidad, addItem }: Props) {
+export default function QuoteModal({ open, onClose, productoId, productoNombre, productoPrecio, productoImagen, productoCodigo, cantidadSeleccionada, productSlug, productSku, preciosPorCantidad, packTiers, addItem }: Props) {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
@@ -70,7 +72,7 @@ export default function QuoteModal({ open, onClose, productoId, productoNombre, 
       setAddedQty(null);
       const qty = cantidadSeleccionada && cantidadSeleccionada > 0 ? cantidadSeleccionada : undefined;
       if (qty) {
-        const { text, cartAction } = buildReply(qty, productoNombre, productoPrecio, productoCodigo, productSlug, preciosPorCantidad, productSku);
+        const { text, cartAction } = buildReply(qty, productoNombre, productoPrecio, productoCodigo, productSlug, preciosPorCantidad, productSku, packTiers);
         setMsgs([{
           from: "asesor",
           text: `¡Hola! 👋 Soy tu asesor Kliniu.\n\nVeo que tienes seleccionadas **${qty.toLocaleString("es-CO")} unidad${qty > 1 ? "es" : ""}** de **${productoNombre}**.\n\n${text}`,
@@ -84,7 +86,7 @@ export default function QuoteModal({ open, onClose, productoId, productoNombre, 
       }
       setTimeout(() => inputRef.current?.focus(), 200);
     }
-  }, [open, productoNombre, productoPrecio, productoCodigo, cantidadSeleccionada, productSlug, productSku, preciosPorCantidad]);
+  }, [open, productoNombre, productoPrecio, productoCodigo, cantidadSeleccionada, productSlug, productSku, preciosPorCantidad, packTiers]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -122,7 +124,7 @@ export default function QuoteModal({ open, onClose, productoId, productoNombre, 
     // Número detectado — va primero para que "hola quiero 6 unidades" calcule el descuento
     const qty = parseInt(raw.replace(/[^\d]/g, ""), 10);
     if (!isNaN(qty) && qty > 0 && /\d/.test(raw)) {
-      return buildReply(qty, productoNombre, productoPrecio, productoCodigo, productSlug, preciosPorCantidad, productSku);
+      return buildReply(qty, productoNombre, productoPrecio, productoCodigo, productSlug, preciosPorCantidad, productSku, packTiers);
     }
 
     // Saludos

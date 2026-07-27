@@ -250,9 +250,26 @@ export async function getProductsForPanel(sellerId?: string) {
         take: 5,
         include: { user: { select: { fullName: true } } },
       },
+      packPrices: { orderBy: { order: "asc" } },
     },
     orderBy: { updatedAt: "desc" },
   });
+}
+
+export async function updateProductPackPrices(
+  productId: string,
+  packs: { id?: string; label: string; qty: number; totalPrice: number }[],
+) {
+  if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
+  const db = prisma;
+  await db.$transaction([
+    db.productPackPrice.deleteMany({ where: { productId } }),
+    ...packs.map((p, i) =>
+      db.productPackPrice.create({
+        data: { productId, label: p.label, qty: p.qty, totalPrice: p.totalPrice, order: i },
+      }),
+    ),
+  ]);
 }
 
 export async function updateProductPrice(

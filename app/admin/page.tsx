@@ -1127,6 +1127,15 @@ export default function AdminPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const embedSlug = searchParams.get("slug");
+
+  useEffect(() => {
+    if (embedSlug && adminProducts.some((p) => p.slug === embedSlug) && editingSlug !== embedSlug) {
+      handleEditProduct(embedSlug);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [embedSlug, adminProducts]);
+
   useEffect(() => {
     if (!isCheckingSession && !isAuthenticated) {
       router.replace("/login?next=/admin");

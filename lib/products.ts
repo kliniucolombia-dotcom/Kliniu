@@ -50,6 +50,7 @@ export type StoreProduct = ProductoCatalogo & {
   descripcion: string;
   destacado: boolean;
   esOutlet: boolean;
+  paquetes?: { label: string; qty: number; totalPrice: number }[];
 };
 
 export type InventoryMovementSummary = {
@@ -221,7 +222,10 @@ function normalizeDisponibilidad(value: string): Disponibilidad {
     : disponibilidades[0];
 }
 
-function toStoreProduct(product: ProductRecord): StoreProduct {
+function toStoreProduct(
+  product: ProductRecord,
+  packPricesByProductId?: Map<string, { label: string; qty: number; totalPrice: number }[]>,
+): StoreProduct {
   const categoria = normalizeCategoria(product.category);
   const disponibilidad = normalizeStockAvailability(
     product.availability,
@@ -276,6 +280,7 @@ function toStoreProduct(product: ProductRecord): StoreProduct {
     videoUrl: product.videoUrl?.trim() || undefined,
     destacado: product.featured,
     esOutlet: product.isOutlet,
+    paquetes: packPricesByProductId?.get(product.id),
   };
 }
 
@@ -347,7 +352,21 @@ export const getProducts = cache(async function getProducts() {
     return getFallbackProducts();
   }
 
-  return (products as ProductRecord[]).map(toStoreProduct);
+  const productIds = (products as ProductRecord[]).map((p) => p.id);
+  const packPricesByProductId = new Map<string, { label: string; qty: number; totalPrice: number }[]>();
+  const { data: packRows } = await supabaseDb
+    .from("ProductPackPrice")
+    .select("*")
+    .in("productId", productIds)
+    .order("order", { ascending: true });
+
+  for (const row of (packRows ?? []) as { productId: string; label: string; qty: number; totalPrice: number }[]) {
+    const list = packPricesByProductId.get(row.productId) ?? [];
+    list.push({ label: row.label, qty: row.qty, totalPrice: row.totalPrice });
+    packPricesByProductId.set(row.productId, list);
+  }
+
+  return (products as ProductRecord[]).map((p) => toStoreProduct(p, packPricesByProductId));
 });
 
 export async function getFeaturedProducts() {

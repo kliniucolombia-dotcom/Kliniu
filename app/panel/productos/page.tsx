@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation";
 import { SimpleSelect } from "../_components/simple-select";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
+type PackPrice = { id?: string; label: string; qty: number; totalPrice: number };
+
 type Product = {
   id: string; slug: string; sku: string | null; name: string; brand: string; category: string;
   price: number; previousPrice: number; stock: number; minimumStock: number; image: string; active: boolean; updatedAt: string;
   priceHistory: { oldPrice: number; newPrice: number; createdAt: string; user: { fullName: string } }[];
+  packPrices: PackPrice[];
 };
 
 const fmt = (n: number) => n.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -61,6 +64,7 @@ export default function ProductosPanel() {
   const [selected, setSelected] = useState<Product | null>(null);
   const [newPrice, setNewPrice] = useState("");
   const [note, setNote] = useState("");
+  const [packs, setPacks] = useState<PackPrice[]>([]);
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const router = useRouter();
@@ -129,7 +133,19 @@ export default function ProductosPanel() {
     setSelected(p);
     setNewPrice(String(p.price));
     setNote("");
+    setPacks(p.packPrices.length > 0 ? p.packPrices : []);
     setAlert(null);
+  };
+
+  const addPack = () => setPacks((prev) => [...prev, { label: "", qty: 12, totalPrice: 0 }]);
+  const removePack = (i: number) => setPacks((prev) => prev.filter((_, idx) => idx !== i));
+  const updatePack = (i: number, field: keyof PackPrice, value: string) => {
+    setPacks((prev) => prev.map((p, idx) => {
+      if (idx !== i) return p;
+      if (field === "label") return { ...p, label: value };
+      const n = parseInt(value.replace(/\D/g, ""), 10) || 0;
+      return { ...p, [field]: n };
+    }));
   };
 
   const savePrice = async () => {
@@ -140,11 +156,13 @@ export default function ProductosPanel() {
     if (diff > 0.5) {
       if (!confirm(`⚠️ El precio cambia un ${(diff * 100).toFixed(0)}%. ¿Confirmar?`)) return;
     }
+    const invalidPack = packs.find((p) => !p.label.trim() || p.qty <= 0 || p.totalPrice <= 0);
+    if (invalidPack) { setAlert({ type: "err", msg: "Completa etiqueta, cantidad y precio en todos los packs" }); return; }
     setSaving(true);
     const r = await fetch("/api/panel/products", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productId: selected.id, newPrice: np, note }),
+      body: JSON.stringify({ productId: selected.id, newPrice: np, note, packPrices: packs }),
     });
     setSaving(false);
     if (r.ok) {
@@ -367,13 +385,22 @@ export default function ProductosPanel() {
                               : "—"}
                           </td>
                           <td className="p-4 text-right">
-                            <button
-                              type="button"
-                              onClick={() => openEdit(p)}
-                              className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-3 py-1.5 text-xs font-semibold text-[#5d6167] transition-colors duration-200 hover:border-[#0C535B] hover:text-[#0C535B]"
-                            >
-                              <IconEye /> Ver
-                            </button>
+                            <div className="inline-flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openEdit(p)}
+                                title="Editar precio por unidad y por cantidad"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 text-[#5d6167] transition-colors duration-200 hover:border-[#0C535B] hover:text-[#0C535B]"
+                              >
+                                <IconEye />
+                              </button>
+                              <a
+                                href={`/admin?tab=edit&slug=${encodeURIComponent(p.slug)}`}
+                                className="inline-flex items-center gap-1.5 rounded-full bg-[#0C535B] px-3 py-1.5 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[#073D43]"
+                              >
+                                Edición completa
+                              </a>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -432,74 +459,117 @@ export default function ProductosPanel() {
         </>
       )}
 
-      {/* Modal editar precio */}
+      {/* Modal editar precios (unidad + presentaciones) */}
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="mb-4 flex items-start justify-between">
-              <div>
-                <h3 className="font-black text-[#1A1A1A]">Editar precio</h3>
-                <p className="mt-0.5 text-sm text-[#64748B]">{selected.name}</p>
+            <div className="max-h-[85vh] overflow-y-auto">
+              <div className="mb-4 flex items-start justify-between">
+                <div>
+                  <h3 className="font-black text-[#1A1A1A]">Precios</h3>
+                  <p className="mt-0.5 text-sm text-[#64748B]">{selected.name}</p>
+                </div>
+                <button onClick={() => setSelected(null)} className="text-[#94A3B8] hover:text-[#1A1A1A]">✕</button>
               </div>
-              <button onClick={() => setSelected(null)} className="text-[#94A3B8] hover:text-[#1A1A1A]">✕</button>
-            </div>
 
-            <div className="mb-3 rounded-xl bg-[#F8FAFC] p-3">
-              <p className="text-xs text-[#94A3B8]">Precio actual</p>
-              <p className="text-xl font-black text-[#1A1A1A]">{fmt(selected.price)}</p>
-            </div>
+              <div className="mb-3 rounded-xl bg-[#F8FAFC] p-3">
+                <p className="text-xs text-[#94A3B8]">Precio unidad actual</p>
+                <p className="text-xl font-black text-[#1A1A1A]">{fmt(selected.price)}</p>
+              </div>
 
-            <div className="mb-3">
-              <label className="mb-1 block text-xs font-bold text-[#64748B]">Nuevo precio (COP)</label>
-              <input
-                type="number"
-                value={newPrice}
-                onChange={(e) => setNewPrice(e.target.value)}
-                className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm font-bold outline-none focus:border-[#27B1B8]"
-                placeholder="0"
-              />
-            </div>
+              <div className="mb-3">
+                <label className="mb-1 block text-xs font-bold text-[#64748B]">Nuevo precio unidad (COP)</label>
+                <input
+                  type="number"
+                  value={newPrice}
+                  onChange={(e) => setNewPrice(e.target.value)}
+                  className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm font-bold outline-none focus:border-[#27B1B8]"
+                  placeholder="0"
+                />
+              </div>
 
-            <div className="mb-4">
-              <label className="mb-1 block text-xs font-bold text-[#64748B]">Nota (opcional)</label>
-              <input
-                type="text"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]"
-                placeholder="Ej: Ajuste por campaña Q2"
-              />
-            </div>
-
-            {/* Historial */}
-            {selected.priceHistory.length > 0 && (
               <div className="mb-4">
-                <p className="mb-2 text-xs font-bold text-[#64748B]">Historial reciente</p>
-                <div className="space-y-1.5 max-h-28 overflow-y-auto">
-                  {selected.priceHistory.map((h, i) => (
-                    <div key={i} className="flex items-center justify-between rounded-lg bg-[#F8FAFC] px-3 py-1.5 text-xs">
-                      <span className="text-[#94A3B8]">{new Date(h.createdAt).toLocaleDateString("es-CO")}</span>
-                      <span className="font-semibold text-[#1A1A1A]">{fmt(h.oldPrice)} → {fmt(h.newPrice)}</span>
-                      <span className="text-[#94A3B8]">{h.user.fullName}</span>
+                <label className="mb-1 block text-xs font-bold text-[#64748B]">Nota (opcional)</label>
+                <input
+                  type="text"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]"
+                  placeholder="Ej: Ajuste por campaña Q2"
+                />
+              </div>
+
+              {/* Precios por presentación (x12, x48, x100...) */}
+              <div className="mb-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="text-xs font-bold text-[#64748B]">Precios por presentación</label>
+                  <button type="button" onClick={addPack} className="text-xs font-bold text-[#27B1B8] hover:underline">
+                    + Agregar
+                  </button>
+                </div>
+                {packs.length === 0 && (
+                  <p className="mb-2 text-xs text-[#94A3B8]">Sin presentaciones (x12, x48, x100...) configuradas.</p>
+                )}
+                <div className="space-y-2">
+                  {packs.map((p, i) => (
+                    <div key={p.id ?? i} className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        value={p.label}
+                        onChange={(e) => updatePack(i, "label", e.target.value)}
+                        placeholder="Paquete x12"
+                        className="w-28 rounded-lg border border-[#E2E8F0] px-2 py-1.5 text-xs outline-none focus:border-[#27B1B8]"
+                      />
+                      <input
+                        type="number"
+                        value={p.qty}
+                        onChange={(e) => updatePack(i, "qty", e.target.value)}
+                        placeholder="Cant."
+                        className="w-16 rounded-lg border border-[#E2E8F0] px-2 py-1.5 text-xs outline-none focus:border-[#27B1B8]"
+                      />
+                      <input
+                        type="number"
+                        value={p.totalPrice}
+                        onChange={(e) => updatePack(i, "totalPrice", e.target.value)}
+                        placeholder="Precio total"
+                        className="flex-1 rounded-lg border border-[#E2E8F0] px-2 py-1.5 text-xs outline-none focus:border-[#27B1B8]"
+                      />
+                      <button type="button" onClick={() => removePack(i)} className="text-[#DC2626] hover:opacity-70">✕</button>
                     </div>
                   ))}
                 </div>
               </div>
-            )}
 
-            {alert && (
-              <div className={`mb-3 rounded-xl px-3 py-2 text-xs font-semibold ${alert.type === "ok" ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#FEE2E2] text-[#DC2626]"}`}>
-                {alert.msg}
+              {/* Historial */}
+              {selected.priceHistory.length > 0 && (
+                <div className="mb-4">
+                  <p className="mb-2 text-xs font-bold text-[#64748B]">Historial reciente</p>
+                  <div className="space-y-1.5 max-h-28 overflow-y-auto">
+                    {selected.priceHistory.map((h, i) => (
+                      <div key={i} className="flex items-center justify-between rounded-lg bg-[#F8FAFC] px-3 py-1.5 text-xs">
+                        <span className="text-[#94A3B8]">{new Date(h.createdAt).toLocaleDateString("es-CO")}</span>
+                        <span className="font-semibold text-[#1A1A1A]">{fmt(h.oldPrice)} → {fmt(h.newPrice)}</span>
+                        <span className="text-[#94A3B8]">{h.user.fullName}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {alert && (
+                <div className={`mb-3 rounded-xl px-3 py-2 text-xs font-semibold ${alert.type === "ok" ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#FEE2E2] text-[#DC2626]"}`}>
+                  {alert.msg}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <button onClick={() => setSelected(null)} className="flex-1 rounded-xl border border-[#E2E8F0] py-2.5 text-sm font-bold text-[#64748B] hover:bg-[#F8FAFC]">
+                  Cancelar
+                </button>
+                <button onClick={savePrice} disabled={saving} className="flex-1 rounded-xl bg-[#27B1B8] py-2.5 text-sm font-bold text-white hover:opacity-80 disabled:opacity-50">
+                  {saving ? "Guardando…" : "Guardar precios"}
+                </button>
               </div>
-            )}
-
-            <div className="flex gap-2">
-              <button onClick={() => setSelected(null)} className="flex-1 rounded-xl border border-[#E2E8F0] py-2.5 text-sm font-bold text-[#64748B] hover:bg-[#F8FAFC]">
-                Cancelar
-              </button>
-              <button onClick={savePrice} disabled={saving} className="flex-1 rounded-xl bg-[#27B1B8] py-2.5 text-sm font-bold text-white hover:opacity-80 disabled:opacity-50">
-                {saving ? "Guardando…" : "Actualizar precio"}
-              </button>
             </div>
           </div>
         </div>
