@@ -141,6 +141,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [areaOverride, setAreaOverride] = useState<Record<string, boolean>>({});
   const [closedGroups, setClosedGroups] = useState<Record<string, boolean>>({});
+  const [navSearch, setNavSearch] = useState("");
 
   const toggleArea = (key: string, defaultOpen: boolean) => {
     setAreaOverride((prev) => ({ ...prev, [key]: !(prev[key] ?? defaultOpen) }));
@@ -225,13 +226,33 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
           )}
         </div>
 
+        {/* Buscador */}
+        {!collapsed && (
+          <div className="border-b border-[#E2E8F0] px-3 py-2.5">
+            <div className="relative">
+              <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[#94A3B8]">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" />
+                </svg>
+              </span>
+              <input
+                value={navSearch}
+                onChange={(e) => setNavSearch(e.target.value)}
+                placeholder="Buscar en el menú…"
+                className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] py-1.5 pl-8 pr-2 text-xs outline-none focus:border-[#27B1B8]"
+              />
+            </div>
+          </div>
+        )}
+
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-2 py-3">
           {(() => {
             const childMatches = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
             const canSee = (m: NavChild) => (m.superAdminOnly ? isSuperAdmin : visibleModules?.has(m.module));
+            const q = navSearch.trim().toLowerCase();
 
-            const items = visibleModules
+            let items = visibleModules
               ? NAV.map((item) => {
                   if (!item.children) {
                     return item.module && visibleModules.has(item.module) ? item : null;
@@ -241,6 +262,21 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                 }).filter((n): n is NavItem => n !== null)
               : [];
 
+            if (q) {
+              items = items
+                .map((item) => {
+                  if (!item.children) {
+                    return item.label.toLowerCase().includes(q) ? item : null;
+                  }
+                  const areaMatches = item.label.toLowerCase().includes(q);
+                  const children = areaMatches
+                    ? item.children
+                    : item.children.filter((c) => c.label.toLowerCase().includes(q));
+                  return children.length > 0 ? { ...item, children } : null;
+                })
+                .filter((n): n is NavItem => n !== null);
+            }
+
             const activeItem = items
               .flatMap((item) => (item.children ? item.children.map((c) => ({ item, href: c.href })) : [{ item, href: item.href }]))
               .filter((x) => childMatches(x.href))
@@ -248,7 +284,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
             return items.map((item) => {
               const active = item.key === activeItem?.key;
-              const isOpen = item.children ? areaOverride[item.key] ?? active : false;
+              const isOpen = item.children ? (q ? true : areaOverride[item.key] ?? active) : false;
 
               // agrupa children consecutivos bajo su group más reciente
               const groupedChildren: { group?: string; groupIcon?: React.ReactNode; children: NavChild[] }[] = [];
@@ -299,7 +335,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                   <div className="mt-2 pl-1">
                     {groupedChildren.map((section, si) => {
                       const groupKey = `${item.key}:${section.group ?? si}`;
-                      const groupClosed = section.group ? closedGroups[groupKey] : false;
+                      const groupClosed = section.group ? (q ? false : closedGroups[groupKey]) : false;
                       return (
                         <div key={groupKey} className={si === 0 ? "" : "mt-1"}>
                           {section.group && (

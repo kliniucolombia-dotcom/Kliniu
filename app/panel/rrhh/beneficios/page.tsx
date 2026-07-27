@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { SimpleSelect } from "../../_components/simple-select";
 import {
   MdCardGiftcard, MdLocalHospital, MdSchool, MdFitnessCenter, MdLink, MdEmojiEvents, MdStarBorder,
@@ -12,6 +13,7 @@ type Benefit = {
   description: string;
   detail: string | null;
   category: string;
+  imageUrl: string | null;
   frequency: string | null;
   isFeatured: boolean;
   isActive: boolean;
@@ -59,13 +61,77 @@ export default function BeneficiosRRHHPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ title: "", description: "", detail: "", category: "OTRO", frequency: "", isFeatured: false, expiresAt: "" });
+  const [form, setForm] = useState({ title: "", description: "", detail: "", category: "OTRO", frequency: "", isFeatured: false, expiresAt: "", imageUrl: "" });
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
+
+  const openCreate = () => {
+    setEditingId(null);
+    setForm({ title: "", description: "", detail: "", category: "OTRO", frequency: "", isFeatured: false, expiresAt: "", imageUrl: "" });
+    setCreating(true);
+    setError("");
+  };
+
+  const openEdit = (b: Benefit) => {
+    setEditingId(b.id);
+    setForm({
+      title: b.title,
+      description: b.description,
+      detail: b.detail ?? "",
+      category: b.category,
+      frequency: b.frequency ?? "",
+      isFeatured: b.isFeatured,
+      expiresAt: b.expiresAt ? b.expiresAt.slice(0, 10) : "",
+      imageUrl: b.imageUrl ?? "",
+    });
+    setCreating(true);
+    setError("");
+    setMenuOpenId(null);
+  };
+
+  const uploadImage = async (file: File) => {
+    setUploadingImage(true);
+    setError("");
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("productName", `beneficio-${form.title || "nuevo"}`);
+    fd.append("kind", "banner");
+    const res = await fetch("/api/uploads", { method: "POST", body: fd });
+    setUploadingImage(false);
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      setError(d.error ?? "Error al subir imagen");
+      return;
+    }
+    const { publicUrl } = (await res.json()) as { publicUrl: string };
+    setForm((f) => ({ ...f, imageUrl: publicUrl }));
+  };
 
   const [tab, setTab] = useState<(typeof TABS)[number]["value"]>("all");
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    if (!menuOpenId) return;
+    const close = () => { setMenuOpenId(null); setMenuPos(null); };
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [menuOpenId]);
+
+  const toggleMenu = (id: string, e: React.MouseEvent<HTMLButtonElement>) => {
+    if (menuOpenId === id) { setMenuOpenId(null); setMenuPos(null); return; }
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMenuPos({ top: rect.bottom + 4, left: rect.right - 160 });
+    setMenuOpenId(id);
+  };
 
   const load = async () => {
     setLoading(true);
@@ -87,22 +153,30 @@ export default function BeneficiosRRHHPage() {
     setError("");
     if (!form.title.trim() || !form.description.trim()) return setError("Título y descripción son obligatorios");
     setSaving(true);
-    const res = await fetch("/api/rrhh-local/benefits", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: form.title, description: form.description, detail: form.detail || undefined,
-        category: form.category, frequency: form.frequency || undefined, isFeatured: form.isFeatured,
-        expiresAt: form.expiresAt || undefined,
-      }),
-    });
+    const body = {
+      title: form.title, description: form.description, detail: form.detail || undefined,
+      category: form.category, frequency: form.frequency || undefined, isFeatured: form.isFeatured,
+      expiresAt: form.expiresAt || undefined, imageUrl: form.imageUrl || undefined,
+    };
+    const res = editingId
+      ? await fetch(`/api/rrhh-local/benefits/${editingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...body, detail: form.detail || null, expiresAt: form.expiresAt || null, imageUrl: form.imageUrl || null }),
+        })
+      : await fetch("/api/rrhh-local/benefits", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
     if (res.ok) {
-      setForm({ title: "", description: "", detail: "", category: "OTRO", frequency: "", isFeatured: false, expiresAt: "" });
+      setForm({ title: "", description: "", detail: "", category: "OTRO", frequency: "", isFeatured: false, expiresAt: "", imageUrl: "" });
       setCreating(false);
+      setEditingId(null);
       await load();
     } else {
       const data = await res.json().catch(() => ({}));
-      setError(data.error || "No fue posible crear el beneficio");
+      setError(data.error || (editingId ? "No fue posible actualizar el beneficio" : "No fue posible crear el beneficio"));
     }
     setSaving(false);
   };
@@ -171,7 +245,7 @@ export default function BeneficiosRRHHPage() {
         </div>
         <button
           type="button"
-          onClick={() => { setCreating(true); setError(""); }}
+          onClick={openCreate}
           className="inline-flex items-center gap-2 rounded-full bg-[#27B1B8] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#0C535B]"
         >
           + Nuevo beneficio
@@ -278,6 +352,7 @@ export default function BeneficiosRRHHPage() {
           <table className="w-full min-w-[900px] text-sm">
             <thead>
               <tr className="border-b border-black/8 text-left text-xs font-semibold uppercase tracking-[0.08em] text-[#8b8d91]">
+                <th className="p-4">Banner</th>
                 <th className="p-4">Beneficio</th>
                 <th className="p-4">Categoría</th>
                 <th className="p-4">Descripción</th>
@@ -288,10 +363,20 @@ export default function BeneficiosRRHHPage() {
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={6} className="p-10 text-center text-sm text-[#6e7379]">Sin beneficios que coincidan con los filtros.</td></tr>
+                <tr><td colSpan={7} className="p-10 text-center text-sm text-[#6e7379]">Sin beneficios que coincidan con los filtros.</td></tr>
               ) : (
                 filtered.map((b) => (
                   <tr key={b.id} className="border-b border-black/6 last:border-0 hover:bg-[#fafaf9]">
+                    <td className="p-4">
+                      {b.imageUrl ? (
+                        <button type="button" onClick={() => setViewingImage(b.imageUrl)} title="Ver banner">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={b.imageUrl} alt="" className="h-14 w-24 rounded-lg object-cover transition-opacity hover:opacity-80" />
+                        </button>
+                      ) : (
+                        <span className="flex h-14 w-24 items-center justify-center rounded-lg bg-[#F1F5F9] text-[10px] text-[#94A3B8]">Sin banner</span>
+                      )}
+                    </td>
                     <td className="p-4">
                       <div className="flex items-center gap-2.5">
                         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EAF8F6] text-base">{(() => { const Icon = categoryIcon(b.category); return <Icon />; })()}</span>
@@ -316,30 +401,14 @@ export default function BeneficiosRRHHPage() {
                       {isExpiringSoon(b.expiresAt) && <p className="text-[10px] font-semibold text-[#C2410C]">Vence pronto</p>}
                     </td>
                     <td className="p-4">
-                      <div className="relative flex justify-end">
+                      <div className="flex justify-end">
                         <button
                           type="button"
-                          onClick={() => setMenuOpenId((id) => (id === b.id ? null : b.id))}
-                          className="flex h-8 w-8 items-center justify-center rounded-full text-[#8b8d91] hover:bg-[#f1f5f9]"
+                          onClick={(e) => toggleMenu(b.id, e)}
+                          className="flex h-9 w-9 items-center justify-center rounded-full border border-black/10 text-lg text-[#475569] hover:border-[#27B1B8] hover:bg-[#F8FAFC] hover:text-[#0C535B]"
                         >
-                          ⋮
+                          <MdMoreVert />
                         </button>
-                        {menuOpenId === b.id && (
-                          <div className="absolute right-0 top-9 z-10 w-40 rounded-xl border border-black/8 bg-white py-1.5 shadow-lg">
-                            <button
-                              onClick={() => { toggleActive(b.id, b.isActive); setMenuOpenId(null); }}
-                              className="block w-full px-4 py-2 text-left text-xs font-semibold text-[#1f2328] hover:bg-[#f8fafc]"
-                            >
-                              {b.isActive ? "Ocultar" : "Activar"}
-                            </button>
-                            <button
-                              onClick={() => { remove(b.id); setMenuOpenId(null); }}
-                              className="block w-full px-4 py-2 text-left text-xs font-semibold text-[#DC2626] hover:bg-[#FEF2F2]"
-                            >
-                              Eliminar
-                            </button>
-                          </div>
-                        )}
                       </div>
                     </td>
                   </tr>
@@ -358,8 +427,8 @@ export default function BeneficiosRRHHPage() {
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
           <div className="my-8 w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
             <div className="mb-4 flex items-start justify-between">
-              <h3 className="font-black text-[#1A1A1A]">Nuevo beneficio</h3>
-              <button onClick={() => setCreating(false)} className="text-[#94A3B8] hover:text-[#1A1A1A]"><MdClose /></button>
+              <h3 className="font-black text-[#1A1A1A]">{editingId ? "Editar beneficio" : "Nuevo beneficio"}</h3>
+              <button onClick={() => { setCreating(false); setEditingId(null); }} className="text-[#94A3B8] hover:text-[#1A1A1A]"><MdClose /></button>
             </div>
             {error && <p className="mb-3 text-sm text-red-500">{error}</p>}
             <div className="grid grid-cols-1 gap-3">
@@ -386,18 +455,84 @@ export default function BeneficiosRRHHPage() {
                   onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
                   className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
               </div>
+              <div>
+                <label className="mb-1 block text-xs font-bold text-[#64748B]">Imagen o banner (opcional)</label>
+                {form.imageUrl && (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={form.imageUrl} alt="" className="mb-2 h-28 w-full rounded-lg object-cover" />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage(f); }}
+                  className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm"
+                />
+                {uploadingImage && <p className="mt-1 text-xs text-[#94A3B8]">Subiendo…</p>}
+              </div>
               <label className="flex items-center gap-2 text-xs font-bold text-[#64748B]">
                 <input type="checkbox" checked={form.isFeatured} onChange={(e) => setForm({ ...form, isFeatured: e.target.checked })} />
                 Destacado
               </label>
             </div>
             <div className="mt-4 flex gap-2">
-              <button onClick={() => setCreating(false)} className="flex-1 rounded-xl border border-[#E2E8F0] py-2.5 text-sm font-bold text-[#64748B] hover:bg-[#F8FAFC]">Cancelar</button>
+              <button onClick={() => { setCreating(false); setEditingId(null); }} className="flex-1 rounded-xl border border-[#E2E8F0] py-2.5 text-sm font-bold text-[#64748B] hover:bg-[#F8FAFC]">Cancelar</button>
               <button onClick={submit} disabled={saving} className="flex-1 rounded-xl bg-[#27B1B8] py-2.5 text-sm font-bold text-white hover:opacity-80 disabled:opacity-50">
-                {saving ? "Guardando…" : "Crear"}
+                {saving ? "Guardando…" : editingId ? "Guardar cambios" : "Crear"}
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {menuOpenId && menuPos && typeof document !== "undefined" && createPortal(
+        (() => {
+          const b = benefits.find((x) => x.id === menuOpenId);
+          if (!b) return null;
+          return (
+            <>
+              <div className="fixed inset-0 z-[55]" onClick={() => { setMenuOpenId(null); setMenuPos(null); }} />
+              <div
+                className="fixed z-[56] w-40 rounded-xl border border-black/8 bg-white py-1.5 shadow-xl"
+                style={{ top: menuPos.top, left: menuPos.left }}
+              >
+                <button
+                  onClick={() => openEdit(b)}
+                  className="block w-full px-4 py-2 text-left text-xs font-semibold text-[#1f2328] hover:bg-[#f8fafc]"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => { toggleActive(b.id, b.isActive); setMenuOpenId(null); setMenuPos(null); }}
+                  className="block w-full px-4 py-2 text-left text-xs font-semibold text-[#1f2328] hover:bg-[#f8fafc]"
+                >
+                  {b.isActive ? "Ocultar" : "Activar"}
+                </button>
+                <button
+                  onClick={() => { remove(b.id); setMenuOpenId(null); setMenuPos(null); }}
+                  className="block w-full px-4 py-2 text-left text-xs font-semibold text-[#DC2626] hover:bg-[#FEF2F2]"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </>
+          );
+        })(),
+        document.body,
+      )}
+
+      {viewingImage && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setViewingImage(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={viewingImage} alt="" className="max-h-[85vh] max-w-full rounded-xl object-contain" />
+          <button
+            onClick={() => setViewingImage(null)}
+            className="absolute right-6 top-6 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[#1A1A1A]"
+          >
+            <MdClose />
+          </button>
         </div>
       )}
     </div>

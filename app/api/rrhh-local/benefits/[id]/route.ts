@@ -8,8 +8,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await request.json();
-  const { title, description, detail, category, frequency, isFeatured, isActive, order, expiresAt } = body as {
-    title?: string; description?: string; detail?: string | null; category?: string;
+  const { title, description, detail, category, imageUrl, frequency, isFeatured, isActive, order, expiresAt } = body as {
+    title?: string; description?: string; detail?: string | null; category?: string; imageUrl?: string | null;
     frequency?: string | null; isFeatured?: boolean; isActive?: boolean; order?: number; expiresAt?: string | null;
   };
 
@@ -20,6 +20,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       ...(description !== undefined ? { description: description.trim() } : {}),
       ...(detail !== undefined ? { detail: detail?.trim() || null } : {}),
       ...(category !== undefined ? { category: category as never } : {}),
+      ...(imageUrl !== undefined ? { imageUrl: imageUrl?.trim() || null } : {}),
       ...(frequency !== undefined ? { frequency: frequency?.trim() || null } : {}),
       ...(isFeatured !== undefined ? { isFeatured } : {}),
       ...(isActive !== undefined ? { isActive } : {}),
