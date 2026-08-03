@@ -1,19 +1,29 @@
-const buckets = new Map<string, { count: number; resetAt: number }>();
+import { Redis } from "@upstash/redis";
+import { Ratelimit } from "@upstash/ratelimit";
 
-/** Rate limit en memoria por instancia. Suficiente como freno a fuerza bruta; no persiste entre instancias serverless frías. */
-export function checkRateLimit(key: string, limit: number, windowMs: number): boolean {
-  const now = Date.now();
-  const entry = buckets.get(key);
+const redis = Redis.fromEnv();
+const limiters = new Map<string, Ratelimit>();
 
-  if (!entry || now > entry.resetAt) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
-    return true;
+function getLimiter(limit: number, windowMs: number) {
+  const cacheKey = `${limit}:${windowMs}`;
+  let limiter = limiters.get(cacheKey);
+
+  if (!limiter) {
+    limiter = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(limit, `${Math.max(1, Math.round(windowMs / 1000))} s`),
+      prefix: "kliniu-ratelimit",
+    });
+    limiters.set(cacheKey, limiter);
   }
 
-  if (entry.count >= limit) return false;
+  return limiter;
+}
 
-  entry.count += 1;
-  return true;
+/** Rate limit distribuido vía Upstash Redis — persiste entre cold starts serverless. */
+export async function checkRateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
+  const { success } = await getLimiter(limit, windowMs).limit(key);
+  return success;
 }
 
 export function getClientIp(request: Request): string {

@@ -5,7 +5,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
-    if (!checkRateLimit(`reset-password:${ip}`, 8, 15 * 60 * 1000)) {
+    if (!(await checkRateLimit(`reset-password:${ip}`, 8, 15 * 60 * 1000))) {
       return Response.json(
         { error: "Demasiados intentos. Espera unos minutos e inténtalo de nuevo." },
         { status: 429 },

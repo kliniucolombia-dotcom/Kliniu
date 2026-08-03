@@ -6,7 +6,11 @@ const SESSION_COOKIE_NAME = "kliniu_session";
 const encoder = new TextEncoder();
 
 function getSessionSecret() {
-  return process.env.APP_SESSION_SECRET || "kliniu-dev-session-secret-change-me";
+  const secret = process.env.APP_SESSION_SECRET;
+  if (!secret) {
+    throw new Error("APP_SESSION_SECRET no está configurada.");
+  }
+  return secret;
 }
 
 function getSessionKey() {

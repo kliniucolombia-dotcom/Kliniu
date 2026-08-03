@@ -21,7 +21,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!checkRateLimit(`admin-login:${getClientIp(request)}:${email}`, 10, 10 * 60 * 1000)) {
+    if (!(await checkRateLimit(`admin-login:${getClientIp(request)}:${email}`, 10, 10 * 60 * 1000))) {
       return Response.json(
         { error: "Demasiados intentos. Espera unos minutos e intenta de nuevo." },
         { status: 429 },

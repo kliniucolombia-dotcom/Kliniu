@@ -8,7 +8,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
-    if (!checkRateLimit(`forgot-password:${ip}`, 5, 15 * 60 * 1000)) {
+    if (!(await checkRateLimit(`forgot-password:${ip}`, 5, 15 * 60 * 1000))) {
       return Response.json(
         { error: "Demasiados intentos. Espera unos minutos e inténtalo de nuevo." },
         { status: 429 },

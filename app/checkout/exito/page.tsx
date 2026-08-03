@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import PurchaseTracker from "./purchase-tracker";
 
 export default async function CheckoutSuccessPage({
   searchParams,
@@ -11,7 +12,7 @@ export default async function CheckoutSuccessPage({
   const order = params.pedido && prisma
     ? await prisma.order.findUnique({
         where: { id: params.pedido },
-        select: { paymentStatus: true },
+        select: { paymentStatus: true, subtotal: true },
       })
     : null;
 
@@ -20,6 +21,9 @@ export default async function CheckoutSuccessPage({
 
   return (
     <main className="flex min-h-[calc(100vh-88px)] items-center justify-center bg-[#f5f5f5] px-6 py-16">
+      {paymentConfirmed && params.pedido && (
+        <PurchaseTracker orderId={params.pedido} value={order.subtotal} />
+      )}
       <section className="w-full max-w-2xl rounded-[2rem] bg-white p-8 text-center shadow-lg shadow-black/10 md:p-10">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#27B1B8]">
           {paymentConfirmed ? "Pago confirmado" : paymentFailed ? "Pago rechazado" : "Estamos verificando tu pago"}

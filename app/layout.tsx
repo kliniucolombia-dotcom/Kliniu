@@ -5,10 +5,12 @@ import "./globals.css";
 import { CartProvider } from "./components/cart-provider";
 import { ProductsProvider } from "./components/products-provider";
 import ConditionalShell from "./components/conditional-shell";
+import GoogleTags from "./components/google-tags";
 import { getProducts } from "@/lib/products";
 import { getSessionFromCookies } from "@/lib/auth";
 import { getUserById } from "@/lib/users";
 import { getCartItemsForUser } from "@/lib/cart";
+import { SITE_URL } from "@/lib/site";
 
 const figtree = Figtree({
   subsets: ["latin"],
@@ -16,11 +18,15 @@ const figtree = Figtree({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Kliniu — Dispensadores e insumos para tu negocio",
     template: "%s — Kliniu",
   },
   description: "Dispensadores, insumos y soluciones de higiene para hoteles, restaurantes y negocios en Colombia.",
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+  },
 };
 
 export default async function RootLayout({
@@ -67,6 +73,7 @@ export default async function RootLayout({
           </CartProvider>
         </ProductsProvider>
         <SpeedInsights />
+        <GoogleTags />
       </body>
     </html>
   );
