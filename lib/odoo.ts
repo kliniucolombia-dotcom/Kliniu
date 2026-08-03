@@ -503,7 +503,7 @@ export async function getOdooProducts(limit = 20) {
         "barcode",
         "categ_id",
       ],
-      limit,
+      ...(limit > 0 ? { limit } : {}),
       order: "write_date desc",
     },
   );

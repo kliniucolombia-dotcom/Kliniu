@@ -1,19 +1,16 @@
 import { getOdooProducts } from "@/lib/odoo";
-import { getSessionFromCookies } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 
 export async function GET(request: Request) {
+  const access = await requirePermission("MODULE_ODOO", "view");
+  if (!access.ok) {
+    return Response.json({ error: "No autorizado." }, { status: access.status });
+  }
+
   try {
-    const session = await getSessionFromCookies();
-
-    if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
-      return Response.json({ error: "No autorizado." }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
-    const limit = Math.min(
-      Math.max(Number(searchParams.get("limit") || "20") || 20, 1),
-      100,
-    );
+    const limitParam = Number(searchParams.get("limit") || "0");
+    const limit = limitParam > 0 ? Math.min(limitParam, 5000) : 0;
     const products = await getOdooProducts(limit);
 
     return Response.json({ products });
