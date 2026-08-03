@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeOdooKw } from "@/lib/odoo";
+import { requirePermission } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const access = await requirePermission("MODULE_ODOO", "view");
+  if (!access.ok) {
+    return new NextResponse(null, { status: access.status });
+  }
+
   const { id } = await params;
   const productId = Number(id);
 
