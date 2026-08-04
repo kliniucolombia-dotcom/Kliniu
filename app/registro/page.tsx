@@ -119,7 +119,7 @@ export default function RegistroPage() {
   };
 
   return (
-    <main className="flex min-h-[calc(100vh-88px)] bg-white">
+    <main className="flex min-h-[calc(100vh-88px)] bg-white lg:h-[calc(100vh-66px)] lg:overflow-hidden">
       {toast && (
         <div className="fixed right-5 top-5 z-[80] w-[min(92vw,380px)]">
           <div
@@ -150,7 +150,7 @@ export default function RegistroPage() {
       )}
 
       {/* Left side — form */}
-      <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 lg:w-1/2">
+      <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 lg:w-1/2 lg:h-full lg:overflow-y-auto">
         <section className="w-full max-w-md">
         <h1 className="text-4xl font-extrabold tracking-tight text-[#111]">
           Crear tu <span className="text-[#27B1B8]">cuenta</span>
@@ -421,7 +421,7 @@ export default function RegistroPage() {
       </div>
 
       {/* Right side — register banner */}
-      <div className="hidden overflow-hidden bg-[#faf5f0] lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-1/2 lg:items-center lg:justify-center">
+      <div className="hidden overflow-hidden bg-[#faf5f0] lg:flex lg:h-full lg:w-1/2 lg:items-center lg:justify-center">
         <div className="relative h-full w-full">
           <Image
             src="/account-register-banner.png"
