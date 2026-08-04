@@ -3,11 +3,6 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 
-function getReelId(href: string) {
-  const match = href.match(/reel\/([^/?]+)/);
-  return match ? match[1] : null;
-}
-
 interface Video {
   id: number;
   titulo: string;
@@ -23,9 +18,7 @@ export default function VideoModal({ videos }: { videos: Video[] }) {
     setMounted(true);
   }, []);
 
-  const reelId = activeHref ? getReelId(activeHref) : null;
-
-  const modal = activeHref && reelId && (
+  const modal = activeHref && (
     <div
       className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 p-4"
       onClick={() => setActiveHref(null)}
@@ -42,14 +35,13 @@ export default function VideoModal({ videos }: { videos: Video[] }) {
         >
           ✕
         </button>
-        <iframe
-          src={`https://www.instagram.com/reel/${reelId}/embed/`}
+        <video
+          src={activeHref}
           className="block w-full"
           style={{ height: "min(600px, calc(100vh - 2rem))" }}
-          frameBorder="0"
-          scrolling="no"
-          allowTransparency
-          allowFullScreen
+          controls
+          autoPlay
+          playsInline
         />
       </div>
     </div>
