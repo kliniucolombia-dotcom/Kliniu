@@ -421,7 +421,7 @@ export default function RegistroPage() {
       </div>
 
       {/* Right side — register banner */}
-      <div className="hidden overflow-hidden bg-[#faf5f0] lg:flex lg:w-1/2 lg:items-center lg:justify-center">
+      <div className="hidden overflow-hidden bg-[#faf5f0] lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-1/2 lg:items-center lg:justify-center">
         <div className="relative h-full w-full">
           <Image
             src="/account-register-banner.png"
