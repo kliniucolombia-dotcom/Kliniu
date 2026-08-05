@@ -43,6 +43,5 @@ export async function POST(request: Request) {
     return Response.json({ error: `No fue posible subir el archivo: ${uploadError.message}` }, { status: 500 });
   }
 
-  const { data } = await supabase.storage.from(BUCKET).createSignedUrl(filePath, 60 * 60 * 24 * 365);
-  return Response.json({ url: data?.signedUrl || filePath, name: file.name, size: file.size });
+  return Response.json({ path: filePath, name: file.name, size: file.size });
 }

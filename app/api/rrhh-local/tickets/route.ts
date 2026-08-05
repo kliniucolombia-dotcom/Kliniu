@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     description?: string;
     location?: string;
     extraFields?: Record<string, unknown>;
-    attachments?: { url: string; name: string; size?: number }[];
+    attachments?: { path: string; name: string; size?: number }[];
   };
 
   if (!categoryId || !subject?.trim() || !description?.trim()) {
@@ -65,13 +65,9 @@ export async function POST(request: Request) {
 
   const priorityValue = ["BAJA", "MEDIA", "ALTA", "URGENTE"].includes(priority || "") ? priority : "MEDIA";
 
-  const safeAttachments = (attachments || []).filter((a) => {
-    try {
-      return ["http:", "https:"].includes(new URL(a.url).protocol);
-    } catch {
-      return false;
-    }
-  });
+  const safeAttachments = (attachments || []).filter(
+    (a) => typeof a.path === "string" && a.path.startsWith(`tickets/${access.user.id}/`),
+  );
 
   const count = await prisma.ticket.count();
   const code = `TK-${String(count + 1).padStart(6, "0")}`;
@@ -88,7 +84,7 @@ export async function POST(request: Request) {
       extraFields: (extraFields ?? {}) as never,
       responsibleId: category.defaultResponsibleId,
       attachments: safeAttachments.length
-        ? { create: safeAttachments.map((a) => ({ url: a.url, name: a.name, size: a.size })) }
+        ? { create: safeAttachments.map((a) => ({ url: a.path, name: a.name, size: a.size })) }
         : undefined,
     },
     include: TICKET_INCLUDE,

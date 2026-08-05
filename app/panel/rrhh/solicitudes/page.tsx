@@ -10,6 +10,16 @@ import { DonutChart } from "@/app/panel/_components/mini-charts";
 import { SimpleSelect } from "@/app/panel/_components/simple-select";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
+async function openTicketAttachment(url: string) {
+  if (/^https?:\/\//i.test(url)) {
+    window.open(url, "_blank", "noreferrer");
+    return;
+  }
+  const res = await fetch(`/api/rrhh-local/tickets/download?path=${encodeURIComponent(url)}`);
+  const data = await res.json().catch(() => ({}));
+  if (res.ok && data.url) window.open(data.url, "_blank", "noreferrer");
+}
+
 type StaffUser = { id: string; fullName: string; role: string };
 type Comment = { id: string; message: string; createdAt: string; user: { fullName: string } };
 type Category = { id: string; name: string; icon: string | null };
@@ -455,8 +465,8 @@ export default function SolicitudesPanelPage() {
                     {detail.attachments.map((a, i) => (
                       <div key={i} className="flex items-center justify-between rounded-lg border border-[#E2E8F0] p-3">
                         <span className="text-sm font-bold text-[#1A1A1A]">{a.name}</span>
-                        <a href={/^https?:\/\//i.test(a.url) ? a.url : "#"} target="_blank" rel="noreferrer"
-                          className="text-xs font-bold text-[#27B1B8] hover:underline">Descargar</a>
+                        <button type="button" onClick={() => openTicketAttachment(a.url)}
+                          className="text-xs font-bold text-[#27B1B8] hover:underline">Descargar</button>
                       </div>
                     ))}
                   </div>

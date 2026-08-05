@@ -25,7 +25,17 @@ type Category = {
   fieldsSchema: FieldDef[];
 };
 
-type Attachment = { url: string; name: string; size?: number };
+type Attachment = { path: string; name: string; size?: number };
+
+async function openTicketAttachment(url: string) {
+  if (/^https?:\/\//i.test(url)) {
+    window.open(url, "_blank", "noreferrer");
+    return;
+  }
+  const res = await fetch(`/api/rrhh-local/tickets/download?path=${encodeURIComponent(url)}`);
+  const data = await res.json().catch(() => ({}));
+  if (res.ok && data.url) window.open(data.url, "_blank", "noreferrer");
+}
 
 type Comment = { id: string; message: string; createdAt: string; user: { fullName: string } };
 
@@ -342,8 +352,8 @@ export default function TicketsPage() {
                   {(detail.attachments || []).map((a, i) => (
                     <div key={i} className="flex items-center justify-between rounded-lg border border-[#E2E8F0] p-3">
                       <span className="text-sm font-bold text-[#1A1A1A]">{a.name}</span>
-                      <a href={/^https?:\/\//i.test(a.url) ? a.url : "#"} target="_blank" rel="noreferrer"
-                        className="text-xs font-bold text-[#27B1B8] hover:underline">Descargar</a>
+                      <button type="button" onClick={() => openTicketAttachment(a.url)}
+                        className="text-xs font-bold text-[#27B1B8] hover:underline">Descargar</button>
                     </div>
                   ))}
                 </div>
@@ -599,7 +609,7 @@ function NewTicketModal({ categories, presetCategoryId, onClose, onCreated, setE
     fd.append("file", file);
     const res = await fetch("/api/rrhh-local/tickets/upload", { method: "POST", body: fd });
     const data = await res.json().catch(() => ({}));
-    if (res.ok) setAttachments((prev) => [...prev, { url: data.url, name: data.name, size: data.size }]);
+    if (res.ok) setAttachments((prev) => [...prev, { path: data.path, name: data.name, size: data.size }]);
     else setError(data.error || "No fue posible subir el archivo");
     setUploading(false);
   };

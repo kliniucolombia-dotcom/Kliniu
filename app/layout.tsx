@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Figtree } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
@@ -34,9 +35,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [initialProducts, session] = await Promise.all([
+  const [initialProducts, session, nonce] = await Promise.all([
     getProducts(),
     getSessionFromCookies(),
+    headers().then((h) => h.get("x-nonce") ?? undefined),
   ]);
   const [currentUser, initialCartItems] = session
     ? await Promise.all([
@@ -73,7 +75,7 @@ export default async function RootLayout({
           </CartProvider>
         </ProductsProvider>
         <SpeedInsights />
-        <GoogleTags />
+        <GoogleTags nonce={nonce} />
       </body>
     </html>
   );
