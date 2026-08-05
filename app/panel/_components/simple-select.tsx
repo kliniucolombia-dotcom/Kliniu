@@ -10,6 +10,7 @@ export function SimpleSelect({
   placeholder,
   hideChevron,
   openUp,
+  disabled,
 }: {
   value: string;
   options: { value: string; label: string }[];
@@ -19,6 +20,7 @@ export function SimpleSelect({
   placeholder?: string;
   hideChevron?: boolean;
   openUp?: boolean;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -39,10 +41,11 @@ export function SimpleSelect({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={
+        disabled={disabled}
+        className={`${
           triggerClassName ??
           "flex w-full items-center justify-between rounded-xl border border-[#E2E8F0] px-3 py-2 text-left text-sm text-[#1A1A1A]"
-        }
+        } disabled:opacity-50`}
       >
         <span>{selected?.label ?? placeholder ?? ""}</span>
         {!hideChevron && <span className="text-[#94A3B8]">▾</span>}

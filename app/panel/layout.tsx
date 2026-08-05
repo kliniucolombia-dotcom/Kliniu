@@ -68,7 +68,6 @@ const NAV: NavItem[] = [
       { href: "/panel/produccion", label: "Producción", module: "MODULE_PRODUCCION", icon: <MdPrecisionManufacturing size={17} /> },
       { href: "/panel/produccion/ordenes", label: "Órdenes de Producción", module: "MODULE_PRODUCCION", icon: <MdAssignment size={17} /> },
       { href: "/panel/bodegas", label: "Bodegas", module: "MODULE_BODEGAS", icon: <MdWarehouse size={17} /> },
-      { href: "/panel/rrhh/solicitudes", label: "Solicitudes", module: "MODULE_RRHH", icon: <MdConfirmationNumber size={17} /> },
     ],
   },
   {

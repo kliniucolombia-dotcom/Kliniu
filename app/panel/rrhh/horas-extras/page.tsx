@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { SimpleSelect } from "../../_components/simple-select";
-import { fmtDateOnly } from "@/lib/date";
+import { fmtDateOnly, isSameMonthDateOnly } from "@/lib/date";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { MdTimer, MdSchedule, MdCheckCircle, MdHourglassEmpty, MdCalendarMonth, MdSearch, MdFileDownload, MdMoreVert, MdClose, MdInfo } from "react-icons/md";
 
@@ -175,10 +175,7 @@ export default function HorasExtrasRRHHPage() {
 
   const kpis = useMemo(() => {
     const now = new Date();
-    const thisMonth = requests.filter((r) => {
-      const d = new Date(r.date);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    });
+    const thisMonth = requests.filter((r) => isSameMonthDateOnly(r.date, now));
     const totalH = thisMonth.reduce((s, r) => s + r.hours, 0);
     const approvedH = thisMonth.filter((r) => r.status === "APPROVED").reduce((s, r) => s + r.hours, 0);
     const pendingH = thisMonth.filter((r) => r.status === "PENDING").reduce((s, r) => s + r.hours, 0);

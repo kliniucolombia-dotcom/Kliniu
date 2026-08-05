@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { MdDownload, MdAssignment, MdPerson, MdCalendarMonth, MdCheckCircle, MdCancel, MdSearch, MdFileDownload, MdMoreVert, MdClose, MdInfo } from "react-icons/md";
 import { SimpleSelect } from "../../_components/simple-select";
-import { fmtDateOnly } from "@/lib/date";
+import { fmtDateOnly, isSameMonthDateOnly } from "@/lib/date";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type EmployeeOption = { id: string; employeeCode: string; jobTitle: string; user: { fullName: string } };
@@ -235,10 +235,7 @@ export default function AusenciasPage() {
 
   const kpis = useMemo(() => {
     const now = new Date();
-    const thisMonth = requests.filter((r) => {
-      const d = new Date(r.startDate);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    });
+    const thisMonth = requests.filter((r) => isSameMonthDateOnly(r.startDate, now));
     return {
       total: thisMonth.length,
       pending: requests.filter((r) => r.status === "PENDING").length,

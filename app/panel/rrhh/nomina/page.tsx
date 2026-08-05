@@ -83,7 +83,10 @@ export default function NominaPage() {
   const [creating, setCreating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ employeeId: "", period: "", grossAmount: "", deductions: "", filePath: "", fileName: "" });
+  const [form, setForm] = useState({
+    employeeId: "", period: "", grossAmount: "", deductions: "", filePath: "", fileName: "",
+    paymentDueDate: "", epsAmount: "", arlAmount: "", pensionAmount: "",
+  });
 
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
@@ -150,10 +153,17 @@ export default function NominaPage() {
         deductions: ded,
         fileUrl: form.filePath || null,
         fileName: form.fileName || null,
+        paymentDueDate: form.paymentDueDate || null,
+        epsAmount: form.epsAmount ? Number(form.epsAmount) : null,
+        arlAmount: form.arlAmount ? Number(form.arlAmount) : null,
+        pensionAmount: form.pensionAmount ? Number(form.pensionAmount) : null,
       }),
     });
     if (res.ok) {
-      setForm({ employeeId: "", period: "", grossAmount: "", deductions: "", filePath: "", fileName: "" });
+      setForm({
+        employeeId: "", period: "", grossAmount: "", deductions: "", filePath: "", fileName: "",
+        paymentDueDate: "", epsAmount: "", arlAmount: "", pensionAmount: "",
+      });
       setCreating(false);
       await load();
     } else {
@@ -423,6 +433,26 @@ export default function NominaPage() {
               <input type="number" placeholder="Deducciones" value={form.deductions}
                 onChange={(e) => setForm({ ...form, deductions: e.target.value })}
                 className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
+              <div className="col-span-full">
+                <label className="mb-1 block text-xs font-bold text-[#64748B]">Fecha de pago programada (opcional, para Tesorería)</label>
+                <input type="date" value={form.paymentDueDate}
+                  onChange={(e) => setForm({ ...form, paymentDueDate: e.target.value })}
+                  className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
+              </div>
+              <div className="col-span-full">
+                <label className="mb-1 block text-xs font-bold text-[#64748B]">Desglose de aportes (opcional, para Contabilidad)</label>
+                <div className="grid grid-cols-3 gap-3">
+                  <input type="number" placeholder="EPS" value={form.epsAmount}
+                    onChange={(e) => setForm({ ...form, epsAmount: e.target.value })}
+                    className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
+                  <input type="number" placeholder="ARL" value={form.arlAmount}
+                    onChange={(e) => setForm({ ...form, arlAmount: e.target.value })}
+                    className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
+                  <input type="number" placeholder="Pensión" value={form.pensionAmount}
+                    onChange={(e) => setForm({ ...form, pensionAmount: e.target.value })}
+                    className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
+                </div>
+              </div>
               <div className="col-span-full flex items-center gap-3">
                 <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-[#CBD5E1] px-3 py-2 text-xs font-bold text-[#64748B] hover:border-[#27B1B8]">
                   <MdAttachFile size={16} />

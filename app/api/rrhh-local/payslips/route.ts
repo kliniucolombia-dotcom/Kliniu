@@ -1,6 +1,7 @@
 import { isRRHH } from "@/lib/roles";
 import { requireActiveUser, requireRRHH } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET(request: Request) {
   const access = await requireActiveUser();
@@ -34,13 +35,20 @@ export async function POST(request: Request) {
   if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
 
   const body = await request.json();
-  const { employeeId, period, grossAmount, deductions, fileUrl, fileName } = body as {
+  const {
+    employeeId, period, grossAmount, deductions, fileUrl, fileName,
+    paymentDueDate, epsAmount, arlAmount, pensionAmount,
+  } = body as {
     employeeId?: string;
     period?: string;
     grossAmount?: number;
     deductions?: number;
     fileUrl?: string;
     fileName?: string;
+    paymentDueDate?: string;
+    epsAmount?: number;
+    arlAmount?: number;
+    pensionAmount?: number;
   };
 
   if (!employeeId || !period?.trim() || typeof grossAmount !== "number" || typeof deductions !== "number") {
@@ -56,7 +64,12 @@ export async function POST(request: Request) {
       netAmount: grossAmount - deductions,
       fileUrl: fileUrl || null,
       fileName: fileName || null,
+      paymentDueDate: paymentDueDate ? new Date(paymentDueDate) : null,
+      epsAmount: typeof epsAmount === "number" ? epsAmount : null,
+      arlAmount: typeof arlAmount === "number" ? arlAmount : null,
+      pensionAmount: typeof pensionAmount === "number" ? pensionAmount : null,
     },
   });
+  await broadcastPanelUpdate("payslips");
   return Response.json(payslip, { status: 201 });
 }

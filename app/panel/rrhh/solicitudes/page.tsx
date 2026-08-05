@@ -7,6 +7,7 @@ import {
   MdAttachFile, MdHistory, MdArticle, MdCheck,
 } from "react-icons/md";
 import { DonutChart } from "@/app/panel/_components/mini-charts";
+import { SimpleSelect } from "@/app/panel/_components/simple-select";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type StaffUser = { id: string; fullName: string; role: string };
@@ -237,21 +238,30 @@ export default function SolicitudesPanelPage() {
               <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Buscar ticket, asunto o solicitante…"
                 className="w-full text-sm text-[#1A1A1A] outline-none" />
             </div>
-            <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-              className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1A1A1A]">
-              <option value="">Estado: Todos</option>
-              {Object.entries(STATUS_LABELS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-            </select>
-            <select value={categoryFilter} onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
-              className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1A1A1A]">
-              <option value="">Tipo: Todos</option>
-              {categories.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
-            </select>
-            <select value={priorityFilter} onChange={(e) => { setPriorityFilter(e.target.value); setPage(1); }}
-              className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1A1A1A]">
-              <option value="">Prioridad: Todas</option>
-              {Object.entries(PRIORITY_LABELS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-            </select>
+            <SimpleSelect
+              value={statusFilter}
+              onChange={(v) => { setStatusFilter(v); setPage(1); }}
+              options={[
+                { value: "", label: "Estado: Todos" },
+                ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label })),
+              ]}
+            />
+            <SimpleSelect
+              value={categoryFilter}
+              onChange={(v) => { setCategoryFilter(v); setPage(1); }}
+              options={[
+                { value: "", label: "Tipo: Todos" },
+                ...categories.map((c) => ({ value: c.name, label: c.name })),
+              ]}
+            />
+            <SimpleSelect
+              value={priorityFilter}
+              onChange={(v) => { setPriorityFilter(v); setPage(1); }}
+              options={[
+                { value: "", label: "Prioridad: Todas" },
+                ...Object.entries(PRIORITY_LABELS).map(([value, label]) => ({ value, label })),
+              ]}
+            />
             <button onClick={exportCsv}
               className="flex items-center gap-1.5 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm font-bold text-[#64748B] hover:bg-[#F8FAFC]">
               <MdFileDownload size={16} /> Exportar
@@ -461,14 +471,19 @@ export default function SolicitudesPanelPage() {
 
                 <div className="mt-5">
                   <p className="text-xs font-bold text-[#64748B]">Responsable</p>
-                  <select value={detail.responsible?.id || ""} onChange={(e) => {
-                    const chosen = staff.find((s) => s.id === e.target.value) || null;
-                    updateTicket({ responsibleId: e.target.value || null }, { responsible: chosen });
-                  }} disabled={saving}
-                    className="mt-1 w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1A1A1A]">
-                    <option value="">Sin asignar</option>
-                    {staff.map((s) => <option key={s.id} value={s.id}>{s.fullName}</option>)}
-                  </select>
+                  <SimpleSelect
+                    value={detail.responsible?.id || ""}
+                    onChange={(v) => {
+                      const chosen = staff.find((s) => s.id === v) || null;
+                      updateTicket({ responsibleId: v || null }, { responsible: chosen });
+                    }}
+                    className="mt-1 w-full"
+                    disabled={saving}
+                    options={[
+                      { value: "", label: "Sin asignar" },
+                      ...staff.map((s) => ({ value: s.id, label: s.fullName })),
+                    ]}
+                  />
                 </div>
 
                 <div className="mt-6">
@@ -500,10 +515,12 @@ export default function SolicitudesPanelPage() {
 
                 <div className="mt-6">
                   <p className="text-xs font-bold text-[#64748B]">Cambiar estado</p>
-                  <select value={pendingStatus} onChange={(e) => setPendingStatus(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#1A1A1A]">
-                    {Object.entries(STATUS_LABELS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-                  </select>
+                  <SimpleSelect
+                    value={pendingStatus}
+                    onChange={setPendingStatus}
+                    className="mt-1 w-full"
+                    options={Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))}
+                  />
                   <button onClick={() => updateTicket({ status: pendingStatus })} disabled={saving || pendingStatus === detail.status}
                     className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#27B1B8] px-3 py-2 text-sm font-bold text-white disabled:opacity-50">
                     <MdCheck size={16} /> Guardar cambio de estado

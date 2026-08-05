@@ -102,6 +102,10 @@ model User {
   productionOrdersApproved ProductionOrder[]  @relation("ProductionOrderApprovedBy")
   employee                 Employee?
   announcementReads        AnnouncementRead[]
+  rrhhNotificationReads    RrhhNotificationRead[]
+  employeeAssetsCreated    EmployeeAsset[]        @relation("EmployeeAssetCreatedBy")
+  employeeNotesAuthored    EmployeeNote[]         @relation("EmployeeNoteAuthor")
+  candidatesCreated        Candidate[]            @relation("CandidateCreatedBy")
   defaultCategoryFor       RequestCategory[]
   assignedTickets          Ticket[]           @relation("TicketResponsible")
   ticketComments           TicketComment[]
@@ -776,6 +780,8 @@ model Employee {
   benefitRequests     BenefitRequest[]
   certificateRequests CertificateRequest[]
   tickets             Ticket[]
+  assets              EmployeeAsset[]
+  notes               EmployeeNote[]
 
   @@index([departmentId])
   @@index([managerId])
@@ -1006,6 +1012,117 @@ model AnnouncementRead {
   @@index([userId])
 }
 
+/// CRM interno de RRHH: pipeline de reclutamiento. No tiene relación con Kommo
+/// (CRM de clientes/ventas) ni con Wati (IA de WhatsApp para ventas) — este es
+/// 100% interno, sin WhatsApp ni integraciones externas.
+model Candidate {
+  id        String          @id @default(cuid())
+  fullName  String
+  email     String?
+  phone     String?
+  position  String
+  stage     CandidateStage  @default(POSTULADO)
+  source    String?
+  notes     String?
+  resumeUrl String?
+  createdById String?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  createdBy User? @relation("CandidateCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([stage])
+}
+
+enum CandidateStage {
+  POSTULADO
+  ENTREVISTA
+  PRUEBA
+  OFERTA
+  CONTRATADO
+  DESCARTADO
+}
+
+/// Bitácora de seguimiento de RRHH sobre un colaborador ya contratado
+/// (no confundir con Candidate, que es antes de la contratación).
+model EmployeeNote {
+  id         String           @id @default(cuid())
+  employeeId String
+  authorId   String
+  type       EmployeeNoteType @default(SEGUIMIENTO)
+  note       String
+  createdAt  DateTime         @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  author   User     @relation("EmployeeNoteAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+}
+
+enum EmployeeNoteType {
+  SEGUIMIENTO
+  LLAMADO_ATENCION
+  RECONOCIMIENTO
+  OTRO
+}
+
+/// Dotación y equipos entregados a un colaborador (portátil, uniforme, EPP, celular…).
+/// No tiene relación con el stock de producto para venta, que vive en Warehouse.
+model EmployeeAsset {
+  id          String            @id @default(cuid())
+  employeeId  String
+  type        EmployeeAssetType @default(OTRO)
+  name        String
+  serial      String?
+  status      EmployeeAssetStatus @default(ENTREGADO)
+  deliveredAt DateTime
+  returnedAt  DateTime?
+  notes       String?
+  createdById String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  employee  Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  createdBy User?    @relation("EmployeeAssetCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([employeeId])
+  @@index([status])
+}
+
+enum EmployeeAssetType {
+  COMPUTO
+  MOVIL
+  UNIFORME
+  EPP
+  HERRAMIENTA
+  MOBILIARIO
+  VEHICULO
+  OTRO
+}
+
+enum EmployeeAssetStatus {
+  ENTREGADO
+  DEVUELTO
+  DANADO
+  PERDIDO
+}
+
+/// Estado de "leído" del feed de notificaciones de RRHH.
+/// El feed se deriva de los eventos reales ya existentes (solicitudes, tickets,
+/// anuncios); aquí solo se guarda qué marcó como leído cada usuario.
+/// `key` tiene la forma "<tipo>:<id>", ej. "ticket:abc123".
+model RrhhNotificationRead {
+  id     String   @id @default(cuid())
+  userId String
+  key    String
+  readAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+  @@index([userId])
+}
+
 model EmployeeDocument {
   id             String               @id @default(cuid())
   employeeId     String
@@ -1066,6 +1183,16 @@ model Payslip {
   fileUrl     String?
   fileName    String?
   createdAt   DateTime @default(now())
+
+  // Tesorería: flujo de caja de nómina
+  paymentDueDate DateTime?
+  isPaid         Boolean   @default(false)
+  paidAt         DateTime?
+
+  // Contabilidad: desglose legal de aportes. Null = sin desglose cargado (no inventar).
+  epsAmount     Int?
+  arlAmount     Int?
+  pensionAmount Int?
 
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 

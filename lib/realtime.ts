@@ -8,7 +8,9 @@ export type RealtimeResource =
   | "orders"
   | "timeoff"
   | "tickets"
-  | "wati";
+  | "wati"
+  | "notifications"
+  | "payslips";
 
 /** Notifica a los clientes suscritos al canal "panel-updates" que un recurso cambió. */
 export async function broadcastPanelUpdate(resource: RealtimeResource) {
