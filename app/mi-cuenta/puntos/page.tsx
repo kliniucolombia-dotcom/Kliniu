@@ -2,11 +2,16 @@ import { redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { getSessionFromCookies } from "@/lib/auth";
+import { getUserById } from "@/lib/users";
+import { getPanelLandingPath } from "@/lib/permissions";
 import { getUserKData, getKTierData, TIERS_K, getMonthlySpendForUser } from "@/lib/points";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mis Puntos K" };
+
+// Mismo mapeo de roles que /mi-cuenta: solo CUSTOMER puede ver esta página.
+const PANEL_ROLES = ["SELLER", "RRHH", "BODEGA", "DISENO", "MARKETING", "JEFE_VENTAS", "TESORERIA", "INGENIERIA"];
 
 const fmt = (n: number) =>
   n.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -14,6 +19,15 @@ const fmt = (n: number) =>
 export default async function MisPuntosPage() {
   const session = await getSessionFromCookies();
   if (!session) redirect("/login");
+
+  const user = await getUserById(session.userId);
+  if (!user) redirect("/login");
+
+  if (user.role === "ADMIN") redirect("/admin");
+  if (user.role === "SUPERADMIN") redirect("/panel");
+  if (user.role === "PACKING") redirect("/empaque");
+  if (user.role === "EMPLOYEE") redirect("/empleado");
+  if (PANEL_ROLES.includes(user.role)) redirect(await getPanelLandingPath(user));
 
   const kData = await getUserKData(session.userId);
   if (!kData) redirect("/login");
