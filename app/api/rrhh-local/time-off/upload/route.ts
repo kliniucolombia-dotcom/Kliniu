@@ -60,6 +60,9 @@ export async function GET(request: Request) {
 
   const path = new URL(request.url).searchParams.get("path");
   if (!path) return Response.json({ error: "path es obligatorio" }, { status: 400 });
+  if (path.includes("..") || path.includes("\\") || path.startsWith("/")) {
+    return Response.json({ error: "Ruta inválida" }, { status: 400 });
+  }
 
   if (!isRRHH(access.user)) {
     const employee = await prisma.employee.findUnique({ where: { userId: access.user.id } });

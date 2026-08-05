@@ -10,6 +10,9 @@ export async function GET(request: Request) {
 
   const path = new URL(request.url).searchParams.get("path");
   if (!path) return Response.json({ error: "path es obligatorio" }, { status: 400 });
+  if (path.includes("..") || path.includes("\\") || path.startsWith("/")) {
+    return Response.json({ error: "Ruta inválida" }, { status: 400 });
+  }
 
   if (!isRRHH(access.user) && !path.startsWith(`tickets/${access.user.id}/`)) {
     return Response.json({ error: "No autorizado" }, { status: 403 });
