@@ -19,7 +19,7 @@ const DEFAULT_SLIDES: {
     imageMobile: "/banners-responsive/BANNER FINALES-22.jpg",
     buttons: [
       { type: "primary", label: "Comprar ahora", sub: "Compra productos individuales con envio a todo colombia", href: "/categorias" },
-      { type: "advisor", label: "Cotiza ahora", sub: "Cotiza en volumen y obtén los mejores productos." },
+      { type: "advisor", label: "Cotiza ahora", sub: "Cotiza en volumen y obtén los mejores descuentos." },
     ],
   },
   {
@@ -270,7 +270,7 @@ export default function HeroCarousel({ banners = [] }: { banners?: (HeroSlideBan
                       Cotiza ahora
                     </span>
                     <span className="mt-1 block max-w-[16rem] text-[clamp(8px,0.65vw,12px)] font-semibold leading-tight text-[#075f68]/72">
-                      Cotiza en volumen y obtén los mejores productos.
+                      Cotiza en volumen y obtén los mejores descuentos.
                     </span>
                   </span>
                 </button>
