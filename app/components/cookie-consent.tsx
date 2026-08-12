@@ -33,7 +33,14 @@ export default function CookieConsent({ nonce }: { nonce?: string }) {
               <MdCookie size={20} />
             </span>
             <p className="flex-1 text-sm text-[#475569]">
-              Usamos cookies para analítica y publicidad. Puedes aceptarlas o rechazarlas.
+              Usamos cookies para analítica y publicidad. Puedes aceptarlas o rechazarlas.{" "}
+              <a
+                href="/politicas/cookies"
+                className="font-bold text-[#0C535B] underline underline-offset-2"
+              >
+                Ver política de cookies
+              </a>
+              .
             </p>
             <div className="flex shrink-0 gap-2">
               <button

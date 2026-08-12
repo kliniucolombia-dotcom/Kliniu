@@ -13,6 +13,16 @@ const STATIC_PATHS = [
   "/puntos",
   "/servicio-de-reparacion",
   "/politicas",
+  "/politicas/terminos-y-condiciones",
+  "/politicas/privacidad",
+  "/politicas/cookies",
+  "/politicas/garantia",
+  "/politicas/devoluciones",
+  "/politicas/retracto-y-reversion",
+  "/politicas/envios",
+  "/politicas/tratamiento-datos",
+  "/politicas/habeas-data",
+  "/politicas/pqrs",
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

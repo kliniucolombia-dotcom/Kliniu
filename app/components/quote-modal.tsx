@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { getVolumePricing } from "@/lib/volume-discounts";
+import { getVolumePricing, formatPrice, parsePriceValue } from "@/lib/volume-discounts";
 
 type Props = {
   open: boolean;
@@ -37,7 +37,12 @@ function buildReply(
   packTiers?: { label: string; qty: number; totalPrice: number }[],
 ): { text: string; cartAction: Msg["cartAction"] } {
   const pricing = getVolumePricing(precio, qty, productSlug, preciosPorCantidad, productSku, packTiers);
-  const { tier, unitPriceLabel, totalLabel } = pricing;
+  const { tier } = pricing;
+  // Sin descuento real (tier.pct === 0): usar el precio de lista tal cual llega,
+  // nunca los valores calculados por getVolumePricing — para cantidades sin tier
+  // aplicable, esta puede caer en un fallback legado con precios desactualizados.
+  const unitPriceLabel = tier.pct === 0 ? precio : pricing.unitPriceLabel;
+  const totalLabel = tier.pct === 0 ? formatPrice(parsePriceValue(precio) * qty) : pricing.totalLabel;
   const codigoLine = codigo ? `Código: ${codigo}\n` : "";
 
   let text = "";

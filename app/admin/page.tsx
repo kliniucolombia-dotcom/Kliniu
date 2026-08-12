@@ -722,6 +722,10 @@ function ColorVariantsEditor({
   const removeVariant = (i: number) => onChange(variants.filter((_, idx) => idx !== i));
   const updateVariant = (i: number, field: "color" | "label", value: string) =>
     onChange(variants.map((v, idx) => (idx === i ? { ...v, [field]: value } : v)));
+  const updateVariantPrice = (i: number, value: string) => {
+    const parsed = value.trim() === "" ? undefined : Math.max(0, Math.round(Number(value)));
+    onChange(variants.map((v, idx) => (idx === i ? { ...v, precioValor: Number.isFinite(parsed) ? parsed : undefined } : v)));
+  };
   const updateVariantImages = (i: number, images: string[]) =>
     onChange(variants.map((v, idx) => (idx === i ? { ...v, images, image: images[0] ?? "" } : v)));
 
@@ -750,7 +754,7 @@ function ColorVariantsEditor({
           </div>
         )}
         {variants.map((v, i) => (
-          <div key={i} className="grid gap-3 rounded-[1.2rem] border border-black/8 bg-white p-4 md:grid-cols-[56px_1fr_minmax(0,2fr)_auto]">
+          <div key={i} className="grid gap-3 rounded-[1.2rem] border border-black/8 bg-white p-4 md:grid-cols-[56px_1fr_140px_minmax(0,2fr)_auto]">
             {/* Color picker */}
             <div className="flex flex-col items-center gap-2">
               <label className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Color</label>
@@ -770,6 +774,18 @@ function ColorVariantsEditor({
                 value={v.label}
                 onChange={(e) => updateVariant(i, "label", e.target.value)}
                 placeholder="Ej. Blanco, Negro..."
+                className="w-full rounded-xl border border-black/10 bg-[#fafaf9] px-3 py-2.5 text-sm text-[#1f2328] outline-none focus:border-[#27B1B8]"
+              />
+            </label>
+            {/* Precio por color (opcional) */}
+            <label className="space-y-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Precio (opcional)</span>
+              <input
+                type="number"
+                min={0}
+                value={v.precioValor ?? ""}
+                onChange={(e) => updateVariantPrice(i, e.target.value)}
+                placeholder="Precio del producto"
                 className="w-full rounded-xl border border-black/10 bg-[#fafaf9] px-3 py-2.5 text-sm text-[#1f2328] outline-none focus:border-[#27B1B8]"
               />
             </label>

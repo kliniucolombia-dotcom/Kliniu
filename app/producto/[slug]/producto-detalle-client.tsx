@@ -13,6 +13,7 @@ import QuoteModal from "../../components/quote-modal";
 import ProductosCarousel from "../../components/productos-carousel";
 import { getVolumePricing, TIPO_VARIANTES, INSUMO_PACK_TIERS_BY_SKU, NO_PACK_SKUS, NO_UNIT_SALE_SKUS } from "@/lib/volume-discounts";
 import type { ProductoEspecificacion } from "../../data/catalog";
+import { formatearMoneda } from "../../data/catalog";
 
 const esInox = (nombre: string, categoria: string, descripcion?: string) =>
   /inoxidable/i.test(nombre) || /inoxidable/i.test(categoria) || /inoxidable/i.test(descripcion ?? "");
@@ -498,6 +499,17 @@ export default function ProductoDetalleClient() {
 
   const colorVarianteActiva = allVariants[colorActivo];
 
+  // Precio por variante de color: si el color activo trae su propio precio, se usa ese
+  // en vez del precio base del producto (ej. Antigoteo 800ml Blanco $54.900 / Negro $59.900).
+  const precioEfectivo =
+    colorVarianteActiva?.precioValor !== undefined
+      ? formatearMoneda(colorVarianteActiva.precioValor)
+      : producto?.precio ?? "";
+  const precioAnteriorEfectivo =
+    colorVarianteActiva?.precioAnteriorValor !== undefined
+      ? formatearMoneda(colorVarianteActiva.precioAnteriorValor)
+      : producto?.precioAnterior;
+
   // Código sin sello / con sello: prioriza el de la variante de tipo (ej. Xpert
   // Bolsa/Botella) o de color (ej. Antigoteo Blanco/Negro) sobre el del producto base.
   const codigoSinSello = tipoVarianteActiva?.sku ?? colorVarianteActiva?.sku ?? producto?.sku;
@@ -509,10 +521,14 @@ export default function ProductoDetalleClient() {
     : slug;
   const varianteSuffix = tiposVariantes?.[tipoActivo]?.slugSuffix ?? "";
   const preciosBase = varianteSuffix === "" ? producto?.preciosPorCantidad : undefined;
+  // Los packs de BD (× 12 und, × 100 und...) son del producto base (ej. Cierre Plástico).
+  // Al elegir un tipo con sufijo (ej. Cierre Metálico) no aplican — el precio de ese tipo
+  // viene del mapa legado PRODUCT_VOLUME_PRICES por effectiveSlug, no de la BD.
+  const packTiersEfectivos = varianteSuffix === "" ? producto?.paquetes : undefined;
 
   const handleAddToCart = () => {
     if (!producto || producto.puedeComprar === false) return;
-    const pricing = getVolumePricing(producto.precio, cantidad, effectiveSlug, preciosBase, producto.sku, producto.paquetes);
+    const pricing = getVolumePricing(precioEfectivo, cantidad, effectiveSlug, preciosBase, producto.sku, packTiersEfectivos);
     const varianteActiva = allVariants[colorActivo];
     const imagenSeleccionada = varianteActiva?.images?.[0] ?? varianteActiva?.image ?? producto.imagen;
     const colorLabel = allVariants.length > 0 ? varianteActiva?.label : undefined;
@@ -521,8 +537,8 @@ export default function ProductoDetalleClient() {
     addItem({
       id: itemId,
       nombre: producto.nombre,
-      precio: pricing.unitPriceLabel,
-      precioOriginal: pricing.hasDiscount ? producto.precio : undefined,
+      precio: pricing.hasDiscount ? pricing.unitPriceLabel : precioEfectivo,
+      precioOriginal: pricing.hasDiscount ? precioEfectivo : undefined,
       imagen: imagenSeleccionada,
       cantidad,
       colorLabel,
@@ -579,7 +595,7 @@ export default function ProductoDetalleClient() {
   const relacionados = products
     .filter((p) => p.categoria === producto.categoria && p.slug !== producto.slug)
     .slice(0, 4);
-  const volumePricing = getVolumePricing(producto.precio, cantidad, effectiveSlug, preciosBase, producto.sku, producto.paquetes);
+  const volumePricing = getVolumePricing(precioEfectivo, cantidad, effectiveSlug, preciosBase, producto.sku, packTiersEfectivos);
 
   const fichaTecnica: ProductoEspecificacion[] =
     producto.especificacionesTecnicas?.length
@@ -699,14 +715,14 @@ export default function ProductoDetalleClient() {
             {/* Price */}
             <div>
               <p className="text-3xl font-extrabold text-[#27B1B8]">
-                {(volumePricing.hasDiscount || varianteSuffix !== "") ? volumePricing.unitPriceLabel : producto.precio}
+                {(volumePricing.hasDiscount || varianteSuffix !== "") ? volumePricing.unitPriceLabel : precioEfectivo}
                 {volumePricing.hasDiscount && <span className="ml-1 text-base font-semibold text-[#27B1B8]/70">c/u</span>}
               </p>
               {volumePricing.hasDiscount && (
-                <p className="mt-0.5 text-sm text-[#aaa] line-through">{producto.precio}</p>
+                <p className="mt-0.5 text-sm text-[#aaa] line-through">{precioEfectivo}</p>
               )}
-              {!volumePricing.hasDiscount && producto.precioAnterior && (
-                <p className="mt-1 text-sm text-[#aaa] line-through">{producto.precioAnterior}</p>
+              {!volumePricing.hasDiscount && precioAnteriorEfectivo && (
+                <p className="mt-1 text-sm text-[#aaa] line-through">{precioAnteriorEfectivo}</p>
               )}
             </div>
 
@@ -793,7 +809,7 @@ export default function ProductoDetalleClient() {
                 )}
 
                 {/* Packs fijos */}
-                {((producto.paquetes && producto.paquetes.length > 0 ? producto.paquetes : INSUMO_PACK_TIERS_BY_SKU[producto.sku ?? ""])?.map((p) => ({ label: p.label, qty: p.qty })) ?? (NO_PACK_SKUS.has(producto.sku ?? "") ? [] : [
+                {((producto.paquetes && producto.paquetes.length > 0 ? producto.paquetes : INSUMO_PACK_TIERS_BY_SKU[producto.sku ?? ""])?.filter((p) => p.qty <= 100).map((p) => ({ label: p.label, qty: p.qty })) ?? (NO_PACK_SKUS.has(producto.sku ?? "") ? [] : [
                   { label: "× 12 und", qty: 12 },
                   { label: "× 48 und", qty: 48 },
                   { label: "× 100 und", qty: 100 },
@@ -1032,14 +1048,14 @@ export default function ProductoDetalleClient() {
         onClose={() => setQuoteOpen(false)}
         productoId={producto.slug}
         productoNombre={producto.nombre}
-        productoPrecio={producto.precio}
+        productoPrecio={precioEfectivo}
         productoImagen={producto.imagen}
         productoCodigo={codigoMostrado}
         cantidadSeleccionada={cantidad}
         productSlug={effectiveSlug}
         productSku={producto.sku}
         preciosPorCantidad={preciosBase}
-        packTiers={producto.paquetes}
+        packTiers={packTiersEfectivos}
         addItem={addItem}
       />
       <SiteFooter />

@@ -16,9 +16,11 @@ async function hasValidSession(request: NextRequest) {
 }
 
 function buildCsp(nonce: string) {
+  // React en desarrollo usa eval() para reconstruir callstacks. Nunca en producción.
+  const devEval = process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://va.vercel-scripts.com https://www.googletagmanager.com https://www.googleadservices.com`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${devEval} https://va.vercel-scripts.com https://www.googletagmanager.com https://www.googleadservices.com`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https://*.supabase.co https://www.google-analytics.com https://www.googletagmanager.com",
     "font-src 'self' data:",

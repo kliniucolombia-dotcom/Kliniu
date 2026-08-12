@@ -8,6 +8,7 @@ const colPoliticas = [
   { label: "Garantía de Productos", href: "/politicas/garantia" },
   { label: "Devoluciones", href: "/politicas/devoluciones" },
   { label: "Tratamiento de datos personales", href: "/politicas/tratamiento-datos" },
+  { label: "Ver todas las políticas", href: "/politicas" },
 ];
 
 const colContacto = [

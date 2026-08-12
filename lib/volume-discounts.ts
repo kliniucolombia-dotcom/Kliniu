@@ -25,10 +25,10 @@ export const PRODUCT_VOLUME_PRICES: Record<
   "dispensador-de-servilletas-napklin-blanco": { unit: 49899, tiers: [{ min: 100, unitPrice: 31199 }, { min: 48, unitPrice: 31799 }, { min: 12, unitPrice: 33799 }] },
   "dispensador-de-papel-higienico-hogar": { unit: 49899, tiers: [{ min: 100, unitPrice: 24000 }, { min: 48, unitPrice: 28300 }, { min: 12, unitPrice: 32100 }] },
   "dispensador-de-papel-higienico-institucional": { unit: 59899, tiers: [{ min: 100, unitPrice: 38900 }, { min: 48, unitPrice: 39700 }, { min: 12, unitPrice: 44099 }] },
-  "dispensador-papel-higienico-institucional--metalico": { unit: 69899, tiers: [{ min: 100, unitPrice: 52000 }, { min: 48, unitPrice: 52099 }, { min: 12, unitPrice: 55199 }] },
-  "dispensador-de-papel-higienico-institucional--metalico": { unit: 69899, tiers: [{ min: 100, unitPrice: 52000 }, { min: 48, unitPrice: 52099 }, { min: 12, unitPrice: 55199 }] },
+  "dispensador-papel-higienico-institucional--metalico": { unit: 69800, tiers: [{ min: 101, unitPrice: 40900 }, { min: 100, unitPrice: 52092 }, { min: 12, unitPrice: 55158 }] },
+  "dispensador-de-papel-higienico-institucional--metalico": { unit: 69800, tiers: [{ min: 101, unitPrice: 40900 }, { min: 100, unitPrice: 52092 }, { min: 12, unitPrice: 55158 }] },
   "dispensador-de-toalla-institucional": { unit: 56899, tiers: [{ min: 100, unitPrice: 34299 }, { min: 48, unitPrice: 37800 }, { min: 12, unitPrice: 41700 }] },
-  "dispensador-de-toalla-institucional--metalico": { unit: 69899, tiers: [{ min: 100, unitPrice: 39999 }, { min: 48, unitPrice: 40199 }, { min: 12, unitPrice: 53600 }] },
+  "dispensador-de-toalla-institucional--metalico": { unit: 69800, tiers: [{ min: 101, unitPrice: 33900 }, { min: 100, unitPrice: 40192 }, { min: 12, unitPrice: 53617 }] },
   "dispensador-de-toallas-center-pull": { unit: 99900, tiers: [{ min: 100, unitPrice: 76299 }, { min: 48, unitPrice: 80699 }, { min: 12, unitPrice: 85800 }] },
   "dispensador-de-crema-dental-5-cepillos": { unit: 49899, tiers: [{ min: 100, unitPrice: 24000 }, { min: 48, unitPrice: 26799 }, { min: 12, unitPrice: 33300 }] },
   "dispensador-de-crema-dental-4-cepillos": { unit: 49899, tiers: [{ min: 100, unitPrice: 24000 }, { min: 48, unitPrice: 26799 }, { min: 12, unitPrice: 33300 }] },
@@ -202,7 +202,7 @@ export function getVolumePricing(
   const insumoPacks = packTiers && packTiers.length > 0 ? packTiers : (productSku ? INSUMO_PACK_TIERS_BY_SKU[productSku] : undefined);
   if (insumoPacks) {
     const baseUnitPrice = parsePriceValue(price);
-    const match = insumoPacks.find((t) => quantity === t.qty);
+    const match = [...insumoPacks].sort((a, b) => b.qty - a.qty).find((t) => quantity >= t.qty);
     if (match) {
       const discountedUnitPrice = match.totalPrice / match.qty;
       return {
