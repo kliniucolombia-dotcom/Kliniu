@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { SimpleSelect } from "../../_components/simple-select";
 import SyncStockButton from "../sync-stock-button";
@@ -57,6 +58,7 @@ export default function OdooProductsPage() {
   const [view, setView] = useState<"grid" | "list">("list");
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(50);
+  const [selected, setSelected] = useState<OdooProduct | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -251,7 +253,12 @@ export default function OdooProductsPage() {
                   qty <= 0 ? "bg-[#FEE2E2] text-[#DC2626]" : qty <= 10 ? "bg-[#FEF3C7] text-[#D97706]" : "bg-[#DCFCE7] text-[#16A34A]";
                 const label = qty <= 0 ? "Sin stock" : qty <= 10 ? "Stock bajo" : "En stock";
                 return (
-                  <div key={p.id} className="rounded-2xl border border-[#E2E8F0] bg-white p-4">
+                  <button
+                    type="button"
+                    key={p.id}
+                    onClick={() => setSelected(p)}
+                    className="rounded-2xl border border-[#E2E8F0] bg-white p-4 text-left transition-colors hover:border-[#27B1B8]"
+                  >
                     <div className="mb-3 aspect-square overflow-hidden rounded-xl border border-[#E2E8F0] bg-[#F8FAFC]">
                       <img
                         src={`/api/odoo/products/image/${p.id}`}
@@ -269,7 +276,7 @@ export default function OdooProductsPage() {
                       <span className="text-sm font-black text-[#1A1A1A]">{fmt(p.list_price ?? 0)}</span>
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${tone}`}>{label}</span>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -299,7 +306,11 @@ export default function OdooProductsPage() {
                         qty <= 0 ? "bg-[#FEE2E2] text-[#DC2626]" : qty <= 10 ? "bg-[#FEF3C7] text-[#D97706]" : "bg-[#DCFCE7] text-[#16A34A]";
                       const label = qty <= 0 ? "Sin stock" : qty <= 10 ? "Stock bajo" : "En stock";
                       return (
-                        <tr key={p.id} className="transition-colors hover:bg-[#F8FAFC]">
+                        <tr
+                          key={p.id}
+                          onClick={() => setSelected(p)}
+                          className="cursor-pointer transition-colors hover:bg-[#F8FAFC]"
+                        >
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
                               <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-[#E2E8F0] bg-[#F8FAFC]">
@@ -394,6 +405,80 @@ export default function OdooProductsPage() {
           </div>
         </>
       )}
+
+      {selected && <ProductModal product={selected} onClose={() => setSelected(null)} />}
     </div>
+  );
+}
+
+function ProductModal({ product, onClose }: { product: OdooProduct; onClose: () => void }) {
+  const qty = product.qty_available ?? 0;
+  const tone =
+    qty <= 0 ? "bg-[#FEE2E2] text-[#DC2626]" : qty <= 10 ? "bg-[#FEF3C7] text-[#D97706]" : "bg-[#DCFCE7] text-[#16A34A]";
+  const label = qty <= 0 ? "Sin stock" : qty <= 10 ? "Stock bajo" : "En stock";
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-[0_24px_64px_rgba(0,0,0,0.28)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-[#E2E8F0] px-5 py-4">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8]">ID Odoo {product.id}</p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-[#64748B] hover:bg-[#F8FAFC]"
+            aria-label="Cerrar"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="flex gap-4 p-5">
+          <div className="h-32 w-32 shrink-0 overflow-hidden rounded-xl border border-[#E2E8F0] bg-[#F8FAFC]">
+            <img
+              src={`/api/odoo/products/image/${product.id}`}
+              alt={product.name}
+              className="h-full w-full object-cover"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+              }}
+            />
+          </div>
+          <div className="min-w-0 flex-1 space-y-2">
+            <p className="text-base font-black leading-tight text-[#1A1A1A]">{product.name}</p>
+            <p className="text-xs font-semibold text-[#94A3B8]">SKU: {product.default_code || "—"}</p>
+            <p className="text-xs text-[#64748B]">{getCategoryName(product.categ_id)}</p>
+            <span className={`inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-bold ${tone}`}>{label}</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-3 border-t border-[#E2E8F0] px-5 py-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">Precio</p>
+            <p className="mt-1 text-sm font-black text-[#1A1A1A]">{fmt(product.list_price ?? 0)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">Stock</p>
+            <p className="mt-1 text-sm font-black text-[#1A1A1A]">{qty}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">Pronóstico</p>
+            <p className="mt-1 text-sm font-black text-[#1A1A1A]">{product.virtual_available ?? 0}</p>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
