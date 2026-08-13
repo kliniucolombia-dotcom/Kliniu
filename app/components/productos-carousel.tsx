@@ -103,7 +103,7 @@ export default function ProductosCarousel({
               key={p.slug}
               className="interactive-lift flex h-[370px] w-[200px] min-w-[200px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-black/8 bg-white 2xl:w-[190px] 2xl:min-w-[190px]"
             >
-              <div className="flex h-40 items-center justify-center bg-white p-4">
+              <Link href={`/producto/${p.slug}`} className="flex h-40 items-center justify-center bg-white p-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={p.imagen}
@@ -111,14 +111,14 @@ export default function ProductosCarousel({
                   className="image-lift max-h-32 w-auto object-contain"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
                 />
-              </div>
+              </Link>
               <div className="flex flex-1 flex-col p-3">
                 <p className="h-5 line-clamp-1 text-[11px] text-[#999]">
                   {p.descripcion}
                 </p>
-                <p className="mt-1.5 h-[54px] line-clamp-3 text-sm font-semibold leading-snug text-[#111]">
+                <Link href={`/producto/${p.slug}`} className="mt-1.5 h-[54px] line-clamp-3 text-sm font-semibold leading-snug text-[#111]">
                   {p.nombre}
-                </p>
+                </Link>
                 <p className="mt-1.5 h-6 text-base font-bold" style={{ color: "#0C535B" }}>{p.precio}</p>
                 <button
                   type="button"

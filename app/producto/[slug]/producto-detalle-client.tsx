@@ -28,15 +28,6 @@ const trustBadges = [
     label: "Envío",
     sub: "a todo Colombia",
   },
-  {
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-5"/>
-      </svg>
-    ),
-    label: "Devoluciones",
-    sub: "Fáciles",
-  },
 ];
 
 const trustBar = [
