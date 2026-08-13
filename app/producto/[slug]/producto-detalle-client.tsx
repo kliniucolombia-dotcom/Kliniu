@@ -919,8 +919,8 @@ export default function ProductoDetalleClient() {
               )}
             </div>
 
-            {/* Trust badges — horizontal row */}
-            <div className="flex divide-x divide-black/8 overflow-hidden rounded-2xl border border-black/8 bg-[#f8fafa]">
+            {/* Trust badges — half width */}
+            <div className="flex divide-x divide-black/8 overflow-hidden rounded-2xl border border-black/8 bg-[#f8fafa] w-1/2">
               {trustBadges.map((b) => (
                 <div key={b.label} className="flex flex-1 items-center gap-2.5 px-4 py-3">
                   <span className="shrink-0 text-[#27B1B8]">{b.icon}</span>
