@@ -12,6 +12,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "../components/cart-provider";
+import { useSaleMode } from "../components/sale-mode-provider";
+import WhatsAppBuyCTA, { WHATSAPP_ICON } from "../components/whatsapp-buy-cta";
 import AsesorBanner from "../components/asesor-banner";
 import AdvisorCtaCard from "../components/advisor-cta-card";
 import { useProducts } from "../components/products-provider";
@@ -117,6 +119,7 @@ function DropdownFiltro({
 /* ─────────────────────── Tarjeta Producto ─────────────────────── */
 function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
   const { addItem } = useCart();
+  const saleMode = useSaleMode();
   const router = useRouter();
   const [agregado, setAgregado] = useState(false);
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
@@ -233,24 +236,35 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
           >
             Ver detalle
           </Link>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              handleAddToCart();
-            }}
-            disabled={producto.puedeComprar === false}
-            aria-label={`Agregar ${producto.nombre} al carrito`}
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
-              agregado ? "bg-[#d4621a] text-white" : "bg-[#F07826] text-white hover:bg-[#d4621a]"
-            }`}
-          >
-            {agregado ? (
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
-            ) : (
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-            )}
-          </button>
+          {saleMode === "whatsapp" ? (
+            <WhatsAppBuyCTA
+              nombre={producto.nombre}
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
+                producto.puedeComprar === false ? "pointer-events-none bg-[#e6e7ea] text-[#7a8087]" : "bg-[#25D366] text-white hover:bg-[#128C7E]"
+              }`}
+            >
+              {WHATSAPP_ICON}
+            </WhatsAppBuyCTA>
+          ) : (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleAddToCart();
+              }}
+              disabled={producto.puedeComprar === false}
+              aria-label={`Agregar ${producto.nombre} al carrito`}
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
+                agregado ? "bg-[#d4621a] text-white" : "bg-[#F07826] text-white hover:bg-[#d4621a]"
+              }`}
+            >
+              {agregado ? (
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
+              ) : (
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </article>
