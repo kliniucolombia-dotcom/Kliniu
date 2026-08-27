@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/site";
 import { prisma } from "@/lib/prisma";
 import { runWatiAssistant } from "@/lib/wati-ai";
 import { sendWatiFileFromUrl, sendWatiMessage } from "@/lib/wati";
@@ -25,13 +26,13 @@ type ConversationHistory = {
 
 const COMBO_MEDIA = {
   image: {
-    url: "https://kliniu.vercel.app/whatsapp/combo-premium-kliniu.jpg",
+    url: `${SITE_URL}/whatsapp/combo-premium-kliniu.jpg`,
     fileName: "combo-premium-kliniu.jpg",
     caption: "📷 Combo Premium Kliniu · $309.900 COP",
     panelMessage: "📷 Imagen del Combo Premium enviada.",
   },
   video: {
-    url: "https://kliniu.vercel.app/whatsapp/combo-premium-kliniu.mp4",
+    url: `${SITE_URL}/whatsapp/combo-premium-kliniu.mp4`,
     fileName: "combo-premium-kliniu.mp4",
     caption: "🎥 Mira el Combo Premium Kliniu en detalle.",
     panelMessage: "🎥 Video del Combo Premium enviado.",
