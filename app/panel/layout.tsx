@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   MdDashboard, MdInventory2, MdCategory, MdBarChart, MdCampaign, MdAttachMoney, MdSettings,
   MdCalculate, MdDescription, MdPrecisionManufacturing, MdAssignment, MdPeople, MdImage, MdVerified,
@@ -134,7 +134,6 @@ const NAV: NavItem[] = [
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router   = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [visibleModules, setVisibleModules] = useState<Set<string> | null>(null);
@@ -171,7 +170,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-    window.location.href = "/login";
+    window.location.replace("/login");
   };
 
   return (

@@ -6,6 +6,7 @@ import "./globals.css";
 import { CartProvider } from "./components/cart-provider";
 import { ProductsProvider } from "./components/products-provider";
 import { SaleModeProvider } from "./components/sale-mode-provider";
+import AuthHistoryGuard from "./components/auth-history-guard";
 import ConditionalShell from "./components/conditional-shell";
 import CookieConsent from "./components/cookie-consent";
 import { getProducts } from "@/lib/products";
@@ -60,6 +61,7 @@ export default async function RootLayout({
       data-scroll-behavior="smooth"
     >
       <body className="min-h-full flex flex-col bg-[#050C14]">
+        <AuthHistoryGuard />
         <SaleModeProvider initialMode={initialSaleMode}>
           <ProductsProvider initialProducts={initialProducts}>
             <CartProvider

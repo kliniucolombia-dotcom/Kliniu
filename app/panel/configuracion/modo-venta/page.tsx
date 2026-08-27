@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { getSessionFromCookies } from "@/lib/auth";
 import { getUserById } from "@/lib/users";
 import { isSuperAdmin } from "@/lib/roles";
-import { getSaleMode } from "@/lib/sale-mode";
 import ModoVentaClient from "./modo-venta-client";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +14,5 @@ export default async function ModoVentaPage() {
   const user = await getUserById(session.userId);
   if (!user || !isSuperAdmin(user)) redirect("/panel/sin-acceso");
 
-  const mode = await getSaleMode();
-
-  return <ModoVentaClient initialMode={mode} />;
+  return <ModoVentaClient />;
 }

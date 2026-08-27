@@ -1,10 +1,19 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
 type SaleMode = "cart" | "whatsapp";
 
-const SaleModeContext = createContext<SaleMode>("cart");
+type SaleModeContextValue = {
+  mode: SaleMode;
+  updateMode: (mode: SaleMode) => void;
+};
+
+const SALE_MODE_CHANNEL = "kliniu-sale-mode";
+const SaleModeContext = createContext<SaleModeContextValue>({
+  mode: "cart",
+  updateMode: () => {},
+});
 
 export function SaleModeProvider({
   children,
@@ -14,19 +23,48 @@ export function SaleModeProvider({
   initialMode?: SaleMode;
 }) {
   const [mode, setMode] = useState<SaleMode>(initialMode);
+  const channelRef = useRef<BroadcastChannel | null>(null);
+  const receivedExternalUpdate = useRef(false);
+
+  const updateMode = useCallback((nextMode: SaleMode) => {
+    setMode(nextMode);
+    channelRef.current?.postMessage(nextMode);
+  }, []);
 
   useEffect(() => {
     fetch("/api/config/sale-mode")
       .then((r) => r.json())
       .then((d: { mode?: SaleMode }) => {
-        if (d.mode === "whatsapp" || d.mode === "cart") setMode(d.mode);
+        if (!receivedExternalUpdate.current && (d.mode === "whatsapp" || d.mode === "cart")) setMode(d.mode);
       })
       .catch(() => {});
   }, []);
 
-  return <SaleModeContext.Provider value={mode}>{children}</SaleModeContext.Provider>;
+  useEffect(() => {
+    if (!("BroadcastChannel" in window)) return;
+
+    const channel = new BroadcastChannel(SALE_MODE_CHANNEL);
+    channelRef.current = channel;
+    channel.onmessage = (event: MessageEvent<unknown>) => {
+      if (event.data === "whatsapp" || event.data === "cart") {
+        receivedExternalUpdate.current = true;
+        setMode(event.data);
+      }
+    };
+
+    return () => {
+      channel.close();
+      channelRef.current = null;
+    };
+  }, []);
+
+  return <SaleModeContext.Provider value={{ mode, updateMode }}>{children}</SaleModeContext.Provider>;
 }
 
 export function useSaleMode() {
-  return useContext(SaleModeContext);
+  return useContext(SaleModeContext).mode;
+}
+
+export function useUpdateSaleMode() {
+  return useContext(SaleModeContext).updateMode;
 }

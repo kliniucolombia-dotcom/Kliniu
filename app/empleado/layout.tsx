@@ -76,7 +76,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
 
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-    window.location.href = "/login";
+    window.location.replace("/login");
   };
 
   const nav = isManager

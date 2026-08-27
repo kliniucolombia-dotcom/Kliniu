@@ -544,7 +544,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
                     onClick={async () => {
                       setMasAbierto(false);
                       await fetch("/api/auth/logout", { method: "POST" });
-                      window.location.href = "/login";
+                      window.location.replace("/login");
                     }}
                     className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-red-500 transition-colors hover:bg-red-50"
                   >

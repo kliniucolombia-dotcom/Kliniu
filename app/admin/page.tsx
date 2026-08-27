@@ -1202,8 +1202,7 @@ export default function AdminPage() {
     } finally {
       setIsAuthenticated(false);
       setAdminName("");
-      router.replace("/login?next=/admin");
-      router.refresh();
+      window.location.replace("/login");
     }
   };
 

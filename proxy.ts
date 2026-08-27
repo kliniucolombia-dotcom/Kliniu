@@ -34,6 +34,19 @@ function buildCsp(nonce: string) {
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 const WEBHOOK_PREFIXES = ["/api/webhooks/", "/api/kommo/webhook", "/api/kommo/assistant", "/api/wati/webhook"];
+const PROTECTED_PREFIXES = [
+  "/mi-cuenta",
+  "/panel",
+  "/empaque",
+  "/admin",
+  "/empleado",
+  "/imprimir-cotizacion",
+  "/nomina/desprendible",
+];
+
+function isProtectedPath(pathname: string) {
+  return PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
 
 function isCrossOriginMutation(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -54,10 +67,7 @@ export async function proxy(request: NextRequest) {
   const hasSession = await hasValidSession(request);
   const { pathname } = request.nextUrl;
 
-  if (
-    (pathname.startsWith("/mi-cuenta") || pathname.startsWith("/panel") || pathname.startsWith("/empaque") || pathname.startsWith("/admin") || pathname.startsWith("/empleado")) &&
-    !hasSession
-  ) {
+  if (isProtectedPath(pathname) && !hasSession) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
@@ -76,6 +86,9 @@ export async function proxy(request: NextRequest) {
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);
+  if (isProtectedPath(pathname)) {
+    response.headers.set("Cache-Control", "no-store, max-age=0, must-revalidate");
+  }
   return response;
 }
 

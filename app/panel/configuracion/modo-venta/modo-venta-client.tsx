@@ -2,16 +2,16 @@
 
 import { useState } from "react";
 import { MdShoppingCart, MdChat, MdCheckCircle } from "react-icons/md";
+import { useSaleMode, useUpdateSaleMode } from "@/app/components/sale-mode-provider";
 
-type SaleMode = "cart" | "whatsapp";
-
-export default function ModoVentaClient({ initialMode }: { initialMode: SaleMode }) {
-  const [mode, setMode] = useState<SaleMode>(initialMode);
+export default function ModoVentaClient() {
+  const mode = useSaleMode();
+  const updateSaleMode = useUpdateSaleMode();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const changeMode = async (next: SaleMode) => {
+  const changeMode = async (next: "cart" | "whatsapp") => {
     if (next === mode || saving) return;
     setSaving(true);
     setError(null);
@@ -25,7 +25,7 @@ export default function ModoVentaClient({ initialMode }: { initialMode: SaleMode
       });
       if (!res.ok) throw new Error();
       const data = await res.json();
-      setMode(data.mode);
+      updateSaleMode(data.mode);
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2000);
     } catch {
