@@ -129,7 +129,7 @@ export default function ProductosCarousel({
                     className="shine-sweep mt-auto flex w-full items-center justify-center gap-1.5 rounded-full bg-[#25D366] py-2 text-xs font-bold text-white hover:bg-[#128C7E]"
                   >
                     {WHATSAPP_ICON}
-                    Contactar por WhatsApp
+                    WhatsApp
                   </WhatsAppBuyCTA>
                 ) : (
                   <button

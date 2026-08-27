@@ -38,7 +38,7 @@ function AddOutletButton({ product, featured = false }: { product: ProductoCatal
         }`}
       >
         {WHATSAPP_ICON}
-        Contactar por WhatsApp
+        WhatsApp
       </WhatsAppBuyCTA>
     );
   }
