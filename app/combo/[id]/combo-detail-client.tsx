@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useCart } from "../../components/cart-provider";
+import { useSaleMode } from "../../components/sale-mode-provider";
+import WhatsAppBuyCTA, { WHATSAPP_ICON } from "../../components/whatsapp-buy-cta";
 
 type Producto = {
   nombre: string;
@@ -30,6 +32,7 @@ export default function ComboDetailClient({
   galleryImages: string[];
 }) {
   const { addItem } = useCart();
+  const saleMode = useSaleMode();
   const [active, setActive] = useState(0);
   const [added, setAdded] = useState(false);
   const mobileScrollRef = useRef<HTMLDivElement>(null);
@@ -224,15 +227,25 @@ export default function ComboDetailClient({
               </ul>
             </div>
 
-            <button
-              type="button"
-              onClick={handleAdd}
-              className={`shine-sweep mt-2 w-full rounded-full py-3 text-sm font-bold transition-colors ${
-                added ? "bg-[#d4621a] text-white" : "bg-[#F07826] text-white hover:bg-[#d4621a]"
-              }`}
-            >
-              {added ? "✓ Agregado" : "Agregar al carrito"}
-            </button>
+            {saleMode === "whatsapp" ? (
+              <WhatsAppBuyCTA
+                nombre={combo.nombre}
+                className="shine-sweep mt-2 flex w-full items-center justify-center gap-1.5 rounded-full bg-[#25D366] py-3 text-sm font-bold text-white hover:bg-[#128C7E]"
+              >
+                {WHATSAPP_ICON}
+                Contactar por WhatsApp
+              </WhatsAppBuyCTA>
+            ) : (
+              <button
+                type="button"
+                onClick={handleAdd}
+                className={`shine-sweep mt-2 w-full rounded-full py-3 text-sm font-bold transition-colors ${
+                  added ? "bg-[#d4621a] text-white" : "bg-[#F07826] text-white hover:bg-[#d4621a]"
+                }`}
+              >
+                {added ? "✓ Agregado" : "Agregar al carrito"}
+              </button>
+            )}
           </div>
         </div>
       </section>

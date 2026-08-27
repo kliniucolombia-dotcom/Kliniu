@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useCart } from "./cart-provider";
+import { useSaleMode } from "./sale-mode-provider";
+import WhatsAppBuyCTA, { WHATSAPP_ICON } from "./whatsapp-buy-cta";
 import type { StoreProduct } from "@/lib/products";
 
 export default function ProductosCarousel({
@@ -11,6 +13,7 @@ export default function ProductosCarousel({
   products: StoreProduct[];
 }) {
   const { addItem } = useCart();
+  const saleMode = useSaleMode();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScroll, setCanScroll] = useState(false);
   const [addedSlugs, setAddedSlugs] = useState<Set<string>>(new Set());
@@ -120,17 +123,27 @@ export default function ProductosCarousel({
                   {p.nombre}
                 </Link>
                 <p className="mt-1.5 h-6 text-base font-bold" style={{ color: "#0C535B" }}>{p.precio}</p>
-                <button
-                  type="button"
-                  onClick={() => handleAdd(p)}
-                  className={`shine-sweep mt-auto w-full rounded-full py-2 text-xs font-bold transition-colors ${
-                    added
-                      ? "bg-[#d4621a] text-white"
-                      : "bg-[#F07826] text-white hover:bg-[#d4621a]"
-                  }`}
-                >
-                  {added ? "✓ Agregado" : "Agregar al carrito"}
-                </button>
+                {saleMode === "whatsapp" ? (
+                  <WhatsAppBuyCTA
+                    nombre={p.nombre}
+                    className="shine-sweep mt-auto flex w-full items-center justify-center gap-1.5 rounded-full bg-[#25D366] py-2 text-xs font-bold text-white hover:bg-[#128C7E]"
+                  >
+                    {WHATSAPP_ICON}
+                    Contactar por WhatsApp
+                  </WhatsAppBuyCTA>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleAdd(p)}
+                    className={`shine-sweep mt-auto w-full rounded-full py-2 text-xs font-bold transition-colors ${
+                      added
+                        ? "bg-[#d4621a] text-white"
+                        : "bg-[#F07826] text-white hover:bg-[#d4621a]"
+                    }`}
+                  >
+                    {added ? "✓ Agregado" : "Agregar al carrito"}
+                  </button>
+                )}
                 <Link
                   href={`/producto/${p.slug}`}
                   className="mt-1.5 w-full rounded-full border border-black/10 py-2 text-center text-xs font-semibold text-[#444] transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"

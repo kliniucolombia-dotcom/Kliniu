@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "./cart-provider";
+import { useSaleMode } from "./sale-mode-provider";
+import WhatsAppBuyCTA, { WHATSAPP_ICON } from "./whatsapp-buy-cta";
 
 type Props = {
   id: string;
@@ -19,6 +21,7 @@ export default function HoverCartControl({
   disabled = false,
 }: Props) {
   const { addItem } = useCart();
+  const saleMode = useSaleMode();
   const [added, setAdded] = useState(false);
   const [cantidad, setCantidad] = useState(1);
   const timeoutRef = useRef<number | null>(null);
@@ -47,6 +50,31 @@ export default function HoverCartControl({
       setAdded(false);
     }, 1400);
   };
+
+  if (saleMode === "whatsapp") {
+    if (disabled) {
+      return (
+        <div className="absolute bottom-4 right-4 z-20">
+          <span
+            aria-label="Sin stock"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/85 bg-[#e6e7ea] text-[#7a8087] shadow-[0_14px_28px_rgba(15,23,42,0.18)]"
+          >
+            ✕
+          </span>
+        </div>
+      );
+    }
+    return (
+      <div className="absolute bottom-4 right-4 z-20">
+        <WhatsAppBuyCTA
+          nombre={nombre}
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#25D366] bg-[#25D366] text-white shadow-[0_14px_28px_rgba(15,23,42,0.18)] transition-all duration-250 ease-out hover:-translate-y-0.5 hover:bg-[#128C7E] hover:shadow-[0_18px_34px_rgba(15,23,42,0.22)]"
+        >
+          {WHATSAPP_ICON}
+        </WhatsAppBuyCTA>
+      </div>
+    );
+  }
 
   return (
     <div className="group/cart absolute bottom-4 right-4 z-20">

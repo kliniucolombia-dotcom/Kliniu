@@ -5,12 +5,14 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { CartProvider } from "./components/cart-provider";
 import { ProductsProvider } from "./components/products-provider";
+import { SaleModeProvider } from "./components/sale-mode-provider";
 import ConditionalShell from "./components/conditional-shell";
 import CookieConsent from "./components/cookie-consent";
 import { getProducts } from "@/lib/products";
 import { getSessionFromCookies } from "@/lib/auth";
 import { getUserById } from "@/lib/users";
 import { getCartItemsForUser } from "@/lib/cart";
+import { getSaleMode } from "@/lib/sale-mode";
 import { SITE_URL } from "@/lib/site";
 
 const figtree = Figtree({
@@ -35,10 +37,11 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [initialProducts, session, nonce] = await Promise.all([
+  const [initialProducts, session, nonce, initialSaleMode] = await Promise.all([
     getProducts(),
     getSessionFromCookies(),
     headers().then((h) => h.get("x-nonce") ?? undefined),
+    getSaleMode(),
   ]);
   const [currentUser, initialCartItems] = session
     ? await Promise.all([
@@ -57,23 +60,25 @@ export default async function RootLayout({
       data-scroll-behavior="smooth"
     >
       <body className="min-h-full flex flex-col bg-[#050C14]">
-        <ProductsProvider initialProducts={initialProducts}>
-          <CartProvider
-            key={cartProviderKey}
-            initialItems={initialCartItems}
-            currentUserId={currentUser?.id ?? null}
-          >
-            <ConditionalShell
-              currentUser={
-                currentUser
-                  ? { fullName: currentUser.fullName, role: currentUser.role }
-                  : null
-              }
+        <SaleModeProvider initialMode={initialSaleMode}>
+          <ProductsProvider initialProducts={initialProducts}>
+            <CartProvider
+              key={cartProviderKey}
+              initialItems={initialCartItems}
+              currentUserId={currentUser?.id ?? null}
             >
-              {children}
-            </ConditionalShell>
-          </CartProvider>
-        </ProductsProvider>
+              <ConditionalShell
+                currentUser={
+                  currentUser
+                    ? { fullName: currentUser.fullName, role: currentUser.role }
+                    : null
+                }
+              >
+                {children}
+              </ConditionalShell>
+            </CartProvider>
+          </ProductsProvider>
+        </SaleModeProvider>
         <SpeedInsights />
         <CookieConsent nonce={nonce} />
       </body>

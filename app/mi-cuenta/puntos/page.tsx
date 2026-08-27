@@ -21,7 +21,7 @@ export default async function MisPuntosPage() {
   if (!session) redirect("/login");
 
   const user = await getUserById(session.userId);
-  if (!user) redirect("/login");
+  if (!user) redirect("/api/auth/session-expired");
 
   if (user.role === "ADMIN") redirect("/admin");
   if (user.role === "SUPERADMIN") redirect("/panel");
@@ -30,7 +30,7 @@ export default async function MisPuntosPage() {
   if (PANEL_ROLES.includes(user.role)) redirect(await getPanelLandingPath(user));
 
   const kData = await getUserKData(session.userId);
-  if (!kData) redirect("/login");
+  if (!kData) redirect("/mi-cuenta");
 
   const tierData = getKTierData(kData.currentTier);
   const nextTierIdx = TIERS_K.findIndex((t) => t.key === kData.currentTier) + 1;

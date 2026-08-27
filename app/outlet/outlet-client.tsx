@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "../components/cart-provider";
+import { useSaleMode } from "../components/sale-mode-provider";
+import WhatsAppBuyCTA, { WHATSAPP_ICON } from "../components/whatsapp-buy-cta";
 import { useProducts } from "../components/products-provider";
 import type { ProductoCatalogo } from "../data/catalog";
 import SiteFooter from "../components/site-footer";
@@ -17,7 +19,29 @@ function hasVisibleDiscount(product: ProductoCatalogo) {
 
 function AddOutletButton({ product, featured = false }: { product: ProductoCatalogo; featured?: boolean }) {
   const { addItem } = useCart();
+  const saleMode = useSaleMode();
   const [added, setAdded] = useState(false);
+
+  if (saleMode === "whatsapp") {
+    if (product.puedeComprar === false) {
+      return (
+        <span className={`inline-flex items-center justify-center rounded-full bg-slate-600 font-bold text-slate-400 ${featured ? "min-h-10 w-full px-5 py-2.5 text-sm" : "mt-3 min-h-10 w-full px-4 py-2.5 text-sm"}`}>
+          Sin stock
+        </span>
+      );
+    }
+    return (
+      <WhatsAppBuyCTA
+        nombre={product.nombre}
+        className={`shine-sweep inline-flex items-center justify-center gap-1.5 rounded-full bg-[#25D366] font-bold text-white transition-all duration-200 hover:bg-[#128C7E] ${
+          featured ? "min-h-10 w-full px-5 py-2.5 text-sm" : "mt-3 min-h-10 w-full px-4 py-2.5 text-sm"
+        }`}
+      >
+        {WHATSAPP_ICON}
+        Contactar por WhatsApp
+      </WhatsAppBuyCTA>
+    );
+  }
 
   return (
     <button

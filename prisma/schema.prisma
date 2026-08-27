@@ -460,6 +460,12 @@ model Banner {
   updatedAt    DateTime   @updatedAt
 }
 
+model AppConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
 enum WatiConversationStatus {
   ACTIVE
   CLOSED

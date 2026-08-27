@@ -4,7 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRef } from "react";
 import { useCart } from "./cart-provider";
+import { useSaleMode } from "./sale-mode-provider";
 import WhatsAppAsesor from "./whatsapp-asesor";
+import WhatsAppBuyCTA, { WHATSAPP_ICON } from "./whatsapp-buy-cta";
 
 type Combo = {
   id: string;
@@ -20,6 +22,7 @@ type Combo = {
 export default function ComboCarousel({ combos }: { combos: Combo[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { addItem } = useCart();
+  const saleMode = useSaleMode();
 
   const handleAdd = (combo: Combo) =>
     addItem({
@@ -87,13 +90,23 @@ export default function ComboCarousel({ combos }: { combos: Combo[] }) {
                 ))}
               </ul>
               <p className="mt-1 text-base font-bold" style={{ color: "#0C535B" }}>{combo.precio}</p>
-              <button
-                type="button"
-                onClick={() => handleAdd(combo)}
-                className="shine-sweep mt-1 w-full rounded-full bg-[#F07826] py-2 text-xs font-bold text-white transition-colors hover:bg-[#d4621a]"
-              >
-                Agregar al carrito
-              </button>
+              {saleMode === "whatsapp" ? (
+                <WhatsAppBuyCTA
+                  nombre={combo.nombre}
+                  className="shine-sweep mt-1 flex w-full items-center justify-center gap-1.5 rounded-full bg-[#25D366] py-2 text-xs font-bold text-white hover:bg-[#128C7E]"
+                >
+                  {WHATSAPP_ICON}
+                  Contactar por WhatsApp
+                </WhatsAppBuyCTA>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleAdd(combo)}
+                  className="shine-sweep mt-1 w-full rounded-full bg-[#F07826] py-2 text-xs font-bold text-white transition-colors hover:bg-[#d4621a]"
+                >
+                  Agregar al carrito
+                </button>
+              )}
               <Link
                 href={`/combo/${combo.id}`}
                 className="mt-1.5 block w-full rounded-full border border-black/10 py-2 text-center text-xs font-semibold text-[#444] transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"

@@ -26,7 +26,9 @@ export default async function MiCuentaPage() {
   const user = await getUserById(session.userId);
 
   if (!user) {
-    redirect("/login");
+    // Cookie válida pero el usuario ya no existe: hay que limpiar la sesión antes
+    // de mandar a /login, si no proxy.ts rebota de vuelta aquí en bucle.
+    redirect("/api/auth/session-expired");
   }
 
   if (user.role === "ADMIN") redirect("/admin");

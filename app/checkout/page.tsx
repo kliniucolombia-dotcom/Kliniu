@@ -4,6 +4,7 @@ import CheckoutForm from "./checkout-form";
 import { getSessionFromCookies } from "@/lib/auth";
 import { getCartItemsForUser } from "@/lib/cart";
 import { getUserById } from "@/lib/users";
+import { getSaleMode } from "@/lib/sale-mode";
 
 export const metadata: Metadata = {
   title: "Finalizar compra",
@@ -15,6 +16,11 @@ function parsePriceValue(price: string) {
 }
 
 export default async function CheckoutPage() {
+  const saleMode = await getSaleMode();
+  if (saleMode === "whatsapp") {
+    redirect("/");
+  }
+
   const session = await getSessionFromCookies();
 
   if (!session) {
@@ -24,7 +30,7 @@ export default async function CheckoutPage() {
   const user = await getUserById(session.userId);
 
   if (!user) {
-    redirect("/login?next=/checkout");
+    redirect("/api/auth/session-expired");
   }
 
   const cartItems = await getCartItemsForUser(user.id);

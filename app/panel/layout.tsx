@@ -127,6 +127,7 @@ const NAV: NavItem[] = [
     icon: <MdSettings size={18} />,
     children: [
       { href: "/panel/usuarios", label: "Usuarios", module: "MODULE_USUARIOS", icon: <MdPeople size={17} /> },
+      { href: "/panel/configuracion/modo-venta", label: "Modo de Venta", module: "MODULE_USUARIOS", icon: <MdShoppingCart size={17} />, superAdminOnly: true },
     ],
   },
 ];
@@ -177,14 +178,14 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
     <div className="flex min-h-screen bg-[#F4F6F8] font-sans">
       {/* ── Topbar móvil ── */}
       <div className="fixed inset-x-0 top-0 z-[60] flex items-center justify-between border-b border-[#E2E8F0] bg-white px-4 py-3 md:hidden">
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/favicon.ico" alt="Kliniu" className="h-8 w-8 shrink-0 rounded-lg" />
           <div>
             <p className="text-xs font-black leading-none text-[#1A1A1A]">Panel</p>
             <p className="text-[10px] font-semibold text-[#27B1B8]">Comercial Kliniu</p>
           </div>
-        </div>
+        </Link>
         <button
           onClick={() => setMobileOpen((o) => !o)}
           aria-label="Abrir menú"
@@ -214,7 +215,10 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         style={{ minHeight: "100vh", height: "100vh" }}
       >
         {/* Logo */}
-        <div className={`flex items-center gap-2 border-b border-[#E2E8F0] px-4 py-4 ${collapsed ? "md:justify-center" : ""}`}>
+        <Link
+          href="/"
+          className={`flex items-center gap-2 border-b border-[#E2E8F0] px-4 py-4 transition-opacity hover:opacity-80 ${collapsed ? "md:justify-center" : ""}`}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/favicon.ico" alt="Kliniu" className="h-8 w-8 shrink-0 rounded-lg" />
           {!collapsed && (
@@ -223,7 +227,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
               <p className="text-[10px] font-semibold text-[#27B1B8]">Comercial Kliniu</p>
             </div>
           )}
-        </div>
+        </Link>
 
         {/* Buscador */}
         {!collapsed && (

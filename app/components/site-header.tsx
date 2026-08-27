@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "./cart-provider";
+import { useSaleMode } from "./sale-mode-provider";
 import { useProducts } from "./products-provider";
 import { categoriasData, slugCategoria } from "../data/catalog";
 import AdvisorCtaCard from "./advisor-cta-card";
@@ -41,6 +42,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
   const searchParams = useSearchParams();
   const menuRef = useRef<HTMLDivElement | null>(null);
   const { totalProducts } = useCart();
+  const saleMode = useSaleMode();
   const { products } = useProducts();
 
   useEffect(() => {
@@ -113,7 +115,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
 
   const showSuggestions = searchFocused && searchSuggestions.length > 0;
 
-  const bottomNavItems = [
+  const allBottomNavItems = [
     // ── Principales (visibles) ──
     {
       label: "Inicio",
@@ -225,6 +227,9 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
       ),
     },
   ];
+
+  const bottomNavItems = allBottomNavItems.filter((item) => item.label !== "Carrito" || saleMode === "cart");
+  const bottomNavMainCount = saleMode === "whatsapp" ? 3 : 4;
 
   return (
     <>
@@ -403,22 +408,24 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
                 </Link>
               )}
 
-              <Link
-                href="/carrito"
-                className="relative flex flex-col items-center gap-0.5 text-[#0C535B] transition-colors hover:text-[#27B1B8]"
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <path d="M16 10a4 4 0 0 1-8 0" />
-                </svg>
-                {totalProducts > 0 && (
-                  <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#27B1B8] px-1 text-[9px] font-bold text-white">
-                    {totalProducts}
-                  </span>
-                )}
-                <span className="hidden text-[10px] font-semibold sm:block">Carrito</span>
-              </Link>
+              {saleMode === "cart" && (
+                <Link
+                  href="/carrito"
+                  className="relative flex flex-col items-center gap-0.5 text-[#0C535B] transition-colors hover:text-[#27B1B8]"
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <path d="M16 10a4 4 0 0 1-8 0" />
+                  </svg>
+                  {totalProducts > 0 && (
+                    <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#27B1B8] px-1 text-[9px] font-bold text-white">
+                      {totalProducts}
+                    </span>
+                  )}
+                  <span className="hidden text-[10px] font-semibold sm:block">Carrito</span>
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -481,7 +488,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
             />
             <div className="absolute bottom-full left-0 right-0 z-50 rounded-t-2xl bg-white px-4 pb-4 pt-5 shadow-[0_-8px_32px_rgba(15,23,42,0.12)] animate-[slideUp_200ms_ease-out]">
               <p className="mb-3 text-[11px] font-black uppercase tracking-widest text-[#0C535B]/50">Más opciones</p>
-              {bottomNavItems.slice(4).map((item) => (
+              {bottomNavItems.slice(bottomNavMainCount).map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -553,7 +560,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
         )}
 
         <div className="flex items-center justify-around px-1 pb-safe pt-1">
-          {bottomNavItems.slice(0, 4).map((item) => (
+          {bottomNavItems.slice(0, bottomNavMainCount).map((item) => (
             <Link
               key={item.href}
               href={item.href}

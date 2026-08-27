@@ -4,9 +4,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import WhatsAppAsesor from "../../components/whatsapp-asesor";
+import WhatsAppBuyCTA, { WHATSAPP_ICON } from "../../components/whatsapp-buy-cta";
 import AsesorBanner from "../../components/asesor-banner";
 import { useParams } from "next/navigation";
 import { useCart } from "../../components/cart-provider";
+import { useSaleMode } from "../../components/sale-mode-provider";
 import { useProducts } from "../../components/products-provider";
 import SiteFooter from "../../components/site-footer";
 import QuoteModal from "../../components/quote-modal";
@@ -432,6 +434,7 @@ export default function ProductoDetalleClient() {
   const params = useParams<{ slug: string }>();
   const { products } = useProducts();
   const { addItem } = useCart();
+  const saleMode = useSaleMode();
   const [cantidad, setCantidad] = useState(1);
   const [esUnidad, setEsUnidad] = useState(true);
   const [showComboTip, setShowComboTip] = useState(false);
@@ -871,33 +874,49 @@ export default function ProductoDetalleClient() {
               )}
 
               <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  disabled={producto.puedeComprar === false}
-                  onClick={handleAddToCart}
-                  className="flex min-h-[50px] items-center justify-center gap-2 rounded-full px-4 py-2.5 text-center text-[13px] font-semibold leading-tight transition-colors sm:text-sm"
-                  style={
-                    producto.puedeComprar === false
-                      ? { background: "#f2f2f1", color: "#6b7280", cursor: "not-allowed", border: "1px solid rgba(0,0,0,0.1)" }
-                      : agregado
-                      ? { background: "#d4621a", color: "#fff", border: "1px solid #d4621a" }
-                      : { background: "#F07826", color: "#fff", border: "1px solid #F07826" }
-                  }
-                >
-                  {producto.puedeComprar === false ? (
-                    "Sin stock"
-                  ) : agregado ? (
-                    <>
-                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                      Agregado
-                    </>
+                {saleMode === "whatsapp" ? (
+                  producto.puedeComprar === false ? (
+                    <span className="flex min-h-[50px] items-center justify-center rounded-full px-4 py-2.5 text-center text-[13px] font-semibold leading-tight sm:text-sm" style={{ background: "#f2f2f1", color: "#6b7280", border: "1px solid rgba(0,0,0,0.1)" }}>
+                      Sin stock
+                    </span>
                   ) : (
-                    <>
-                      Agregar al carrito
-                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                    </>
-                  )}
-                </button>
+                    <WhatsAppBuyCTA
+                      nombre={producto.nombre}
+                      className="flex min-h-[50px] items-center justify-center gap-2 rounded-full border border-[#25D366] bg-[#25D366] px-4 py-2.5 text-center text-[13px] font-semibold leading-tight text-white transition-colors hover:bg-[#128C7E] hover:border-[#128C7E] sm:text-sm"
+                    >
+                      {WHATSAPP_ICON}
+                      Contactar por WhatsApp
+                    </WhatsAppBuyCTA>
+                  )
+                ) : (
+                  <button
+                    type="button"
+                    disabled={producto.puedeComprar === false}
+                    onClick={handleAddToCart}
+                    className="flex min-h-[50px] items-center justify-center gap-2 rounded-full px-4 py-2.5 text-center text-[13px] font-semibold leading-tight transition-colors sm:text-sm"
+                    style={
+                      producto.puedeComprar === false
+                        ? { background: "#f2f2f1", color: "#6b7280", cursor: "not-allowed", border: "1px solid rgba(0,0,0,0.1)" }
+                        : agregado
+                        ? { background: "#d4621a", color: "#fff", border: "1px solid #d4621a" }
+                        : { background: "#F07826", color: "#fff", border: "1px solid #F07826" }
+                    }
+                  >
+                    {producto.puedeComprar === false ? (
+                      "Sin stock"
+                    ) : agregado ? (
+                      <>
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                        Agregado
+                      </>
+                    ) : (
+                      <>
+                        Agregar al carrito
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                      </>
+                    )}
+                  </button>
+                )}
                 <button
                   type="button"
                   disabled={producto.puedeComprar === false}
