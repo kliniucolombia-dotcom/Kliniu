@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { MdCookie } from "react-icons/md";
 import GoogleTags from "./google-tags";
+import MetaPixel from "./meta-pixel";
 
 const STORAGE_KEY = "kliniu_cookie_consent";
 
@@ -26,6 +27,7 @@ export default function CookieConsent({ nonce }: { nonce?: string }) {
   return (
     <>
       {consent === "accepted" && <GoogleTags nonce={nonce} />}
+      {consent === "accepted" && <MetaPixel nonce={nonce} />}
       {ready && consent === null && (
         <div className="fixed inset-x-0 bottom-0 z-[70] flex justify-center px-4 pb-4">
           <div className="flex w-full max-w-xl flex-col gap-3 rounded-2xl border border-[#E2E8F0] bg-white p-4 shadow-[0_8px_30px_rgba(0,0,0,0.12)] sm:flex-row sm:items-center">
