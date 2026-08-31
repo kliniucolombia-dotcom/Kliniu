@@ -8,6 +8,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { fbAddToCart } from "@/lib/fbpixel";
+import { parsePriceValue } from "@/lib/volume-discounts";
 
 export type CartItem = {
   id: string;
@@ -194,6 +196,14 @@ export function CartProvider({
         setItems((current) =>
           mergeCartItem(current, item, quantityToAdd, normalizedId),
         );
+
+        fbAddToCart({
+          content_ids: [item.sku ?? normalizedId],
+          content_name: item.nombre,
+          content_type: "product",
+          value: parsePriceValue(item.precio) * quantityToAdd,
+          currency: "COP",
+        });
 
         if (currentUserId) {
           void (async () => {

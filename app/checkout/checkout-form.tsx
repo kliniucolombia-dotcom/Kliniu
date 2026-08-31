@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "
 import Link from "next/link";
 import { departamentosColombia, getCitiesForDepartment } from "@/lib/colombia-locations";
 import { getShippingForLocation, getShippingOverride, formatShippingPrice } from "@/lib/shipping-rates";
+import { fbInitiateCheckout } from "@/lib/fbpixel";
 
 type CheckoutItem = {
   id: string;
@@ -104,6 +105,17 @@ export default function CheckoutForm({
   const step2Done = Boolean(form.department.trim() && form.addressLine1.trim() && form.city.trim());
   const step3Done = step1Done && step2Done; // método de pago siempre seleccionado por defecto
   const currentStep = !step1Done ? 1 : !step2Done ? 2 : !step3Done ? 3 : 4;
+
+  useEffect(() => {
+    fbInitiateCheckout({
+      content_ids: items.map((i) => i.sku ?? i.id),
+      content_type: "product",
+      num_items: items.reduce((acc, i) => acc + i.cantidad, 0),
+      value: subtotal,
+      currency: "COP",
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!toast) return;
