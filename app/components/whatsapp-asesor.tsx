@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { fbContact } from "@/lib/fbpixel";
 
 type Props = {
   children: React.ReactNode;
@@ -30,6 +31,8 @@ export default function WhatsAppAsesor({ children, className, message, randomAse
   }, [message, randomAsesor, hasCustomLink]);
 
   const handleClick = (e: React.MouseEvent) => {
+    fbContact();
+
     if (hasCustomLink || !randomAsesor) return;
     e.preventDefault();
     const phone = ASESORES[Math.floor(Math.random() * ASESORES.length)];

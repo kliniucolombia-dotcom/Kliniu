@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "./cart-provider";
+import { fbSearch } from "@/lib/fbpixel";
 import { useSaleMode } from "./sale-mode-provider";
 import { useProducts } from "./products-provider";
 import { categoriasData, slugCategoria } from "../data/catalog";
@@ -85,6 +86,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
     event.preventDefault();
     const q = searchQuery.trim();
     setSearchFocused(false);
+    if (q) fbSearch({ search_string: q });
     const params = new URLSearchParams();
     if (q) {
       params.set("q", q);

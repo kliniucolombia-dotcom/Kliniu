@@ -4,8 +4,13 @@ declare global {
   }
 }
 
-function track(event: string, params?: Record<string, unknown>) {
-  if (typeof window === "undefined" || !window.fbq) return;
+function track(event: string, params?: Record<string, unknown>, retries = 20) {
+  if (typeof window === "undefined") return;
+  if (!window.fbq) {
+    if (retries <= 0) return;
+    setTimeout(() => track(event, params, retries - 1), 150);
+    return;
+  }
   window.fbq("track", event, params);
 }
 
