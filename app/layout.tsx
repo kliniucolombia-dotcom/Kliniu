@@ -9,6 +9,7 @@ import { SaleModeProvider } from "./components/sale-mode-provider";
 import AuthHistoryGuard from "./components/auth-history-guard";
 import ConditionalShell from "./components/conditional-shell";
 import CookieConsent from "./components/cookie-consent";
+import MetaPixel from "./components/meta-pixel";
 import { getProducts } from "@/lib/products";
 import { getSessionFromCookies } from "@/lib/auth";
 import { getUserById } from "@/lib/users";
@@ -82,6 +83,7 @@ export default async function RootLayout({
           </ProductsProvider>
         </SaleModeProvider>
         <SpeedInsights />
+        <MetaPixel nonce={nonce} />
         <CookieConsent nonce={nonce} />
       </body>
     </html>
