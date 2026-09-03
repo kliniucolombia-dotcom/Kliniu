@@ -389,17 +389,10 @@ export default function ProductosPanel() {
                               <button
                                 type="button"
                                 onClick={() => openEdit(p)}
-                                title="Editar precio por unidad y por cantidad"
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 text-[#5d6167] transition-colors duration-200 hover:border-[#0C535B] hover:text-[#0C535B]"
-                              >
-                                <IconEye />
-                              </button>
-                              <a
-                                href={`/admin?tab=edit&slug=${encodeURIComponent(p.slug)}`}
                                 className="inline-flex items-center gap-1.5 rounded-full bg-[#0C535B] px-3 py-1.5 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[#073D43]"
                               >
-                                Edición completa
-                              </a>
+                                Editar producto
+                              </button>
                             </div>
                           </td>
                         </tr>

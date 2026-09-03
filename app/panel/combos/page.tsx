@@ -661,6 +661,7 @@ export default function CombosPanel() {
 
             <div className="mt-3">
               <label className="mb-1 block text-xs font-bold text-[#64748B]">Imagen principal</label>
+              <p className="mb-1.5 text-[11px] text-[#94A3B8]">Recomendado: 800×800px, cuadrada</p>
               <input ref={imageInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage(f); }} />
               <div className="flex items-center gap-3">
@@ -677,6 +678,7 @@ export default function CombosPanel() {
 
             <div className="mt-3">
               <label className="mb-1 block text-xs font-bold text-[#64748B]">Imágenes adicionales (opcional)</label>
+              <p className="mb-1.5 text-[11px] text-[#94A3B8]">Recomendado: 800×800px, cuadrada</p>
               <input ref={galleryInputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden"
                 onChange={(e) => { const files = e.target.files; if (files && files.length) uploadGalleryImages(files); e.target.value = ""; }} />
               <div className="flex flex-wrap items-center gap-3">
@@ -702,6 +704,19 @@ export default function CombosPanel() {
 
             <div className="mt-4">
               <label className="mb-1 block text-xs font-bold text-[#64748B]">Productos incluidos</label>
+              {form.items.length > 0 && (
+                <div className="mb-2 flex flex-wrap gap-1.5 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-2">
+                  {form.items.map((item) => {
+                    const p = products.find((x) => x.id === item.productId);
+                    return (
+                      <span key={item.productId} className="inline-flex items-center gap-1 rounded-full bg-white border border-[#E2E8F0] px-2.5 py-1 text-[11px] text-[#1A1A1A]">
+                        {p?.name ?? item.productId} × {item.quantity}
+                        <button type="button" onClick={() => toggleProduct(item.productId)} className="text-[#94A3B8] hover:text-[#DC2626]">✕</button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
               <input
                 value={productSearch}
                 onChange={(e) => setProductSearch(e.target.value)}

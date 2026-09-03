@@ -40,6 +40,7 @@ const FIXED_SLOTS: Slot[] = [
   { key: "asesor_banner", type: "SITE", tab: "categorias", group: "Banners estáticos", label: "¿Necesitas ayuda para elegir?", preview: "wide", fallbackDesktop: "/banners-web/BANNER-FINALES-20.png", mobileFixed: true },
   { key: "outlet_hero", type: "SITE", tab: "outlet", group: "Banners estáticos", label: "Hero tienda Outlet", preview: "wide", fallbackDesktop: "/banner-outlet.jpg", fallbackMobile: "/banners-responsive/oulet%20movil.jpg" },
   { key: "outlet_super_ofertas", type: "SITE", tab: "outlet", group: "Banners estáticos", label: "Banner Super Ofertas", preview: "wide", fallbackDesktop: "/outlet/banner-super-ofertas.jpg" },
+  { key: "combos_hero", type: "SITE", tab: "otras", group: "Otras páginas", label: "Combos", preview: "wide" },
   { key: "nosotros_hero", type: "SITE", tab: "otras", group: "Otras páginas", label: "Nosotros", preview: "wide", fallbackDesktop: "/banner-foto-nosotros.png", mobileFixed: true },
   { key: "contacto_hero", type: "SITE", tab: "otras", group: "Otras páginas", label: "Contacto", preview: "wide", fallbackDesktop: "/banners-web/BANNER-FINALES-09.png", fallbackMobile: "/banners-responsive/BANNER-FINALES-30.png" },
   { key: "puntos_hero", type: "SITE", tab: "otras", group: "Otras páginas", label: "Puntos K", preview: "wide", fallbackDesktop: "/puntos-k-banner.jpg" },
