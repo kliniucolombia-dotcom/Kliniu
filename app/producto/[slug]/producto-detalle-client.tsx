@@ -981,7 +981,7 @@ export default function ProductoDetalleClient() {
                 )}
                 {producto.aplicacion && (
                   <div>
-                    <p className="mb-1 font-bold text-[#F07826]">Aplicación</p>
+                    <p className="mb-1 font-bold text-[#F07826]">Especificaciones</p>
                     <p className="text-[#333]">{producto.aplicacion}</p>
                   </div>
                 )}

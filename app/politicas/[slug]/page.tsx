@@ -7,7 +7,7 @@ const policies = {
   privacidad: {
     title: "Política de Privacidad",
     summary:
-      "En KLINIU SAS entendemos y valoramos la importancia de proteger su información personal. Estamos comprometidos con mantener la confidencialidad, seguridad y privacidad de los datos que nuestros usuarios, clientes y visitantes nos proporcionan.",
+      "En KLINIU SAS, entendemos y valoramos la importancia de proteger su información personal. Por ello, estamos comprometidos con mantener la confidencialidad, seguridad y privacidad de los datos que nuestros usuarios, clientes y visitantes nos proporcionan.",
     sections: [
       {
         heading: "Uso de la Información",
@@ -23,7 +23,7 @@ const policies = {
       },
       {
         heading: "Política de Garantías y Derecho de Retracto",
-        body: "En KLINIU SAS, nuestro principal compromiso es su total satisfacción. Todos nuestros productos cuentan con garantía, cambio o devolución, siempre que se cumplan las condiciones establecidas.",
+        body: "En KLINIU SAS, nuestro principal compromiso es su total satisfacción. Todos nuestros productos cuentan con garantía, cambio o devolución, siempre que se cumplan las condiciones establecidas a continuación.",
       },
       {
         heading: "Condiciones Generales",
@@ -31,7 +31,7 @@ const policies = {
       },
       {
         heading: "Trámites y Contacto",
-        body: "Para gestionar cualquier tipo de garantía, cambio o devolución, comuníquese con nuestro Centro de Atención al Cliente:\n\nColombia: +57(1) 3682434 / +57 3226556454 — Cra. 28 #3443, Bogotá.\nHonduras: +504 31852275\nRepública Dominicana: +1 (809) 8507005\nNicaragua: +505 82508359\n\nCorreo: info@kliniu.com",
+        body: "Para gestionar cualquier tipo de garantía, cambio o devolución, puede comunicarse con nuestro Centro de Atención al Cliente:\n\nColombia: Tel: +57(1) 3682434 / +57 3226556454 — Dirección: Av. 28 No. 34-43, Barrio La Soledad, Bogotá.\nHonduras: +504 31852275\nRepública Dominicana: +1 (809) 8507005\nNicaragua: +505 82508359\n\nTambién puede escribirnos a: info@kliniu.com",
       },
       {
         heading: "1. Garantía por Defectos de Fabricación",
@@ -59,7 +59,7 @@ const policies = {
       },
       {
         heading: "Acerca de Nosotros",
-        body: "KLINIU SAS, con el respaldo de GC International, es una empresa colombiana con presencia en México, Nicaragua, Honduras, Guatemala y República Dominicana. Desde 1984 nos dedicamos al diseño, fabricación y comercialización de productos plásticos para el hogar e industria metalmecánica. Contamos con certificaciones ISO 9001 e ISO 14001, y nuestras materias primas están aprobadas por la FDA.",
+        body: "KLINIU SAS, con el respaldo de GC International, es una empresa colombiana con presencia en México, Nicaragua, Honduras, Guatemala y República Dominicana. Desde 1984 nos dedicamos al diseño, fabricación y comercialización de productos plásticos para el hogar e industria metalmecánica.\n\nContamos con certificaciones ISO 9001 e ISO 14001, y nuestras materias primas están aprobadas por la FDA, garantizando productos de alta calidad. Nuestra misión es innovar y ofrecer soluciones prácticas que faciliten la vida en el hogar y la industria.",
       },
     ],
   },
@@ -94,7 +94,7 @@ const policies = {
       },
       {
         heading: "7. Canales de Atención",
-        body: "Correo: ventas@kliniu.com\nTeléfono: 601 3682434 / 312 5860921\nHorario: lunes a viernes, 8:00 a.m. – 5:00 p.m.",
+        body: "Correo: ventas@kliniu.com\nTeléfono: 601 3682434 / 312 5860921\nHorario: lunes a viernes, 8:00 a.m. – 5:00 p.m.\nWeb: www.kliniu.com",
       },
       {
         heading: "8. Tabla de Garantías por Producto",

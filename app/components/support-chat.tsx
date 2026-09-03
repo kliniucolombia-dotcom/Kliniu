@@ -326,6 +326,14 @@ export default function SupportChat() {
               <textarea
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    if (!isSending && input.trim().length > 0) {
+                      void sendMessage(input);
+                    }
+                  }
+                }}
                 rows={2}
                 placeholder="Cuéntame sobre tu espacio o necesidad..."
                 className="min-h-[54px] flex-1 resize-none rounded-[1.2rem] border border-black/10 bg-white px-4 py-3 text-sm text-[#1f2328] outline-none transition-colors duration-200 focus:border-[#27B1B8]"
