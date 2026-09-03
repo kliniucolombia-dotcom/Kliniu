@@ -1,5 +1,23 @@
 import OpenAI from "openai";
 import { buildCatalogContext, buildLocalAssistantReply, buildProductCards, getCatalogSnapshot, type ChatProductCard } from "@/lib/chatbot";
+import { prisma } from "@/lib/prisma";
+
+const FALLBACK_SELLER_PHONE = "573125860921";
+
+async function getSellerWhatsappLink(): Promise<string> {
+  let phone = FALLBACK_SELLER_PHONE;
+  if (prisma) {
+    const sellers = await prisma.user.findMany({
+      where: { role: "SELLER", whatsappPhone: { not: null } },
+      select: { whatsappPhone: true, _count: { select: { assignedOrders: true } } },
+    });
+    if (sellers.length > 0) {
+      const next = sellers.sort((a, b) => a._count.assignedOrders - b._count.assignedOrders)[0];
+      phone = next.whatsappPhone ?? FALLBACK_SELLER_PHONE;
+    }
+  }
+  return `https://wa.me/${phone}`;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -107,11 +125,19 @@ export async function POST(request: Request) {
     }
     const fallback = buildLocalAssistantReply(latestUserMessage.content, snapshot);
 
+    // No mostrar tarjetas de producto tras una queja o devolución: se siente fuera de lugar.
+    const COMPLAINT_WORDS = ["pesimo", "pesima", "mal servicio", "no responde", "nadie responde", "queja", "reclamo", "dañad", "danad", "defectuoso", "devolucion", "devolver", "reembolso", "mal estado"];
+    const latestNormalizedForComplaint = latestUserMessage.content.toLowerCase()
+      .normalize("NFD").replace(/[̀-ͯ]/g, "");
+    const isComplaintOrReturn = COMPLAINT_WORDS.some((w) => latestNormalizedForComplaint.includes(w));
+
+    const sellerWhatsapp = await getSellerWhatsappLink();
+
     if (!openai) {
       return Response.json({
         message: fallback.message,
         suggestions: fallback.suggestions,
-        products: fallback.products,
+        products: isComplaintOrReturn ? undefined : fallback.products,
         mode: "local",
       });
     }
@@ -120,6 +146,8 @@ export async function POST(request: Request) {
       model: process.env.OPENAI_CHAT_MODEL || "gpt-4o-mini",
       instructions: [
         "Eres KLINIU AI, el asesor comercial virtual oficial de Kliniu.",
+        `Link de WhatsApp del asesor asignado para escalar (úsalo SIEMPRE que escales algo, en formato markdown [Escríbenos por WhatsApp](${sellerWhatsapp})): ${sellerWhatsapp}`,
+        isComplaintOrReturn ? "El cliente acaba de hacer una queja o pedir una devolución: NO recomiendes ni menciones productos nuevos en esta respuesta, concéntrate solo en resolver su problema y dale el WhatsApp." : "",
         "Kliniu es una empresa especializada en dispensadores institucionales, soluciones de higiene, organización y productos para baños empresariales, hogares, hoteles, restaurantes, clínicas, oficinas y distribuidores en Colombia.",
         "Tu objetivo principal es: asesorar, recomendar, generar confianza, aumentar el ticket de compra y llevar al cliente a cotización o WhatsApp.",
 
@@ -131,9 +159,17 @@ export async function POST(request: Request) {
 
         "REGLAS CRÍTICAS:",
         "- NUNCA inventes precios, stock, tiempos de entrega ni promociones. Solo usa el catálogo proporcionado.",
-        "- Si no tienes un dato, responde: 'Te ayudo a validarlo con el equipo comercial 👌'",
+        "- Si no tienes un dato, responde: 'Te ayudo a validarlo con el equipo comercial 👌' y SIEMPRE agrega el link de WhatsApp del asesor que se te dio como canal concreto (nunca digas solo 'voy a validarlo' sin dar el link).",
         "- NUNCA digas 'como modelo de lenguaje', 'no tengo acceso' ni respondas como IA genérica.",
         "- NUNCA respondas párrafos gigantes.",
+        "- STOCK/DISPONIBILIDAD: el campo 'disponibilidad' y 'stock' del catálogo es la única fuente válida. Repítelo literal (ej. si dice 'Agotado' di agotado, si dice 'Disponible' di disponible). Si un producto no aparece en el catálogo proporcionado para esta consulta, NUNCA afirmes que 'sí hay' o 'no hay' stock — di que vas a confirmar disponibilidad exacta con el equipo comercial y da el WhatsApp.",
+        "- GARANTÍA: Kliniu NO tiene una política de garantía definida todavía. Si preguntan por garantía (duración, fecha de inicio, cobertura), NUNCA inventes un plazo ni digas '1 año'. Responde siempre: 'Eso lo confirmamos directo con el equipo comercial 👌' + WhatsApp. Sé consistente: la misma pregunta debe dar siempre la misma respuesta.",
+        "- INSTALACIÓN: Kliniu NO ofrece servicio de instalación. Si preguntan, dilo claro: la instalación no está incluida, el cliente la hace o contrata a alguien local. No lo derives como 'a validar'.",
+        "- DESCUENTOS POR VOLUMEN: no existe tabla fija de % por cantidad. Nunca inventes un porcentaje ni confirmes uno que proponga el cliente (ej. si pide 15%, no lo apruebes ni lo rechaces). Siempre: 'Para volumen el descuento lo define el equipo comercial según el pedido' + WhatsApp, mencionando la cantidad que ya dio el cliente para que el asesor no se la vuelva a pedir.",
+        "- PAGO: el pago de productos individuales se hace online desde el carrito con Wompi (tarjeta débito/crédito, PSE). Para pedidos grandes/empresariales (cotizaciones, volumen) el pago se coordina directo con el asesor por WhatsApp — nunca prometas generar un link de pago o reservar inventario tú mismo, eso lo hace el asesor.",
+        "- ENVÍO — COSTO (dato real, úsalo siempre que pregunten): a Bogotá D.C. el envío es GRATIS. Al resto del país tiene costo fijo de $12.000 COP. Da este dato directo, sin pedir más información antes.",
+        "- ENVÍO — TIEMPO: no hay un tiempo de entrega exacto definido por ciudad/transportadora, así que nunca inventes un número de días. Di que el tiempo exacto lo confirma el equipo comercial según destino.",
+        "- Cuando escales cualquier tema a 'equipo comercial', SIEMPRE incluye el link de WhatsApp exacto que se te dio en el contexto, con el mensaje ya redactado si es posible. Nunca dejes la escalada sin un canal concreto.",
 
         "DETECCIÓN DE TIPO DE CLIENTE:",
         "Detecta automáticamente el tipo de espacio o negocio. NUNCA digas que no reconoces el tipo de negocio — siempre recomienda productos de higiene apropiados.",
@@ -201,7 +237,9 @@ export async function POST(request: Request) {
     return Response.json({
       message,
       suggestions: fallback.suggestions,
-      products: fallback.products ?? (snapshot.matchedProducts.length > 0 ? buildProductCards(snapshot.matchedProducts) : undefined),
+      products: isComplaintOrReturn
+        ? undefined
+        : fallback.products ?? (snapshot.matchedProducts.length > 0 ? buildProductCards(snapshot.matchedProducts) : undefined),
       mode: "openai",
     });
   } catch {
