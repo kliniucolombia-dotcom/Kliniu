@@ -20,6 +20,7 @@ export type PublicUser = {
   company: string | null;
   email: string;
   phone: string | null;
+  whatsappPhone: string | null;
   department: string | null;
   city: string | null;
   addressLine1: string | null;
@@ -128,6 +129,7 @@ export async function getUserById(userId: string) {
       company: true,
       email: true,
       phone: true,
+      whatsappPhone: true,
       department: true,
       city: true,
       addressLine1: true,
@@ -212,6 +214,7 @@ export async function updateUserProfile(
       company: true,
       email: true,
       phone: true,
+      whatsappPhone: true,
       department: true,
       city: true,
       addressLine1: true,
@@ -297,7 +300,7 @@ export async function createUserByAdmin(input: CreateUserByAdminInput): Promise<
       role: input.role,
     },
     select: {
-      id: true, fullName: true, company: true, email: true, phone: true,
+      id: true, fullName: true, company: true, email: true, phone: true, whatsappPhone: true,
       department: true, city: true, addressLine1: true, addressLine2: true, avatarUrl: true,
       role: true, status: true, createdAt: true,
     },
@@ -315,7 +318,7 @@ export async function listUsers(): Promise<PublicUser[]> {
     where: { role: { not: "CUSTOMER" } },
     orderBy: { createdAt: "desc" },
     select: {
-      id: true, fullName: true, company: true, email: true, phone: true,
+      id: true, fullName: true, company: true, email: true, phone: true, whatsappPhone: true,
       department: true, city: true, addressLine1: true, addressLine2: true, avatarUrl: true,
       role: true, status: true, createdAt: true,
     },
@@ -325,6 +328,7 @@ export async function listUsers(): Promise<PublicUser[]> {
 export type UpdateUserByAdminInput = {
   fullName?: string;
   email?: string;
+  whatsappPhone?: string | null;
   role?: UserRole;
   status?: "ACTIVE" | "INACTIVE" | "SUSPENDED";
   newPassword?: string;
@@ -413,6 +417,7 @@ export async function updateUserByAdmin(userId: string, input: UpdateUserByAdmin
 
   const data: {
     fullName?: string; email?: string;
+    whatsappPhone?: string | null;
     role?: UserRole;
     status?: "ACTIVE" | "INACTIVE" | "SUSPENDED";
     passwordHash?: string;
@@ -421,6 +426,7 @@ export async function updateUserByAdmin(userId: string, input: UpdateUserByAdmin
   if (input.fullName?.trim()) data.fullName = input.fullName.trim();
   if (input.role) data.role = input.role;
   if (input.status) data.status = input.status;
+  if (input.whatsappPhone !== undefined) data.whatsappPhone = input.whatsappPhone?.trim() || null;
 
   if (input.email?.trim()) {
     const email = input.email.trim().toLowerCase();
@@ -439,7 +445,7 @@ export async function updateUserByAdmin(userId: string, input: UpdateUserByAdmin
     where: { id: userId },
     data,
     select: {
-      id: true, fullName: true, company: true, email: true, phone: true,
+      id: true, fullName: true, company: true, email: true, phone: true, whatsappPhone: true,
       department: true, city: true, addressLine1: true, addressLine2: true, avatarUrl: true,
       role: true, status: true, createdAt: true,
     },

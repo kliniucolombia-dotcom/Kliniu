@@ -12,12 +12,15 @@ type Props = {
   nombre: string;
   className: string;
   children: React.ReactNode;
+  /** WhatsApp del vendedor asignado (ej. combo con "Vendedor" en panel); si viene, ese es el único destino */
+  phone?: string | null;
 };
 
-export default function WhatsAppBuyCTA({ nombre, className, children }: Props) {
+export default function WhatsAppBuyCTA({ nombre, className, children, phone }: Props) {
   return (
     <WhatsAppAsesor
-      randomAsesor
+      randomAsesor={!phone}
+      phone={phone}
       message={`Hola, quiero comprar "${nombre}"`}
       className={className}
     >

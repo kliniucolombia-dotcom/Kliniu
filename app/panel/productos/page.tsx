@@ -67,6 +67,7 @@ export default function ProductosPanel() {
   const [packs, setPacks] = useState<PackPrice[]>([]);
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
   const router = useRouter();
 
   const load = useCallback(async () => {
@@ -186,12 +187,21 @@ export default function ProductosPanel() {
           <h1 className="text-3xl font-black text-[#1A1A1A]">Productos</h1>
           <p className="mt-1 text-sm text-[#6e7379]">Consulta precios, stock y estado del catálogo.</p>
         </div>
-        <a
-          href="/admin?tab=edit"
-          className="shrink-0 rounded-full bg-[#0C535B] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#073D43]"
-        >
-          Edición completa
-        </a>
+        <div className="flex shrink-0 gap-2">
+          <button
+            type="button"
+            onClick={() => setShowCreate(true)}
+            className="rounded-full bg-[#27B1B8] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#1f8f95]"
+          >
+            + Crear producto
+          </button>
+          <a
+            href="/admin?tab=edit"
+            className="rounded-full bg-[#0C535B] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#073D43]"
+          >
+            Edición completa
+          </a>
+        </div>
       </div>
 
       {loading ? (
@@ -564,6 +574,23 @@ export default function ProductosPanel() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup crear producto — carga el formulario completo de admin sin salir del panel */}
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-black/8 px-5 py-3">
+              <h3 className="font-black text-[#1A1A1A]">Crear producto</h3>
+              <button onClick={() => setShowCreate(false)} className="text-[#94A3B8] hover:text-[#1A1A1A]">✕</button>
+            </div>
+            <iframe
+              src="/admin?tab=create&embed=1"
+              className="min-h-0 flex-1"
+              title="Crear producto"
+            />
           </div>
         </div>
       )}

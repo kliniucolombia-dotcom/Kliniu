@@ -11,6 +11,7 @@ type UserRow = {
   id: string;
   fullName: string;
   email: string;
+  whatsappPhone: string | null;
   role: Role;
   status: Status;
   createdAt: string;
@@ -311,6 +312,8 @@ export default function UsuariosPage() {
   const [statusFilter, setStatusFilter] = useState<Status | "ALL">("ALL");
   const [emailTarget, setEmailTarget] = useState<UserRow | null>(null);
   const [emailValue, setEmailValue] = useState("");
+  const [fullNameValue, setFullNameValue] = useState("");
+  const [whatsappValue, setWhatsappValue] = useState("");
   const [passwordTarget, setPasswordTarget] = useState<UserRow | null>(null);
   const [passwordValue, setPasswordValue] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -365,7 +368,7 @@ export default function UsuariosPage() {
     }
   };
 
-  const updateUser = async (id: string, patch: Partial<Pick<UserRow, "role" | "status" | "email">> & { newPassword?: string }, successMsg?: string) => {
+  const updateUser = async (id: string, patch: Partial<Pick<UserRow, "role" | "status" | "email" | "fullName" | "whatsappPhone">> & { newPassword?: string }, successMsg?: string) => {
     const res = await fetch(`/api/panel/users/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -383,12 +386,20 @@ export default function UsuariosPage() {
   const editEmail = (u: UserRow) => {
     setEmailTarget(u);
     setEmailValue(u.email);
+    setFullNameValue(u.fullName);
+    setWhatsappValue(u.whatsappPhone ?? "");
   };
 
   const confirmEditEmail = () => {
     if (!emailTarget) return;
-    const value = emailValue.trim();
-    if (value && value !== emailTarget.email) updateUser(emailTarget.id, { email: value }, "Correo actualizado correctamente");
+    const email = emailValue.trim();
+    const fullName = fullNameValue.trim();
+    const whatsappPhone = whatsappValue.trim();
+    const patch: Partial<Pick<UserRow, "email" | "fullName" | "whatsappPhone">> = {};
+    if (email && email !== emailTarget.email) patch.email = email;
+    if (fullName && fullName !== emailTarget.fullName) patch.fullName = fullName;
+    if (whatsappPhone !== (emailTarget.whatsappPhone ?? "")) patch.whatsappPhone = whatsappPhone || null;
+    if (Object.keys(patch).length > 0) updateUser(emailTarget.id, patch, "Usuario actualizado correctamente");
     setEmailTarget(null);
   };
 
@@ -695,7 +706,7 @@ export default function UsuariosPage() {
                     <button onClick={() => openPermissions(u.id)} title="Editar permisos" aria-label="Editar permisos" className="rounded-lg p-1.5 hover:bg-[#F1F5F9] hover:text-[#27B1B8]">
                       <IconPencil />
                     </button>
-                    <button onClick={() => editEmail(u)} title="Editar correo" aria-label="Editar correo" className="rounded-lg p-1.5 hover:bg-[#F1F5F9] hover:text-[#27B1B8]">
+                    <button onClick={() => editEmail(u)} title="Editar usuario" aria-label="Editar usuario" className="rounded-lg p-1.5 hover:bg-[#F1F5F9] hover:text-[#27B1B8]">
                       <IconMail />
                     </button>
                     <button onClick={() => editPassword(u)} title="Cambiar contraseña" aria-label="Cambiar contraseña" className="rounded-lg p-1.5 hover:bg-[#F1F5F9] hover:text-[#27B1B8]">
@@ -922,17 +933,34 @@ export default function UsuariosPage() {
                 <IconMail />
               </span>
               <div>
-                <h2 className="text-sm font-black text-[#1A1A1A]">Editar correo</h2>
+                <h2 className="text-sm font-black text-[#1A1A1A]">Editar usuario</h2>
                 <p className="text-xs text-[#94A3B8]">{emailTarget.fullName}</p>
               </div>
             </div>
-            <label className="mb-1 block text-xs font-semibold text-[#64748B]">Nuevo correo</label>
+            <label className="mb-1 block text-xs font-semibold text-[#64748B]">Nombre completo</label>
             <input
               autoFocus
+              type="text"
+              value={fullNameValue}
+              onChange={(e) => setFullNameValue(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && confirmEditEmail()}
+              className="mb-3 w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#27B1B8] focus:outline-none"
+            />
+            <label className="mb-1 block text-xs font-semibold text-[#64748B]">Correo</label>
+            <input
               type="email"
               value={emailValue}
               onChange={(e) => setEmailValue(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && confirmEditEmail()}
+              className="mb-3 w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#27B1B8] focus:outline-none"
+            />
+            <label className="mb-1 block text-xs font-semibold text-[#64748B]">WhatsApp (para asignación de combos)</label>
+            <input
+              type="tel"
+              value={whatsappValue}
+              onChange={(e) => setWhatsappValue(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && confirmEditEmail()}
+              placeholder="Ej. 573112088806"
               className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#27B1B8] focus:outline-none"
             />
             <div className="mt-5 flex justify-end gap-2">

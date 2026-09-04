@@ -8,7 +8,7 @@ import SiteFooter from "./components/site-footer";
 import VideoModal from "./components/video-modal";
 import WhatsAppAsesor from "./components/whatsapp-asesor";
 import { getFeaturedProducts } from "@/lib/products";
-import { getActiveCombos } from "@/lib/combos";
+import { getActiveCombos, resolveSellerPhones } from "@/lib/combos";
 import { getBannersByKeys } from "@/lib/banners";
 import { formatearMoneda } from "./data/catalog";
 
@@ -23,6 +23,7 @@ const videos = [
 export default async function Home() {
   const productos = await getFeaturedProducts();
   const combosDb = await getActiveCombos();
+  const sellerPhones = await resolveSellerPhones(combosDb.map((c) => c.createdByName));
   const banners = await getBannersByKeys([
     "home_banner_features",
     "home_banner_asesoria",
@@ -52,6 +53,7 @@ export default async function Home() {
     precioNumero: combo.price,
     precioNormal: combo.items.reduce((sum, i) => sum + getComboItemNormalPrice(i.product, i.quantity), 0),
     sku: combo.sku,
+    sellerPhone: combo.createdByName ? sellerPhones.get(combo.createdByName) ?? null : null,
   }));
 
   const bannerFeatures = banners.get("home_banner_features");

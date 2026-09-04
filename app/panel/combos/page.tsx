@@ -136,18 +136,25 @@ export default function CombosPanel() {
   const [perPage, setPerPage] = useState(10);
   const [showTip, setShowTip] = useState(true);
   const [copiedSku, setCopiedSku] = useState<string | null>(null);
+  const [me, setMe] = useState<{ role: string; fullName: string } | null>(null);
+  const isSuperAdmin = me?.role === "SUPERADMIN";
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [rCombos, rProducts, rVendedores] = await Promise.all([
+    const [rCombos, rProducts, rVendedores, rMe] = await Promise.all([
       fetch("/api/panel/combos"),
       fetch("/api/panel/products?minimal=1"),
       fetch("/api/panel/vendedores"),
+      fetch("/api/panel/permissions"),
     ]);
     if (rCombos.status === 401 || rCombos.status === 403) { router.push("/login"); return; }
     setCombos(await rCombos.json());
     setProducts(rProducts.ok ? await rProducts.json() : []);
     setVendedores(rVendedores.ok ? await rVendedores.json() : []);
+    if (rMe.ok) {
+      const d = await rMe.json();
+      setMe({ role: d.role, fullName: d.fullName });
+    }
     setLoading(false);
   }, [router]);
 
@@ -236,7 +243,7 @@ export default function CombosPanel() {
   const openCreate = () => {
     setSelected(null);
     setCreating(true);
-    setForm(EMPTY_FORM);
+    setForm({ ...EMPTY_FORM, createdByName: isSuperAdmin ? "" : (me?.fullName ?? "") });
     setAlert(null);
   };
 
@@ -647,15 +654,24 @@ export default function CombosPanel() {
               </div>
             </div>
 
-            <div className="mt-3">
-              <label className="mb-1 block text-xs font-bold text-[#64748B]">Vendedor</label>
-              <SimpleSelect
-                value={form.createdByName}
-                onChange={(v) => setForm((f) => ({ ...f, createdByName: v }))}
-                placeholder="Seleccionar vendedor…"
-                options={[{ value: "Todos los vendedores", label: "Todos los vendedores" }, ...vendedores.map((v) => ({ value: v.fullName, label: v.fullName }))]}
-              />
-            </div>
+            {isSuperAdmin ? (
+              <div className="mt-3">
+                <label className="mb-1 block text-xs font-bold text-[#64748B]">Vendedor</label>
+                <SimpleSelect
+                  value={form.createdByName}
+                  onChange={(v) => setForm((f) => ({ ...f, createdByName: v }))}
+                  placeholder="Seleccionar vendedor…"
+                  options={[{ value: "Todos los vendedores", label: "Todos los vendedores" }, ...vendedores.map((v) => ({ value: v.fullName, label: v.fullName }))]}
+                />
+              </div>
+            ) : (
+              <div className="mt-3">
+                <label className="mb-1 block text-xs font-bold text-[#64748B]">Vendedor</label>
+                <p className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2.5 text-sm text-[#64748B]">
+                  {form.createdByName || me?.fullName || "—"} <span className="text-xs text-[#94A3B8]">(asignado automáticamente)</span>
+                </p>
+              </div>
+            )}
 
             <div className="mt-3">
               <label className="mb-1 block text-xs font-bold text-[#64748B]">Descripción (opcional)</label>

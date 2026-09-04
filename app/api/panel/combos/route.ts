@@ -29,6 +29,11 @@ export async function POST(request: Request) {
     return Response.json({ error: "Faltan datos (name, price, items)" }, { status: 400 });
   }
 
+  // Solo SUPERADMIN puede asignar el combo a otro vendedor; el resto queda auto-asignado a su propia cuenta.
+  const createdByName = access.user.role === "SUPERADMIN"
+    ? (body.createdByName || access.user.fullName)
+    : access.user.fullName;
+
   try {
     const combo = await createCombo({
       name: body.name,
@@ -38,7 +43,7 @@ export async function POST(request: Request) {
       price: body.price,
       active: body.active,
       items: body.items,
-      createdByName: body.createdByName || access.user.fullName,
+      createdByName,
     });
     await broadcastPanelUpdate("combos");
     return Response.json(combo);
@@ -66,6 +71,9 @@ export async function PATCH(request: Request) {
 
   if (!body.id) return Response.json({ error: "Falta id" }, { status: 400 });
 
+  // Solo SUPERADMIN puede reasignar el vendedor de un combo existente.
+  const createdByName = access.user.role === "SUPERADMIN" ? body.createdByName : undefined;
+
   try {
     const combo = await updateCombo(body.id, {
       name: body.name,
@@ -75,7 +83,7 @@ export async function PATCH(request: Request) {
       price: body.price,
       active: body.active,
       items: body.items,
-      createdByName: body.createdByName,
+      createdByName,
     });
     await broadcastPanelUpdate("combos");
     return Response.json(combo);

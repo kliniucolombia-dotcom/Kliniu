@@ -25,7 +25,7 @@ function buildCsp(nonce: string) {
     "img-src 'self' data: blob: https://*.supabase.co https://www.google-analytics.com https://www.googletagmanager.com https://www.facebook.com",
     "font-src 'self' data:",
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://www.facebook.com https://connect.facebook.net",
-    "frame-src https://www.youtube.com",
+    "frame-src 'self' https://www.youtube.com",
     "object-src 'none'",
     "base-uri 'self'",
     "frame-ancestors 'self'",

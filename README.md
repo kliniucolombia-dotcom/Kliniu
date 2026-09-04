@@ -1,6 +1,6 @@
 # Kliniu
 
-Plataforma e-commerce para venta de repuestos automotrices.
+Plataforma e-commerce para venta de dispensadores.
 
 ## Producción
 

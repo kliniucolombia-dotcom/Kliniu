@@ -919,6 +919,7 @@ function splitCommaSeparatedValues(value: string) {
 export default function AdminPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isEmbed = searchParams.get("embed") === "1";
   const {
     adminProducts,
     createProduct,
@@ -1695,7 +1696,7 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f5f5] text-[#111]">
+    <main className={isEmbed ? "bg-[#f5f5f5] text-[#111]" : "min-h-screen bg-[#f5f5f5] text-[#111]"}>
       {toast && (
         <div className="fixed right-5 top-5 z-[80] w-[min(92vw,380px)]">
           <div
@@ -1725,9 +1726,10 @@ export default function AdminPage() {
         </div>
       )}
 
-      <section className="py-16">
+      <section className={isEmbed ? "py-4" : "py-16"}>
         <div className="space-y-8">
-          {/* Hero solo cuando no hay módulo activo */}
+          {/* Hero solo cuando no hay módulo activo (nunca en embed) */}
+          {!isEmbed && (
           <div className="admin-fade-up" style={{ display: activeTab ? "none" : "block" }}>
             {/* Hero full-width */}
             <div className="relative overflow-hidden" style={{ height: "100vh" }}>
@@ -1816,10 +1818,11 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
+          )}
 
-          <div className="mx-auto max-w-[1440px] px-6">
+          <div className={isEmbed ? "mx-auto max-w-[1440px] px-2" : "mx-auto max-w-[1440px] px-6"}>
 
-          {activeTab && (
+          {activeTab && !isEmbed && (
             <div className="mb-6">
               <button
                 type="button"

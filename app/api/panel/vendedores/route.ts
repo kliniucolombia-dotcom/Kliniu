@@ -8,7 +8,7 @@ export async function GET() {
   if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
 
   const users = await prisma.user.findMany({
-    where: { role: "SELLER", status: "ACTIVE" },
+    where: { role: "SELLER", status: "ACTIVE", fullName: { notIn: ["odoo", "Vendedor Prueba"] } },
     select: { id: true, fullName: true },
     orderBy: { fullName: "asc" },
   });

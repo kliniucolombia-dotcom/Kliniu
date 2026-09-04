@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getActiveCombos } from "@/lib/combos";
+import { getActiveCombos, resolveSellerPhones } from "@/lib/combos";
 import { getBannerByKey } from "@/lib/banners";
 import SiteFooter from "../components/site-footer";
 import ComboCard from "../components/combo-card";
@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 
 export default async function CombosPage() {
   const combosDb = await getActiveCombos();
+  const sellerPhones = await resolveSellerPhones(combosDb.map((c) => c.createdByName));
   const banner = await getBannerByKey("combos_hero");
   const heroDesktop = banner?.desktopImage ?? null;
   const heroMobile = banner?.mobileImage ?? null;
@@ -67,6 +68,7 @@ export default async function CombosPage() {
                     precioNumero: combo.price,
                     precioNormal: combo.items.reduce((sum, i) => sum + getComboItemNormalPrice(i.product, i.quantity), 0),
                     sku: combo.sku,
+                    sellerPhone: combo.createdByName ? sellerPhones.get(combo.createdByName) ?? null : null,
                   }}
                 />
               ))}

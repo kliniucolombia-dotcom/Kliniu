@@ -63,6 +63,19 @@ export async function getComboById(id: string) {
   });
 }
 
+/** Resuelve el WhatsApp del vendedor asignado (createdByName) para uno o varios combos. */
+export async function resolveSellerPhones(createdByNames: (string | null | undefined)[]) {
+  const names = Array.from(new Set(createdByNames.filter((n): n is string => Boolean(n?.trim()))));
+  if (!prisma || names.length === 0) return new Map<string, string>();
+
+  const sellers = await prisma.user.findMany({
+    where: { fullName: { in: names }, whatsappPhone: { not: null } },
+    select: { fullName: true, whatsappPhone: true },
+  });
+
+  return new Map(sellers.map((s) => [s.fullName, s.whatsappPhone as string]));
+}
+
 export async function createCombo(input: ComboInput) {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
   if (input.items.length === 0) throw new Error("COMBO_WITHOUT_ITEMS");

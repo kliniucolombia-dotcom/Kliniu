@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getComboById } from "@/lib/combos";
+import { getComboById, resolveSellerPhones } from "@/lib/combos";
 import { formatearMoneda } from "@/app/data/catalog";
 import ComboDetailClient from "./combo-detail-client";
 import { getComboItemNormalPrice } from "@/lib/volume-discounts";
@@ -8,6 +8,8 @@ export default async function ComboPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const combo = await getComboById(id);
   if (!combo || !combo.active) notFound();
+  const sellerPhones = await resolveSellerPhones([combo.createdByName]);
+  const sellerPhone = combo.createdByName ? sellerPhones.get(combo.createdByName) ?? null : null;
 
   const productos = combo.items.map((item) => ({
     nombre: item.product.name,
@@ -34,6 +36,7 @@ export default async function ComboPage({ params }: { params: Promise<{ id: stri
         precioNumero: combo.price,
         precioNormal: combo.items.reduce((sum, i) => sum + getComboItemNormalPrice(i.product, i.quantity), 0),
         imagenPrincipal: combo.image ?? "/combo-productos-kliniu.png",
+        sellerPhone,
       }}
       productos={productos}
       galleryImages={galleryImages.length > 0 ? galleryImages : ["/combo-productos-kliniu.png"]}

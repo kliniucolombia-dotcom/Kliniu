@@ -16,6 +16,7 @@ export type ComboCardData = {
   precioNumero: number;
   precioNormal: number;
   sku: string;
+  sellerPhone?: string | null;
 };
 
 export default function ComboCard({ combo, className = "" }: { combo: ComboCardData; className?: string }) {
@@ -63,6 +64,7 @@ export default function ComboCard({ combo, className = "" }: { combo: ComboCardD
           {saleMode === "whatsapp" ? (
             <WhatsAppBuyCTA
               nombre={combo.nombre}
+              phone={combo.sellerPhone}
               className="shine-sweep flex w-full min-w-0 items-center justify-center gap-1.5 rounded-full bg-[#25D366] px-2 py-2 text-xs font-bold text-white hover:bg-[#128C7E] sm:flex-1"
             >
               {WHATSAPP_ICON}
