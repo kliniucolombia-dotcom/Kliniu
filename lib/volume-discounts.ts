@@ -278,3 +278,50 @@ export function getVolumePricing(
     hasDiscount: tier.pct > 0,
   };
 }
+
+/**
+ * Precio "normal" de un item de combo: si la cantidad coincide con un paquete
+ * del producto (los de DB, o el mapa estático por SKU), vale el precio total del
+ * paquete; si no, precio unitario × cantidad.
+ */
+export function getComboItemNormalPrice(
+  product: { price: number; sku?: string | null; packPrices?: { label: string; qty: number; totalPrice: number }[] | null },
+  quantity: number,
+): number {
+  const packs = getProductPacks(product);
+  if (packs.length > 0) {
+    const exact = packs.find((pack) => pack.qty === quantity);
+    if (exact) return exact.totalPrice;
+
+    const byQtyDesc = [...packs].sort((a, b) => b.qty - a.qty);
+    // Cantidad suelta: se cobra al unitario del paquete que alcanza (igual que la ficha del producto)
+    const reached = byQtyDesc.find((pack) => quantity >= pack.qty);
+    if (reached) return Math.round((reached.totalPrice / reached.qty) * quantity);
+
+    // Insumos que no se venden por unidad: el unitario real es el del paquete
+    // más chico, no `price` (que en estos SKUs guarda el valor del paquete).
+    if (product.sku && NO_UNIT_SALE_SKUS.has(product.sku)) {
+      const smallest = byQtyDesc[byQtyDesc.length - 1];
+      return Math.round((smallest.totalPrice / smallest.qty) * quantity);
+    }
+  }
+  return product.price * quantity;
+}
+
+/** Paquetes disponibles para un producto (DB primero, si no el mapa por SKU). */
+export function getProductPacks(
+  product: { sku?: string | null; packPrices?: { label: string; qty: number; totalPrice: number }[] | null },
+): { label: string; qty: number; totalPrice: number }[] {
+  if (product.packPrices && product.packPrices.length > 0) return product.packPrices;
+  return (product.sku ? INSUMO_PACK_TIERS_BY_SKU[product.sku] : undefined) ?? [];
+}
+
+/**
+ * Precio real por unidad. En los insumos que no se venden sueltos, `price`
+ * guarda el valor del paquete, así que el unitario sale del paquete más chico.
+ */
+export function getProductUnitPrice(
+  product: { price: number; sku?: string | null; packPrices?: { label: string; qty: number; totalPrice: number }[] | null },
+): number {
+  return getComboItemNormalPrice(product, 1);
+}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCart } from "../../components/cart-provider";
 import { useSaleMode } from "../../components/sale-mode-provider";
 import WhatsAppBuyCTA, { WHATSAPP_ICON } from "../../components/whatsapp-buy-cta";
+import ComboPrice from "../../components/combo-price";
 
 type Producto = {
   nombre: string;
@@ -19,6 +20,8 @@ type Combo = {
   sku: string;
   nombre: string;
   precio: string;
+  precioNumero: number;
+  precioNormal: number;
   imagenPrincipal: string;
 };
 
@@ -200,7 +203,12 @@ export default function ComboDetailClient({
               {combo.nombre}
             </h1>
             <p className="text-sm text-[#6e7379]">Código: {combo.sku}</p>
-            <p className="text-3xl font-extrabold" style={{ color: "#27B1B8" }}>{combo.precio}</p>
+            <ComboPrice
+              className="gap-1"
+              price={combo.precioNumero}
+              normalPrice={combo.precioNormal}
+              priceClassName="text-3xl font-extrabold text-[#27B1B8]"
+            />
 
             <div className="rounded-2xl border border-black/8 bg-[#f8f8f7] p-4">
               <p className="mb-3 text-sm font-bold text-[#0C535B]">Este combo incluye</p>

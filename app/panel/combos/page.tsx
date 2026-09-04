@@ -3,8 +3,12 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { SimpleSelect } from "../_components/simple-select";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import { getComboItemNormalPrice, getProductPacks, getProductUnitPrice } from "@/lib/volume-discounts";
+import { MdCheckCircle, MdRadioButtonUnchecked } from "react-icons/md";
 
-type MiniProduct = { id: string; name: string; price: number; image: string; sku: string | null };
+type PackPrice = { label: string; qty: number; totalPrice: number };
+
+type MiniProduct = { id: string; name: string; price: number; image: string; sku: string | null; packPrices?: PackPrice[] };
 
 type ComboItem = { productId: string; quantity: number; product: MiniProduct };
 
@@ -152,7 +156,7 @@ export default function CombosPanel() {
 
   const combosWithSavings = useMemo(() => {
     return combos.map((c) => {
-      const normalTotal = c.items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
+      const normalTotal = c.items.reduce((sum, i) => sum + getComboItemNormalPrice(i.product, i.quantity), 0);
       const savings = Math.max(0, normalTotal - c.price);
       const savingsPct = normalTotal > 0 ? (savings / normalTotal) * 100 : 0;
       return { ...c, normalTotal, savings, savingsPct };
@@ -301,7 +305,7 @@ export default function CombosPanel() {
   const normalTotal = useMemo(() => {
     return form.items.reduce((total, item) => {
       const product = products.find((p) => p.id === item.productId);
-      return total + (product?.price ?? 0) * item.quantity;
+      return total + (product ? getComboItemNormalPrice(product, item.quantity) : 0);
     }, 0);
   }, [form.items, products]);
 
@@ -649,7 +653,7 @@ export default function CombosPanel() {
                 value={form.createdByName}
                 onChange={(v) => setForm((f) => ({ ...f, createdByName: v }))}
                 placeholder="Seleccionar vendedor…"
-                options={vendedores.map((v) => ({ value: v.fullName, label: v.fullName }))}
+                options={[{ value: "Todos los vendedores", label: "Todos los vendedores" }, ...vendedores.map((v) => ({ value: v.fullName, label: v.fullName }))]}
               />
             </div>
 
@@ -660,8 +664,30 @@ export default function CombosPanel() {
             </div>
 
             <div className="mt-3">
+              <label className="mb-1 block text-xs font-bold text-[#64748B]">Estado</label>
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, active: !f.active }))}
+                aria-pressed={form.active}
+                className={`flex w-full items-center justify-between rounded-xl border px-4 py-2.5 text-sm font-bold transition-colors ${
+                  form.active
+                    ? "border-[#27B1B8] bg-[#27B1B8]/10 text-[#0C7A80]"
+                    : "border-[#E2E8F0] bg-white text-[#94A3B8] hover:bg-[#F8FAFC]"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  {form.active ? <MdCheckCircle className="h-4 w-4" /> : <MdRadioButtonUnchecked className="h-4 w-4" />}
+                  {form.active ? "Activo" : "Inactivo"}
+                </span>
+                <span className={`relative h-5 w-9 rounded-full transition-colors ${form.active ? "bg-[#27B1B8]" : "bg-[#CBD5E1]"}`}>
+                  <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${form.active ? "left-[1.125rem]" : "left-0.5"}`} />
+                </span>
+              </button>
+            </div>
+
+            <div className="mt-3">
               <label className="mb-1 block text-xs font-bold text-[#64748B]">Imagen principal</label>
-              <p className="mb-1.5 text-[11px] text-[#94A3B8]">Recomendado: 800×800px, cuadrada</p>
+              <p className="mb-1.5 text-[11px] text-[#94A3B8]">Recomendado: 1480×2000px, vertical (3:4)</p>
               <input ref={imageInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage(f); }} />
               <div className="flex items-center gap-3">
@@ -678,7 +704,7 @@ export default function CombosPanel() {
 
             <div className="mt-3">
               <label className="mb-1 block text-xs font-bold text-[#64748B]">Imágenes adicionales (opcional)</label>
-              <p className="mb-1.5 text-[11px] text-[#94A3B8]">Recomendado: 800×800px, cuadrada</p>
+              <p className="mb-1.5 text-[11px] text-[#94A3B8]">Recomendado: 1480×2000px, vertical (3:4)</p>
               <input ref={galleryInputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden"
                 onChange={(e) => { const files = e.target.files; if (files && files.length) uploadGalleryImages(files); e.target.value = ""; }} />
               <div className="flex flex-wrap items-center gap-3">
@@ -709,8 +735,21 @@ export default function CombosPanel() {
                   {form.items.map((item) => {
                     const p = products.find((x) => x.id === item.productId);
                     return (
-                      <span key={item.productId} className="inline-flex items-center gap-1 rounded-full bg-white border border-[#E2E8F0] px-2.5 py-1 text-[11px] text-[#1A1A1A]">
+                      <span key={item.productId} className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#E2E8F0] px-2.5 py-1 text-[11px] text-[#1A1A1A]">
                         {p?.name ?? item.productId} × {item.quantity}
+                        {p && getProductPacks(p).length > 0 && (
+                          <SimpleSelect
+                            className="shrink-0"
+                            triggerClassName="flex items-center gap-1 rounded-full bg-[#F1F5F9] px-2 py-0.5 text-[10px] font-bold text-[#475569]"
+                            value={getProductPacks(p).some((pack) => pack.qty === item.quantity) ? String(item.quantity) : "1"}
+                            placeholder={`× ${item.quantity} und`}
+                            onChange={(v) => setQuantity(item.productId, Number(v))}
+                            options={[
+                              { value: "1", label: "Unidad" },
+                              ...getProductPacks(p).map((pack) => ({ value: String(pack.qty), label: pack.label })),
+                            ]}
+                          />
+                        )}
                         <button type="button" onClick={() => toggleProduct(item.productId)} className="text-[#94A3B8] hover:text-[#DC2626]">✕</button>
                       </span>
                     );
@@ -730,7 +769,20 @@ export default function CombosPanel() {
                     <div key={p.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-[#F8FAFC]">
                       <input type="checkbox" checked={!!item} onChange={() => toggleProduct(p.id)} />
                       <span className="flex-1 truncate text-xs text-[#1A1A1A]">{p.name}</span>
-                      <span className="text-[10px] text-[#94A3B8]">{fmt(p.price)}</span>
+                      <span className="text-[10px] text-[#94A3B8]">{fmt(getProductUnitPrice(p))} c/u</span>
+                      {item && getProductPacks(p).length > 0 && (
+                        <SimpleSelect
+                          portal
+                          className="shrink-0"
+                          triggerClassName="flex items-center gap-1 rounded-lg border border-[#E2E8F0] px-2 py-1 text-[11px] font-bold text-[#475569]"
+                          value={getProductPacks(p).some((pack) => pack.qty === item.quantity) ? String(item.quantity) : "1"}
+                          onChange={(v) => setQuantity(p.id, Number(v))}
+                          options={[
+                            { value: "1", label: "Unidad" },
+                            ...getProductPacks(p).map((pack) => ({ value: String(pack.qty), label: pack.label })),
+                          ]}
+                        />
+                      )}
                       {item && (
                         <input
                           type="number"
@@ -768,11 +820,6 @@ export default function CombosPanel() {
                 </div>
               </div>
             </div>
-
-            <label className="mt-3 flex items-center gap-2 text-xs font-bold text-[#64748B]">
-              <input type="checkbox" checked={form.active} onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))} />
-              Activo
-            </label>
 
             {alert && (
               <div className={`mt-3 rounded-xl px-3 py-2 text-xs font-semibold ${alert.type === "ok" ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#FEE2E2] text-[#DC2626]"}`}>

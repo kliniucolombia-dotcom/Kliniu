@@ -42,7 +42,7 @@ export async function getCombosForPanel() {
   if (!prisma) return [];
   return prisma.combo.findMany({
     orderBy: { createdAt: "desc" },
-    include: { items: { include: { product: { select: { id: true, name: true, price: true, image: true } } } } },
+    include: { items: { include: { product: { select: { id: true, name: true, price: true, image: true, sku: true, packPrices: { select: { label: true, qty: true, totalPrice: true }, orderBy: { order: "asc" } } } } } } },
   });
 }
 
@@ -51,7 +51,7 @@ export async function getActiveCombos() {
   return prisma.combo.findMany({
     where: { active: true },
     orderBy: { createdAt: "desc" },
-    include: { items: { include: { product: { select: { id: true, name: true, price: true, image: true } } } } },
+    include: { items: { include: { product: { select: { id: true, name: true, price: true, image: true, sku: true, packPrices: { select: { label: true, qty: true, totalPrice: true }, orderBy: { order: "asc" } } } } } } },
   });
 }
 

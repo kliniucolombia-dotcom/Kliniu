@@ -313,16 +313,6 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
                 Outlet
               </Link>
               <Link
-                href="/combos"
-                className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-                  pathname === "/combos"
-                    ? "text-[#0C535B] underline decoration-[#27B1B8] decoration-2 underline-offset-4"
-                    : "text-[#0C535B] hover:text-[#27B1B8]"
-                }`}
-              >
-                Combos
-              </Link>
-              <Link
                 href="/quienes-somos"
                 className="rounded-lg px-3 py-2 text-sm font-semibold text-[#0C535B] transition-colors hover:text-[#27B1B8]"
               >

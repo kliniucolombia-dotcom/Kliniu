@@ -1,5 +1,7 @@
 import Link from "next/link";
 import ComboCarousel from "./components/combo-carousel";
+import ComboCtaCard from "./components/combo-cta-card";
+import { getComboItemNormalPrice } from "@/lib/volume-discounts";
 import HeroCarousel from "./components/hero-carousel";
 import ProductosCarousel from "./components/productos-carousel";
 import SiteFooter from "./components/site-footer";
@@ -48,6 +50,7 @@ export default async function Home() {
     })),
     precio: formatearMoneda(combo.price),
     precioNumero: combo.price,
+    precioNormal: combo.items.reduce((sum, i) => sum + getComboItemNormalPrice(i.product, i.quantity), 0),
     sku: combo.sku,
   }));
 
@@ -111,6 +114,7 @@ export default async function Home() {
                 <br />
                 un solo combo
               </p>
+              <ComboCtaCard className="mt-5 hidden min-h-[420px] w-full lg:flex" />
             </div>
             <ComboCarousel combos={combos} />
           </div>

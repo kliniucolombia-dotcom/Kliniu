@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getComboById } from "@/lib/combos";
 import { formatearMoneda } from "@/app/data/catalog";
 import ComboDetailClient from "./combo-detail-client";
+import { getComboItemNormalPrice } from "@/lib/volume-discounts";
 
 export default async function ComboPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -18,11 +19,8 @@ export default async function ComboPage({ params }: { params: Promise<{ id: stri
 
   const galleryImages = Array.from(
     new Set(
-      [
-        combo.image,
-        ...(combo.galleryImages || []),
-        ...productos.flatMap((p) => [p.imagen, ...p.galeria]),
-      ].filter((src): src is string => Boolean(src))
+      // Solo las imágenes cargadas al combo en el panel, no las de sus productos
+      [combo.image, ...(combo.galleryImages || [])].filter((src): src is string => Boolean(src))
     )
   );
 
@@ -33,6 +31,8 @@ export default async function ComboPage({ params }: { params: Promise<{ id: stri
         sku: combo.sku,
         nombre: combo.name,
         precio: formatearMoneda(combo.price),
+        precioNumero: combo.price,
+        precioNormal: combo.items.reduce((sum, i) => sum + getComboItemNormalPrice(i.product, i.quantity), 0),
         imagenPrincipal: combo.image ?? "/combo-productos-kliniu.png",
       }}
       productos={productos}

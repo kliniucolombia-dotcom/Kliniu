@@ -2,8 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { getActiveCombos } from "@/lib/combos";
 import { getBannerByKey } from "@/lib/banners";
-import { formatearMoneda } from "../data/catalog";
 import SiteFooter from "../components/site-footer";
+import ComboCard from "../components/combo-card";
+import { getComboItemNormalPrice } from "@/lib/volume-discounts";
+import { formatearMoneda } from "../data/catalog";
 
 export const metadata = { title: "Combos" };
 
@@ -54,26 +56,19 @@ export default async function CombosPage() {
           ) : (
             <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               {combosDb.map((combo) => (
-                <Link
+                <ComboCard
                   key={combo.id}
-                  href={`/combo/${combo.id}`}
-                  className="interactive-lift overflow-hidden rounded-2xl border border-black/8 bg-white"
-                >
-                  <div className="flex h-36 items-center justify-center bg-[#f8f8f7] p-3">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={combo.image ?? "/combo-productos-kliniu.png"}
-                      alt={combo.name}
-                      className="image-lift h-full w-full object-contain"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1 p-4">
-                    <p className="font-semibold text-[#111]">{combo.name}</p>
-                    <p className="mt-1 text-base font-bold" style={{ color: "#0C535B" }}>
-                      {formatearMoneda(combo.price)}
-                    </p>
-                  </div>
-                </Link>
+                  combo={{
+                    id: combo.id,
+                    nombre: combo.name,
+                    imagen: combo.image ?? "/combo-productos-kliniu.png",
+                    items: combo.items.map((i) => `${i.quantity}× ${i.product.name}`),
+                    precio: formatearMoneda(combo.price),
+                    precioNumero: combo.price,
+                    precioNormal: combo.items.reduce((sum, i) => sum + getComboItemNormalPrice(i.product, i.quantity), 0),
+                    sku: combo.sku,
+                  }}
+                />
               ))}
             </div>
           )}
