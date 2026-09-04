@@ -112,6 +112,10 @@ const policies = {
       "Si necesitas revisar una devolución, nuestro equipo comercial te acompaña para validar el caso y darte una respuesta clara.",
     sections: [
       {
+        heading: "Plazos aplicables",
+        body: "Derecho de retracto (compras no presenciales: web, teléfono o catálogo): 5 días hábiles siguientes a la entrega, con el producto nuevo, sin uso y con empaques, etiquetas y accesorios originales. El costo del transporte de devolución lo asume el consumidor y el reembolso se realiza dentro de los 30 días calendario siguientes a la verificación del producto. Ver Garantía, sección 6 — Derecho de Retracto.\n\nDevolución por defecto de fabricación: dentro del período de garantía del producto, contado desde la fecha de entrega (factura o guía de despacho). La solicitud se evalúa en máximo 10 días hábiles. Consulta los plazos por línea de producto en la página de Garantía.",
+      },
+      {
         heading: "Solicitud",
         body: "Comunícate con Kliniu indicando número de pedido, producto, motivo de devolución y evidencia fotográfica si aplica.",
       },
@@ -121,7 +125,7 @@ const policies = {
       },
       {
         heading: "Tiempos y respuesta",
-        body: "Una vez recibida la solicitud, el equipo comercial validará la información y te indicará los pasos para cambio, nota crédito o solución aplicable.",
+        body: "Una vez recibida la solicitud, el equipo comercial la validará en máximo 10 días hábiles y te indicará los pasos para cambio, reparación, nota crédito o reembolso según corresponda.",
       },
     ],
   },
@@ -151,7 +155,7 @@ const policies = {
     sections: [
       {
         heading: "1. Identificación del comerciante",
-        body: "Razón social: KLINIU S.A.S.\nDomicilio: Cra. 28 #3443, Bogotá D.C., Colombia.\nCorreo electrónico: info@kliniu.com\nTeléfonos: 601 3682434 / 312 5860921\nHorario de atención: lunes a viernes, 8:00 a.m. – 5:00 p.m.\nKLINIU S.A.S. es una sociedad comercial constituida bajo las leyes de la República de Colombia y responsable de la operación de este sitio.",
+        body: "Razón social: KLINIU S.A.S.\nDomicilio: Cra. 28 #34-43, Bogotá D.C., Colombia.\nCorreo electrónico: info@kliniu.com\nTeléfonos: 601 3682434 / 312 5860921\nHorario de atención: lunes a viernes, 8:00 a.m. – 5:00 p.m.\nKLINIU S.A.S. es una sociedad comercial constituida bajo las leyes de la República de Colombia y responsable de la operación de este sitio.",
       },
       {
         heading: "2. Objeto y aceptación",
@@ -284,7 +288,7 @@ const policies = {
     sections: [
       {
         heading: "1. Canales habilitados",
-        body: "Correo electrónico: info@kliniu.com (canal oficial para radicar PQRS).\nTeléfonos: 601 3682434 / 312 5860921\nWhatsApp comercial: disponible desde el sitio web.\nPresencial: Cra. 28 #3443, Bogotá D.C.\nHorario: lunes a viernes, 8:00 a.m. – 5:00 p.m.",
+        body: "Correo electrónico: info@kliniu.com (canal oficial para radicar PQRS).\nTeléfonos: 601 3682434 / 312 5860921\nWhatsApp comercial: disponible desde el sitio web.\nPresencial: Cra. 28 #34-43, Bogotá D.C.\nHorario: lunes a viernes, 8:00 a.m. – 5:00 p.m.",
       },
       {
         heading: "2. Información que debes incluir",
@@ -350,7 +354,7 @@ const policies = {
     sections: [
       {
         heading: "1. Responsable del tratamiento",
-        body: "KLINIU S.A.S., con domicilio en Cra. 28 #3443, Bogotá D.C., Colombia. Correo para el ejercicio de derechos: info@kliniu.com. Teléfonos: 601 3682434 / 312 5860921.",
+        body: "KLINIU S.A.S., con domicilio en Cra. 28 #34-43, Bogotá D.C., Colombia. Correo para el ejercicio de derechos: info@kliniu.com. Teléfonos: 601 3682434 / 312 5860921.",
       },
       {
         heading: "2. Autorización del titular",

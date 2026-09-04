@@ -13,8 +13,8 @@ const colPoliticas = [
 
 const colContacto = [
   {
-    label: "Cra. 28 #3443, Bogotá",
-    href: "https://www.google.com/maps/search/?api=1&query=Cra.+28+%233443+Bogota+Colombia",
+    label: "Cra. 28 #34-43, Bogotá",
+    href: "https://www.google.com/maps/search/?api=1&query=Cra.+28+%2334-43+Bogota+Colombia",
     icon: "/icono-ubicacion.png",
   },
 ];
