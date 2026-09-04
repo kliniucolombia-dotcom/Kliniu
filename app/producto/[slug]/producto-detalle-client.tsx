@@ -17,8 +17,7 @@ import { getVolumePricing, TIPO_VARIANTES, INSUMO_PACK_TIERS_BY_SKU, NO_PACK_SKU
 import type { ProductoEspecificacion } from "../../data/catalog";
 import { formatearMoneda } from "../../data/catalog";
 
-const esInox = (nombre: string, categoria: string, descripcion?: string) =>
-  /inoxidable/i.test(nombre) || /inoxidable/i.test(categoria) || /inoxidable/i.test(descripcion ?? "");
+const esInox = (nombre: string) => /inoxidable/i.test(nombre);
 
 const trustBadges = [
   {
@@ -690,7 +689,7 @@ export default function ProductoDetalleClient() {
             <div>
               <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-[#111] md:text-[26px]">
                 {producto.nombre}
-                {esInox(producto.nombre, producto.categoria, producto.descripcion) && (
+                {esInox(producto.nombre) && (
                   <span className="text-[#555]"> · Inox 304</span>
                 )}
               </h1>

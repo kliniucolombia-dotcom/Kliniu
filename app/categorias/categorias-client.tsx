@@ -140,7 +140,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
 
   const tipoBadge = producto.descripcion?.split("·")[0]?.trim();
   const variaciones = producto.variacionesColor ?? [];
-  const inox = /inoxidable/i.test(producto.nombre) || /inoxidable/i.test(producto.categoria ?? "") || /inoxidable/i.test(producto.descripcion ?? "");
+  const inox = /inoxidable/i.test(producto.nombre);
   const imagenActual = activeColor
     ? (variaciones.find((v) => v.color === activeColor)?.image ?? producto.imagen)
     : producto.imagen;
