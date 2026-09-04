@@ -59,11 +59,11 @@ export default function ComboCard({ combo, className = "" }: { combo: ComboCardD
         <div className="mt-1 border-t border-black/8 pt-2">
           <ComboPrice price={combo.precioNumero} normalPrice={combo.precioNormal} />
         </div>
-        <div className="mt-1 flex items-center gap-2">
+        <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center">
           {saleMode === "whatsapp" ? (
             <WhatsAppBuyCTA
               nombre={combo.nombre}
-              className="shine-sweep flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#25D366] py-2 text-xs font-bold text-white hover:bg-[#128C7E]"
+              className="shine-sweep flex w-full min-w-0 items-center justify-center gap-1.5 rounded-full bg-[#25D366] px-2 py-2 text-xs font-bold text-white hover:bg-[#128C7E] sm:flex-1"
             >
               {WHATSAPP_ICON}
               WhatsApp
@@ -72,14 +72,14 @@ export default function ComboCard({ combo, className = "" }: { combo: ComboCardD
             <button
               type="button"
               onClick={handleAdd}
-              className="shine-sweep flex-1 rounded-full bg-[#F07826] py-2 text-xs font-bold text-white transition-colors hover:bg-[#d4621a]"
+              className="shine-sweep w-full min-w-0 rounded-full bg-[#F07826] px-2 py-2 text-xs font-bold text-white transition-colors hover:bg-[#d4621a] sm:flex-1"
             >
               Agregar
             </button>
           )}
           <Link
             href={`/combo/${combo.id}`}
-            className="flex-1 rounded-full border border-black/10 py-2 text-center text-xs font-semibold text-[#444] transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"
+            className="w-full min-w-0 whitespace-nowrap rounded-full border border-black/10 px-2 py-2 text-center text-xs font-semibold text-[#444] transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8] sm:flex-1"
           >
             Ver combo
           </Link>
