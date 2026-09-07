@@ -1,7 +1,8 @@
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseStorageClient } from "@/lib/supabase-storage";
-import { MATERIAL_BUCKET } from "@/lib/material";
+import { MATERIAL_BUCKET, resolveFolderAccess } from "@/lib/material";
+import { isSuperAdmin } from "@/lib/roles";
 
 // Vercel corta el body a 4.5 MB en las Server Actions, pero las Route Handlers
 // aceptan hasta 100 MB. Dejamos 50 como tope razonable para material comercial.
@@ -21,6 +22,10 @@ export async function POST(request: Request) {
   const file = formData.get("file");
   const folderIdRaw = formData.get("folderId");
   const folderId = typeof folderIdRaw === "string" && folderIdRaw ? folderIdRaw : null;
+
+  // No se puede subir a una carpeta que no puedes ver.
+  const folderAccess = await resolveFolderAccess(folderId, access.user, isSuperAdmin(access.user));
+  if (!folderAccess.ok) return Response.json({ error: "Carpeta no encontrada" }, { status: 404 });
 
   if (!(file instanceof File)) return Response.json({ error: "Debes seleccionar un archivo." }, { status: 400 });
   if (file.size > MAX_FILE_SIZE_BYTES) {
