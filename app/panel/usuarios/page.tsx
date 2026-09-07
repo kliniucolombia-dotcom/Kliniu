@@ -706,18 +706,19 @@ export default function UsuariosPage() {
                   </div>
                 </td>
                 <td className="sticky right-0 border-l border-[#E2E8F0] bg-white p-3">
-                  <div className="flex items-center gap-2 text-[#64748B]">
-                    <button onClick={() => openPermissions(u.id)} title="Editar permisos" aria-label="Editar permisos" className="rounded-lg p-1.5 hover:bg-[#F1F5F9] hover:text-[#27B1B8]">
-                      <IconPencil />
+                  <div className="flex items-center gap-0.5 text-[#64748B]">
+                    <button onClick={() => openPermissions(u.id)} aria-label="Editar permisos" className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-bold hover:bg-[#F1F5F9] hover:text-[#27B1B8]">
+                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6l7-3z" /></svg> Permisos
                     </button>
-                    <button onClick={() => editEmail(u)} title="Editar usuario" aria-label="Editar usuario" className="rounded-lg p-1.5 hover:bg-[#F1F5F9] hover:text-[#27B1B8]">
-                      <IconMail />
+                    <button onClick={() => editEmail(u)} aria-label="Editar datos del usuario" className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-bold hover:bg-[#F1F5F9] hover:text-[#27B1B8]">
+                      <IconPencil /> Datos
                     </button>
-                    <button onClick={() => editPassword(u)} title="Cambiar contraseña" aria-label="Cambiar contraseña" className="rounded-lg p-1.5 hover:bg-[#F1F5F9] hover:text-[#27B1B8]">
-                      <IconKey />
+                    <button onClick={() => editPassword(u)} aria-label="Cambiar contraseña" className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-bold hover:bg-[#F1F5F9] hover:text-[#27B1B8]">
+                      <IconKey /> Clave
                     </button>
-                    <button onClick={() => { setDeleteTarget(u); setDeleteImpact(null); }} title="Eliminar" aria-label="Eliminar" className="rounded-lg p-1.5 text-red-500 hover:bg-red-50">
-                      <IconTrash />
+                    <span className="mx-1 h-4 w-px shrink-0 bg-[#E2E8F0]" />
+                    <button onClick={() => { setDeleteTarget(u); setDeleteImpact(null); }} aria-label="Eliminar usuario" className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-bold text-red-500 hover:bg-red-50">
+                      <IconTrash /> Eliminar
                     </button>
                   </div>
                 </td>
