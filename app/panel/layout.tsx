@@ -8,7 +8,7 @@ import {
   MdCardGiftcard, MdLocalOffer, MdWork, MdHome, MdSearch, MdNotificationsNone, MdPersonOutline,
   MdApartment, MdAccessTime, MdBeachAccess, MdRemoveCircleOutline, MdSwapHoriz, MdHandshake,
   MdCreditCard, MdHelpOutline, MdGroup, MdWarehouse, MdArticle, MdSmartToy, MdShoppingCart,
-  MdInventory, MdExtension, MdConfirmationNumber, MdChat,
+  MdInventory, MdExtension, MdConfirmationNumber, MdChat, MdVideocam,
 } from "react-icons/md";
 
 type NavChild = {
@@ -55,6 +55,7 @@ const NAV: NavItem[] = [
       { href: "/panel/combos", label: "Combos", module: "MODULE_COMBOS", icon: <MdCardGiftcard size={17} /> },
       { href: "/panel/outlet", label: "Outlet", module: "MODULE_OUTLET", icon: <MdLocalOffer size={17} /> },
       { href: "/panel/banners", label: "Diseño", module: "MODULE_BANNERS", icon: <MdImage size={17} /> },
+      { href: "/panel/videos-soluciones", label: "Videos", module: "MODULE_BANNERS", icon: <MdVideocam size={17} /> },
       { href: "/panel/costos", label: "Costos", module: "MODULE_COSTOS", group: "Precios", groupIcon: <MdAttachMoney size={14} />, icon: <MdAttachMoney size={17} /> },
       { href: "/panel/calculadora-precio", label: "Precio de Venta", module: "MODULE_CALCULADORA_PRECIO", icon: <MdCalculate size={17} /> },
     ],
@@ -67,6 +68,7 @@ const NAV: NavItem[] = [
     children: [
       { href: "/panel/produccion", label: "Producción", module: "MODULE_PRODUCCION", icon: <MdPrecisionManufacturing size={17} /> },
       { href: "/panel/produccion/ordenes", label: "Órdenes de Producción", module: "MODULE_PRODUCCION", icon: <MdAssignment size={17} /> },
+      { href: "/panel/produccion/departamentos", label: "Departamentos", module: "MODULE_PRODUCCION", icon: <MdApartment size={17} /> },
       { href: "/panel/bodegas", label: "Bodegas", module: "MODULE_BODEGAS", icon: <MdWarehouse size={17} /> },
     ],
   },

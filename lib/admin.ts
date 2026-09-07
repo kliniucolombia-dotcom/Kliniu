@@ -11,7 +11,7 @@ export async function requireStaffUpload() {
 
   const user = await getUserById(session.userId);
 
-  if (!user || (user.role !== "SELLER" && user.role !== "RRHH" && !isAdmin(user))) {
+  if (!user || (user.role !== "SELLER" && user.role !== "RRHH" && user.role !== "DISENO" && !isAdmin(user))) {
     throw new Error("FORBIDDEN");
   }
 

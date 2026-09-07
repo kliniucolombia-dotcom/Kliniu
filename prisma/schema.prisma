@@ -1336,3 +1336,26 @@ model TicketComment {
 
   @@index([ticketId])
 }
+
+model ProductionDepartment {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SolutionVideo {
+  id        String   @id @default(cuid())
+  title     String
+  videoUrl  String
+  thumbUrl  String?
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
+}
