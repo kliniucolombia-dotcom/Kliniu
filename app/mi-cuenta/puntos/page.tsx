@@ -4,14 +4,13 @@ import Link from "next/link";
 import { getSessionFromCookies } from "@/lib/auth";
 import { getUserById } from "@/lib/users";
 import { getPanelLandingPath } from "@/lib/permissions";
+import { PANEL_ROLES } from "@/lib/permission-defaults";
 import { getUserKData, getKTierData, TIERS_K, getMonthlySpendForUser } from "@/lib/points";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mis Puntos K" };
 
-// Mismo mapeo de roles que /mi-cuenta: solo CUSTOMER puede ver esta página.
-const PANEL_ROLES = ["SELLER", "RRHH", "BODEGA", "DISENO", "MARKETING", "JEFE_VENTAS", "TESORERIA", "INGENIERIA"];
 
 const fmt = (n: number) =>
   n.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });

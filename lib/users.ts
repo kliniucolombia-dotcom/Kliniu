@@ -320,7 +320,7 @@ export async function listUsers(): Promise<PublicUser[]> {
     select: {
       id: true, fullName: true, company: true, email: true, phone: true, whatsappPhone: true,
       department: true, city: true, addressLine1: true, addressLine2: true, avatarUrl: true,
-      role: true, status: true, createdAt: true,
+      role: true, status: true, createdAt: true, backupUserId: true,
     },
   });
 }
@@ -332,6 +332,8 @@ export type UpdateUserByAdminInput = {
   role?: UserRole;
   status?: "ACTIVE" | "INACTIVE" | "SUSPENDED";
   newPassword?: string;
+  /** Quién cubre a este usuario cuando falta; "" o null lo deja sin respaldo. */
+  backupUserId?: string | null;
 };
 
 export type UserDeletionImpact = {
@@ -421,9 +423,15 @@ export async function updateUserByAdmin(userId: string, input: UpdateUserByAdmin
     role?: UserRole;
     status?: "ACTIVE" | "INACTIVE" | "SUSPENDED";
     passwordHash?: string;
+    backupUserId?: string | null;
   } = {};
 
   if (input.fullName?.trim()) data.fullName = input.fullName.trim();
+  // Nadie puede ser su propio respaldo.
+  if (input.backupUserId !== undefined) {
+    const backupId = input.backupUserId || null;
+    data.backupUserId = backupId === userId ? null : backupId;
+  }
   if (input.role) data.role = input.role;
   if (input.status) data.status = input.status;
   if (input.whatsappPhone !== undefined) data.whatsappPhone = input.whatsappPhone?.trim() || null;

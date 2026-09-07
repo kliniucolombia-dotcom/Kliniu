@@ -4,7 +4,7 @@ import { DEFAULT_PERMISSIONS } from "@/lib/permission-defaults";
 import { SimpleSelect } from "../_components/simple-select";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
-type Role = "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "BODEGA" | "DISENO" | "MARKETING" | "JEFE_VENTAS" | "TESORERIA" | "INGENIERIA";
+type Role = "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "BODEGA" | "DISENO" | "MARKETING" | "JEFE_VENTAS" | "TESORERIA" | "INGENIERIA" | "LOGISTICA" | "LIDER_ENSAMBLE" | "LIDER_INYECCION" | "MANTENIMIENTO" | "JEFE_OPERACIONES" | "DIRECTOR_OPERACIONES";
 type Status = "ACTIVE" | "INACTIVE" | "SUSPENDED";
 
 type UserRow = {
@@ -12,6 +12,7 @@ type UserRow = {
   fullName: string;
   email: string;
   whatsappPhone: string | null;
+  backupUserId: string | null;
   role: Role;
   status: Status;
   createdAt: string;
@@ -57,9 +58,11 @@ const MODULE_LABELS: Record<string, string> = {
   MODULE_BODEGAS: "Bodegas",
   MODULE_WHATSAPP: "WhatsApp",
   MODULE_MATERIAL: "Material Comercial",
+  MODULE_LOGISTICA: "Logística",
+  MODULE_MANTENIMIENTO: "Mantenimiento",
 };
 
-const ROLES: Role[] = ["CUSTOMER", "ADMIN", "SELLER", "PACKING", "SUPERADMIN", "RRHH", "BODEGA", "DISENO", "MARKETING", "JEFE_VENTAS", "TESORERIA", "INGENIERIA"];
+const ROLES: Role[] = ["CUSTOMER", "ADMIN", "SELLER", "PACKING", "SUPERADMIN", "RRHH", "BODEGA", "DISENO", "MARKETING", "JEFE_VENTAS", "TESORERIA", "INGENIERIA", "LOGISTICA", "LIDER_ENSAMBLE", "LIDER_INYECCION", "MANTENIMIENTO", "JEFE_OPERACIONES", "DIRECTOR_OPERACIONES"];
 const STATUSES: Status[] = ["ACTIVE", "INACTIVE", "SUSPENDED"];
 
 const ROLE_LABELS: Record<Role, string> = {
@@ -75,6 +78,12 @@ const ROLE_LABELS: Record<Role, string> = {
   JEFE_VENTAS: "Jefe de Ventas",
   TESORERIA: "Tesorería",
   INGENIERIA: "Ingeniería",
+  LOGISTICA: "Logística",
+  LIDER_ENSAMBLE: "Líder Planta Ensamble",
+  LIDER_INYECCION: "Líder Planta Inyección",
+  MANTENIMIENTO: "Mantenimiento",
+  JEFE_OPERACIONES: "Jefe de Operaciones",
+  DIRECTOR_OPERACIONES: "Director de Operaciones",
 };
 
 const STATUS_LABELS: Record<Status, string> = {
@@ -96,6 +105,12 @@ const ROLE_BADGE: Record<Role, string> = {
   JEFE_VENTAS: "bg-[#DBEAFE] text-[#1D4ED8]",
   TESORERIA: "bg-[#EDE9FE] text-[#6D28D9]",
   INGENIERIA: "bg-[#FEE2E2] text-[#DC2626]",
+  LOGISTICA: "bg-[#E0F2FE] text-[#0369A1]",
+  LIDER_ENSAMBLE: "bg-[#DBEAFE] text-[#1D4ED8]",
+  LIDER_INYECCION: "bg-[#DBEAFE] text-[#1D4ED8]",
+  MANTENIMIENTO: "bg-[#FFEDD5] text-[#C2410C]",
+  JEFE_OPERACIONES: "bg-[#EDE9FE] text-[#6D28D9]",
+  DIRECTOR_OPERACIONES: "bg-[#EDE9FE] text-[#6D28D9]",
 };
 
 const STATUS_DOT: Record<Status, string> = {
@@ -129,6 +144,8 @@ const MODULE_ICON: Record<string, { path: string; className: string }> = {
   MODULE_BODEGAS: { path: "M3 21V9l9-6 9 6v12M9 21v-8h6v8", className: "bg-[#E0F2FE] text-[#0369A1]" },
   MODULE_WHATSAPP: { path: "M3 21l1.65-4.95A9 9 0 1112 21a9 9 0 01-6.35-1.95L3 21zM8 10a4 4 0 008 0", className: "bg-[#DCFCE7] text-[#15803D]" },
   MODULE_MATERIAL: { path: "M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z", className: "bg-[#FEF3C7] text-[#B45309]" },
+  MODULE_LOGISTICA: { path: "M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a2 2 0 100-4 2 2 0 000 4zM18.5 21a2 2 0 100-4 2 2 0 000 4z", className: "bg-[#E0F2FE] text-[#0369A1]" },
+  MODULE_MANTENIMIENTO: { path: "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z", className: "bg-[#FFEDD5] text-[#C2410C]" },
 };
 
 function ModuleIcon({ module }: { module: string }) {
@@ -315,6 +332,7 @@ export default function UsuariosPage() {
   const [roleFilter, setRoleFilter] = useState<Role | "ALL">("ALL");
   const [statusFilter, setStatusFilter] = useState<Status | "ALL">("ALL");
   const [emailTarget, setEmailTarget] = useState<UserRow | null>(null);
+  const [backupValue, setBackupValue] = useState("");
   const [emailValue, setEmailValue] = useState("");
   const [fullNameValue, setFullNameValue] = useState("");
   const [whatsappValue, setWhatsappValue] = useState("");
@@ -372,7 +390,7 @@ export default function UsuariosPage() {
     }
   };
 
-  const updateUser = async (id: string, patch: Partial<Pick<UserRow, "role" | "status" | "email" | "fullName" | "whatsappPhone">> & { newPassword?: string }, successMsg?: string) => {
+  const updateUser = async (id: string, patch: Partial<Pick<UserRow, "role" | "status" | "email" | "fullName" | "whatsappPhone" | "backupUserId">> & { newPassword?: string }, successMsg?: string) => {
     const res = await fetch(`/api/panel/users/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -392,6 +410,7 @@ export default function UsuariosPage() {
     setEmailValue(u.email);
     setFullNameValue(u.fullName);
     setWhatsappValue(u.whatsappPhone ?? "");
+    setBackupValue(u.backupUserId ?? "");
   };
 
   const confirmEditEmail = () => {
@@ -399,10 +418,11 @@ export default function UsuariosPage() {
     const email = emailValue.trim();
     const fullName = fullNameValue.trim();
     const whatsappPhone = whatsappValue.trim();
-    const patch: Partial<Pick<UserRow, "email" | "fullName" | "whatsappPhone">> = {};
+    const patch: Partial<Pick<UserRow, "email" | "fullName" | "whatsappPhone" | "backupUserId">> = {};
     if (email && email !== emailTarget.email) patch.email = email;
     if (fullName && fullName !== emailTarget.fullName) patch.fullName = fullName;
     if (whatsappPhone !== (emailTarget.whatsappPhone ?? "")) patch.whatsappPhone = whatsappPhone || null;
+    if (backupValue !== (emailTarget.backupUserId ?? "")) patch.backupUserId = backupValue || null;
     if (Object.keys(patch).length > 0) updateUser(emailTarget.id, patch, "Usuario actualizado correctamente");
     setEmailTarget(null);
   };
@@ -966,7 +986,19 @@ export default function UsuariosPage() {
               onChange={(e) => setWhatsappValue(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && confirmEditEmail()}
               placeholder="Ej. 573112088806"
-              className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#27B1B8] focus:outline-none"
+              className="mb-3 w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#27B1B8] focus:outline-none"
+            />
+            <label className="mb-1 block text-xs font-semibold text-[#64748B]">Respaldo (quién lo cubre si falta)</label>
+            <SimpleSelect
+              value={backupValue}
+              options={[
+                { value: "", label: "Sin respaldo" },
+                ...users
+                  .filter((u) => u.id !== emailTarget.id)
+                  .map((u) => ({ value: u.id, label: `${u.fullName} — ${ROLE_LABELS[u.role] ?? u.role}` })),
+              ]}
+              onChange={setBackupValue}
+              portal
             />
             <div className="mt-5 flex justify-end gap-2">
               <button onClick={() => setEmailTarget(null)} className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-xs font-bold text-[#64748B]">

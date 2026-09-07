@@ -4,6 +4,7 @@ import { getSessionFromCookies } from "@/lib/auth";
 import { getOrdersForUser } from "@/lib/orders";
 import { getUserById } from "@/lib/users";
 import { getPanelLandingPath } from "@/lib/permissions";
+import { PANEL_ROLES } from "@/lib/permission-defaults";
 import AccountProfileForm from "./profile-form";
 
 export const dynamic = "force-dynamic";
@@ -12,9 +13,6 @@ export const metadata: Metadata = {
   title: "Mi cuenta",
 };
 
-// Mismo mapeo de roles que /api/auth/login: /mi-cuenta es solo para CUSTOMER,
-// cualquier otro rol de staff se manda a su panel correspondiente.
-const PANEL_ROLES = ["SELLER", "RRHH", "BODEGA", "DISENO", "MARKETING", "JEFE_VENTAS", "TESORERIA", "INGENIERIA"];
 
 export default async function MiCuentaPage() {
   const session = await getSessionFromCookies();

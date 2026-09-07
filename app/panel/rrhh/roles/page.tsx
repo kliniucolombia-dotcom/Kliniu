@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import {
   MdWorkspacePremium, MdShoppingBag, MdPeople, MdVerifiedUser, MdBadge,
   MdWarehouse, MdPalette, MdCampaign, MdTrendingUp, MdAccountBalance,
-  MdSettings, MdGroups, MdChevronRight,
+  MdSettings, MdGroups, MdChevronRight, MdLocalShipping, MdPrecisionManufacturing,
+  MdBuild, MdSupervisorAccount, MdManageAccounts,
 } from "react-icons/md";
 
 type RoleRow = {
@@ -26,6 +27,12 @@ const ROLE_ICONS: Record<string, React.ReactNode> = {
   JEFE_VENTAS: <MdTrendingUp />,
   TESORERIA: <MdAccountBalance />,
   INGENIERIA: <MdSettings />,
+  LOGISTICA: <MdLocalShipping />,
+  LIDER_ENSAMBLE: <MdPrecisionManufacturing />,
+  LIDER_INYECCION: <MdPrecisionManufacturing />,
+  MANTENIMIENTO: <MdBuild />,
+  JEFE_OPERACIONES: <MdSupervisorAccount />,
+  DIRECTOR_OPERACIONES: <MdManageAccounts />,
 };
 
 export default function RolesPage() {

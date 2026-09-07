@@ -19,7 +19,7 @@ type SiteHeaderProps = {
   } | null;
 };
 
-const PANEL_ROLES: UserRole[] = ["SELLER", "SUPERADMIN", "BODEGA", "DISENO", "MARKETING", "JEFE_VENTAS", "TESORERIA", "INGENIERIA"];
+const PANEL_ROLES: UserRole[] = ["SELLER", "SUPERADMIN", "BODEGA", "DISENO", "MARKETING", "JEFE_VENTAS", "TESORERIA", "INGENIERIA", "LOGISTICA", "LIDER_ENSAMBLE", "LIDER_INYECCION", "MANTENIMIENTO", "JEFE_OPERACIONES", "DIRECTOR_OPERACIONES"];
 
 function getUserHref(role: UserRole): string {
   if (role === "ADMIN") return "/admin";

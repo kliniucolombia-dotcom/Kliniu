@@ -14,6 +14,12 @@ const ROLE_LABELS: Record<string, string> = {
   JEFE_VENTAS: "Jefe de Ventas",
   TESORERIA: "Tesorería",
   INGENIERIA: "Ingeniería",
+  LOGISTICA: "Logística",
+  LIDER_ENSAMBLE: "Líder Planta Ensamble",
+  LIDER_INYECCION: "Líder Planta Inyección",
+  MANTENIMIENTO: "Mantenimiento",
+  JEFE_OPERACIONES: "Jefe de Operaciones",
+  DIRECTOR_OPERACIONES: "Director de Operaciones",
 };
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {
@@ -29,6 +35,12 @@ const ROLE_DESCRIPTIONS: Record<string, string> = {
   JEFE_VENTAS: "Supervisión del equipo comercial y metas de venta.",
   TESORERIA: "Gestión de pagos, cartera y finanzas.",
   INGENIERIA: "Acceso a módulos y herramientas de ingeniería.",
+  LOGISTICA: "Rutas de distribución, costos de transporte y novedades.",
+  LIDER_ENSAMBLE: "Dirección de la planta de ensamble y su programa de producción.",
+  LIDER_INYECCION: "Coordinación de la producción de inyección y cambios de molde.",
+  MANTENIMIENTO: "Mantenimiento preventivo y correctivo de equipos, moldes e infraestructura.",
+  JEFE_OPERACIONES: "Supervisión y gestión de toda el área de operaciones.",
+  DIRECTOR_OPERACIONES: "Dirección y visibilidad completa del área de operaciones.",
 };
 
 export async function GET() {

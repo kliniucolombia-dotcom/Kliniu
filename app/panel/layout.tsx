@@ -9,12 +9,15 @@ import {
   MdApartment, MdAccessTime, MdBeachAccess, MdRemoveCircleOutline, MdSwapHoriz, MdHandshake,
   MdCreditCard, MdHelpOutline, MdGroup, MdWarehouse, MdArticle, MdSmartToy, MdShoppingCart,
   MdInventory, MdExtension, MdConfirmationNumber, MdChat, MdVideocam, MdFolder,
+  MdLocalShipping, MdBuild,
 } from "react-icons/md";
 
 type NavChild = {
   href: string;
   label: string;
   module: string;
+  /** Visible si el usuario ve cualquiera de estos módulos (para vistas transversales). */
+  anyModule?: string[];
   group?: string;
   groupIcon?: React.ReactNode;
   icon?: React.ReactNode;
@@ -63,14 +66,24 @@ const NAV: NavItem[] = [
   },
   {
     key: "operaciones",
-    href: "/panel/produccion",
+    href: "/panel/operaciones",
     label: "Operaciones",
     icon: <MdPrecisionManufacturing size={18} />,
     children: [
+      {
+        href: "/panel/operaciones",
+        label: "Tablero",
+        module: "MODULE_PRODUCCION",
+        anyModule: ["MODULE_PRODUCCION", "MODULE_BODEGAS", "MODULE_LOGISTICA", "MODULE_MANTENIMIENTO"],
+        icon: <MdDashboard size={17} />,
+      },
       { href: "/panel/produccion", label: "Producción", module: "MODULE_PRODUCCION", icon: <MdPrecisionManufacturing size={17} /> },
       { href: "/panel/produccion/ordenes", label: "Órdenes de Producción", module: "MODULE_PRODUCCION", icon: <MdAssignment size={17} /> },
+      { href: "/panel/produccion/moldes", label: "Moldes", module: "MODULE_PRODUCCION", icon: <MdSwapHoriz size={17} /> },
       { href: "/panel/produccion/departamentos", label: "Departamentos", module: "MODULE_PRODUCCION", icon: <MdApartment size={17} /> },
       { href: "/panel/bodegas", label: "Bodegas", module: "MODULE_BODEGAS", icon: <MdWarehouse size={17} /> },
+      { href: "/panel/logistica", label: "Logística", module: "MODULE_LOGISTICA", icon: <MdLocalShipping size={17} /> },
+      { href: "/panel/mantenimiento", label: "Mantenimiento", module: "MODULE_MANTENIMIENTO", icon: <MdBuild size={17} /> },
     ],
   },
   {
@@ -254,7 +267,12 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         <nav className="flex-1 overflow-y-auto px-2 py-3">
           {(() => {
             const childMatches = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
-            const canSee = (m: NavChild) => (m.superAdminOnly ? isSuperAdmin : visibleModules?.has(m.module));
+            const canSee = (m: NavChild) =>
+              m.superAdminOnly
+                ? isSuperAdmin
+                : m.anyModule
+                  ? m.anyModule.some((mod) => visibleModules?.has(mod))
+                  : visibleModules?.has(m.module);
             const q = navSearch.trim().toLowerCase();
 
             let items = visibleModules

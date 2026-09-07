@@ -9,9 +9,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const body = await request.json().catch(() => ({})) as {
     fullName?: string; email?: string; whatsappPhone?: string | null;
-    role?: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "BODEGA" | "DISENO" | "MARKETING" | "JEFE_VENTAS" | "TESORERIA" | "INGENIERIA";
+    role?: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "BODEGA" | "DISENO" | "MARKETING" | "JEFE_VENTAS" | "TESORERIA" | "INGENIERIA" | "LOGISTICA" | "LIDER_ENSAMBLE" | "LIDER_INYECCION" | "MANTENIMIENTO" | "JEFE_OPERACIONES" | "DIRECTOR_OPERACIONES";
     status?: "ACTIVE" | "INACTIVE" | "SUSPENDED";
     newPassword?: string;
+    backupUserId?: string | null;
   };
 
   try {

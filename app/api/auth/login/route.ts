@@ -2,6 +2,7 @@ import { authenticateUser, getUserById } from "@/lib/users";
 import { setSessionCookie } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { getPanelLandingPath } from "@/lib/permissions";
+import { PANEL_ROLES } from "@/lib/permission-defaults";
 
 export async function POST(request: Request) {
   try {
@@ -59,7 +60,6 @@ export async function POST(request: Request) {
       role: user.role,
     });
 
-    const PANEL_ROLES = ["SELLER", "RRHH", "BODEGA", "DISENO", "MARKETING", "JEFE_VENTAS", "TESORERIA", "INGENIERIA"];
     const fullUser = PANEL_ROLES.includes(user.role) ? await getUserById(user.id) : null;
 
     const redirectTo =

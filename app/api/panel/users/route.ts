@@ -15,7 +15,7 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => ({})) as {
     fullName?: string; email?: string; password?: string;
-    role?: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "BODEGA" | "DISENO" | "MARKETING" | "JEFE_VENTAS" | "TESORERIA" | "INGENIERIA";
+    role?: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "BODEGA" | "DISENO" | "MARKETING" | "JEFE_VENTAS" | "TESORERIA" | "INGENIERIA" | "LOGISTICA" | "LIDER_ENSAMBLE" | "LIDER_INYECCION" | "MANTENIMIENTO" | "JEFE_OPERACIONES" | "DIRECTOR_OPERACIONES";
   };
 
   if (!body.fullName?.trim() || !body.email?.trim() || !body.password || !body.role) {

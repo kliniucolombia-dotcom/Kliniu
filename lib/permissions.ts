@@ -96,6 +96,8 @@ const PANEL_LANDING_ROUTES: Array<{ module: PanelModule; path: string }> = [
   { module: "MODULE_ODOO", path: "/panel/odoo" },
   { module: "MODULE_USUARIOS", path: "/panel/usuarios" },
   { module: "MODULE_MATERIAL", path: "/panel/material-comercial" },
+  { module: "MODULE_LOGISTICA", path: "/panel/logistica" },
+  { module: "MODULE_MANTENIMIENTO", path: "/panel/mantenimiento" },
   { module: "MODULE_RRHH", path: "/panel/rrhh" },
 ];
 
@@ -103,6 +105,7 @@ export const PANEL_NO_ACCESS_PATH = "/panel/sin-acceso";
 
 export async function getPanelLandingPath(user: PublicUser): Promise<string> {
   if (isSuperAdmin(user)) return "/panel";
+  if (user.role === "JEFE_OPERACIONES" || user.role === "DIRECTOR_OPERACIONES") return "/panel/operaciones";
 
   const perms = await getEffectivePermissions(user);
   for (const { module, path } of PANEL_LANDING_ROUTES) {
