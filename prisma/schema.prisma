@@ -440,6 +440,7 @@ enum PanelModule {
   MODULE_OUTLET
   MODULE_BODEGAS
   MODULE_WHATSAPP
+  MODULE_MATERIAL
 }
 
 enum BannerType {
@@ -1358,4 +1359,34 @@ model SolutionVideo {
   updatedAt DateTime @updatedAt
 
   @@index([order])
+}
+
+model MaterialFolder {
+  id          String   @id @default(cuid())
+  name        String
+  parentId    String?
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parent   MaterialFolder?  @relation("MaterialFolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children MaterialFolder[] @relation("MaterialFolderTree")
+  files    MaterialFile[]
+
+  @@index([parentId])
+}
+
+model MaterialFile {
+  id          String   @id @default(cuid())
+  folderId    String?
+  name        String
+  path        String
+  mimeType    String?
+  size        Int?
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  folder MaterialFolder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@index([folderId])
 }

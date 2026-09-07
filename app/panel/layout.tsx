@@ -8,7 +8,7 @@ import {
   MdCardGiftcard, MdLocalOffer, MdWork, MdHome, MdSearch, MdNotificationsNone, MdPersonOutline,
   MdApartment, MdAccessTime, MdBeachAccess, MdRemoveCircleOutline, MdSwapHoriz, MdHandshake,
   MdCreditCard, MdHelpOutline, MdGroup, MdWarehouse, MdArticle, MdSmartToy, MdShoppingCart,
-  MdInventory, MdExtension, MdConfirmationNumber, MdChat, MdVideocam,
+  MdInventory, MdExtension, MdConfirmationNumber, MdChat, MdVideocam, MdFolder,
 } from "react-icons/md";
 
 type NavChild = {
@@ -56,6 +56,7 @@ const NAV: NavItem[] = [
       { href: "/panel/outlet", label: "Outlet", module: "MODULE_OUTLET", icon: <MdLocalOffer size={17} /> },
       { href: "/panel/banners", label: "Diseño", module: "MODULE_BANNERS", icon: <MdImage size={17} /> },
       { href: "/panel/videos-soluciones", label: "Videos", module: "MODULE_BANNERS", icon: <MdVideocam size={17} /> },
+      { href: "/panel/material-comercial", label: "Material Comercial", module: "MODULE_MATERIAL", icon: <MdFolder size={17} /> },
       { href: "/panel/costos", label: "Costos", module: "MODULE_COSTOS", group: "Precios", groupIcon: <MdAttachMoney size={14} />, icon: <MdAttachMoney size={17} /> },
       { href: "/panel/calculadora-precio", label: "Precio de Venta", module: "MODULE_CALCULADORA_PRECIO", icon: <MdCalculate size={17} /> },
     ],

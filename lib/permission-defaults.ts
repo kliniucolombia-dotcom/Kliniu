@@ -36,6 +36,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_OUTLET: NONE,
     MODULE_BODEGAS: VIEW_ONLY,
     MODULE_WHATSAPP: NONE,
+    MODULE_MATERIAL: NONE,
   },
   SELLER: {
     MODULE_DASHBOARD: VIEW_ONLY,
@@ -55,6 +56,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_OUTLET: VIEW_ONLY,
     MODULE_BODEGAS: NONE,
     MODULE_WHATSAPP: FULL,
+    MODULE_MATERIAL: FULL,
   },
   PACKING: {
     MODULE_DASHBOARD: NONE,
@@ -74,6 +76,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_OUTLET: NONE,
     MODULE_BODEGAS: NONE,
     MODULE_WHATSAPP: NONE,
+    MODULE_MATERIAL: NONE,
   },
   CUSTOMER: {
     MODULE_DASHBOARD: NONE,
@@ -93,6 +96,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_OUTLET: NONE,
     MODULE_BODEGAS: NONE,
     MODULE_WHATSAPP: NONE,
+    MODULE_MATERIAL: NONE,
   },
   RRHH: {
     MODULE_DASHBOARD: NONE,
@@ -112,6 +116,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_OUTLET: NONE,
     MODULE_BODEGAS: NONE,
     MODULE_WHATSAPP: NONE,
+    MODULE_MATERIAL: NONE,
   },
   EMPLOYEE: {
     MODULE_DASHBOARD: NONE,
@@ -131,6 +136,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_OUTLET: NONE,
     MODULE_BODEGAS: NONE,
     MODULE_WHATSAPP: NONE,
+    MODULE_MATERIAL: NONE,
   },
   BODEGA: {
     MODULE_DASHBOARD: NONE,
@@ -150,6 +156,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_OUTLET: NONE,
     MODULE_BODEGAS: VIEW_CREATE_EDIT,
     MODULE_WHATSAPP: NONE,
+    MODULE_MATERIAL: NONE,
   },
   DISENO: {
     MODULE_DASHBOARD: NONE,
@@ -169,6 +176,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_OUTLET: VIEW_EDIT_DELETE,
     MODULE_BODEGAS: NONE,
     MODULE_WHATSAPP: NONE,
+    MODULE_MATERIAL: FULL,
   },
   MARKETING: {
     MODULE_DASHBOARD: NONE,
@@ -188,6 +196,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_OUTLET: FULL,
     MODULE_BODEGAS: NONE,
     MODULE_WHATSAPP: FULL,
+    MODULE_MATERIAL: FULL,
   },
   JEFE_VENTAS: {
     MODULE_DASHBOARD: NONE,
@@ -207,6 +216,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_OUTLET: FULL,
     MODULE_BODEGAS: NONE,
     MODULE_WHATSAPP: FULL,
+    MODULE_MATERIAL: FULL,
   },
   TESORERIA: {
     MODULE_DASHBOARD: NONE,
@@ -226,6 +236,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_OUTLET: NONE,
     MODULE_BODEGAS: NONE,
     MODULE_WHATSAPP: NONE,
+    MODULE_MATERIAL: NONE,
   },
   INGENIERIA: {
     MODULE_DASHBOARD: NONE,
@@ -245,6 +256,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
     MODULE_OUTLET: NONE,
     MODULE_BODEGAS: VIEW_ONLY,
     MODULE_WHATSAPP: NONE,
+    MODULE_MATERIAL: NONE,
   },
 };
 
@@ -266,4 +278,5 @@ export const ALL_MODULES: PanelModule[] = [
   "MODULE_OUTLET",
   "MODULE_BODEGAS",
   "MODULE_WHATSAPP",
+  "MODULE_MATERIAL",
 ];

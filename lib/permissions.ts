@@ -95,6 +95,7 @@ const PANEL_LANDING_ROUTES: Array<{ module: PanelModule; path: string }> = [
   { module: "MODULE_PRODUCCION", path: "/panel/produccion" },
   { module: "MODULE_ODOO", path: "/panel/odoo" },
   { module: "MODULE_USUARIOS", path: "/panel/usuarios" },
+  { module: "MODULE_MATERIAL", path: "/panel/material-comercial" },
   { module: "MODULE_RRHH", path: "/panel/rrhh" },
 ];
 
