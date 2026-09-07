@@ -45,7 +45,7 @@ const contactBar = [
   },
   {
     label: "Dirección",
-    value: "Cra. 28 #34-43, Bogotá",
+    value: "Cra. 28 #3443, Bogotá",
     href: "https://www.google.com/maps/search/?api=1&query=Cra.+28+%2334-43+Bogota+Colombia",
     icon: (
       <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -60,7 +60,7 @@ const paises = [
   {
     bandera: "/flag-colombia.png",
     nombre: "Colombia",
-    direccion: "Cra. 28 #34-43, Bogotá",
+    direccion: "Cra. 28 #3443, Bogotá",
     contacto: "Kliniu Colombia",
     telefono: "+57 (311) 208 8806",
     wa: "https://wa.me/573112088806",
