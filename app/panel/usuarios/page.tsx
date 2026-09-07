@@ -347,7 +347,11 @@ export default function UsuariosPage() {
       const data = await res.json();
       setUsers(data.users);
     } else {
-      setError("No autorizado o error al cargar usuarios");
+      setError(
+        res.status === 401 || res.status === 403
+          ? "No autorizado para ver usuarios"
+          : `Error al cargar usuarios (${res.status}). Reintenta.`,
+      );
     }
     setLoading(false);
   };
