@@ -14,10 +14,17 @@ type PanelProduct = {
   application: string | null; compatibility: string[]; warranty: string | null;
   technicalSpecs: unknown; colorVariants: unknown; videoUrl: string | null; active: boolean;
   isOutlet: boolean;
+  outletExpiresAt: string | null;
   updatedAt: string;
 };
 
 const fmt = (n: number) => n.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
+
+function outletDaysLeft(expiresAt: string | null): number | null {
+  if (!expiresAt) return null;
+  const ms = new Date(expiresAt).getTime() - Date.now();
+  return Math.ceil(ms / (24 * 60 * 60 * 1000));
+}
 
 function getPageNumbers(current: number, total: number): (number | "...")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -288,6 +295,21 @@ export default function OutletPanel() {
     setSaving(false);
   };
 
+  const extendOutlet = async (p: PanelProduct, days = 15) => {
+    setSaving(true);
+    setAlert(null);
+    const r = await fetch(`/api/products/${p.slug}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ extendOutletDays: days }),
+    });
+    const d = await r.json() as { error?: string };
+    if (!r.ok) { setAlert({ type: "err", msg: d.error || "Error al extender" }); setSaving(false); return; }
+    setAlert({ type: "ok", msg: `Outlet extendido ${days} días desde hoy` });
+    await load();
+    setSaving(false);
+  };
+
   return (
     <div className="min-h-full bg-[#f5f5f5] p-6 space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -385,16 +407,18 @@ export default function OutletPanel() {
                     <th className="p-4">Precio</th>
                     <th className="p-4">Stock</th>
                     <th className="p-4">Últ. actualización</th>
+                    <th className="p-4">Vence</th>
                     <th className="p-4">Estado</th>
                     <th className="p-4 text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pagedOutlet.length === 0 ? (
-                    <tr><td colSpan={7} className="p-10 text-center text-sm text-[#6e7379]">Aún no hay productos en Outlet.</td></tr>
+                    <tr><td colSpan={8} className="p-10 text-center text-sm text-[#6e7379]">Aún no hay productos en Outlet.</td></tr>
                   ) : (
                     pagedOutlet.map((p) => {
                       const priceDiff = p.previousPrice ? ((p.price - p.previousPrice) / p.previousPrice) * 100 : 0;
+                      const daysLeft = outletDaysLeft(p.outletExpiresAt);
                       return (
                         <tr key={p.id} className="border-b border-black/6 last:border-0 hover:bg-[#fafaf9]">
                           <td className="p-4">
@@ -430,12 +454,32 @@ export default function OutletPanel() {
                             <p>{new Date(p.updatedAt).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}</p>
                           </td>
                           <td className="p-4">
+                            {daysLeft === null ? (
+                              <span className="text-xs text-[#8b8d91]">—</span>
+                            ) : daysLeft > 0 ? (
+                              <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${daysLeft <= 3 ? "bg-[#FEF2F2] text-[#DC2626]" : "bg-[#EAF8F6] text-[#0C535B]"}`}>
+                                {daysLeft} {daysLeft === 1 ? "día" : "días"}
+                              </span>
+                            ) : (
+                              <span className="rounded-full bg-[#F1F5F9] px-2.5 py-0.5 text-xs font-semibold text-[#64748B]">
+                                Expirado (oculto en el sitio)
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-4">
                             <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${p.active ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#F1F5F9] text-[#64748B]"}`}>
                               {p.active ? "Activo" : "Inactivo"}
                             </span>
                           </td>
                           <td className="p-4 text-right">
                             <div className="flex justify-end gap-2">
+                              <button
+                                disabled={saving}
+                                onClick={() => extendOutlet(p)}
+                                className="rounded-full border border-[#F59E0B]/30 bg-[#FFFBEB] px-3 py-1.5 text-xs font-semibold text-[#B45309] transition-colors duration-200 hover:bg-[#F59E0B] hover:text-white disabled:opacity-50"
+                              >
+                                +15 días
+                              </button>
                               <button
                                 disabled={saving}
                                 onClick={() => openEdit(p)}

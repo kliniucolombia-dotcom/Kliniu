@@ -42,6 +42,7 @@ type ProductRecord = {
   featured: boolean;
   active: boolean;
   isOutlet: boolean;
+  outletExpiresAt?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -280,6 +281,7 @@ function toStoreProduct(
     videoUrl: product.videoUrl?.trim() || undefined,
     destacado: product.featured,
     esOutlet: product.isOutlet,
+    outletExpiraEl: product.outletExpiresAt ?? null,
     paquetes: packPricesByProductId?.get(product.id),
   };
 }
@@ -333,6 +335,7 @@ function getFallbackProducts(): StoreProduct[] {
     ),
     destacado: producto.destacado ?? index < 5,
     esOutlet: producto.esOutlet ?? false,
+    outletExpiraEl: producto.outletExpiraEl ?? null,
   }));
 }
 
@@ -639,20 +642,50 @@ export async function updateProduct(slug: string, input: ProductMutationInput, a
   return toStoreProduct(updated as ProductRecord);
 }
 
+const OUTLET_DURATION_DAYS = 15;
+
 export async function setProductOutletFlag(slug: string, isOutlet: boolean) {
   if (!supabaseDb) {
     throw new Error("DATABASE_NOT_CONFIGURED");
   }
 
+  // Al agregar a Outlet arranca un contador de 15 días; al quitarlo se limpia
+  // para que, si se vuelve a agregar más adelante, el contador empiece de cero.
+  const outletExpiresAt = isOutlet
+    ? new Date(Date.now() + OUTLET_DURATION_DAYS * 24 * 60 * 60 * 1000).toISOString()
+    : null;
+
   const { data: updated, error } = await supabaseDb
     .from("Product")
-    .update({ isOutlet, updatedAt: new Date().toISOString() })
+    .update({ isOutlet, outletExpiresAt, updatedAt: new Date().toISOString() })
     .eq("slug", slug)
     .select()
     .single();
 
   if (error || !updated) {
     throw new Error(error?.message || "Error al actualizar Outlet");
+  }
+
+  return toStoreProduct(updated as ProductRecord);
+}
+
+/** Extiende el contador de Outlet desde hoy (no acumula sobre el vencimiento anterior). */
+export async function extendProductOutlet(slug: string, days = OUTLET_DURATION_DAYS) {
+  if (!supabaseDb) {
+    throw new Error("DATABASE_NOT_CONFIGURED");
+  }
+
+  const outletExpiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: updated, error } = await supabaseDb
+    .from("Product")
+    .update({ outletExpiresAt, updatedAt: new Date().toISOString() })
+    .eq("slug", slug)
+    .select()
+    .single();
+
+  if (error || !updated) {
+    throw new Error(error?.message || "Error al extender Outlet");
   }
 
   return toStoreProduct(updated as ProductRecord);

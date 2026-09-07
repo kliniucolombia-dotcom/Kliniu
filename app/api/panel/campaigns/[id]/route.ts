@@ -28,6 +28,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       notes: body.notes ?? existing.notes,
       status: body.status ?? existing.status,
       productId: body.productId !== undefined ? (body.productId || null) : existing.productId,
+      comboId: body.comboId !== undefined ? (body.comboId || null) : existing.comboId,
+      startDate: body.startDate ? new Date(body.startDate) : existing.startDate,
+      endDate: body.endDate !== undefined ? (body.endDate ? new Date(body.endDate) : null) : existing.endDate,
     },
   });
 

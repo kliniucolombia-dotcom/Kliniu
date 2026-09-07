@@ -31,6 +31,7 @@ model Product {
   featured              Boolean                 @default(false)
   active                Boolean                 @default(true)
   isOutlet              Boolean                 @default(false)
+  outletExpiresAt       DateTime?
   createdAt             DateTime                @default(now())
   updatedAt             DateTime                @updatedAt
   colorVariants         Json?                   @default("[]")
@@ -264,6 +265,7 @@ model Campaign {
   name           String
   sellerId       String
   productId      String?
+  comboId        String?
   investment     Float           @default(0)
   sales          Float           @default(0)
   targetMultiple Float           @default(10)
@@ -276,6 +278,7 @@ model Campaign {
   updatedAt      DateTime        @updatedAt
   leads          Int             @default(0)
   product        Product?        @relation(fields: [productId], references: [id])
+  combo          Combo?          @relation(fields: [comboId], references: [id])
   seller         User            @relation("CampaignSeller", fields: [sellerId], references: [id])
   dailyEntries   CampaignDaily[]
 }
@@ -531,6 +534,7 @@ model Combo {
   updatedAt     DateTime    @updatedAt
   items         ComboItem[]
   cartItems     CartItem[]
+  campaigns     Campaign[]
 }
 
 model ComboItem {

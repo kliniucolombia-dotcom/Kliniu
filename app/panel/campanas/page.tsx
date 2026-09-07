@@ -9,8 +9,60 @@ type Campaign = {
   leads: number; targetMultiple: number; status: string; startDate: string;
   endDate?: string; notes?: string;
   seller: { id: string; fullName: string; email: string };
-  product?: { id: string; name: string; image: string };
+  combo?: { id: string; name: string; image: string | null };
 };
+
+// Un endpoint caído no debe congelar la página entera: devuelve [] en vez de reventar.
+async function fetchList(url: string): Promise<unknown[]> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+const DATE_FILTERS = [
+  { value: "all", label: "Todo" },
+  { value: "today", label: "Hoy" },
+  { value: "week", label: "Últimos 7 días" },
+  { value: "days15", label: "Últimos 15 días" },
+  { value: "month", label: "Últimos 30 días" },
+  { value: "quarter", label: "Últimos 90 días" },
+  { value: "thisMonth", label: "Este mes" },
+  { value: "lastMonth", label: "Mes pasado" },
+  { value: "thisYear", label: "Este año" },
+  { value: "custom", label: "Rango personalizado" },
+];
+
+const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+const daysAgo = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return startOfDay(d); };
+
+/** Devuelve [desde, hasta] según el filtro; null significa sin límite por ese lado. */
+function dateFilterRange(filter: string, customFrom: string, customTo: string): [Date | null, Date | null] {
+  const now = new Date();
+  switch (filter) {
+    case "today": return [startOfDay(now), endOfDay(now)];
+    case "week": return [daysAgo(7), null];
+    case "days15": return [daysAgo(15), null];
+    case "month": return [daysAgo(30), null];
+    case "quarter": return [daysAgo(90), null];
+    case "thisMonth": return [new Date(now.getFullYear(), now.getMonth(), 1), null];
+    case "lastMonth": return [
+      new Date(now.getFullYear(), now.getMonth() - 1, 1),
+      endOfDay(new Date(now.getFullYear(), now.getMonth(), 0)),
+    ];
+    case "thisYear": return [new Date(now.getFullYear(), 0, 1), null];
+    case "custom": return [
+      customFrom ? startOfDay(new Date(`${customFrom}T00:00:00`)) : null,
+      customTo ? endOfDay(new Date(`${customTo}T00:00:00`)) : null,
+    ];
+    default: return [null, null];
+  }
+}
 
 const fmtUSD = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 const fmtCOP = (n: number) => `$${Math.round(n).toLocaleString("es-CO")} COP`;
@@ -27,29 +79,31 @@ export default function CampanasPanel() {
   const [showForm, setShowForm]     = useState(false);
   const [editing, setEditing]       = useState<Campaign | null>(null);
   const [sellers, setSellers]       = useState<{ id: string; fullName: string }[]>([]);
-  const [products, setProducts]     = useState<{ id: string; name: string }[]>([]);
+  const [combos, setCombos]         = useState<{ id: string; name: string }[]>([]);
   const [saving, setSaving]         = useState(false);
   const [alert, setAlert]           = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [dailyCampaign, setDailyCampaign] = useState<Campaign | null>(null);
   const [trm, setTrm] = useState(4000);
   const [dateFilter, setDateFilter] = useState("all");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
 
   const [form, setForm] = useState({
-    name: "", sellerId: "", productId: "", investment: "", sales: "", leads: "",
+    name: "", sellerId: "", comboId: "", investment: "", sales: "", leads: "",
     targetMultiple: "10", platform: "Meta Ads", notes: "", status: "ACTIVE",
+    startDate: "", endDate: "",
   });
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [rc, rs, rp] = await Promise.all([
-      fetch("/api/panel/campaigns"),
-      fetch("/api/panel/sellers"),
-      fetch("/api/panel/products?minimal=1"),
+    const [dc, ds, dco] = await Promise.all([
+      fetchList("/api/panel/campaigns"),
+      fetchList("/api/panel/sellers"),
+      fetchList("/api/panel/combos"),
     ]);
-    const [dc, ds, dp] = await Promise.all([rc.json(), rs.json(), rp.json()]);
-    setCampaigns(Array.isArray(dc) ? dc : []);
-    setSellers(Array.isArray(ds) ? ds : []);
-    setProducts(Array.isArray(dp) ? dp : []);
+    setCampaigns(dc as Campaign[]);
+    setSellers(ds as { id: string; fullName: string }[]);
+    setCombos((dco as { id: string; name: string }[]).map((c) => ({ id: c.id, name: c.name })));
     setLoading(false);
   }, []);
 
@@ -58,27 +112,36 @@ export default function CampanasPanel() {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name: "", sellerId: sellers[0]?.id ?? "", productId: "", investment: "", sales: "", leads: "", targetMultiple: "10", platform: "Meta Ads", notes: "", status: "ACTIVE" });
+    setForm({ name: "", sellerId: sellers[0]?.id ?? "", comboId: "", investment: "", sales: "", leads: "", targetMultiple: "10", platform: "Meta Ads", notes: "", status: "ACTIVE", startDate: "", endDate: "" });
     setAlert(null);
     setShowForm(true);
   };
 
   const openEdit = (c: Campaign) => {
     setEditing(c);
-    setForm({ name: c.name, sellerId: c.seller.id, productId: c.product?.id ?? "", investment: String(c.investment), sales: String(c.sales), leads: String(c.leads ?? 0), targetMultiple: String(c.targetMultiple), platform: c.platform, notes: c.notes ?? "", status: c.status });
+    setForm({
+      name: c.name, sellerId: c.seller.id, comboId: c.combo?.id ?? "", investment: String(c.investment), sales: String(c.sales), leads: String(c.leads ?? 0), targetMultiple: String(c.targetMultiple), platform: c.platform, notes: c.notes ?? "", status: c.status,
+      startDate: c.startDate ? c.startDate.slice(0, 10) : "",
+      endDate: c.endDate ? c.endDate.slice(0, 10) : "",
+    });
     setAlert(null);
     setShowForm(true);
   };
 
   const filteredCampaigns = campaigns.filter((c) => {
-    if (dateFilter === "all") return true;
-    const days = { week: 7, month: 30, quarter: 90 }[dateFilter] ?? 0;
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - days);
-    return new Date(c.startDate) >= cutoff;
+    const [from, to] = dateFilterRange(dateFilter, customFrom, customTo);
+    if (!from && !to) return true;
+    const start = new Date(c.startDate);
+    if (from && start < from) return false;
+    if (to && start > to) return false;
+    return true;
   });
 
   const save = async () => {
+    if (form.startDate && form.endDate && form.endDate < form.startDate) {
+      setAlert({ type: "err", msg: "La fecha final no puede ser anterior a la inicial" });
+      return;
+    }
     setSaving(true);
     const body = { ...form, investment: parseFloat(form.investment) || 0, sales: parseFloat(form.sales) || 0, leads: parseInt(form.leads) || 0, targetMultiple: parseFloat(form.targetMultiple) || 10 };
     const url = editing ? `/api/panel/campaigns/${editing.id}` : "/api/panel/campaigns";
@@ -107,20 +170,50 @@ export default function CampanasPanel() {
         <p className="mt-0.5 text-sm font-black text-[#1A1A1A]">Meta mínima: inversión × {10} = ventas esperadas</p>
       </div>
 
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         <span className="text-xs font-bold text-[#64748B]">Periodo:</span>
-        <div className="w-40">
-          <SimpleSelect
-            value={dateFilter}
-            options={[
-              { value: "all", label: "Todo" },
-              { value: "week", label: "Última semana" },
-              { value: "month", label: "Último mes" },
-              { value: "quarter", label: "Último trimestre" },
-            ]}
-            onChange={setDateFilter}
-          />
+        <div className="w-48">
+          <SimpleSelect value={dateFilter} options={DATE_FILTERS} onChange={setDateFilter} />
         </div>
+
+        {dateFilter === "custom" && (
+          <>
+            <label className="flex items-center gap-1.5 text-xs font-bold text-[#64748B]">
+              Desde
+              <input
+                type="date"
+                value={customFrom}
+                max={customTo || undefined}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm font-normal text-[#1A1A1A] outline-none focus:border-[#27B1B8]"
+              />
+            </label>
+            <label className="flex items-center gap-1.5 text-xs font-bold text-[#64748B]">
+              Hasta
+              <input
+                type="date"
+                value={customTo}
+                min={customFrom || undefined}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm font-normal text-[#1A1A1A] outline-none focus:border-[#27B1B8]"
+              />
+            </label>
+          </>
+        )}
+
+        {dateFilter !== "all" && (
+          <button
+            type="button"
+            onClick={() => { setDateFilter("all"); setCustomFrom(""); setCustomTo(""); }}
+            className="rounded-full border border-[#E2E8F0] px-3 py-1.5 text-xs font-bold text-[#64748B] hover:bg-[#F8FAFC]"
+          >
+            ↻ Limpiar
+          </button>
+        )}
+
+        <span className="ml-auto text-xs text-[#94A3B8]">
+          {filteredCampaigns.length} de {campaigns.length} campañas
+        </span>
       </div>
 
       {loading ? (
@@ -128,8 +221,22 @@ export default function CampanasPanel() {
       ) : filteredCampaigns.length === 0 ? (
         <div className="flex h-48 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[#E2E8F0] bg-white">
           <p className="text-3xl">📢</p>
-          <p className="text-sm font-semibold text-[#94A3B8]">No hay campañas todavía</p>
-          <button onClick={openNew} className="rounded-xl bg-[#27B1B8] px-4 py-2 text-xs font-bold text-white">Crear primera campaña</button>
+          {campaigns.length > 0 ? (
+            <>
+              <p className="text-sm font-semibold text-[#94A3B8]">Ninguna campaña en el periodo seleccionado</p>
+              <button
+                onClick={() => { setDateFilter("all"); setCustomFrom(""); setCustomTo(""); }}
+                className="rounded-xl border border-[#E2E8F0] px-4 py-2 text-xs font-bold text-[#64748B]"
+              >
+                Ver todas
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-semibold text-[#94A3B8]">No hay campañas todavía</p>
+              <button onClick={openNew} className="rounded-xl bg-[#27B1B8] px-4 py-2 text-xs font-bold text-white">Crear primera campaña</button>
+            </>
+          )}
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-[#E2E8F0] bg-white">
@@ -215,11 +322,11 @@ export default function CampanasPanel() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-bold text-[#64748B]">Producto (opcional)</label>
+                <label className="mb-1 block text-xs font-bold text-[#64748B]">Combo (opcional)</label>
                 <SimpleSelect
-                  value={form.productId}
-                  options={[{ value: "", label: "Sin producto" }, ...products.map((p) => ({ value: p.id, label: p.name }))]}
-                  onChange={(v) => setForm({ ...form, productId: v })}
+                  value={form.comboId}
+                  options={[{ value: "", label: "Sin combo" }, ...combos.map((c) => ({ value: c.id, label: c.name }))]}
+                  onChange={(v) => setForm({ ...form, comboId: v })}
                 />
               </div>
 
@@ -253,6 +360,16 @@ export default function CampanasPanel() {
                   options={["Meta Ads","Google Ads","TikTok Ads","LinkedIn Ads","Otro"].map((p) => ({ value: p, label: p }))}
                   onChange={(v) => setForm({ ...form, platform: v })}
                 />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-bold text-[#64748B]">Fecha inicio</label>
+                <input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-bold text-[#64748B]">Fecha fin (opcional)</label>
+                <input type="date" value={form.endDate} min={form.startDate || undefined} onChange={(e) => setForm({ ...form, endDate: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" />
               </div>
 
               {/* Preview ROAS en tiempo real */}

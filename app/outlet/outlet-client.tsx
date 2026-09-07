@@ -5,16 +5,38 @@ import { useEffect, useMemo, useState } from "react";
 import { useCart } from "../components/cart-provider";
 import { useSaleMode } from "../components/sale-mode-provider";
 import WhatsAppBuyCTA, { WHATSAPP_ICON } from "../components/whatsapp-buy-cta";
-import { useProducts } from "../components/products-provider";
 import type { ProductoCatalogo } from "../data/catalog";
 import SiteFooter from "../components/site-footer";
+import { MdHourglassBottom } from "react-icons/md";
 
 function isOutletProduct(product: ProductoCatalogo) {
-  return product.esOutlet === true && product.categoria === "Outlet";
+  if (product.esOutlet !== true) return false;
+  if (product.outletExpiraEl && new Date(product.outletExpiraEl) < new Date()) return false;
+  return true;
 }
 
 function hasVisibleDiscount(product: ProductoCatalogo) {
   return Boolean(product.descuento && product.descuento !== "-0%");
+}
+
+function outletDaysLeft(product: ProductoCatalogo): number | null {
+  if (!product.outletExpiraEl) return null;
+  const ms = new Date(product.outletExpiraEl).getTime() - Date.now();
+  return Math.max(0, Math.ceil(ms / (24 * 60 * 60 * 1000)));
+}
+
+function OutletCountdownBadge({ product }: { product: ProductoCatalogo }) {
+  const days = outletDaysLeft(product);
+  if (days === null) return null;
+  return (
+    <span
+      className="absolute right-4 top-4 z-10 rounded-lg px-2.5 py-1 text-[11px] font-black text-white"
+      style={{ background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.25)" }}
+    >
+      <MdHourglassBottom className="mr-1 inline-block align-[-2px]" size={12} />
+      {days === 0 ? "Último día" : `${days} ${days === 1 ? "día" : "días"}`}
+    </span>
+  );
 }
 
 function AddOutletButton({ product, featured = false }: { product: ProductoCatalogo; featured?: boolean }) {
@@ -106,6 +128,7 @@ function ProductCard({ product }: { product: ProductoCatalogo }) {
             ★ OFERTA DESTACADA
           </span>
         ) : null}
+        <OutletCountdownBadge product={product} />
         <div className="outlet-product-pop">
           <ProductImage product={product} maxHeight={170} />
         </div>
@@ -168,6 +191,7 @@ function FeaturedCarousel({ products }: { products: ProductoCatalogo[] }) {
             {product.descuento}
           </span>
         )}
+        <OutletCountdownBadge product={product} />
         <Link href={`/producto/${product.slug}`} className="outlet-product-pop">
           <ProductImage product={product} maxHeight={260} />
         </Link>
@@ -261,8 +285,7 @@ function FeaturedCarousel({ products }: { products: ProductoCatalogo[] }) {
   );
 }
 
-export default function OutletClient({ heroDesktop, heroMobile, superOfertas }: { heroDesktop: string; heroMobile: string; superOfertas: string }) {
-  const { products } = useProducts();
+export default function OutletClient({ products, heroDesktop, heroMobile, superOfertas }: { products: ProductoCatalogo[]; heroDesktop: string; heroMobile: string; superOfertas: string }) {
   const outletCatalog = useMemo(
     () => products.filter(isOutletProduct),
     [products],

@@ -295,6 +295,7 @@ export async function getCampaignsForPanel(sellerId?: string) {
     include: {
       seller: { select: { id: true, fullName: true, email: true } },
       product: { select: { id: true, name: true, image: true, slug: true } },
+      combo: { select: { id: true, name: true, image: true, slug: true } },
     },
     orderBy: { createdAt: "desc" },
   });

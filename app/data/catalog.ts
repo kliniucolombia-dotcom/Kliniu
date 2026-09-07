@@ -288,6 +288,7 @@ export type ProductoCatalogo = {
   videoUrl?: string;
   destacado?: boolean;
   esOutlet?: boolean;
+  outletExpiraEl?: string | null;
   preciosPorCantidad?: { cantidad: number; precioUnitario: number }[];
 };
 

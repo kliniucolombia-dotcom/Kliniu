@@ -1,4 +1,4 @@
-import { deleteProduct, setProductOutletFlag, updateProduct } from "@/lib/products";
+import { deleteProduct, extendProductOutlet, setProductOutletFlag, updateProduct } from "@/lib/products";
 import { requireAdminOrSeller } from "@/lib/admin";
 
 function getProductErrorResponse(
@@ -50,6 +50,11 @@ export async function PATCH(
 
     if (typeof body.isOutlet === "boolean" && Object.keys(body).length === 1) {
       const product = await setProductOutletFlag(slug, body.isOutlet);
+      return Response.json({ product });
+    }
+
+    if (typeof body.extendOutletDays === "number" && Object.keys(body).length === 1) {
+      const product = await extendProductOutlet(slug, body.extendOutletDays);
       return Response.json({ product });
     }
 

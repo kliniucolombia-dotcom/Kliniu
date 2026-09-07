@@ -7,8 +7,13 @@ export async function GET() {
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { session } = access;
   const sellerId = session.role === "SELLER" ? session.userId : undefined;
-  const campaigns = await getCampaignsForPanel(sellerId);
-  return Response.json(campaigns);
+  try {
+    const campaigns = await getCampaignsForPanel(sellerId);
+    return Response.json(campaigns);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Error al cargar campañas";
+    return Response.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {
@@ -18,9 +23,10 @@ export async function POST(request: Request) {
   if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
 
   const body = await request.json() as {
-    name: string; sellerId: string; productId?: string;
+    name: string; sellerId: string; productId?: string; comboId?: string;
     investment: number; sales: number; targetMultiple: number;
     platform: string; notes?: string; status: string;
+    startDate?: string; endDate?: string;
   };
 
   if (!body.name) return Response.json({ error: "Nombre requerido" }, { status: 400 });
@@ -32,6 +38,7 @@ export async function POST(request: Request) {
       name: body.name,
       sellerId,
       productId: body.productId || null,
+      comboId: body.comboId || null,
       investment: body.investment ?? 0,
       sales: body.sales ?? 0,
       leads: (body as { leads?: number }).leads ?? 0,
@@ -39,6 +46,8 @@ export async function POST(request: Request) {
       platform: body.platform ?? "Meta Ads",
       notes: body.notes ?? null,
       status: body.status ?? "ACTIVE",
+      ...(body.startDate ? { startDate: new Date(body.startDate) } : {}),
+      endDate: body.endDate ? new Date(body.endDate) : null,
     },
   });
 
