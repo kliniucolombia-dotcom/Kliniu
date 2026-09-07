@@ -10,18 +10,18 @@ import WhatsAppAsesor from "./components/whatsapp-asesor";
 import { getFeaturedProducts } from "@/lib/products";
 import { getActiveCombos, resolveSellerPhones } from "@/lib/combos";
 import { getBannersByKeys } from "@/lib/banners";
+import { getActiveSolutionVideos } from "@/lib/solution-videos";
 import { formatearMoneda } from "./data/catalog";
-
-const videos = [
-  { id: 1, titulo: "Dispensadores para líquidos", href: "/videos/reel-1-dispensadores-liquidos.mp4", thumb: "/foca-video-1.png" },
-  { id: 2, titulo: "Dispensadores de papel, toalla y servilletas", href: "/videos/reel-2-dispensadores-papel-toalla.mp4", thumb: "/foca-video-2.png" },
-  { id: 3, titulo: "KlinOx Acero Inoxidable", href: "/videos/reel-3-klinox-acero-inoxidable.mp4", thumb: "/foca-video-3.png" },
-  { id: 4, titulo: "Dispensadores de pasta dental", href: "/videos/reel-4-dispensadores-pasta-dental.mp4", thumb: "/foca-video-4.png" },
-  { id: 5, titulo: "Hoteles y Restaurantes", href: "/videos/reel-5-hoteles-restaurantes.mp4", thumb: "/foca-video-5.png" },
-];
 
 export default async function Home() {
   const productos = await getFeaturedProducts();
+  const solutionVideosDb = await getActiveSolutionVideos();
+  const videos = solutionVideosDb.map((v, i) => ({
+    id: i + 1,
+    titulo: v.title,
+    href: v.videoUrl,
+    thumb: v.thumbUrl ?? undefined,
+  }));
   const combosDb = await getActiveCombos();
   const sellerPhones = await resolveSellerPhones(combosDb.map((c) => c.createdByName));
   const banners = await getBannersByKeys([
