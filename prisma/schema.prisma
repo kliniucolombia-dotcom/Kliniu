@@ -464,6 +464,18 @@ model Banner {
   updatedAt    DateTime   @updatedAt
 }
 
+model ChatLead {
+  id          String   @id @default(cuid())
+  name        String?
+  city        String?
+  quantity    String?
+  whatsapp    String?
+  lastMessage String
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 model AppConfig {
   key       String   @id
   value     String

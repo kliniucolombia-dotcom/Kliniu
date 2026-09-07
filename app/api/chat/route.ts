@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { buildCatalogContext, buildLocalAssistantReply, buildProductCards, getCatalogSnapshot, type ChatProductCard } from "@/lib/chatbot";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const FALLBACK_SELLER_PHONE = "573125860921";
 
@@ -20,6 +21,34 @@ async function getSellerWhatsappLink(): Promise<string> {
 }
 
 export const dynamic = "force-dynamic";
+
+/** Extrae datos de cierre (WhatsApp/nombre/ciudad/cantidad) de un mensaje del cliente, si los hay. */
+function extractLeadInfo(text: string): { name?: string; city?: string; quantity?: string; whatsapp?: string } | null {
+  const phoneMatch = text.match(/(?:\+?57)?[\s.-]?(3\d{2}[\s.-]?\d{3}[\s.-]?\d{4})/);
+  if (!phoneMatch) return null;
+
+  const whatsapp = phoneMatch[0].replace(/\D/g, "").slice(-10);
+  const nameMatch = text.match(/(?:me llamo|mi nombre es|soy)\s+([a-záéíóúñ\s]{2,40})/i);
+  const cityMatch = text.match(/(?:ciudad|en)\s+([a-záéíóúñ]{3,30})/i);
+  const qtyMatch = text.match(/(\d{1,4})\s*(?:unidades|und|piezas|dispensadores)/i);
+
+  return {
+    whatsapp,
+    name: nameMatch?.[1]?.trim(),
+    city: cityMatch?.[1]?.trim(),
+    quantity: qtyMatch?.[1],
+  };
+}
+
+/** Guarda el lead en background sin bloquear ni romper la respuesta del chat si falla. */
+function saveLeadIfPresent(text: string) {
+  if (!prisma) return;
+  const lead = extractLeadInfo(text);
+  if (!lead) return;
+  prisma.chatLead
+    .create({ data: { ...lead, lastMessage: text.slice(0, 500) } })
+    .catch(() => {});
+}
 
 type IncomingMessage = {
   role: "user" | "assistant";
@@ -57,6 +86,13 @@ function sanitizeMessages(messages: unknown): IncomingMessage[] {
 
 export async function POST(request: Request) {
   try {
+    if (!(await checkRateLimit(`chat:${getClientIp(request)}`, 20, 60 * 1000))) {
+      return Response.json(
+        { error: "Estás enviando mensajes muy rápido. Espera un momento e intenta de nuevo." },
+        { status: 429 },
+      );
+    }
+
     const body = (await request.json()) as {
       messages?: IncomingMessage[];
     };
@@ -70,6 +106,8 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+
+    saveLeadIfPresent(latestUserMessage.content);
 
     // Si el último mensaje es solo un tipo de espacio (hogar, restaurante, etc.),
     // siempre combinar con el mensaje anterior para no perder el producto buscado.
@@ -126,7 +164,14 @@ export async function POST(request: Request) {
     const fallback = buildLocalAssistantReply(latestUserMessage.content, snapshot);
 
     // No mostrar tarjetas de producto tras una queja o devolución: se siente fuera de lugar.
-    const COMPLAINT_WORDS = ["pesimo", "pesima", "mal servicio", "no responde", "nadie responde", "queja", "reclamo", "dañad", "danad", "defectuoso", "devolucion", "devolver", "reembolso", "mal estado"];
+    const COMPLAINT_WORDS = [
+      "pesimo", "pesima", "mal servicio", "no responde", "nadie responde", "queja", "reclamo",
+      "dañad", "danad", "defectuoso", "devolucion", "devolver", "reembolso", "mal estado",
+      "no sirve", "no funciona", "se daño", "se dano", "se rompio", "llego roto", "llego dañado",
+      "llego danado", "estafa", "fraude", "no llego", "nunca llego", "pedido perdido",
+      "no me han respondido", "sic", "superintendencia", "demanda", "abogado", "denuncia",
+      "muy molesto", "muy enojado", "estoy furioso", "es urgente", "urgente",
+    ];
     const latestNormalizedForComplaint = latestUserMessage.content.toLowerCase()
       .normalize("NFD").replace(/[̀-ͯ]/g, "");
     const isComplaintOrReturn = COMPLAINT_WORDS.some((w) => latestNormalizedForComplaint.includes(w));
@@ -228,16 +273,17 @@ export async function POST(request: Request) {
 
         "DETECCIÓN DE TIPO DE CLIENTE:",
         "Detecta automáticamente el tipo de espacio o negocio. NUNCA digas que no reconoces el tipo de negocio — siempre recomienda productos de higiene apropiados.",
-        "- Hotel / Restaurante / Gran empresa / Fábrica / Alto tráfico / Mucha gente → SIEMPRE recomendar primero la línea KlinOx Acero Inoxidable. Argumento clave: 'Para alto flujo de personas, el acero inoxidable es la mejor inversión: soporta uso intensivo diario sin desgastarse, fácil de limpiar y desinfectar, y da una imagen profesional. A largo plazo sale más económico que reponer dispensadores plásticos 👌'",
-        "- Clínica/hospital/laboratorio/salud/morgue/funeraria/consultorio → SIEMPRE recomendar el Dispensador de Jabón Codo (Elbow) como primera opción. Es operado con el codo o antebrazo, sin contacto de manos, clave en protocolos de higiene. Resaltar: 'ideal porque se activa sin tocar con las manos, manteniendo la higiene rigurosa.'",
+        "- Hotel / Restaurante / Gran empresa / Fábrica / Alto tráfico / Mucha gente → SIEMPRE recomendar primero la línea KlinOx Acero Inoxidable. Argumento clave: 'Para alto flujo de personas, el acero inoxidable es la mejor inversión: soporta uso intensivo diario sin desgastarse, fácil de limpiar y desinfectar, y da una imagen profesional. A largo plazo sale más económico que reponer dispensadores plásticos 👌' El tipo de espacio ya define el material — NO preguntes material en este caso.",
+        "- Clínica/hospital/laboratorio/salud/morgue/funeraria/consultorio → SIEMPRE recomendar el Dispensador de Jabón Codo (Elbow) como primera opción. Es operado con el codo o antebrazo, sin contacto de manos, clave en protocolos de higiene. Resaltar: 'ideal porque se activa sin tocar con las manos, manteniendo la higiene rigurosa.' Ya define material/tipo de accionamiento — NO preguntes eso, solo capacidad (ml) si sigue ambiguo.",
         "- Oficina → organización, imagen profesional, ahorro, practicidad.",
         "- Hogar → diseño, comodidad, estética moderna.",
         "- Mayorista → volumen, distribución, precios empresariales, atención personalizada.",
         "- Cualquier otro negocio legal (lavadero, taller, estudio, academia, iglesia, etc.) → tratar como espacio comercial. Recomendar dispensadores de jabón + papel/toallas como mínimo. Adaptar el argumento al contexto del negocio (higiene para clientes, imagen del local, etc.).",
 
         "FLUJO DE VENTA ESTRICTO — sigue este orden siempre:",
-        "PASO 1 — Identifica el espacio. Cuando el usuario menciona CUALQUIER actividad comercial o producto que vende/fabrica, INFIERE el tipo de negocio y ve DIRECTO al PASO 2 sin preguntar. Ejemplos: 'quiero vender pollos' = pollería/carnicería → recomienda jabón, servilleteros, papel higiénico; 'vender ropa' = tienda retail → jabón y papel; 'vender comida' = restaurante/food service → jabón, servilleteros, toallas; 'negocio de enfermería' = clínica → codo/elbow + KlinOx. SOLO pregunta el espacio si el mensaje es 100% genérico sin ninguna pista de actividad (ej: 'quiero un dispensador' sin nada más).",
-        "PASO 2 — Si sabes el espacio: Menciona brevemente 2-3 productos del catálogo por nombre (sin repetir precios ni URLs — la UI los muestra como tarjetas automáticamente). Resalta en 1 línea qué diferencia a cada uno.",
+        "PASO 1 — Identifica el espacio. Cuando el usuario menciona CUALQUIER actividad comercial o producto que vende/fabrica, INFIERE el tipo de negocio y ve DIRECTO al PASO 1.5 sin preguntar el espacio. Ejemplos: 'quiero vender pollos' = pollería/carnicería → recomienda jabón, servilleteros, papel higiénico; 'vender ropa' = tienda retail → jabón y papel; 'vender comida' = restaurante/food service → jabón, servilleteros, toallas; 'negocio de enfermería' = clínica → codo/elbow + KlinOx. SOLO pregunta el espacio si el mensaje es 100% genérico sin ninguna pista de actividad (ej: 'quiero un dispensador' sin nada más).",
+        "PASO 1.5 — Filtro de variante (solo si el producto pedido es un dispensador de jabón/líquidos y aún queda ambigüedad real): variantes posibles = material (acero inoxidable / brass / ABS / policarbonato), capacidad (500/600/800/1000/1200/1300 ml), accionamiento (manual / automático con sensor). Si el tipo de espacio YA definió el material por la regla de 'DETECCIÓN DE TIPO DE CLIENTE' (hotel/restaurante/alto tráfico = inox, clínica/salud = codo), no preguntes eso. Si el cliente ya dio en su mensaje el material, los ml o manual/automático, no vuelvas a preguntar eso. Pregunta SOLO lo que realmente falte y sigue siendo relevante, combinado en una única frase corta (ej: '¿Lo prefieres en acero inoxidable o plástico, y manual o automático?'). Si no falta nada relevante por preguntar, salta directo al PASO 2. Nunca hagas más de una pregunta de filtro por mensaje ni la repitas si el cliente ya respondió.",
+        "PASO 2 — Con el espacio (y variante, si aplicó) ya claros: Menciona brevemente 2-3 productos del catálogo por nombre (sin repetir precios ni URLs — la UI los muestra como tarjetas automáticamente). Resalta en 1 línea qué diferencia a cada uno.",
         "PASO 3 — Después de mostrar los productos: ofrece el combo/kit. Ejemplo: 'Si llevas el set completo (jabón + papel + toallas) te sale con descuento 👌'",
         "PASO 4 — Cierre: pide nombre, ciudad, cantidad y WhatsApp para enviar cotización.",
         "REGLA: Muestra siempre entre 2 y 3 productos. Nunca solo 1 (a menos que solo haya 1 en el catálogo para esa búsqueda). Sé conciso al describir cada uno.",

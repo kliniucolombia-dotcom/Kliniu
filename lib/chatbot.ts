@@ -642,12 +642,27 @@ export function buildLocalAssistantReply(
         const n = normalizeText(p.nombre);
         return c.includes("klinox") || n.includes("acero") || n.includes("inoxidable") || n.includes("brass");
       });
+      // Líquidos/jabón/gel/alcohol también tienen versión manual y automática (sensor) —
+      // preguntar esa variante junto con el material evita una segunda ronda de preguntas.
+      const TIPOS_CON_ACCIONAMIENTO = ["jabon", "liquido", "alcohol", "gel"];
+      const tieneAccionamiento = normalized.includes("automatico") || normalized.includes("manual") || normalized.includes("sensor");
+      const preguntarAccionamiento = !tieneAccionamiento && TIPOS_CON_ACCIONAMIENTO.some((k) => queryTokensAll.includes(k) || normalized.includes(k));
+
       return {
-        message: `Tenemos opciones para eso 👌\n\n🔩 **Acero inoxidable** — más duradero, higiénico y profesional. Ideal para uso intensivo y largo plazo.\n🧴 **Plástico ABS** — más económico, práctico para uso moderado.\n\n¿Cuál prefieres?`,
-        suggestions: [
-          { label: "🔩 Acero inoxidable", action: "acero inoxidable" },
-          { label: "🧴 Plástico ABS", action: "plastico ABS" },
-        ],
+        message: preguntarAccionamiento
+          ? `Tenemos opciones para eso 👌\n\n🔩 **Acero inoxidable** vs 🧴 **Plástico ABS** — el inox dura más y es más higiénico; el ABS es más económico.\n🤖 **Automático** (sensor, sin contacto) vs ✋ **Manual** — ¿cuál prefieres de cada uno?`
+          : `Tenemos opciones para eso 👌\n\n🔩 **Acero inoxidable** — más duradero, higiénico y profesional. Ideal para uso intensivo y largo plazo.\n🧴 **Plástico ABS** — más económico, práctico para uso moderado.\n\n¿Cuál prefieres?`,
+        suggestions: preguntarAccionamiento
+          ? [
+              { label: "🔩🤖 Inox automático", action: "acero inoxidable automatico" },
+              { label: "🔩✋ Inox manual", action: "acero inoxidable manual" },
+              { label: "🧴🤖 ABS automático", action: "plastico ABS automatico" },
+              { label: "🧴✋ ABS manual", action: "plastico ABS manual" },
+            ]
+          : [
+              { label: "🔩 Acero inoxidable", action: "acero inoxidable" },
+              { label: "🧴 Plástico ABS", action: "plastico ABS" },
+            ],
         products: productosAceroPreview.length > 0 ? buildProductCards(productosAceroPreview) : undefined,
       };
     }

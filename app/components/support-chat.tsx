@@ -60,6 +60,20 @@ const initialMessage: ChatMessage = {
     "¡Hola! Soy tu asesor personal de Kliniu 👋\n\nCuéntame un poco sobre tu espacio: ¿qué tipo de lugar es? (hotel, restaurante, oficina, clínica…) y cuántas personas lo usan al día.\n\nCon eso te recomiendo exactamente qué dispensadores y productos necesitas.",
 };
 
+const CHAT_STORAGE_KEY = "kliniu:chat-history";
+
+function loadStoredMessages(): ChatMessage[] {
+  if (typeof window === "undefined") return [initialMessage];
+  try {
+    const raw = window.sessionStorage.getItem(CHAT_STORAGE_KEY);
+    if (!raw) return [initialMessage];
+    const parsed = JSON.parse(raw) as ChatMessage[];
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : [initialMessage];
+  } catch {
+    return [initialMessage];
+  }
+}
+
 export default function SupportChat() {
   const [isOpen, setIsOpen] = useState(false);
   const [isVisualSearchOpen, setIsVisualSearchOpen] = useState(false);
@@ -69,6 +83,16 @@ export default function SupportChat() {
   const [requestError, setRequestError] = useState("");
   const [sellerContact, setSellerContact] = useState<{ phone: string; name: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    setMessages(loadStoredMessages());
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
+    } catch {}
+  }, [messages]);
 
   useEffect(() => {
     fetch("/api/seller/contact")
