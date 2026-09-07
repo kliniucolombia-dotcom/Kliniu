@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { buildCatalogContext, buildLocalAssistantReply, buildProductCards, getCatalogSnapshot, type ChatProductCard } from "@/lib/chatbot";
+import { buildCatalogContext, buildLocalAssistantReply, getCatalogSnapshot, type ChatProductCard } from "@/lib/chatbot";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
@@ -348,9 +348,7 @@ export async function POST(request: Request) {
     return Response.json({
       message,
       suggestions: fallback.suggestions,
-      products: isComplaintOrReturn
-        ? undefined
-        : filterShownProducts(fallback.products ?? (snapshot.matchedProducts.length > 0 ? buildProductCards(snapshot.matchedProducts) : undefined)),
+      products: isComplaintOrReturn ? undefined : filterShownProducts(fallback.products),
       mode: "openai",
     });
   } catch {
