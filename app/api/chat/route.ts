@@ -10,11 +10,11 @@ async function getSellerWhatsappLink(): Promise<string> {
   if (prisma) {
     const sellers = await prisma.user.findMany({
       where: { role: "SELLER", whatsappPhone: { not: null } },
-      select: { whatsappPhone: true, _count: { select: { assignedOrders: true } } },
+      select: { whatsappPhone: true },
     });
     if (sellers.length > 0) {
-      const next = sellers.sort((a, b) => a._count.assignedOrders - b._count.assignedOrders)[0];
-      phone = next.whatsappPhone ?? FALLBACK_SELLER_PHONE;
+      const random = sellers[Math.floor(Math.random() * sellers.length)];
+      phone = random.whatsappPhone ?? FALLBACK_SELLER_PHONE;
     }
   }
   return `https://wa.me/${phone}`;
@@ -95,9 +95,11 @@ export async function POST(request: Request) {
 
     const body = (await request.json()) as {
       messages?: IncomingMessage[];
+      shownProductSlugs?: string[];
     };
 
     const messages = sanitizeMessages(body.messages);
+    const shownProductSlugs = new Set(Array.isArray(body.shownProductSlugs) ? body.shownProductSlugs : []);
     const latestUserMessage = [...messages].reverse().find((message) => message.role === "user");
 
     if (!latestUserMessage) {
@@ -178,11 +180,17 @@ export async function POST(request: Request) {
 
     const sellerWhatsapp = await getSellerWhatsappLink();
 
+    const filterShownProducts = (products?: ChatProductCard[]) => {
+      if (!products || products.length === 0) return undefined;
+      const fresh = products.filter((product) => !shownProductSlugs.has(product.slug));
+      return fresh.length > 0 ? fresh : undefined;
+    };
+
     if (!openai) {
       return Response.json({
         message: fallback.message,
         suggestions: fallback.suggestions,
-        products: isComplaintOrReturn ? undefined : fallback.products,
+        products: isComplaintOrReturn ? undefined : filterShownProducts(fallback.products),
         mode: "local",
       });
     }
@@ -342,7 +350,7 @@ export async function POST(request: Request) {
       suggestions: fallback.suggestions,
       products: isComplaintOrReturn
         ? undefined
-        : fallback.products ?? (snapshot.matchedProducts.length > 0 ? buildProductCards(snapshot.matchedProducts) : undefined),
+        : filterShownProducts(fallback.products ?? (snapshot.matchedProducts.length > 0 ? buildProductCards(snapshot.matchedProducts) : undefined)),
       mode: "openai",
     });
   } catch {

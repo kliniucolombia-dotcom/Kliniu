@@ -133,6 +133,9 @@ export default function SupportChat() {
             role: message.role,
             content: message.content,
           })),
+          shownProductSlugs: messages
+            .flatMap((message) => message.products ?? [])
+            .map((product) => product.slug),
         }),
       });
 
