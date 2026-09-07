@@ -2,17 +2,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   MdFolder, MdCreateNewFolder, MdUploadFile, MdDelete, MdEdit, MdDownload,
-  MdChevronRight, MdInsertDriveFile, MdImage, MdPictureAsPdf, MdMovie, MdHome,
+  MdChevronRight, MdInsertDriveFile, MdImage, MdPictureAsPdf, MdMovie, MdHome, MdLock, MdGroup,
 } from "react-icons/md";
 
 type Crumb = { id: string; name: string };
-type Folder = { id: string; name: string; createdAt: string };
+type Folder = { id: string; name: string; createdAt: string; canDelete: boolean; isPrivate: boolean };
 type FileItem = {
   id: string;
   name: string;
   mimeType: string | null;
   size: number | null;
   createdAt: string;
+  canDelete: boolean;
 };
 type Listing = { breadcrumb: Crumb[]; folders: Folder[]; files: FileItem[] };
 
@@ -40,10 +41,10 @@ export default function MaterialComercialPage() {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [newFolder, setNewFolder] = useState<string | null>(null);
+  const [newFolderPrivate, setNewFolderPrivate] = useState(false);
   const [rename, setRename] = useState<Target | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<Target | null>(null);
-  const [canDelete, setCanDelete] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -60,15 +61,6 @@ export default function MaterialComercialPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Borrar es solo de SUPERADMIN; el servidor igual lo bloquea, esto es para no
-  // mostrar un botón que siempre fallaría.
-  useEffect(() => {
-    fetch("/api/panel/permissions")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setCanDelete(d?.role === "SUPERADMIN"))
-      .catch(() => setCanDelete(false));
-  }, []);
-
   const createFolder = async () => {
     if (!newFolder?.trim()) return;
     setSaving(true);
@@ -77,11 +69,12 @@ export default function MaterialComercialPage() {
       const r = await fetch("/api/panel/material", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newFolder, parentId: folderId }),
+        body: JSON.stringify({ name: newFolder, parentId: folderId, isPrivate: newFolderPrivate }),
       });
       const d = await r.json();
       if (!r.ok) { setError(d.error ?? "No se pudo crear la carpeta"); return; }
       setNewFolder(null);
+      setNewFolderPrivate(false);
       await load();
     } finally {
       setSaving(false);
@@ -166,7 +159,7 @@ export default function MaterialComercialPage() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => setNewFolder("")}
+            onClick={() => { setNewFolder(""); setNewFolderPrivate(false); }}
             className="flex items-center gap-1.5 rounded-xl border border-[#E2E8F0] bg-white px-4 py-2.5 text-sm font-black text-[#1A1A1A] transition hover:bg-[#F8FAFC]"
           >
             <MdCreateNewFolder size={18} /> Nueva carpeta
@@ -226,6 +219,11 @@ export default function MaterialComercialPage() {
                   <td className="px-4 py-3">
                     <button onClick={() => setFolderId(f.id)} className="flex items-center gap-2 font-bold text-[#1A1A1A]">
                       <MdFolder size={20} className="text-[#F59E0B]" /> {f.name}
+                      {f.isPrivate && (
+                        <span className="flex items-center gap-1 rounded-full bg-[#F1F5F9] px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-[#64748B]">
+                          <MdLock size={11} /> Privada
+                        </span>
+                      )}
                     </button>
                   </td>
                   <td className="px-4 py-3 text-[#94A3B8]">—</td>
@@ -239,7 +237,7 @@ export default function MaterialComercialPage() {
                       >
                         <MdEdit size={17} />
                       </button>
-                      {canDelete && (
+                      {f.canDelete && (
                         <button
                           onClick={() => setConfirmDelete({ type: "folder", id: f.id, name: f.name })}
                           className="rounded-lg p-1.5 text-[#DC2626] transition hover:bg-[#FEE2E2]"
@@ -277,7 +275,7 @@ export default function MaterialComercialPage() {
                       >
                         <MdEdit size={17} />
                       </button>
-                      {canDelete && (
+                      {f.canDelete && (
                         <button
                           onClick={() => setConfirmDelete({ type: "file", id: f.id, name: f.name })}
                           className="rounded-lg p-1.5 text-[#DC2626] transition hover:bg-[#FEE2E2]"
@@ -307,6 +305,31 @@ export default function MaterialComercialPage() {
               placeholder="Nombre de la carpeta"
               className="mt-4 w-full rounded-xl border border-[#E2E8F0] px-3 py-2.5 text-sm outline-none focus:border-[#27B1B8]"
             />
+
+            <p className="mt-4 text-xs font-black uppercase tracking-widest text-[#94A3B8]">Quién puede verla</p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {[
+                { value: false, label: "Todo el equipo", hint: "Cualquiera con acceso al módulo", icon: <MdGroup size={18} /> },
+                { value: true, label: "Solo yo", hint: "Y los superadmin", icon: <MdLock size={18} /> },
+              ].map((opt) => (
+                <button
+                  key={String(opt.value)}
+                  type="button"
+                  onClick={() => setNewFolderPrivate(opt.value)}
+                  aria-pressed={newFolderPrivate === opt.value}
+                  className={`rounded-xl border p-3 text-left transition ${
+                    newFolderPrivate === opt.value
+                      ? "border-[#27B1B8] bg-[#F0FDFA]"
+                      : "border-[#E2E8F0] hover:bg-[#F8FAFC]"
+                  }`}
+                >
+                  <span className={newFolderPrivate === opt.value ? "text-[#27B1B8]" : "text-[#94A3B8]"}>{opt.icon}</span>
+                  <span className="mt-1 block text-sm font-black text-[#1A1A1A]">{opt.label}</span>
+                  <span className="block text-[11px] leading-tight text-[#64748B]">{opt.hint}</span>
+                </button>
+              ))}
+            </div>
+
             {error && <p className="mt-2 text-xs font-semibold text-[#DC2626]">{error}</p>}
             <div className="mt-5 flex justify-end gap-2">
               <button onClick={() => { setNewFolder(null); setError(null); }} className="rounded-xl px-4 py-2 text-sm font-black text-[#64748B]">Cancelar</button>

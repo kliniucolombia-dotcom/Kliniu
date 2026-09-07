@@ -1364,6 +1364,7 @@ model SolutionVideo {
 model MaterialFolder {
   id          String   @id @default(cuid())
   name        String
+  isPrivate   Boolean  @default(false)
   parentId    String?
   createdById String?
   createdAt   DateTime @default(now())

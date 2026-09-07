@@ -1,7 +1,8 @@
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseStorageClient } from "@/lib/supabase-storage";
-import { MATERIAL_BUCKET } from "@/lib/material";
+import { MATERIAL_BUCKET, resolveFolderAccess } from "@/lib/material";
+import { isSuperAdmin } from "@/lib/roles";
 
 export async function GET(request: Request) {
   const access = await requirePermission("MODULE_MATERIAL", "view");
@@ -14,6 +15,9 @@ export async function GET(request: Request) {
   // La ruta sale de la DB, nunca del cliente: no hay traversal posible.
   const file = await prisma.materialFile.findUnique({ where: { id } });
   if (!file) return Response.json({ error: "Archivo no encontrado" }, { status: 404 });
+
+  const folderAccess = await resolveFolderAccess(file.folderId, access.user, isSuperAdmin(access.user));
+  if (!folderAccess.ok) return Response.json({ error: "Archivo no encontrado" }, { status: 404 });
 
   const supabase = createSupabaseStorageClient();
   if (!supabase) return Response.json({ error: "Storage no disponible" }, { status: 500 });
