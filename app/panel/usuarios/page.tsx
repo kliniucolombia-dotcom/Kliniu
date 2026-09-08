@@ -688,7 +688,7 @@ export default function UsuariosPage() {
         <table className="w-full min-w-[820px] text-sm">
           <thead>
             <tr className="border-b border-[#E2E8F0] text-left text-xs font-bold text-[#64748B]">
-              <th className="p-3">Usuario</th>
+              <th className="sticky left-0 z-10 border-r border-[#E2E8F0] bg-[#F8FAFC] p-3">Usuario</th>
               <th className="p-3">Correo electrónico</th>
               <th className="p-3">Rol</th>
               <th className="p-3">Estado</th>
@@ -698,7 +698,7 @@ export default function UsuariosPage() {
           <tbody>
             {filteredUsers.map((u, idx) => (
               <tr key={u.id} className="border-b border-[#F1F5F9]">
-                <td className="p-3">
+                <td className="sticky left-0 z-10 border-r border-[#E2E8F0] bg-white p-3">
                   <div className="flex items-center gap-3">
                     <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${AVATAR_COLORS[idx % AVATAR_COLORS.length]}`}>
                       {initials(u.fullName)}
@@ -733,18 +733,18 @@ export default function UsuariosPage() {
                 </td>
                 <td className="sticky right-0 border-l border-[#E2E8F0] bg-white p-3">
                   <div className="flex items-center gap-0.5 text-[#64748B]">
-                    <button onClick={() => openPermissions(u.id)} aria-label="Editar permisos" className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-bold hover:bg-[#F1F5F9] hover:text-[#27B1B8]">
-                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6l7-3z" /></svg> Permisos
+                    <button onClick={() => openPermissions(u.id)} aria-label="Editar permisos" title="Permisos" className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-xs font-bold hover:bg-[#F1F5F9] hover:text-[#27B1B8] md:px-2">
+                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6l7-3z" /></svg> <span className="hidden md:inline">Permisos</span>
                     </button>
-                    <button onClick={() => editEmail(u)} aria-label="Editar datos del usuario" className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-bold hover:bg-[#F1F5F9] hover:text-[#27B1B8]">
-                      <IconPencil /> Datos
+                    <button onClick={() => editEmail(u)} aria-label="Editar datos del usuario" title="Datos" className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-xs font-bold hover:bg-[#F1F5F9] hover:text-[#27B1B8] md:px-2">
+                      <IconPencil /> <span className="hidden md:inline">Datos</span>
                     </button>
-                    <button onClick={() => editPassword(u)} aria-label="Cambiar contraseña" className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-bold hover:bg-[#F1F5F9] hover:text-[#27B1B8]">
-                      <IconKey /> Clave
+                    <button onClick={() => editPassword(u)} aria-label="Cambiar contraseña" title="Clave" className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-xs font-bold hover:bg-[#F1F5F9] hover:text-[#27B1B8] md:px-2">
+                      <IconKey /> <span className="hidden md:inline">Clave</span>
                     </button>
                     <span className="mx-1 h-4 w-px shrink-0 bg-[#E2E8F0]" />
-                    <button onClick={() => { setDeleteTarget(u); setDeleteImpact(null); }} aria-label="Eliminar usuario" className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-bold text-red-500 hover:bg-red-50">
-                      <IconTrash /> Eliminar
+                    <button onClick={() => { setDeleteTarget(u); setDeleteImpact(null); }} aria-label="Eliminar usuario" title="Eliminar" className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-xs font-bold text-red-500 hover:bg-red-50 md:px-2">
+                      <IconTrash /> <span className="hidden md:inline">Eliminar</span>
                     </button>
                   </div>
                 </td>
