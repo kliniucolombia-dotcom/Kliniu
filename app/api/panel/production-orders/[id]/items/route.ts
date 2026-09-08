@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { createProductionOrderItem } from "@/lib/panel";
+import { parsePositiveInteger } from "@/lib/operations-validation";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_PRODUCCION", "create");
@@ -16,7 +17,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   try {
     const created = await createProductionOrderItem(id, {
       productId: body.productId,
-      quantity: body.quantity,
+      quantity: body.quantity === undefined ? 1 : parsePositiveInteger(body.quantity),
       destination: body.destination,
       notes: body.notes,
     });
@@ -31,6 +32,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (e instanceof Error && e.message === "PRODUCT_NOT_FOUND") {
       return Response.json({ error: "Producto no encontrado" }, { status: 404 });
     }
+    if (e instanceof Error && e.message === "INVALID_NUMBER") return Response.json({ error: "Cantidad inválida" }, { status: 400 });
     return Response.json({ error: "Error interno" }, { status: 500 });
   }
 }

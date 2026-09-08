@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { createProductionRun, getProductionRuns } from "@/lib/panel";
+import { parseIsoDateTime, parseNonNegativeNumber } from "@/lib/operations-validation";
 
 export async function GET(request: Request) {
   const access = await requirePermission("MODULE_PRODUCCION", "view");
@@ -36,8 +37,24 @@ export async function POST(request: Request) {
   if (body.produced === undefined) {
     return Response.json({ error: "Cantidad producida requerida" }, { status: 400 });
   }
-  const endTime = new Date(body.endTime);
-  const startTime = new Date(body.startTime);
+  let endTime: Date;
+  let startTime: Date;
+  let productionDate: Date;
+  try {
+    endTime = parseIsoDateTime(body.endTime);
+    startTime = parseIsoDateTime(body.startTime);
+    productionDate = parseIsoDateTime(body.productionDate);
+    parseNonNegativeNumber(body.injectionWeight);
+    parseNonNegativeNumber(body.pieceWeight);
+    parseNonNegativeNumber(body.cycle);
+    parseNonNegativeNumber(body.temperature);
+    parseNonNegativeNumber(body.produced);
+    if (body.damaged !== undefined) parseNonNegativeNumber(body.damaged);
+    if (body.nonConforming !== undefined) parseNonNegativeNumber(body.nonConforming);
+    if (!Number.isInteger(body.produced) || (body.damaged !== undefined && !Number.isInteger(body.damaged)) || (body.nonConforming !== undefined && !Number.isInteger(body.nonConforming))) throw new Error("INVALID_NUMBER");
+  } catch {
+    return Response.json({ error: "Fechas o cantidades inválidas" }, { status: 400 });
+  }
   if (endTime <= startTime) {
     return Response.json({ error: "La hora final debe ser posterior a la hora de inicio" }, { status: 400 });
   }
@@ -49,7 +66,7 @@ export async function POST(request: Request) {
       productId: body.productId ?? null,
       productionOrderId: body.productionOrderId ?? null,
       orderNumber: body.orderNumber,
-      productionDate: new Date(body.productionDate),
+      productionDate,
       startTime,
       endTime,
       material: body.material,

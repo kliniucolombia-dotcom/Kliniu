@@ -42,3 +42,30 @@ export function parseNonNegativeNumber(value: unknown): number {
   }
   return value;
 }
+
+export function parseDateRange(from: unknown, to: unknown): { from: string; to: string } {
+  const fromDate = parseBogotaCivilDate(from);
+  const toDate = parseBogotaCivilDate(to);
+  if (toDate < fromDate) throw new Error("INVALID_DATE_RANGE");
+  return { from: from as string, to: to as string };
+}
+
+export function parseEnum<const T extends readonly string[]>(value: unknown, allowed: T): T[number] {
+  if (typeof value !== "string" || !allowed.includes(value)) throw new Error("INVALID_ENUM");
+  return value as T[number];
+}
+
+export function parseRequiredString(value: unknown): string {
+  if (typeof value !== "string" || value.trim() === "") throw new Error("INVALID_STRING");
+  return value.trim();
+}
+
+export async function readJsonRecord(request: Request): Promise<Record<string, unknown>> {
+  try {
+    const value: unknown = await request.json();
+    if (!isRecord(value)) throw new Error("INVALID_BODY");
+    return value;
+  } catch {
+    throw new Error("INVALID_BODY");
+  }
+}

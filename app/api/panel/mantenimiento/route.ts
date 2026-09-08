@@ -8,8 +8,7 @@ import {
   listOrders,
   listQuotes,
 } from "@/lib/maintenance";
-
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+import { parseDateRange } from "@/lib/operations-validation";
 
 export async function GET(request: Request) {
   const access = await requirePermission("MODULE_MANTENIMIENTO", "view");
@@ -18,7 +17,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const from = url.searchParams.get("from") ?? "";
   const to = url.searchParams.get("to") ?? "";
-  if (!DATE_RE.test(from) || !DATE_RE.test(to) || to < from) {
+  try { parseDateRange(from, to); } catch {
     return Response.json({ error: "Rango de fechas inválido" }, { status: 400 });
   }
 

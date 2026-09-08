@@ -6,10 +6,33 @@ import {
   parseIsoDateTime,
   parseNonNegativeNumber,
   parsePositiveInteger,
+  parseDateRange,
+  parseEnum,
+  parseRequiredString,
+  readJsonRecord,
 } from "../lib/operations-validation";
 
 test("parseBogotaCivilDate acepta una fecha civil real en Bogotá", () => {
   assert.equal(parseBogotaCivilDate("2026-09-08").toISOString(), "2026-09-08T05:00:00.000Z");
+});
+
+test("parseDateRange valida existencia y orden cronológico", () => {
+  assert.doesNotThrow(() => parseDateRange("2026-09-01", "2026-09-08"));
+  assert.throws(() => parseDateRange("2026-09-08", "2026-09-01"), /INVALID_DATE_RANGE/);
+  assert.throws(() => parseDateRange("2026-02-30", "2026-09-01"), /INVALID_DATE/);
+});
+
+test("parseEnum y parseRequiredString rechazan valores fuera del contrato", () => {
+  assert.equal(parseEnum("DONE", ["OPEN", "DONE"] as const), "DONE");
+  assert.throws(() => parseEnum("OTHER", ["OPEN", "DONE"] as const), /INVALID_ENUM/);
+  assert.equal(parseRequiredString("  dato  "), "dato");
+  assert.throws(() => parseRequiredString("  "), /INVALID_STRING/);
+});
+
+test("readJsonRecord rechaza JSON inválido y cuerpos que no sean objetos", async () => {
+  await assert.rejects(readJsonRecord(new Request("http://test", { method: "POST", body: "{" })), /INVALID_BODY/);
+  await assert.rejects(readJsonRecord(new Request("http://test", { method: "POST", body: "[]" })), /INVALID_BODY/);
+  assert.deepEqual(await readJsonRecord(new Request("http://test", { method: "POST", body: '{"ok":true}' })), { ok: true });
 });
 
 test("parseBogotaCivilDate rechaza fechas imposibles y formatos ambiguos", () => {

@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { adjustWarehouseStock } from "@/lib/warehouses";
+import { parsePositiveInteger } from "@/lib/operations-validation";
 
 export async function POST(request: Request) {
   const access = await requirePermission("MODULE_BODEGAS", "edit");
@@ -13,16 +14,17 @@ export async function POST(request: Request) {
     note?: string;
   };
 
-  if (!body.productId || !body.warehouseId || !body.type || !body.quantity) {
+  if (!body.productId || !body.warehouseId || (body.type !== "ENTRADA" && body.type !== "SALIDA")) {
     return Response.json({ error: "Faltan datos (productId, warehouseId, type, quantity)" }, { status: 400 });
   }
 
   try {
+    const quantity = parsePositiveInteger(body.quantity);
     const stock = await adjustWarehouseStock({
       productId: body.productId,
       warehouseId: body.warehouseId,
       type: body.type,
-      quantity: body.quantity,
+      quantity,
       userId: access.user.id,
       note: body.note,
     });

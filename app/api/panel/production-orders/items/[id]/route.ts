@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { deleteProductionOrderItem, updateProductionOrderItem } from "@/lib/panel";
+import { parsePositiveInteger } from "@/lib/operations-validation";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_PRODUCCION", "edit");
@@ -10,7 +11,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   };
 
   try {
-    const updated = await updateProductionOrderItem(id, body);
+    const updated = await updateProductionOrderItem(id, { ...body, quantity: body.quantity === undefined ? undefined : parsePositiveInteger(body.quantity) });
     return Response.json(updated);
   } catch (e) {
     if (e instanceof Error && e.message === "NOT_FOUND") {
@@ -22,6 +23,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (e instanceof Error && e.message === "PRODUCT_NOT_FOUND") {
       return Response.json({ error: "Producto no encontrado" }, { status: 404 });
     }
+    if (e instanceof Error && e.message === "INVALID_NUMBER") return Response.json({ error: "Cantidad inválida" }, { status: 400 });
     return Response.json({ error: "Error interno" }, { status: 500 });
   }
 }
