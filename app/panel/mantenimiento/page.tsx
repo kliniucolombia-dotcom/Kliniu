@@ -127,7 +127,10 @@ export default function MantenimientoPanel() {
     setLoading(false);
   }, [from, to, router]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const task = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(task);
+  }, [load]);
   useEffect(() => {
     if (!alert) return;
     const t = setTimeout(() => setAlert(null), 4000);
@@ -555,15 +558,6 @@ function ReportModal({ from, to, kpis, onClose, onDone, onError }: ModalProps & 
       module: "MODULE_MANTENIMIENTO",
       periodStart,
       periodEnd,
-      kpis: {
-        ordenesAbiertas: kpis.openOrders,
-        preventivas: kpis.preventive,
-        correctivas: kpis.corrective,
-        completadas: kpis.completed,
-        tiempoMuertoMin: kpis.downtimeMinutes,
-        equiposFueraServicio: kpis.equipmentDown,
-        itemsBajoMinimo: kpis.lowStockItems,
-      },
       notes,
     });
     setSubmitting(false);

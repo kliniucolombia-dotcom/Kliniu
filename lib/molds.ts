@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { MoldStatus } from "@/generated/prisma/client";
 import { parseBogotaDate } from "@/lib/logistics";
+import { assertDirectMoldStatusChange } from "@/lib/mold-policy";
 
 function requirePrisma() {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
@@ -25,7 +26,18 @@ export async function createMold(data: { code: string; name: string }) {
 }
 
 export async function updateMold(id: string, data: { name?: string; status?: MoldStatus }) {
-  return requirePrisma().mold.update({ where: { id }, data });
+  const db = requirePrisma();
+  return db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`mold:${id}`}))`;
+    if (data.status !== undefined) {
+      const [mold, open] = await Promise.all([
+        tx.mold.findUniqueOrThrow({ where: { id }, select: { status: true } }),
+        tx.moldChange.findFirst({ where: { moldId: id, finishedAt: null }, select: { id: true } }),
+      ]);
+      assertDirectMoldStatusChange(mold.status, data.status, Boolean(open));
+    }
+    return tx.mold.update({ where: { id }, data });
+  });
 }
 
 export async function listMoldChanges(from: string, to: string) {
@@ -44,6 +56,8 @@ export async function listMoldChanges(from: string, to: string) {
 export async function startMoldChange(input: { machineId: string; moldId: string; notes?: string; userId: string }) {
   const db = requirePrisma();
   return db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`mold-machine:${input.machineId}`}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`mold:${input.moldId}`}))`;
     const open = await tx.moldChange.findFirst({ where: { machineId: input.machineId, finishedAt: null } });
     if (open) throw new Error("MACHINE_BUSY");
 
@@ -61,14 +75,18 @@ export async function startMoldChange(input: { machineId: string; moldId: string
 export async function finishMoldChange(id: string, notes?: string) {
   const db = requirePrisma();
   return db.$transaction(async (tx) => {
-    const current = await tx.moldChange.findUniqueOrThrow({ where: { id } });
+    let current = await tx.moldChange.findUniqueOrThrow({ where: { id } });
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`mold-machine:${current.machineId}`}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`mold:${current.moldId}`}))`;
+    current = await tx.moldChange.findUniqueOrThrow({ where: { id } });
     if (current.finishedAt) throw new Error("ALREADY_FINISHED");
-    const change = await tx.moldChange.update({
-      where: { id },
+    const changed = await tx.moldChange.updateMany({
+      where: { id, finishedAt: null },
       data: { finishedAt: new Date(), notes: notes?.trim() || current.notes },
     });
+    if (changed.count !== 1) throw new Error("ALREADY_FINISHED");
     await tx.mold.update({ where: { id: current.moldId }, data: { status: "AVAILABLE" } });
-    return change;
+    return tx.moldChange.findUniqueOrThrow({ where: { id } });
   });
 }
 

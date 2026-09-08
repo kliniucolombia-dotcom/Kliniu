@@ -3,10 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { getLogisticsKpis } from "@/lib/logistics";
 import { getMaintenanceKpis } from "@/lib/maintenance";
 import { getMoldKpis } from "@/lib/molds";
-import { listOperationsReports } from "@/lib/operations-reports";
-import { listProductsWithWarehouseStock, getWarehouses } from "@/lib/warehouses";
-
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+import { listAuthorizedOperationsReports } from "@/lib/operations-reports";
+import { operationsModulesWithView } from "@/lib/operations-report-policy";
+import { listProductsWithWarehouseStock, getWarehouses, summarizeWarehouseStock } from "@/lib/warehouses";
+import { parseDateRange } from "@/lib/operations-validation";
 
 export async function GET(request: Request) {
   const access = await requireActiveUser();
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const from = url.searchParams.get("from") ?? "";
   const to = url.searchParams.get("to") ?? "";
-  if (!DATE_RE.test(from) || !DATE_RE.test(to) || to < from) {
+  try { parseDateRange(from, to); } catch {
     return Response.json({ error: "Rango de fechas inválido" }, { status: 400 });
   }
 
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
     visible.logistica ? getLogisticsKpis(from, to) : null,
     visible.mantenimiento ? getMaintenanceKpis(from, to) : null,
     visible.produccion ? getMoldKpis(from, to) : null,
-    listOperationsReports(undefined, 20),
+    listAuthorizedOperationsReports(operationsModulesWithView(perms), 20),
     visible.bodegas ? getWarehouses() : null,
     visible.bodegas ? listProductsWithWarehouseStock() : null,
     visible.produccion
@@ -42,14 +42,7 @@ export async function GET(request: Request) {
       : null,
   ]);
 
-  const bodegas = warehouses && products
-    ? warehouses.map((w) => ({
-        id: w.id,
-        name: w.name,
-        units: products.reduce((acc, p) => acc + (p.stocksByWarehouseId[w.id] ?? 0), 0),
-        lowStock: products.filter((p) => (p.stocksByWarehouseId[w.id] ?? 0) > 0 && p.stock <= p.minimumStock).length,
-      }))
-    : null;
+  const bodegas = warehouses && products ? summarizeWarehouseStock(warehouses, products) : null;
 
   const coverage = await prisma!.user.findMany({
     where: {

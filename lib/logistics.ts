@@ -5,6 +5,7 @@ import type {
   TransportIncidentStatus,
   VehicleType,
 } from "@/generated/prisma/client";
+import { parseBogotaCivilDate } from "@/lib/operations-validation";
 
 function requirePrisma() {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
@@ -13,7 +14,7 @@ function requirePrisma() {
 
 // Fechas "YYYY-MM-DD" se interpretan en hora Bogotá para evitar el corrimiento de un día por TZ.
 export function parseBogotaDate(value: string): Date {
-  return new Date(`${value}T00:00:00-05:00`);
+  return parseBogotaCivilDate(value);
 }
 
 function endOfBogotaDay(value: string): Date {

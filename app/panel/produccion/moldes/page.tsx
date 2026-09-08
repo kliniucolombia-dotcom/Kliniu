@@ -61,7 +61,10 @@ export default function MoldesPanel() {
     setLoading(false);
   }, [from, to, router]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const task = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(task);
+  }, [load]);
   useEffect(() => {
     if (!alert) return;
     const t = setTimeout(() => setAlert(null), 4000);

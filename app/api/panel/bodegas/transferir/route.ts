@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { transferWarehouseStock } from "@/lib/warehouses";
+import { parsePositiveInteger } from "@/lib/operations-validation";
 
 export async function POST(request: Request) {
   const access = await requirePermission("MODULE_BODEGAS", "edit");
@@ -13,7 +14,7 @@ export async function POST(request: Request) {
     note?: string;
   };
 
-  if (!body.productId || !body.fromWarehouseId || !body.toWarehouseId || !body.quantity) {
+  if (!body.productId || !body.fromWarehouseId || !body.toWarehouseId) {
     return Response.json(
       { error: "Faltan datos (productId, fromWarehouseId, toWarehouseId, quantity)" },
       { status: 400 },
@@ -21,11 +22,12 @@ export async function POST(request: Request) {
   }
 
   try {
+    const quantity = parsePositiveInteger(body.quantity);
     const stock = await transferWarehouseStock({
       productId: body.productId,
       fromWarehouseId: body.fromWarehouseId,
       toWarehouseId: body.toWarehouseId,
-      quantity: body.quantity,
+      quantity,
       userId: access.user.id,
       note: body.note,
     });

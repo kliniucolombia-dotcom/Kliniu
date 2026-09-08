@@ -20,6 +20,6 @@ export async function POST(request: Request) {
     return Response.json({ change });
   } catch (error) {
     const key = error instanceof Error ? error.message : "";
-    return Response.json({ error: ERRORS[key] ?? "No fue posible registrar el montaje" }, { status: 400 });
+    return Response.json({ error: ERRORS[key] ?? "No fue posible registrar el montaje" }, { status: key === "MACHINE_BUSY" || key === "MOLD_NOT_AVAILABLE" ? 409 : 400 });
   }
 }

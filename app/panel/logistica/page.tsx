@@ -143,7 +143,10 @@ export default function LogisticaPanel() {
     setLoading(false);
   }, [from, to, router]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const task = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(task);
+  }, [load]);
 
   useEffect(() => {
     if (!alert) return;
@@ -582,14 +585,6 @@ function ReportModal({ from, to, kpis, onClose, onDone, onError }: ModalProps & 
       module: "MODULE_LOGISTICA",
       periodStart,
       periodEnd,
-      kpis: {
-        rutasTotal: kpis.routesTotal,
-        rutasFinalizadas: kpis.routesDone,
-        pedidosEnRuta: kpis.ordersTotal,
-        pedidosEntregados: kpis.ordersDelivered,
-        costoTotal: kpis.costTotal,
-        novedadesAbiertas: kpis.openIncidents,
-      },
       notes,
     });
     setSubmitting(false);

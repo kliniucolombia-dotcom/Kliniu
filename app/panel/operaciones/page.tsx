@@ -86,7 +86,10 @@ export default function OperacionesDashboard() {
     setLoading(false);
   }, [from, to, router]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const task = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(task);
+  }, [load]);
 
   return (
     <div className="p-6 lg:p-8">

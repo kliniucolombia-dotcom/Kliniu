@@ -16,6 +16,8 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     if (e instanceof Error && e.message === "INVALID_TRANSITION") {
       return Response.json({ error: "Solo se puede completar desde en producción" }, { status: 409 });
     }
+    if (e instanceof Error && e.message === "NO_PRODUCTION_RUNS") return Response.json({ error: "La orden debe tener al menos una corrida de producción" }, { status: 400 });
+    if (e instanceof Error && e.message === "INSUFFICIENT_PRODUCTION") return Response.json({ error: "La producción neta no cubre las unidades solicitadas" }, { status: 409 });
     return Response.json({ error: "Error interno" }, { status: 500 });
   }
 }

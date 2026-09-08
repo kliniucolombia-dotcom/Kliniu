@@ -27,7 +27,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return Response.json({
       order: await updateOrder(id, { priority: body.priority, assignedToId: body.assignedToId, description: body.description }),
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "INVALID_TRANSITION") return Response.json({ error: "La orden cambió de estado o la transición no es válida" }, { status: 409 });
+    if (error instanceof Error && error.message === "NOT_FOUND") return Response.json({ error: "Orden no encontrada" }, { status: 404 });
     return Response.json({ error: "No fue posible actualizar la orden" }, { status: 400 });
   }
 }

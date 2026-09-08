@@ -64,7 +64,10 @@ export default function BodegasPanel() {
     setSelectedWarehouseId((current) => current ?? data.warehouses[0]?.id ?? null);
   }, [router]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const task = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(task);
+  }, [load]);
 
   const warehouseStats = useMemo(() => {
     const stats: Record<string, { skuCount: number; totalUnits: number }> = {};

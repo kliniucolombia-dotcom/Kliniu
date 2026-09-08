@@ -266,6 +266,15 @@ export type ProductWithWarehouseStocks = {
   stocksByWarehouseId: Record<string, number>;
 };
 
+export function summarizeWarehouseStock(warehouses: Warehouse[], products: ProductWithWarehouseStocks[]) {
+  return warehouses.map((warehouse) => ({
+    id: warehouse.id,
+    name: warehouse.name,
+    units: products.reduce((total, product) => total + (product.stocksByWarehouseId[warehouse.id] ?? 0), 0),
+    lowStock: products.filter((product) => (product.stocksByWarehouseId[warehouse.id] ?? 0) <= product.minimumStock).length,
+  }));
+}
+
 export async function listProductsWithWarehouseStock(): Promise<ProductWithWarehouseStocks[]> {
   const db = requirePrisma();
   const products = await db.product.findMany({
