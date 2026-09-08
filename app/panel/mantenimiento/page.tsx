@@ -555,15 +555,6 @@ function ReportModal({ from, to, kpis, onClose, onDone, onError }: ModalProps & 
       module: "MODULE_MANTENIMIENTO",
       periodStart,
       periodEnd,
-      kpis: {
-        ordenesAbiertas: kpis.openOrders,
-        preventivas: kpis.preventive,
-        correctivas: kpis.corrective,
-        completadas: kpis.completed,
-        tiempoMuertoMin: kpis.downtimeMinutes,
-        equiposFueraServicio: kpis.equipmentDown,
-        itemsBajoMinimo: kpis.lowStockItems,
-      },
       notes,
     });
     setSubmitting(false);

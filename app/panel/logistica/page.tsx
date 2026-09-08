@@ -582,14 +582,6 @@ function ReportModal({ from, to, kpis, onClose, onDone, onError }: ModalProps & 
       module: "MODULE_LOGISTICA",
       periodStart,
       periodEnd,
-      kpis: {
-        rutasTotal: kpis.routesTotal,
-        rutasFinalizadas: kpis.routesDone,
-        pedidosEnRuta: kpis.ordersTotal,
-        pedidosEntregados: kpis.ordersDelivered,
-        costoTotal: kpis.costTotal,
-        novedadesAbiertas: kpis.openIncidents,
-      },
       notes,
     });
     setSubmitting(false);
