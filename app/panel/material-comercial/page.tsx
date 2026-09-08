@@ -39,6 +39,8 @@ export default function MaterialComercialPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{ url: string; name: string; mimeType: string | null } | null>(null);
   const [saving, setSaving] = useState(false);
   const [newFolder, setNewFolder] = useState<string | null>(null);
   const [newFolderPrivate, setNewFolderPrivate] = useState(false);
@@ -86,7 +88,10 @@ export default function MaterialComercialPage() {
     setUploading(true);
     setError(null);
     try {
-      for (const file of Array.from(files)) {
+      const list = Array.from(files);
+      for (let i = 0; i < list.length; i++) {
+        const file = list[i];
+        setUploadingFile(list.length > 1 ? `${file.name} (${i + 1}/${list.length})` : file.name);
         const body = new FormData();
         body.append("file", file);
         if (folderId) body.append("folderId", folderId);
@@ -100,6 +105,7 @@ export default function MaterialComercialPage() {
       await load();
     } finally {
       setUploading(false);
+      setUploadingFile(null);
       if (inputRef.current) inputRef.current.value = "";
     }
   };
@@ -147,6 +153,17 @@ export default function MaterialComercialPage() {
     window.open(d.url, "_blank", "noopener,noreferrer");
   };
 
+  const isPreviewable = (mimeType: string | null) =>
+    !!mimeType && (mimeType.startsWith("image/") || mimeType === "application/pdf");
+
+  const openFile = async (file: FileItem) => {
+    if (!isPreviewable(file.mimeType)) { download(file); return; }
+    const r = await fetch(`/api/panel/material/download?id=${file.id}`);
+    const d = await r.json();
+    if (!r.ok) { setError(d.error ?? "No se pudo abrir el archivo"); return; }
+    setPreview({ url: d.url, name: file.name, mimeType: file.mimeType });
+  };
+
   const empty = !data.folders.length && !data.files.length;
 
   return (
@@ -188,6 +205,13 @@ export default function MaterialComercialPage() {
           </span>
         ))}
       </div>
+
+      {uploading && uploadingFile && (
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-[#BAE6E8] bg-[#F0FDFA] px-4 py-3 text-sm font-semibold text-[#0C535B]">
+          <div className="h-4 w-4 flex-none animate-spin rounded-full border-2 border-[#27B1B8] border-t-transparent" />
+          Subiendo {uploadingFile}…
+        </div>
+      )}
 
       {error && !rename && !confirmDelete && newFolder === null && (
         <div className="mb-4 rounded-xl bg-[#FEE2E2] px-3 py-2 text-xs font-semibold text-[#DC2626]">{error}</div>
@@ -253,7 +277,7 @@ export default function MaterialComercialPage() {
               {data.files.map((f) => (
                 <tr key={f.id} className="transition hover:bg-[#F8FAFC]">
                   <td className="px-4 py-3">
-                    <button onClick={() => download(f)} className="flex items-center gap-2 text-left font-semibold text-[#1A1A1A]">
+                    <button onClick={() => openFile(f)} className="flex items-center gap-2 text-left font-semibold text-[#1A1A1A]">
                       {fileIcon(f.mimeType)} {f.name}
                     </button>
                   </td>
@@ -354,6 +378,27 @@ export default function MaterialComercialPage() {
             <div className="mt-5 flex justify-end gap-2">
               <button onClick={() => { setRename(null); setError(null); }} className="rounded-xl px-4 py-2 text-sm font-black text-[#64748B]">Cancelar</button>
               <button onClick={applyRename} disabled={saving} className="rounded-xl bg-[#27B1B8] px-4 py-2 text-sm font-black text-white disabled:opacity-60">Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {preview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setPreview(null)}>
+          <div className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-2xl bg-white p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="truncate text-sm font-black text-[#1A1A1A]">{preview.name}</h2>
+              <button onClick={() => setPreview(null)} className="rounded-lg p-1.5 text-[#64748B] transition hover:bg-[#F1F5F9]" aria-label="Cerrar">
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto">
+              {preview.mimeType?.startsWith("image/") ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={preview.url} alt={preview.name} className="mx-auto max-h-[75vh] w-auto rounded-lg object-contain" />
+              ) : (
+                <iframe src={preview.url} title={preview.name} className="h-[75vh] w-full rounded-lg" />
+              )}
             </div>
           </div>
         </div>
