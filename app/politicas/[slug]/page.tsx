@@ -155,7 +155,7 @@ const policies = {
     sections: [
       {
         heading: "1. Identificación del comerciante",
-        body: "Razón social: KLINIU S.A.S.\nDomicilio: Cra. 28 #3443, Bogotá D.C., Colombia.\nCorreo electrónico: info@kliniu.com\nTeléfonos: 601 3682434 / 312 5860921\nHorario de atención: lunes a viernes, 8:00 a.m. – 5:00 p.m.\nKLINIU S.A.S. es una sociedad comercial constituida bajo las leyes de la República de Colombia y responsable de la operación de este sitio.",
+        body: "Razón social: KLINIU S.A.S.\nDomicilio: Av. Cra. 28 #34-43, Bogotá D.C., Colombia.\nCorreo electrónico: info@kliniu.com\nTeléfonos: 601 3682434 / 312 5860921\nHorario de atención: lunes a viernes, 8:00 a.m. – 5:00 p.m.\nKLINIU S.A.S. es una sociedad comercial constituida bajo las leyes de la República de Colombia y responsable de la operación de este sitio.",
       },
       {
         heading: "2. Objeto y aceptación",
@@ -288,7 +288,7 @@ const policies = {
     sections: [
       {
         heading: "1. Canales habilitados",
-        body: "Correo electrónico: info@kliniu.com (canal oficial para radicar PQRS).\nTeléfonos: 601 3682434 / 312 5860921\nWhatsApp comercial: disponible desde el sitio web.\nPresencial: Cra. 28 #3443, Bogotá D.C.\nHorario: lunes a viernes, 8:00 a.m. – 5:00 p.m.",
+        body: "Correo electrónico: info@kliniu.com (canal oficial para radicar PQRS).\nTeléfonos: 601 3682434 / 312 5860921\nWhatsApp comercial: disponible desde el sitio web.\nPresencial: Av. Cra. 28 #34-43, Bogotá D.C.\nHorario: lunes a viernes, 8:00 a.m. – 5:00 p.m.",
       },
       {
         heading: "2. Información que debes incluir",
@@ -354,7 +354,7 @@ const policies = {
     sections: [
       {
         heading: "1. Responsable del tratamiento",
-        body: "KLINIU S.A.S., con domicilio en Cra. 28 #3443, Bogotá D.C., Colombia. Correo para el ejercicio de derechos: info@kliniu.com. Teléfonos: 601 3682434 / 312 5860921.",
+        body: "KLINIU S.A.S., con domicilio en Av. Cra. 28 #34-43, Bogotá D.C., Colombia. Correo para el ejercicio de derechos: info@kliniu.com. Teléfonos: 601 3682434 / 312 5860921.",
       },
       {
         heading: "2. Autorización del titular",
