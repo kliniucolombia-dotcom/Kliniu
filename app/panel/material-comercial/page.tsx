@@ -62,7 +62,7 @@ export default function MaterialComercialPage() {
   useEffect(() => { load(); }, [load]);
 
   const createFolder = async () => {
-    if (!newFolder?.trim()) return;
+    if (!newFolder?.trim()) { setError("Ponle un nombre a la carpeta"); return; }
     setSaving(true);
     setError(null);
     try {
@@ -203,13 +203,13 @@ export default function MaterialComercialPage() {
           Carpeta vacía. Sube archivos o crea una subcarpeta.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-2xl border border-[#E2E8F0] bg-white">
+          <table className="w-full min-w-[420px] text-sm">
             <thead className="bg-[#F8FAFC] text-left text-xs font-black uppercase tracking-widest text-[#94A3B8]">
               <tr>
                 <th className="px-4 py-3">Nombre</th>
-                <th className="px-4 py-3">Tamaño</th>
-                <th className="px-4 py-3">Fecha</th>
+                <th className="hidden px-4 py-3 sm:table-cell">Tamaño</th>
+                <th className="hidden px-4 py-3 sm:table-cell">Fecha</th>
                 <th className="px-4 py-3 text-right">Acciones</th>
               </tr>
             </thead>
@@ -226,8 +226,8 @@ export default function MaterialComercialPage() {
                       )}
                     </button>
                   </td>
-                  <td className="px-4 py-3 text-[#94A3B8]">—</td>
-                  <td className="px-4 py-3 text-[#64748B]">{new Date(f.createdAt).toLocaleDateString("es-CO")}</td>
+                  <td className="hidden px-4 py-3 text-[#94A3B8] sm:table-cell">—</td>
+                  <td className="hidden px-4 py-3 text-[#64748B] sm:table-cell">{new Date(f.createdAt).toLocaleDateString("es-CO")}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
                       <button
@@ -257,8 +257,8 @@ export default function MaterialComercialPage() {
                       {fileIcon(f.mimeType)} {f.name}
                     </button>
                   </td>
-                  <td className="px-4 py-3 text-[#64748B]">{formatSize(f.size)}</td>
-                  <td className="px-4 py-3 text-[#64748B]">{new Date(f.createdAt).toLocaleDateString("es-CO")}</td>
+                  <td className="hidden px-4 py-3 text-[#64748B] sm:table-cell">{formatSize(f.size)}</td>
+                  <td className="hidden px-4 py-3 text-[#64748B] sm:table-cell">{new Date(f.createdAt).toLocaleDateString("es-CO")}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
                       <button
