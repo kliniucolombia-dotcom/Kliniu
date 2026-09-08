@@ -9,6 +9,7 @@ import type {
   MaintenanceType,
 } from "@/generated/prisma/client";
 import { parseBogotaDate } from "@/lib/logistics";
+import { nextMaintenanceNumber } from "@/lib/maintenance-policy";
 
 function requirePrisma() {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
@@ -89,13 +90,14 @@ export async function listOrders(from: string, to: string) {
   });
 }
 
-async function nextOrderNumber() {
-  const last = await requirePrisma().maintenanceOrder.findFirst({
+type MaintenanceTx = Parameters<Parameters<ReturnType<typeof requirePrisma>["$transaction"]>[0]>[0];
+
+async function generateOrderNumber(tx: MaintenanceTx) {
+  const last = await tx.maintenanceOrder.findFirst({
     orderBy: { createdAt: "desc" },
     select: { number: true },
   });
-  const n = last ? parseInt(last.number.replace(/\D/g, ""), 10) + 1 : 1;
-  return `MT-${String(n).padStart(4, "0")}`;
+  return nextMaintenanceNumber(last?.number ?? null);
 }
 
 export async function createOrder(input: {
@@ -107,27 +109,23 @@ export async function createOrder(input: {
   reportedById: string;
 }) {
   const db = requirePrisma();
-  const number = await nextOrderNumber();
-  return db.maintenanceOrder.create({
-    data: {
-      number,
-      equipmentId: input.equipmentId,
-      type: input.type,
-      priority: input.priority,
-      description: input.description.trim(),
-      assignedToId: input.assignedToId || null,
-      reportedById: input.reportedById,
-    },
-  });
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await db.$transaction(async (tx) => tx.maintenanceOrder.create({ data: { number: await generateOrderNumber(tx), equipmentId: input.equipmentId, type: input.type, priority: input.priority, description: input.description.trim(), assignedToId: input.assignedToId || null, reportedById: input.reportedById } }));
+    } catch (error) {
+      const duplicate = typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "P2002";
+      if (!duplicate || attempt === 2) throw error;
+    }
+  }
+  throw new Error("MAINTENANCE_ORDER_NUMBER_CONFLICT");
 }
 
 export async function startOrder(id: string) {
   const db = requirePrisma();
   return db.$transaction(async (tx) => {
-    const order = await tx.maintenanceOrder.update({
-      where: { id },
-      data: { status: "IN_PROGRESS", startedAt: new Date() },
-    });
+    const changed = await tx.maintenanceOrder.updateMany({ where: { id, status: "PENDING" }, data: { status: "IN_PROGRESS", startedAt: new Date() } });
+    if (changed.count !== 1) throw new Error("INVALID_TRANSITION");
+    const order = await tx.maintenanceOrder.findUniqueOrThrow({ where: { id } });
     await tx.equipment.update({ where: { id: order.equipmentId }, data: { status: "MAINTENANCE" } });
     return order;
   });
@@ -136,11 +134,13 @@ export async function startOrder(id: string) {
 export async function completeOrder(id: string, data: { resolution: string; downtimeMinutes?: number }) {
   const db = requirePrisma();
   return db.$transaction(async (tx) => {
-    const current = await tx.maintenanceOrder.findUniqueOrThrow({ where: { id } });
+    const current = await tx.maintenanceOrder.findUnique({ where: { id } });
+    if (!current) throw new Error("NOT_FOUND");
+    if (current.status !== "IN_PROGRESS") throw new Error("INVALID_TRANSITION");
     const completedAt = new Date();
     const autoDowntime = current.startedAt ? Math.round((completedAt.getTime() - current.startedAt.getTime()) / 60000) : null;
-    const order = await tx.maintenanceOrder.update({
-      where: { id },
+    const changed = await tx.maintenanceOrder.updateMany({
+      where: { id, status: "IN_PROGRESS" },
       data: {
         status: "DONE",
         completedAt,
@@ -148,6 +148,8 @@ export async function completeOrder(id: string, data: { resolution: string; down
         downtimeMinutes: data.downtimeMinutes ?? autoDowntime,
       },
     });
+    if (changed.count !== 1) throw new Error("INVALID_TRANSITION");
+    const order = await tx.maintenanceOrder.findUniqueOrThrow({ where: { id } });
     const stillOpen = await tx.maintenanceOrder.count({
       where: { equipmentId: order.equipmentId, status: { in: OPEN_STATUSES } },
     });
@@ -161,7 +163,9 @@ export async function completeOrder(id: string, data: { resolution: string; down
 export async function cancelOrder(id: string) {
   const db = requirePrisma();
   return db.$transaction(async (tx) => {
-    const order = await tx.maintenanceOrder.update({ where: { id }, data: { status: "CANCELLED" } });
+    const changed = await tx.maintenanceOrder.updateMany({ where: { id, status: { in: ["PENDING", "IN_PROGRESS"] } }, data: { status: "CANCELLED" } });
+    if (changed.count !== 1) throw new Error("INVALID_TRANSITION");
+    const order = await tx.maintenanceOrder.findUniqueOrThrow({ where: { id } });
     const stillOpen = await tx.maintenanceOrder.count({
       where: { equipmentId: order.equipmentId, status: { in: OPEN_STATUSES } },
     });
