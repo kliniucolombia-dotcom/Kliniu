@@ -6,6 +6,7 @@ import {
   MdCardGiftcard, MdLocalHospital, MdSchool, MdFitnessCenter, MdLink, MdEmojiEvents, MdStarBorder,
   MdGroup, MdFavorite, MdCalendarMonth, MdCelebration, MdSearch, MdFileDownload, MdMoreVert, MdClose,
 } from "react-icons/md";
+import { useConfirm } from "@/app/components/confirm-dialog";
 
 type Benefit = {
   id: string;
@@ -56,6 +57,7 @@ function isExpiringSoon(expiresAt: string | null) {
 }
 
 export default function BeneficiosRRHHPage() {
+  const confirm = useConfirm();
   const [benefits, setBenefits] = useState<Benefit[]>([]);
   const [employeeCount, setEmployeeCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -191,7 +193,7 @@ export default function BeneficiosRRHHPage() {
   };
 
   const remove = async (id: string) => {
-    if (!window.confirm("¿Eliminar este beneficio?")) return;
+    if (!(await confirm({ title: "Eliminar beneficio", message: "¿Eliminar este beneficio?" }))) return;
     const res = await fetch(`/api/rrhh-local/benefits/${id}`, { method: "DELETE" });
     if (res.ok) await load();
   };

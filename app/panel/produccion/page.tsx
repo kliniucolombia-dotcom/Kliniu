@@ -180,7 +180,7 @@ export default function ProduccionPage() {
     <div className="p-6 lg:p-8">
       <div className="mb-6">
         <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8]">Planta</p>
-        <h1 className="mt-1 text-2xl font-black text-[#1A1A1A]">Producción</h1>
+        <h1 className="mt-1 text-2xl font-black text-[#1A1A1A]">Inyección</h1>
         <p className="mt-0.5 text-sm text-[#64748B]">Registro diario de corridas de inyección</p>
       </div>
 

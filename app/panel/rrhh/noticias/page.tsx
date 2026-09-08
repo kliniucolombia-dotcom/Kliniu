@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { SimpleSelect } from "../../_components/simple-select";
 import { MdCampaign, MdVisibility, MdGroup, MdCalendarMonth, MdSearch, MdRefresh, MdMoreVert, MdClose } from "react-icons/md";
+import { useConfirm } from "@/app/components/confirm-dialog";
 
 type Announcement = {
   id: string;
@@ -35,6 +36,7 @@ function fmt(d: string) {
 }
 
 export default function NoticiasRRHHPage() {
+  const confirm = useConfirm();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -110,7 +112,7 @@ export default function NoticiasRRHHPage() {
   };
 
   const remove = async (id: string) => {
-    if (!window.confirm("¿Eliminar esta noticia?")) return;
+    if (!(await confirm({ title: "Eliminar noticia", message: "¿Eliminar esta noticia?" }))) return;
     const res = await fetch(`/api/rrhh-local/announcements/${id}`, { method: "DELETE" });
     if (res.ok) await load();
   };

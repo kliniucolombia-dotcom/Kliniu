@@ -5,6 +5,7 @@ import { SimpleSelect } from "../_components/simple-select";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { getComboItemNormalPrice, getProductPacks, getProductUnitPrice } from "@/lib/volume-discounts";
 import { MdCheckCircle, MdRadioButtonUnchecked } from "react-icons/md";
+import { useConfirm } from "@/app/components/confirm-dialog";
 
 type PackPrice = { label: string; qty: number; totalPrice: number };
 
@@ -113,6 +114,7 @@ function IconCopy() {
 }
 
 export default function CombosPanel() {
+  const confirm = useConfirm();
   const [combos, setCombos] = useState<Combo[]>([]);
   const [products, setProducts] = useState<MiniProduct[]>([]);
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
@@ -356,7 +358,7 @@ export default function CombosPanel() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm("¿Eliminar este combo?")) return;
+    if (!(await confirm({ title: "Eliminar combo", message: "¿Eliminar este combo?" }))) return;
     await fetch(`/api/panel/combos?id=${id}`, { method: "DELETE" });
     load();
   };

@@ -48,7 +48,7 @@ const MODULE_LABELS: Record<string, string> = {
   MODULE_COSTOS: "Costos",
   MODULE_CALCULADORA_PRECIO: "Precio de Venta",
   MODULE_COTIZACIONES: "Cotizaciones",
-  MODULE_PRODUCCION: "Producción",
+  MODULE_PRODUCCION: "Inyección",
   MODULE_ODOO: "Odoo",
   MODULE_USUARIOS: "Usuarios",
   MODULE_BANNERS: "Banners",

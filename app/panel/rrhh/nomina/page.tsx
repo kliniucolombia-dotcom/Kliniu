@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { MdAttachFile, MdDownload, MdPictureAsPdf, MdTableChart, MdAttachMoney, MdGroup, MdDescription, MdCalendarMonth, MdSearch, MdFileDownload, MdFileUpload, MdMoreVert, MdClose } from "react-icons/md";
 import { SimpleSelect } from "../../_components/simple-select";
+import { useConfirm } from "@/app/components/confirm-dialog";
 
 type EmployeeRow = {
   id: string;
@@ -75,6 +76,7 @@ function nextPayrollDate() {
 }
 
 export default function NominaPage() {
+  const confirm = useConfirm();
   const [rows, setRows] = useState<EmployeeRow[]>([]);
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [payslips, setPayslips] = useState<Payslip[]>([]);
@@ -174,7 +176,7 @@ export default function NominaPage() {
   };
 
   const remove = async (id: string) => {
-    if (!window.confirm("¿Eliminar este desprendible?")) return;
+    if (!(await confirm({ title: "Eliminar desprendible", message: "¿Eliminar este desprendible?" }))) return;
     const res = await fetch(`/api/rrhh-local/payslips/${id}`, { method: "DELETE" });
     if (res.ok) await load();
   };

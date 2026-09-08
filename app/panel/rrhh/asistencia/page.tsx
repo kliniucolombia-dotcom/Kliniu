@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { SimpleSelect } from "../../_components/simple-select";
 import { fmtDateOnly } from "@/lib/date";
 import { MdEventNote, MdGroup, MdCheckCircle, MdSchedule, MdCalendarMonth, MdSearch, MdFileDownload, MdMoreVert, MdClose } from "react-icons/md";
+import { useConfirm } from "@/app/components/confirm-dialog";
 
 type EmployeeOption = { id: string; employeeCode: string; jobTitle: string; user: { fullName: string } };
 
@@ -55,6 +56,7 @@ function fmt(d: string) {
 }
 
 export default function AsistenciaPage() {
+  const confirm = useConfirm();
   const [records, setRecords] = useState<AttendanceRow[]>([]);
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -122,7 +124,7 @@ export default function AsistenciaPage() {
   };
 
   const removeRecord = async (id: string) => {
-    if (!confirm("¿Eliminar este registro de asistencia?")) return;
+    if (!(await confirm({ title: "Eliminar registro", message: "¿Eliminar este registro de asistencia?" }))) return;
     await fetch(`/api/rrhh-local/attendance/${id}`, { method: "DELETE" });
     await load();
   };

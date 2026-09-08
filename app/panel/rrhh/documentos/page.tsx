@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { MdAttachFile, MdDownload, MdDescription, MdGroup, MdCalendarMonth, MdShield, MdSearch, MdRefresh, MdClose } from "react-icons/md";
 import { SimpleSelect } from "../../_components/simple-select";
+import { useConfirm } from "@/app/components/confirm-dialog";
 
 type EmployeeOption = { id: string; userId: string; employeeCode: string; user: { fullName: string } };
 type DocumentRow = {
@@ -41,6 +42,7 @@ function fmt(d: string) {
 }
 
 export default function DocumentosRRHHPage() {
+  const confirm = useConfirm();
   const [documents, setDocuments] = useState<DocumentRow[]>([]);
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -116,7 +118,7 @@ export default function DocumentosRRHHPage() {
   };
 
   const remove = async (id: string) => {
-    if (!window.confirm("¿Eliminar este documento?")) return;
+    if (!(await confirm({ title: "Eliminar documento", message: "¿Eliminar este documento?" }))) return;
     const res = await fetch(`/api/rrhh-local/documents/${id}`, { method: "DELETE" });
     if (res.ok) await load();
   };

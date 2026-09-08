@@ -35,7 +35,7 @@ type Data = {
 const MODULE_META: Record<string, { label: string; href: string; icon: React.ReactNode; color: string }> = {
   MODULE_LOGISTICA: { label: "Logística", href: "/panel/logistica", icon: <MdLocalShipping size={16} />, color: "#0369A1" },
   MODULE_MANTENIMIENTO: { label: "Mantenimiento", href: "/panel/mantenimiento", icon: <MdBuild size={16} />, color: "#C2410C" },
-  MODULE_PRODUCCION: { label: "Producción", href: "/panel/produccion", icon: <MdPrecisionManufacturing size={16} />, color: "#1D4ED8" },
+  MODULE_PRODUCCION: { label: "Inyección", href: "/panel/produccion", icon: <MdPrecisionManufacturing size={16} />, color: "#1D4ED8" },
   MODULE_BODEGAS: { label: "Bodegas", href: "/panel/bodegas", icon: <MdWarehouse size={16} />, color: "#15803D" },
 };
 

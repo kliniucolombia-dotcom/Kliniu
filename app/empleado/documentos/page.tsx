@@ -7,6 +7,7 @@ import {
 import { SimpleSelect } from "@/app/panel/_components/simple-select";
 import { fmtDateOnly } from "@/lib/date";
 import CertificadoLaboral from "./certificado-laboral";
+import { useConfirm } from "@/app/components/confirm-dialog";
 
 type EmployeeDocument = {
   id: string;
@@ -90,6 +91,7 @@ function getPageNumbers(current: number, total: number): (number | "...")[] {
 const EMPTY_FORM = { name: "", category: "OTRO", expiresAt: "" };
 
 export default function DocumentosPage() {
+  const confirm = useConfirm();
   const [documents, setDocuments] = useState<EmployeeDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -165,7 +167,7 @@ export default function DocumentosPage() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm("¿Eliminar este documento?")) return;
+    if (!(await confirm({ title: "Eliminar documento", message: "¿Eliminar este documento?" }))) return;
     const res = await fetch(`/api/rrhh-local/documents/${id}`, { method: "DELETE" });
     if (res.ok) await load();
     else setError("No fue posible eliminar el documento");

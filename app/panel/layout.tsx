@@ -11,6 +11,7 @@ import {
   MdInventory, MdExtension, MdConfirmationNumber, MdChat, MdVideocam, MdFolder,
   MdLocalShipping, MdBuild,
 } from "react-icons/md";
+import { ConfirmProvider } from "@/app/components/confirm-dialog";
 
 type NavChild = {
   href: string;
@@ -77,7 +78,7 @@ const NAV: NavItem[] = [
         anyModule: ["MODULE_PRODUCCION", "MODULE_BODEGAS", "MODULE_LOGISTICA", "MODULE_MANTENIMIENTO"],
         icon: <MdDashboard size={17} />,
       },
-      { href: "/panel/produccion", label: "Producción", module: "MODULE_PRODUCCION", icon: <MdPrecisionManufacturing size={17} /> },
+      { href: "/panel/produccion", label: "Inyección", module: "MODULE_PRODUCCION", icon: <MdPrecisionManufacturing size={17} /> },
       { href: "/panel/produccion/ordenes", label: "Órdenes de Producción", module: "MODULE_PRODUCCION", icon: <MdAssignment size={17} /> },
       { href: "/panel/produccion/moldes", label: "Moldes", module: "MODULE_PRODUCCION", icon: <MdSwapHoriz size={17} /> },
       { href: "/panel/produccion/departamentos", label: "Departamentos", module: "MODULE_PRODUCCION", icon: <MdApartment size={17} /> },
@@ -438,7 +439,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
       {/* ── Content ── */}
       <div className="flex-1 overflow-x-hidden overflow-y-auto pt-14 md:pt-0">
-        {children}
+        <ConfirmProvider>{children}</ConfirmProvider>
       </div>
     </div>
   );

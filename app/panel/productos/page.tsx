@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { SimpleSelect } from "../_components/simple-select";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import { useConfirm } from "@/app/components/confirm-dialog";
 
 type PackPrice = { id?: string; label: string; qty: number; totalPrice: number };
 
@@ -52,6 +53,7 @@ function IconEye() {
 }
 
 export default function ProductosPanel() {
+  const confirm = useConfirm();
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -164,7 +166,7 @@ export default function ProductosPanel() {
     if (isNaN(np) || np <= 0) { setAlert({ type: "err", msg: "Precio inválido" }); return; }
     const diff = Math.abs(np - selected.price) / selected.price;
     if (diff > 0.5) {
-      if (!confirm(`⚠️ El precio cambia un ${(diff * 100).toFixed(0)}%. ¿Confirmar?`)) return;
+      if (!(await confirm({ title: "Cambio de precio grande", message: `El precio cambia un ${(diff * 100).toFixed(0)}%. ¿Confirmar el cambio?`, confirmLabel: "Confirmar", danger: false }))) return;
     }
     const invalidPack = packs.find((p) => !p.label.trim() || p.qty <= 0 || p.totalPrice <= 0);
     if (invalidPack) { setAlert({ type: "err", msg: "Completa etiqueta, cantidad y precio en todos los packs" }); return; }

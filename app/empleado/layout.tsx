@@ -8,6 +8,7 @@ import {
   MdPayments, MdAccessTime, MdCardGiftcard, MdDescription, MdArticle, MdAccountTree,
   MdNotifications, MdExpandMore, MdSupportAgent, MdGroups, MdConfirmationNumber,
 } from "react-icons/md";
+import { ConfirmProvider } from "@/app/components/confirm-dialog";
 
 const RRHH_WHATSAPP = "573184001648";
 
@@ -189,7 +190,7 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
             )}
           </div>
         </header>
-        {children}
+        <ConfirmProvider>{children}</ConfirmProvider>
       </div>
     </div>
   );
