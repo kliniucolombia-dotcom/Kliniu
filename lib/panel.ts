@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { buildSaleCalculatorSummary, sanitizeSaleCalcNumber, sanitizePct } from "@/lib/sale-calculator";
 import { buildQuotationSummary, calcLineTotal, type QuotationTaxConfigInput } from "@/lib/quotation-calculator";
 import { buildProductionSummary, sanitizeProductionNumber, type ProductionRunInput } from "@/lib/production-calculator";
+import { assertProductionCanComplete } from "@/lib/production-order-policy";
 
 // ─── ROAS helpers ───────────────────────────────────────────────
 
@@ -1256,36 +1257,43 @@ export async function deleteProductionOrderItem(id: string) {
 
 export async function approveProductionOrder(id: string, approvedById: string) {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
-  const order = await prisma.productionOrder.findUnique({ where: { id }, include: { items: true } });
-  if (!order) throw new Error("NOT_FOUND");
-  if (order.status !== "DRAFT") throw new Error("INVALID_TRANSITION");
-  if (order.items.length === 0) throw new Error("NO_ITEMS");
-  return prisma.productionOrder.update({
-    where: { id },
-    data: { status: "APPROVED", approvedById, approvedAt: new Date() },
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.productionOrder.findUnique({ where: { id }, include: { items: { select: { id: true } } } });
+    if (!order) throw new Error("NOT_FOUND");
+    if (order.items.length === 0) throw new Error("NO_ITEMS");
+    const changed = await tx.productionOrder.updateMany({ where: { id, status: "DRAFT" }, data: { status: "APPROVED", approvedById, approvedAt: new Date() } });
+    if (changed.count !== 1) throw new Error("INVALID_TRANSITION");
+    return tx.productionOrder.findUniqueOrThrow({ where: { id } });
   });
 }
 
 export async function startProductionOrder(id: string) {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
-  const order = await prisma.productionOrder.findUnique({ where: { id } });
-  if (!order) throw new Error("NOT_FOUND");
-  if (order.status !== "APPROVED") throw new Error("INVALID_TRANSITION");
-  return prisma.productionOrder.update({ where: { id }, data: { status: "IN_PRODUCTION" } });
+  const exists = await prisma.productionOrder.findUnique({ where: { id }, select: { id: true } });
+  if (!exists) throw new Error("NOT_FOUND");
+  const changed = await prisma.productionOrder.updateMany({ where: { id, status: "APPROVED" }, data: { status: "IN_PRODUCTION" } });
+  if (changed.count !== 1) throw new Error("INVALID_TRANSITION");
+  return prisma.productionOrder.findUniqueOrThrow({ where: { id } });
 }
 
 export async function completeProductionOrder(id: string) {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
-  const order = await prisma.productionOrder.findUnique({ where: { id } });
-  if (!order) throw new Error("NOT_FOUND");
-  if (order.status !== "IN_PRODUCTION") throw new Error("INVALID_TRANSITION");
-  return prisma.productionOrder.update({ where: { id }, data: { status: "COMPLETED" } });
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.productionOrder.findUnique({ where: { id }, include: { items: { select: { quantity: true } }, runs: { select: { produced: true, damaged: true, nonConforming: true } } } });
+    if (!order) throw new Error("NOT_FOUND");
+    if (order.status !== "IN_PRODUCTION") throw new Error("INVALID_TRANSITION");
+    assertProductionCanComplete(order.items.reduce((total, item) => total + item.quantity, 0), order.runs);
+    const changed = await tx.productionOrder.updateMany({ where: { id, status: "IN_PRODUCTION" }, data: { status: "COMPLETED" } });
+    if (changed.count !== 1) throw new Error("INVALID_TRANSITION");
+    return tx.productionOrder.findUniqueOrThrow({ where: { id } });
+  });
 }
 
 export async function cancelProductionOrder(id: string) {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
-  const order = await prisma.productionOrder.findUnique({ where: { id } });
-  if (!order) throw new Error("NOT_FOUND");
-  if (order.status !== "DRAFT" && order.status !== "APPROVED") throw new Error("INVALID_TRANSITION");
-  return prisma.productionOrder.update({ where: { id }, data: { status: "CANCELLED" } });
+  const exists = await prisma.productionOrder.findUnique({ where: { id }, select: { id: true } });
+  if (!exists) throw new Error("NOT_FOUND");
+  const changed = await prisma.productionOrder.updateMany({ where: { id, status: { in: ["DRAFT", "APPROVED"] } }, data: { status: "CANCELLED" } });
+  if (changed.count !== 1) throw new Error("INVALID_TRANSITION");
+  return prisma.productionOrder.findUniqueOrThrow({ where: { id } });
 }
