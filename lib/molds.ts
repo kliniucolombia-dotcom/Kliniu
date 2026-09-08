@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { MoldStatus } from "@/generated/prisma/client";
 import { parseBogotaDate } from "@/lib/logistics";
+import { assertDirectMoldStatusChange } from "@/lib/mold-policy";
 
 function requirePrisma() {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
@@ -25,7 +26,15 @@ export async function createMold(data: { code: string; name: string }) {
 }
 
 export async function updateMold(id: string, data: { name?: string; status?: MoldStatus }) {
-  return requirePrisma().mold.update({ where: { id }, data });
+  const db = requirePrisma();
+  if (data.status !== undefined) {
+    const [mold, open] = await Promise.all([
+      db.mold.findUniqueOrThrow({ where: { id }, select: { status: true } }),
+      db.moldChange.findFirst({ where: { moldId: id, finishedAt: null }, select: { id: true } }),
+    ]);
+    assertDirectMoldStatusChange(mold.status, data.status, Boolean(open));
+  }
+  return db.mold.update({ where: { id }, data });
 }
 
 export async function listMoldChanges(from: string, to: string) {
@@ -51,7 +60,7 @@ export async function startMoldChange(input: { machineId: string; moldId: string
     if (mold.status !== "AVAILABLE") throw new Error("MOLD_NOT_AVAILABLE");
 
     const change = await tx.moldChange.create({
-      data: { machineId: input.machineId, moldId: input.moldId, startedAt: new Date(), notes: input.notes?.trim() || null, changedById: input.userId },
+      data: { machineId: input.machineId, moldId: input.moldId, activeMachineId: input.machineId, activeMoldId: input.moldId, startedAt: new Date(), notes: input.notes?.trim() || null, changedById: input.userId },
     });
     await tx.mold.update({ where: { id: input.moldId }, data: { status: "IN_USE" } });
     return change;
@@ -65,7 +74,7 @@ export async function finishMoldChange(id: string, notes?: string) {
     if (current.finishedAt) throw new Error("ALREADY_FINISHED");
     const change = await tx.moldChange.update({
       where: { id },
-      data: { finishedAt: new Date(), notes: notes?.trim() || current.notes },
+      data: { finishedAt: new Date(), activeMachineId: null, activeMoldId: null, notes: notes?.trim() || current.notes },
     });
     await tx.mold.update({ where: { id: current.moldId }, data: { status: "AVAILABLE" } });
     return change;

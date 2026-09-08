@@ -20,6 +20,7 @@ export async function POST(request: Request) {
     return Response.json({ change });
   } catch (error) {
     const key = error instanceof Error ? error.message : "";
-    return Response.json({ error: ERRORS[key] ?? "No fue posible registrar el montaje" }, { status: 400 });
+    const duplicate = typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "P2002";
+    return Response.json({ error: duplicate ? "La máquina o el molde ya tiene un montaje abierto." : ERRORS[key] ?? "No fue posible registrar el montaje" }, { status: duplicate ? 409 : 400 });
   }
 }
