@@ -53,6 +53,8 @@ export async function listMoldChanges(from: string, to: string) {
 export async function startMoldChange(input: { machineId: string; moldId: string; notes?: string; userId: string }) {
   const db = requirePrisma();
   return db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`mold-machine:${input.machineId}`}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`mold:${input.moldId}`}))`;
     const open = await tx.moldChange.findFirst({ where: { machineId: input.machineId, finishedAt: null } });
     if (open) throw new Error("MACHINE_BUSY");
 
@@ -60,7 +62,7 @@ export async function startMoldChange(input: { machineId: string; moldId: string
     if (mold.status !== "AVAILABLE") throw new Error("MOLD_NOT_AVAILABLE");
 
     const change = await tx.moldChange.create({
-      data: { machineId: input.machineId, moldId: input.moldId, activeMachineId: input.machineId, activeMoldId: input.moldId, startedAt: new Date(), notes: input.notes?.trim() || null, changedById: input.userId },
+      data: { machineId: input.machineId, moldId: input.moldId, startedAt: new Date(), notes: input.notes?.trim() || null, changedById: input.userId },
     });
     await tx.mold.update({ where: { id: input.moldId }, data: { status: "IN_USE" } });
     return change;
@@ -74,7 +76,7 @@ export async function finishMoldChange(id: string, notes?: string) {
     if (current.finishedAt) throw new Error("ALREADY_FINISHED");
     const change = await tx.moldChange.update({
       where: { id },
-      data: { finishedAt: new Date(), activeMachineId: null, activeMoldId: null, notes: notes?.trim() || current.notes },
+      data: { finishedAt: new Date(), notes: notes?.trim() || current.notes },
     });
     await tx.mold.update({ where: { id: current.moldId }, data: { status: "AVAILABLE" } });
     return change;

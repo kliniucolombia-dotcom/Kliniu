@@ -1557,8 +1557,6 @@ model MoldChange {
   moldId      String
   startedAt   DateTime
   finishedAt  DateTime?
-  activeMachineId String? @unique
-  activeMoldId    String? @unique
   changedById String
   notes       String?
   createdAt   DateTime  @default(now())
