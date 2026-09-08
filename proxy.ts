@@ -34,6 +34,12 @@ function buildCsp(nonce: string) {
 }
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+const JSON_METHODS = new Set(["POST", "PUT", "PATCH"]);
+const OPERATIONS_API_PREFIXES = [
+  "/api/panel/operaciones", "/api/panel/logistica", "/api/panel/mantenimiento",
+  "/api/panel/bodegas", "/api/panel/production-orders", "/api/panel/production-runs",
+  "/api/panel/produccion/moldes",
+];
 const WEBHOOK_PREFIXES = ["/api/webhooks/", "/api/kommo/webhook", "/api/kommo/assistant", "/api/wati/webhook"];
 const PROTECTED_PREFIXES = [
   "/mi-cuenta",
@@ -60,9 +66,25 @@ function isCrossOriginMutation(request: NextRequest) {
   return origin !== request.nextUrl.origin;
 }
 
+function isOperationsJsonMutation(request: NextRequest) {
+  return JSON_METHODS.has(request.method) && OPERATIONS_API_PREFIXES.some((prefix) => request.nextUrl.pathname.startsWith(prefix));
+}
+
 export async function proxy(request: NextRequest) {
   if (isCrossOriginMutation(request)) {
     return NextResponse.json({ error: "Origen no permitido" }, { status: 403 });
+  }
+
+  if (isOperationsJsonMutation(request)) {
+    if (!request.headers.get("content-type")?.toLowerCase().includes("application/json")) {
+      return NextResponse.json({ error: "Content-Type debe ser application/json" }, { status: 415 });
+    }
+    try {
+      const body: unknown = await request.clone().json();
+      if (typeof body !== "object" || body === null || Array.isArray(body)) throw new Error("INVALID_BODY");
+    } catch {
+      return NextResponse.json({ error: "Cuerpo JSON inválido" }, { status: 400 });
+    }
   }
 
   const hasSession = await hasValidSession(request);

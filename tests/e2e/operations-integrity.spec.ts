@@ -20,7 +20,7 @@ async function sessionFor(email: string) {
 }
 
 async function authenticate(page: import("playwright/test").Page, email: string) {
-  await page.context().addCookies([{ name: "kliniu_session", value: await sessionFor(email), url: "http://127.0.0.1:3000", httpOnly: true, sameSite: "Lax" }]);
+  await page.context().addCookies([{ name: "kliniu_session", value: await sessionFor(email), url: "http://localhost:3000", httpOnly: true, sameSite: "Lax" }]);
 }
 
 test("logística solo ve y consulta su módulo de Operaciones", async ({ page }) => {
@@ -40,6 +40,17 @@ test("los rangos de fechas imposibles se rechazan en la API real", async ({ page
   const response = await page.request.get("/api/panel/logistica?from=2026-02-30&to=2026-03-01");
   expect(response.status()).toBe(400);
   await expect(response.json()).resolves.toMatchObject({ error: "Rango de fechas inválido" });
+});
+
+test("JSON malformado se rechaza como 400 antes del Route Handler", async ({ page }) => {
+  await authenticate(page, "logistica@kliniu.com");
+  await page.goto("/panel/logistica");
+  const response = await page.evaluate(async () => {
+    const result = await fetch("/api/panel/logistica/rutas", { method: "POST", headers: { "content-type": "application/json" }, body: "{" });
+    return { status: result.status, body: await result.json() as { error: string } };
+  });
+  expect(response.status).toBe(400);
+  expect(response.body).toMatchObject({ error: "Cuerpo JSON inválido" });
 });
 
 test("dirección de operaciones abre el tablero integrado", async ({ page }) => {
