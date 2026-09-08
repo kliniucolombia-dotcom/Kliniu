@@ -34,7 +34,10 @@ export default function DepartamentosProduccionPage() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const task = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(task);
+  }, [load]);
 
   const openCreate = () => { setForm(EMPTY_FORM); setError(null); setModal({ mode: "create" }); };
 

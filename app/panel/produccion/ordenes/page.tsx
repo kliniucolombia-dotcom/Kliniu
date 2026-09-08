@@ -42,7 +42,10 @@ export default function ProductionOrdersListPage() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const task = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(task);
+  }, [load]);
 
   const create = async () => {
     if (!newDate) { setError("Selecciona una fecha"); return; }
