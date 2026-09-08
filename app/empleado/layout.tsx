@@ -75,7 +75,10 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
     return () => window.removeEventListener("empleado:avatar-updated", onAvatarUpdated);
   }, []);
 
+  const [loggingOut, setLoggingOut] = useState(false);
   const logout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
     await fetch("/api/auth/logout", { method: "POST" });
     window.location.replace("/login");
   };
@@ -122,10 +125,10 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
           </div>
         </div>
         <div className="border-t border-[#E2E8F0] p-3">
-          <button onClick={logout}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-red-500 transition-colors hover:bg-red-50">
+          <button onClick={logout} disabled={loggingOut}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-60">
             <MdLogout size={18} />
-            Cerrar sesión
+            {loggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
           </button>
         </div>
       </aside>
@@ -136,9 +139,9 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
             <Image src="/foca-icono-redondo.png" alt="Kliniu" width={32} height={32} className="h-8 w-8 shrink-0 rounded-full" />
             <p className="text-xs font-black leading-none text-[#1A1A1A]">Portal Empleado</p>
           </div>
-          <button onClick={logout}
-            className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs font-semibold text-red-500 transition-colors hover:bg-red-100">
-            Cerrar sesión
+          <button onClick={logout} disabled={loggingOut}
+            className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs font-semibold text-red-500 transition-colors hover:bg-red-100 disabled:opacity-60">
+            {loggingOut ? "Cerrando..." : "Cerrar sesión"}
           </button>
         </header>
         <nav className="flex gap-1 overflow-x-auto border-b border-[#E2E8F0] bg-white px-3 py-2 md:hidden print:hidden">
@@ -182,9 +185,9 @@ export default function EmpleadoLayout({ children }: { children: React.ReactNode
                   className="flex items-center gap-2 px-4 py-2.5 text-sm text-[#1A1A1A] hover:bg-[#F4F6F8]">
                   <MdPerson size={16} /> Mi perfil
                 </Link>
-                <button onClick={logout}
-                  className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50">
-                  <MdLogout size={16} /> Cerrar sesión
+                <button onClick={logout} disabled={loggingOut}
+                  className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 disabled:opacity-60">
+                  <MdLogout size={16} /> {loggingOut ? "Cerrando..." : "Cerrar sesión"}
                 </button>
               </div>
             )}
