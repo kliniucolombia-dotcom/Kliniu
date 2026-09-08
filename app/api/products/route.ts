@@ -41,7 +41,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const user = await requireAdminOrSeller();
+    const user = await requireAdminOrSeller("MODULE_PRODUCTOS", "create");
     const body = await request.json();
     const product = await createProduct(body, user.id);
 

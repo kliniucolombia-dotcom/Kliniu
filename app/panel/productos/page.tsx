@@ -68,6 +68,8 @@ export default function ProductosPanel() {
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [canCreate, setCanCreate] = useState(false);
+  const [canEdit, setCanEdit] = useState(false);
   const router = useRouter();
 
   const load = useCallback(async () => {
@@ -81,6 +83,13 @@ export default function ProductosPanel() {
 
   useEffect(() => { load(); }, [load]);
   useRealtimeRefresh(["products"], load);
+
+  useEffect(() => {
+    fetch("/api/panel/permissions").then((r) => r.json()).then((d) => {
+      setCanCreate(!!d.permissions?.MODULE_PRODUCTOS?.canCreate);
+      setCanEdit(!!d.permissions?.MODULE_PRODUCTOS?.canEdit);
+    });
+  }, []);
 
   const categories = useMemo(() => {
     const map = new Map<string, { count: number; image: string }>();
@@ -188,19 +197,23 @@ export default function ProductosPanel() {
           <p className="mt-1 text-sm text-[#6e7379]">Consulta precios, stock y estado del catálogo.</p>
         </div>
         <div className="flex shrink-0 gap-2">
-          <button
-            type="button"
-            onClick={() => setShowCreate(true)}
-            className="rounded-full bg-[#27B1B8] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#1f8f95]"
-          >
-            + Crear producto
-          </button>
-          <a
-            href="/admin?tab=edit"
-            className="rounded-full bg-[#0C535B] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#073D43]"
-          >
-            Edición completa
-          </a>
+          {canCreate && (
+            <button
+              type="button"
+              onClick={() => setShowCreate(true)}
+              className="rounded-full bg-[#27B1B8] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#1f8f95]"
+            >
+              + Crear producto
+            </button>
+          )}
+          {canEdit && (
+            <a
+              href="/admin?tab=edit"
+              className="rounded-full bg-[#0C535B] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#073D43]"
+            >
+              Edición completa
+            </a>
+          )}
         </div>
       </div>
 
@@ -396,13 +409,15 @@ export default function ProductosPanel() {
                           </td>
                           <td className="p-4 text-right">
                             <div className="inline-flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => openEdit(p)}
-                                className="inline-flex items-center gap-1.5 rounded-full bg-[#0C535B] px-3 py-1.5 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[#073D43]"
-                              >
-                                Editar producto
-                              </button>
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  onClick={() => openEdit(p)}
+                                  className="inline-flex items-center gap-1.5 rounded-full bg-[#0C535B] px-3 py-1.5 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[#073D43]"
+                                >
+                                  Editar producto
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>

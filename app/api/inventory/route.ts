@@ -3,7 +3,7 @@ import { requireAdminOrSeller } from "@/lib/admin";
 
 export async function GET() {
   try {
-    await requireAdminOrSeller();
+    await requireAdminOrSeller("MODULE_PRODUCTOS", "view");
     const movements = await getRecentInventoryMovements();
 
     return Response.json({ movements });

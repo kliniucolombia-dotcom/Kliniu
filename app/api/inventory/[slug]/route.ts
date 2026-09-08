@@ -6,7 +6,7 @@ export async function PATCH(
   context: { params: Promise<{ slug: string }> },
 ) {
   try {
-    await requireAdminOrSeller();
+    await requireAdminOrSeller("MODULE_PRODUCTOS", "edit");
     const { slug } = await context.params;
     const body = (await request.json()) as {
       quantity?: number;
