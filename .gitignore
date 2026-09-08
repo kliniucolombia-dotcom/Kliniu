@@ -93,5 +93,8 @@ next-env.d.ts
 # playwright mcp artifacts
 /.playwright-mcp/
 
+# local git worktrees
+/.worktrees/
+
 # claude code local settings (puede contener credenciales de sesión)
 .claude/settings.local.json
