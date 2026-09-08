@@ -5,10 +5,12 @@ import Link from "next/link";
 import {
   MdLocalShipping, MdBuild, MdPrecisionManufacturing, MdWarehouse,
   MdArrowForward, MdTimerOff, MdSwapHoriz, MdAttachMoney, MdReportProblem, MdCheckCircle,
+  MdHandshake,
 } from "react-icons/md";
 import { COP, fmtDate, todayBogota, Kpi, Section, Empty, Stat, Table, DateRange } from "../_components/ops-ui";
 
-type Visible = { logistica: boolean; mantenimiento: boolean; produccion: boolean; bodegas: boolean };
+type Visible = { logistica: boolean; mantenimiento: boolean; produccion: boolean; bodegas: boolean; ensamble: boolean };
+type AssemblyKpis = { runs: number; assembled: number; goodUnits: number; defective: number; qualityPercentage: number; unitsPerLaborHour: number };
 type LogisticsKpis = { routesTotal: number; routesDone: number; ordersTotal: number; ordersDelivered: number; costTotal: number; openIncidents: number };
 type MaintenanceKpis = { openOrders: number; preventive: number; corrective: number; completed: number; downtimeMinutes: number; equipmentDown: number; lowStockItems: number };
 type ProductionKpis = { changesCompleted: number; avgChangeMinutes: number; openChanges: number; moldsInUse: number; moldsTotal: number; ordersByStatus: { status: string; count: number }[] };
@@ -28,6 +30,7 @@ type Data = {
   logistica: LogisticsKpis | null;
   mantenimiento: MaintenanceKpis | null;
   produccion: ProductionKpis | null;
+  ensamble: AssemblyKpis | null;
   bodegas: WarehouseKpi[] | null;
   reports: Report[];
 };
@@ -36,10 +39,13 @@ const MODULE_META: Record<string, { label: string; href: string; icon: React.Rea
   MODULE_LOGISTICA: { label: "Logística", href: "/panel/logistica", icon: <MdLocalShipping size={16} />, color: "#0369A1" },
   MODULE_MANTENIMIENTO: { label: "Mantenimiento", href: "/panel/mantenimiento", icon: <MdBuild size={16} />, color: "#C2410C" },
   MODULE_PRODUCCION: { label: "Inyección", href: "/panel/produccion", icon: <MdPrecisionManufacturing size={16} />, color: "#1D4ED8" },
+  MODULE_ENSAMBLE: { label: "Ensamble", href: "/panel/ensamble", icon: <MdHandshake size={16} />, color: "#6D28D9" },
   MODULE_BODEGAS: { label: "Bodegas", href: "/panel/bodegas", icon: <MdWarehouse size={16} />, color: "#15803D" },
 };
 
 const KPI_LABELS: Record<string, string> = {
+  corridas: "Corridas", unidadesEnsambladas: "Ensambladas", unidadesBuenas: "Buenas",
+  unidadesDefectuosas: "Defectuosas", calidadPct: "% calidad", unidadesPorHoraHombre: "Und/hora-hombre",
   rutasTotal: "Rutas", rutasFinalizadas: "Rutas finalizadas", pedidosEnRuta: "Pedidos en ruta",
   pedidosEntregados: "Entregados", costoTotal: "Costo transporte", novedadesAbiertas: "Novedades abiertas",
   ordenesAbiertas: "Órdenes abiertas", preventivas: "Preventivas", correctivas: "Correctivas",
@@ -133,6 +139,15 @@ export default function OperacionesDashboard() {
               <Kpi icon={<MdTimerOff size={18} />} label="Promedio por cambio" value={fmtMinutes(data.produccion.avgChangeMinutes)} color="#F0A73C" />
               <Kpi icon={<MdPrecisionManufacturing size={18} />} label="Moldes montados" value={`${data.produccion.moldsInUse} / ${data.produccion.moldsTotal}`} color="#7C6CE0" />
               <Kpi icon={<MdReportProblem size={18} />} label="Montajes sin cerrar" value={String(data.produccion.openChanges)} color="#DC2626" />
+            </ModuleBlock>
+          )}
+
+          {data.ensamble && (
+            <ModuleBlock module="MODULE_ENSAMBLE">
+              <Kpi icon={<MdHandshake size={18} />} label="Unidades ensambladas" value={data.ensamble.assembled.toLocaleString("es-CO")} color="#6D28D9" />
+              <Kpi icon={<MdCheckCircle size={18} />} label="Unidades buenas" value={data.ensamble.goodUnits.toLocaleString("es-CO")} color="#15803D" />
+              <Kpi icon={<MdPrecisionManufacturing size={18} />} label="Und / hora-hombre" value={data.ensamble.unitsPerLaborHour.toFixed(1)} color="#0369A1" />
+              <Kpi icon={<MdReportProblem size={18} />} label="Defectuosas" value={data.ensamble.defective.toLocaleString("es-CO")} color="#DC2626" />
             </ModuleBlock>
           )}
 

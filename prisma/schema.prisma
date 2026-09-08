@@ -42,6 +42,7 @@ model Product {
   saleCalculatorItems   SaleCalculatorItem[]
   quotationItems        QuotationItem[]
   productionRuns        ProductionRun[]
+  assemblyRuns          AssemblyRun[]
   productionOrderItems  ProductionOrderItem[]
   comboItems            ComboItem[]
   warehouseStocks       ProductWarehouseStock[]
@@ -103,6 +104,7 @@ model User {
   permissions              UserPermission[]
   quotationsAsClient       Quotation[]        @relation("QuotationClient")
   productionRuns           ProductionRun[]    @relation("ProductionOperator")
+  assemblyRuns             AssemblyRun[]      @relation("AssemblyLeader")
   productionOrdersCreated  ProductionOrder[]  @relation("ProductionOrderCreatedBy")
   productionOrdersApproved ProductionOrder[]  @relation("ProductionOrderApprovedBy")
   employee                 Employee?
@@ -415,6 +417,59 @@ model ProductionRun {
   @@index([productionOrderId])
 }
 
+/// Puesto o línea de la planta de ensamble. Equivalente a Machine en inyección.
+model AssemblyStation {
+  id        String        @id @default(cuid())
+  code      Int           @unique
+  name      String
+  location  String?
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  runs      AssemblyRun[]
+
+  @@index([isActive])
+}
+
+/// Corrida diaria de ensamble. Las unidades buenas entran a la bodega de producto terminado.
+model AssemblyRun {
+  id        String          @id @default(cuid())
+  stationId String
+  station   AssemblyStation @relation(fields: [stationId], references: [id])
+  leaderId  String
+  leader    User            @relation("AssemblyLeader", fields: [leaderId], references: [id])
+  productId String
+  product   Product         @relation(fields: [productId], references: [id])
+
+  productionOrderId String?
+  productionOrder   ProductionOrder? @relation(fields: [productionOrderId], references: [id])
+  orderNumber       String
+
+  productionDate DateTime
+  startTime      DateTime
+  endTime        DateTime
+
+  assembled     Int
+  defective     Int @default(0)
+  nonConforming Int @default(0)
+  reworked      Int @default(0)
+
+  workerCount Int
+  laborHours  Float
+
+  defectReason String?
+  observations String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stationId])
+  @@index([leaderId])
+  @@index([productId])
+  @@index([productionDate])
+  @@index([productionOrderId])
+}
+
 enum UserRole {
   CUSTOMER
   ADMIN
@@ -464,6 +519,7 @@ enum PanelModule {
   MODULE_MATERIAL
   MODULE_LOGISTICA
   MODULE_MANTENIMIENTO
+  MODULE_ENSAMBLE
 }
 
 enum BannerType {
@@ -722,6 +778,7 @@ model ProductionOrder {
   id             String                @id @default(cuid())
   number         String                @unique
   productionDate DateTime
+  area           ProductionArea        @default(INYECCION)
   status         ProductionOrderStatus @default(DRAFT)
   notes          String?
   createdById    String
@@ -733,9 +790,11 @@ model ProductionOrder {
   updatedAt      DateTime              @updatedAt
   items          ProductionOrderItem[]
   runs           ProductionRun[]
+  assemblyRuns   AssemblyRun[]
 
   @@index([createdById])
   @@index([status])
+  @@index([area])
 }
 
 model ProductionOrderItem {
@@ -751,6 +810,11 @@ model ProductionOrderItem {
 
   @@index([productionOrderId])
   @@index([productId])
+}
+
+enum ProductionArea {
+  INYECCION
+  ENSAMBLE
 }
 
 enum ProductionOrderStatus {

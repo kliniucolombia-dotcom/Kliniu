@@ -17,7 +17,7 @@ export function parseBogotaDate(value: string): Date {
   return parseBogotaCivilDate(value);
 }
 
-function endOfBogotaDay(value: string): Date {
+export function endOfBogotaDay(value: string): Date {
   return new Date(`${value}T23:59:59.999-05:00`);
 }
 

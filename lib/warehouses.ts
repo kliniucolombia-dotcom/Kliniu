@@ -183,40 +183,49 @@ export async function setWarehouseStockAbsolute(input: {
   });
 }
 
-export async function adjustWarehouseStock(input: {
+export type WarehouseAdjustInput = {
   productId: string;
   warehouseId: string;
   type: "ENTRADA" | "SALIDA";
   quantity: number;
   userId: string;
+  source?: "USER" | "ODOO" | "SYSTEM";
   note?: string;
-}): Promise<number> {
+};
+
+export async function adjustWarehouseStock(input: WarehouseAdjustInput): Promise<number> {
   const db = requirePrisma();
+  return db.$transaction((tx) => adjustWarehouseStockTx(tx, input));
+}
+
+/** Misma operación dentro de una transacción ajena (Prisma no permite anidar $transaction). */
+export async function adjustWarehouseStockTx(
+  tx: Prisma.TransactionClient,
+  input: WarehouseAdjustInput,
+): Promise<number> {
   const quantity = Math.round(input.quantity);
   if (quantity <= 0) throw new Error("INVALID_QUANTITY");
 
-  return db.$transaction(async (tx) => {
-    if (input.type === "ENTRADA") {
-      await incrementStock(tx, input.productId, input.warehouseId, quantity);
-    } else {
-      await decrementStockIfSufficient(tx, input.productId, input.warehouseId, quantity);
-    }
+  if (input.type === "ENTRADA") {
+    await incrementStock(tx, input.productId, input.warehouseId, quantity);
+  } else {
+    await decrementStockIfSufficient(tx, input.productId, input.warehouseId, quantity);
+  }
 
-    await tx.warehouseMovement.create({
-      data: {
-        productId: input.productId,
-        type: input.type,
-        source: "USER",
-        quantity,
-        fromWarehouseId: input.type === "SALIDA" ? input.warehouseId : null,
-        toWarehouseId: input.type === "ENTRADA" ? input.warehouseId : null,
-        note: input.note,
-        userId: input.userId,
-      },
-    });
-
-    return recalculateProductStock(tx, input.productId);
+  await tx.warehouseMovement.create({
+    data: {
+      productId: input.productId,
+      type: input.type,
+      source: input.source ?? "USER",
+      quantity,
+      fromWarehouseId: input.type === "SALIDA" ? input.warehouseId : null,
+      toWarehouseId: input.type === "ENTRADA" ? input.warehouseId : null,
+      note: input.note,
+      userId: input.userId,
+    },
   });
+
+  return recalculateProductStock(tx, input.productId);
 }
 
 export async function transferWarehouseStock(input: {

@@ -1092,10 +1092,13 @@ async function generateProductionOrderNumber(tx: ProductionOrderTx): Promise<str
   return `${prefix}${String(lastSeq + 1).padStart(6, "0")}`;
 }
 
-export async function getProductionOrders(filters?: { status?: string }) {
+export async function getProductionOrders(filters?: { status?: string; area?: string }) {
   if (!prisma) return [];
   const orders = await prisma.productionOrder.findMany({
-    where: filters?.status ? { status: filters.status as never } : undefined,
+    where: {
+      ...(filters?.status ? { status: filters.status as never } : {}),
+      ...(filters?.area ? { area: filters.area as never } : {}),
+    },
     include: { items: true, createdBy: { select: { fullName: true } } },
     orderBy: { createdAt: "desc" },
   });
@@ -1103,6 +1106,7 @@ export async function getProductionOrders(filters?: { status?: string }) {
     id: o.id,
     number: o.number,
     status: o.status,
+    area: o.area,
     productionDate: o.productionDate.toISOString(),
     createdByName: o.createdBy.fullName,
     createdAt: o.createdAt.toISOString(),
@@ -1127,6 +1131,7 @@ export async function getProductionOrderWithItems(id: string) {
     id: order.id,
     number: order.number,
     status: order.status,
+    area: order.area,
     productionDate: order.productionDate.toISOString(),
     notes: order.notes,
     createdById: order.createdById,
@@ -1149,7 +1154,7 @@ export async function getProductionOrderWithItems(id: string) {
   };
 }
 
-export async function createProductionOrder(data: { createdById: string; productionDate: Date; notes?: string | null }) {
+export async function createProductionOrder(data: { createdById: string; productionDate: Date; notes?: string | null; area?: "INYECCION" | "ENSAMBLE" }) {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
@@ -1160,6 +1165,7 @@ export async function createProductionOrder(data: { createdById: string; product
             number,
             createdById: data.createdById,
             productionDate: data.productionDate,
+            area: data.area ?? "INYECCION",
             notes: data.notes ?? null,
           },
         });
@@ -1182,13 +1188,14 @@ async function assertProductionOrderDraft(id: string) {
 
 export async function updateProductionOrder(
   id: string,
-  data: { productionDate?: Date; notes?: string | null },
+  data: { productionDate?: Date; notes?: string | null; area?: "INYECCION" | "ENSAMBLE" },
 ) {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
   await assertProductionOrderDraft(id);
   return prisma.productionOrder.update({
     where: { id },
     data: {
+      ...(data.area !== undefined ? { area: data.area } : {}),
       ...(data.productionDate !== undefined ? { productionDate: data.productionDate } : {}),
       ...(data.notes !== undefined ? { notes: data.notes } : {}),
     },

@@ -113,6 +113,7 @@ const PANEL_LANDING_ROUTES: Array<{ module: PanelModule; path: string }> = [
   { module: "MODULE_CALCULADORA_PRECIO", path: "/panel/calculadora-precio" },
   { module: "MODULE_COTIZACIONES", path: "/panel/cotizaciones" },
   { module: "MODULE_PRODUCCION", path: "/panel/produccion" },
+  { module: "MODULE_ENSAMBLE", path: "/panel/ensamble" },
   { module: "MODULE_ODOO", path: "/panel/odoo" },
   { module: "MODULE_USUARIOS", path: "/panel/usuarios" },
   { module: "MODULE_MATERIAL", path: "/panel/material-comercial" },

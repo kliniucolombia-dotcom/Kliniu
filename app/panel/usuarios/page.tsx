@@ -60,6 +60,7 @@ const MODULE_LABELS: Record<string, string> = {
   MODULE_MATERIAL: "Material Comercial",
   MODULE_LOGISTICA: "Logística",
   MODULE_MANTENIMIENTO: "Mantenimiento",
+  MODULE_ENSAMBLE: "Ensamble",
 };
 
 const ROLES: Role[] = ["CUSTOMER", "ADMIN", "SELLER", "PACKING", "SUPERADMIN", "RRHH", "BODEGA", "DISENO", "MARKETING", "JEFE_VENTAS", "TESORERIA", "INGENIERIA", "LOGISTICA", "LIDER_ENSAMBLE", "LIDER_INYECCION", "MANTENIMIENTO", "JEFE_OPERACIONES", "DIRECTOR_OPERACIONES"];
@@ -145,6 +146,7 @@ const MODULE_ICON: Record<string, { path: string; className: string }> = {
   MODULE_WHATSAPP: { path: "M3 21l1.65-4.95A9 9 0 1112 21a9 9 0 01-6.35-1.95L3 21zM8 10a4 4 0 008 0", className: "bg-[#DCFCE7] text-[#15803D]" },
   MODULE_MATERIAL: { path: "M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z", className: "bg-[#FEF3C7] text-[#B45309]" },
   MODULE_LOGISTICA: { path: "M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a2 2 0 100-4 2 2 0 000 4zM18.5 21a2 2 0 100-4 2 2 0 000 4z", className: "bg-[#E0F2FE] text-[#0369A1]" },
+  MODULE_ENSAMBLE: { path: "M12 2l9 5v10l-9 5-9-5V7zM3 7l9 5 9-5M12 12v10", className: "bg-[#EDE9FE] text-[#6D28D9]" },
   MODULE_MANTENIMIENTO: { path: "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z", className: "bg-[#FFEDD5] text-[#C2410C]" },
 };
 

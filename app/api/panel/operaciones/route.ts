@@ -3,10 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { getLogisticsKpis } from "@/lib/logistics";
 import { getMaintenanceKpis } from "@/lib/maintenance";
 import { getMoldKpis } from "@/lib/molds";
+import { getAssemblyKpis } from "@/lib/assembly";
 import { listAuthorizedOperationsReports } from "@/lib/operations-reports";
 import { operationsModulesWithView } from "@/lib/operations-report-policy";
 import { listProductsWithWarehouseStock, getWarehouses, summarizeWarehouseStock } from "@/lib/warehouses";
 import { parseDateRange } from "@/lib/operations-validation";
+import { endOfBogotaDay, parseBogotaDate } from "@/lib/logistics";
 
 export async function GET(request: Request) {
   const access = await requireActiveUser();
@@ -18,6 +20,7 @@ export async function GET(request: Request) {
     mantenimiento: perms.MODULE_MANTENIMIENTO?.canView ?? false,
     produccion: perms.MODULE_PRODUCCION?.canView ?? false,
     bodegas: perms.MODULE_BODEGAS?.canView ?? false,
+    ensamble: perms.MODULE_ENSAMBLE?.canView ?? false,
   };
   if (!Object.values(visible).some(Boolean)) {
     return Response.json({ error: "No autorizado" }, { status: 403 });
@@ -30,7 +33,7 @@ export async function GET(request: Request) {
     return Response.json({ error: "Rango de fechas inválido" }, { status: 400 });
   }
 
-  const [logistica, mantenimiento, moldes, reports, warehouses, products, productionOrders] = await Promise.all([
+  const [logistica, mantenimiento, moldes, reports, warehouses, products, productionOrders, ensamble] = await Promise.all([
     visible.logistica ? getLogisticsKpis(from, to) : null,
     visible.mantenimiento ? getMaintenanceKpis(from, to) : null,
     visible.produccion ? getMoldKpis(from, to) : null,
@@ -40,6 +43,7 @@ export async function GET(request: Request) {
     visible.produccion
       ? prisma!.productionOrder.groupBy({ by: ["status"], _count: { _all: true } })
       : null,
+    visible.ensamble ? getAssemblyKpis(parseBogotaDate(from), endOfBogotaDay(to)) : null,
   ]);
 
   const bodegas = warehouses && products ? summarizeWarehouseStock(warehouses, products) : null;
@@ -66,5 +70,5 @@ export async function GET(request: Request) {
       }
     : null;
 
-  return Response.json({ visible, logistica, mantenimiento, produccion, bodegas, reports, coverage });
+  return Response.json({ visible, logistica, mantenimiento, produccion, ensamble, bodegas, reports, coverage });
 }

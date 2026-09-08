@@ -2,8 +2,15 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { fmtDateOnly } from "@/lib/date";
+import { SimpleSelect } from "../../_components/simple-select";
 
 type ProductionOrderStatus = "DRAFT" | "APPROVED" | "IN_PRODUCTION" | "COMPLETED" | "CANCELLED";
+type ProductionArea = "INYECCION" | "ENSAMBLE";
+
+const AREA_META: Record<ProductionArea, { label: string; color: string; bg: string }> = {
+  INYECCION: { label: "Inyección", color: "#1D4ED8", bg: "#DBEAFE" },
+  ENSAMBLE: { label: "Ensamble", color: "#6D28D9", bg: "#EDE9FE" },
+};
 
 const STATUS_META: Record<ProductionOrderStatus, { label: string; color: string; bg: string }> = {
   DRAFT:         { label: "Borrador",      color: "#64748B", bg: "#F1F5F9" },
@@ -17,6 +24,7 @@ type ProductionOrderListItem = {
   id: string;
   number: string;
   status: ProductionOrderStatus;
+  area: ProductionArea;
   productionDate: string;
   createdByName: string;
   summary: { totalReferences: number; totalUnits: number; status: string };
@@ -27,6 +35,7 @@ export default function ProductionOrdersListPage() {
   const [orders, setOrders] = useState<ProductionOrderListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [newArea, setNewArea] = useState<ProductionArea>("INYECCION");
   const [error, setError] = useState<string | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
   const [newDate, setNewDate] = useState(new Date().toISOString().slice(0, 10));
@@ -53,7 +62,7 @@ export default function ProductionOrdersListPage() {
     setError(null);
     try {
       const r = await fetch("/api/panel/production-orders", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productionDate: newDate }),
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productionDate: newDate, area: newArea }),
       });
       const d = await r.json();
       if (!r.ok) { setError(d.error ?? "No se pudo crear"); return; }
@@ -96,7 +105,7 @@ export default function ProductionOrdersListPage() {
           <table className="w-full border-collapse text-sm">
             <thead className="bg-[#F8FAFC]">
               <tr>
-                {["Número", "Fecha", "Responsable", "Estado", "Referencias", "Unidades"].map((h) => (
+                {["Número", "Fecha", "Área", "Responsable", "Estado", "Referencias", "Unidades"].map((h) => (
                   <th key={h} className="border-b border-[#E2E8F0] px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">{h}</th>
                 ))}
               </tr>
@@ -112,6 +121,11 @@ export default function ProductionOrdersListPage() {
                       </button>
                     </td>
                     <td className="border-b border-[#F1F5F9] px-4 py-3 text-[#64748B]">{fmtDateOnly(o.productionDate)}</td>
+                    <td className="border-b border-[#F1F5F9] px-4 py-3">
+                      <span className="rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest" style={{ color: AREA_META[o.area].color, background: AREA_META[o.area].bg }}>
+                        {AREA_META[o.area].label}
+                      </span>
+                    </td>
                     <td className="border-b border-[#F1F5F9] px-4 py-3 text-[#1A1A1A]">{o.createdByName}</td>
                     <td className="border-b border-[#F1F5F9] px-4 py-3">
                       <span className="rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest" style={{ color: meta.color, background: meta.bg }}>
@@ -132,13 +146,20 @@ export default function ProductionOrdersListPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
             <h3 className="font-black text-[#1A1A1A]">Nueva orden de producción</h3>
-            <p className="mt-2 text-sm text-[#64748B]">Selecciona la fecha de producción.</p>
-            <input
-              type="date"
-              value={newDate}
-              onChange={(e) => setNewDate(e.target.value)}
-              className="mt-4 w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]"
-            />
+            <p className="mt-2 text-sm text-[#64748B]">Selecciona el área y la fecha de producción.</p>
+            <div className="mt-4 space-y-3">
+              <SimpleSelect
+                value={newArea}
+                options={[{ value: "INYECCION", label: "Inyección" }, { value: "ENSAMBLE", label: "Ensamble" }]}
+                onChange={(v) => setNewArea(v as ProductionArea)}
+              />
+              <input
+                type="date"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]"
+              />
+            </div>
             {error && <p className="mt-2 text-xs font-semibold text-[#DC2626]">{error}</p>}
             <div className="mt-5 flex justify-end gap-2">
               <button
