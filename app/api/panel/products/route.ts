@@ -1,10 +1,15 @@
-import { requirePermission } from "@/lib/permissions";
+import { requireAnyPermission, requirePermission } from "@/lib/permissions";
 import { getProductsForPanel, updateProductPrice, updateProductPackPrices } from "@/lib/panel";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET(request: Request) {
-  const access = await requirePermission("MODULE_PRODUCTOS", "view");
+  // El panel de Outlet se alimenta de esta misma lista, así que basta con
+  // poder ver cualquiera de los dos módulos.
+  const access = await requireAnyPermission([
+    { module: "MODULE_PRODUCTOS", action: "view" },
+    { module: "MODULE_OUTLET", action: "view" },
+  ]);
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { searchParams } = new URL(request.url);
   const minimal = searchParams.get("minimal") === "1";

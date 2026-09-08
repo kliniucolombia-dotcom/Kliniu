@@ -1,9 +1,13 @@
 import { getRecentInventoryMovements } from "@/lib/products";
-import { requireAdminOrSeller } from "@/lib/admin";
+import { requireAnyPermission } from "@/lib/permissions";
 
 export async function GET() {
   try {
-    await requireAdminOrSeller("MODULE_PRODUCTOS", "view");
+    const access = await requireAnyPermission([
+      { module: "MODULE_PRODUCTOS", action: "view" },
+      { module: "MODULE_OUTLET", action: "view" },
+    ]);
+    if (!access.ok) throw new Error(access.status === 401 ? "UNAUTHORIZED" : "FORBIDDEN");
     const movements = await getRecentInventoryMovements();
 
     return Response.json({ movements });

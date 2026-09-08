@@ -138,6 +138,7 @@ export default function CombosPanel() {
   const [copiedSku, setCopiedSku] = useState<string | null>(null);
   const [me, setMe] = useState<{ role: string; fullName: string } | null>(null);
   const isSuperAdmin = me?.role === "SUPERADMIN";
+  const [canCreate, setCanCreate] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -154,6 +155,7 @@ export default function CombosPanel() {
     if (rMe.ok) {
       const d = await rMe.json();
       setMe({ role: d.role, fullName: d.fullName });
+      setCanCreate(!!d.permissions?.MODULE_COMBOS?.canCreate);
     }
     setLoading(false);
   }, [router]);
@@ -375,13 +377,15 @@ export default function CombosPanel() {
           >
             <IconDownload /> Exportar
           </button>
-          <button
-            type="button"
-            onClick={openCreate}
-            className="inline-flex items-center gap-2 rounded-full bg-[#0C535B] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#073D43]"
-          >
-            <IconPlus /> Nuevo combo
-          </button>
+          {canCreate && (
+            <button
+              type="button"
+              onClick={openCreate}
+              className="inline-flex items-center gap-2 rounded-full bg-[#0C535B] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#073D43]"
+            >
+              <IconPlus /> Nuevo combo
+            </button>
+          )}
         </div>
       </div>
 

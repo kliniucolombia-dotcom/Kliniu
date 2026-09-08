@@ -543,7 +543,10 @@ export async function updateProduct(slug: string, input: ProductMutationInput, a
   const nextSlugBase = slugify(nombre) || slug;
   let nextSlug = slug;
 
-  if (nextSlugBase !== slug) {
+  // El slug solo se recalcula si de verdad cambió el nombre. Varios productos
+  // tienen un slug que ya no coincide con su nombre actual, y regenerarlo al
+  // guardar (por ejemplo al tocar solo el precio) les cambiaba la URL pública.
+  if (nombre !== existingRecord.name && nextSlugBase !== slug) {
     nextSlug = nextSlugBase;
     let suffix = 1;
 
@@ -640,6 +643,65 @@ export async function updateProduct(slug: string, input: ProductMutationInput, a
   });
 
   return toStoreProduct(updated as ProductRecord);
+}
+
+/**
+ * Edición acotada para quien administra Outlet pero no el catálogo: solo puede
+ * mover precio y stock. El resto de la ficha (nombre, SKU, categoría, imágenes,
+ * descripción…) se reconstruye desde lo que ya hay en la base, así que aunque
+ * el cliente mande otros campos, se ignoran. Sin esto, bastaba con marcar un
+ * producto como Outlet para poder reescribirle la ficha entera.
+ */
+export async function updateOutletProductPricing(
+  slug: string,
+  input: Pick<ProductMutationInput, "precioValor" | "precioAnteriorValor" | "stock" | "stockMinimo">,
+  actorUserId: string,
+) {
+  if (!supabaseDb) {
+    throw new Error("DATABASE_NOT_CONFIGURED");
+  }
+
+  const { data: existing, error } = await supabaseDb
+    .from("Product")
+    .select("*")
+    .eq("slug", slug)
+    .single();
+
+  if (error || !existing) {
+    throw new Error("PRODUCT_NOT_FOUND");
+  }
+
+  const record = existing as ProductRecord;
+
+  return updateProduct(
+    slug,
+    {
+      sku: record.sku || undefined,
+      oemReferencia: record.oemReference || undefined,
+      referenciasAlternas: normalizeTextList(record.alternativeReferences || []),
+      // Se reenvían crudos a propósito: esta vía no debe cambiar nada fuera de
+      // precio y stock, ni siquiera "corrigiendo" un valor que no esté en la lista.
+      categoria: record.category as Categoria,
+      nombre: record.name,
+      marca: record.brand,
+      imagen: record.image,
+      imagenesExtra: normalizeGalleryImages(record.galleryImages || []),
+      disponibilidad: record.availability as Disponibilidad,
+      descripcion: record.description,
+      aplicacion: record.application || undefined,
+      compatibilidad: normalizeTextList(record.compatibility || []),
+      garantia: record.warranty || undefined,
+      especificacionesTecnicas: normalizeTechnicalSpecs(record.technicalSpecs),
+      variacionesColor: (record.colorVariants as ProductMutationInput["variacionesColor"]) ?? [],
+      videoUrl: record.videoUrl || undefined,
+      isOutlet: record.isOutlet,
+      precioValor: input.precioValor,
+      precioAnteriorValor: input.precioAnteriorValor,
+      stock: input.stock,
+      stockMinimo: input.stockMinimo,
+    },
+    actorUserId,
+  );
 }
 
 const OUTLET_DURATION_DAYS = 15;

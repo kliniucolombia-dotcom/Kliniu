@@ -1,5 +1,5 @@
 import { createProduct, getProducts } from "@/lib/products";
-import { requireAdminOrSeller } from "@/lib/admin";
+import { requireAnyPermission, requirePermission } from "@/lib/permissions";
 
 function getProductErrorResponse(
   error: unknown,
@@ -7,18 +7,20 @@ function getProductErrorResponse(
   databaseMessage: string,
 ) {
   const message =
-    error instanceof Error &&
-    (error.message === "UNAUTHORIZED" || error.message === "FORBIDDEN")
+    error instanceof Error && error.message === "UNAUTHORIZED"
       ? "No autorizado."
-      : error instanceof Error && error.message === "DATABASE_NOT_CONFIGURED"
-        ? databaseMessage
-        : fallbackMessage;
+      : error instanceof Error && error.message === "FORBIDDEN"
+        ? "No tienes permiso para esta acción."
+        : error instanceof Error && error.message === "DATABASE_NOT_CONFIGURED"
+          ? databaseMessage
+          : fallbackMessage;
 
   const status =
-    error instanceof Error &&
-    (error.message === "UNAUTHORIZED" || error.message === "FORBIDDEN")
+    error instanceof Error && error.message === "UNAUTHORIZED"
       ? 401
-      : 500;
+      : error instanceof Error && error.message === "FORBIDDEN"
+        ? 403
+        : 500;
 
   const details =
     error instanceof Error &&
@@ -41,9 +43,19 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const user = await requireAdminOrSeller("MODULE_PRODUCTOS", "create");
     const body = await request.json();
-    const product = await createProduct(body, user.id);
+
+    // Un producto marcado como Outlet lo puede crear tanto quien administra
+    // el catálogo como quien administra Outlet.
+    const access = body?.isOutlet === true
+      ? await requireAnyPermission([
+          { module: "MODULE_OUTLET", action: "create" },
+          { module: "MODULE_PRODUCTOS", action: "create" },
+        ])
+      : await requirePermission("MODULE_PRODUCTOS", "create");
+    if (!access.ok) throw new Error(access.status === 401 ? "UNAUTHORIZED" : "FORBIDDEN");
+
+    const product = await createProduct(body, access.user.id);
 
     return Response.json({ product }, { status: 201 });
   } catch (error) {

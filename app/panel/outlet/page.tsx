@@ -104,7 +104,18 @@ export default function OutletPanel() {
   const [removeTarget, setRemoveTarget] = useState<PanelProduct | null>(null);
   const [editTarget, setEditTarget] = useState<PanelProduct | null>(null);
   const [editForm, setEditForm] = useState({ precioNormal: "", precioOutlet: "", stock: "", stockMinimo: "" });
+  const [canCreate, setCanCreate] = useState(false);
+  const [canEdit, setCanEdit] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    fetch("/api/panel/permissions").then((r) => r.json()).then((d) => {
+      const outlet = d.permissions?.MODULE_OUTLET;
+      const catalog = d.permissions?.MODULE_PRODUCTOS;
+      setCanCreate(!!(outlet?.canCreate || catalog?.canCreate));
+      setCanEdit(!!(outlet?.canEdit || catalog?.canEdit));
+    });
+  }, []);
 
   const [outletSearch, setOutletSearch] = useState("");
   const [outletPage, setOutletPage] = useState(1);
@@ -326,13 +337,15 @@ export default function OutletPanel() {
           >
             <IconDownload /> Exportar
           </button>
-          <button
-            type="button"
-            onClick={() => setShowCreate(true)}
-            className="inline-flex items-center gap-2 rounded-full bg-[#0C535B] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#073D43]"
-          >
-            <IconPlus /> Crear producto outlet
-          </button>
+          {canCreate && (
+            <button
+              type="button"
+              onClick={() => setShowCreate(true)}
+              className="inline-flex items-center gap-2 rounded-full bg-[#0C535B] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#073D43]"
+            >
+              <IconPlus /> Crear producto outlet
+            </button>
+          )}
         </div>
       </div>
 
@@ -473,27 +486,31 @@ export default function OutletPanel() {
                           </td>
                           <td className="p-4 text-right">
                             <div className="flex justify-end gap-2">
-                              <button
-                                disabled={saving}
-                                onClick={() => extendOutlet(p)}
-                                className="rounded-full border border-[#F59E0B]/30 bg-[#FFFBEB] px-3 py-1.5 text-xs font-semibold text-[#B45309] transition-colors duration-200 hover:bg-[#F59E0B] hover:text-white disabled:opacity-50"
-                              >
-                                +15 días
-                              </button>
-                              <button
-                                disabled={saving}
-                                onClick={() => openEdit(p)}
-                                className="rounded-full border border-[#27B1B8]/30 bg-[#EAF8F6] px-3 py-1.5 text-xs font-semibold text-[#0C535B] transition-colors duration-200 hover:bg-[#27B1B8] hover:text-white disabled:opacity-50"
-                              >
-                                Editar
-                              </button>
-                              <button
-                                disabled={saving}
-                                onClick={() => setRemoveTarget(p)}
-                                className="rounded-full border border-[#DC2626]/25 bg-[#FEF2F2] px-3 py-1.5 text-xs font-semibold text-[#DC2626] transition-colors duration-200 hover:bg-[#DC2626] hover:text-white disabled:opacity-50"
-                              >
-                                Quitar
-                              </button>
+                              {canEdit && (
+                                <>
+                                  <button
+                                    disabled={saving}
+                                    onClick={() => extendOutlet(p)}
+                                    className="rounded-full border border-[#F59E0B]/30 bg-[#FFFBEB] px-3 py-1.5 text-xs font-semibold text-[#B45309] transition-colors duration-200 hover:bg-[#F59E0B] hover:text-white disabled:opacity-50"
+                                  >
+                                    +15 días
+                                  </button>
+                                  <button
+                                    disabled={saving}
+                                    onClick={() => openEdit(p)}
+                                    className="rounded-full border border-[#27B1B8]/30 bg-[#EAF8F6] px-3 py-1.5 text-xs font-semibold text-[#0C535B] transition-colors duration-200 hover:bg-[#27B1B8] hover:text-white disabled:opacity-50"
+                                  >
+                                    Editar
+                                  </button>
+                                  <button
+                                    disabled={saving}
+                                    onClick={() => setRemoveTarget(p)}
+                                    className="rounded-full border border-[#DC2626]/25 bg-[#FEF2F2] px-3 py-1.5 text-xs font-semibold text-[#DC2626] transition-colors duration-200 hover:bg-[#DC2626] hover:text-white disabled:opacity-50"
+                                  >
+                                    Quitar
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -537,6 +554,7 @@ export default function OutletPanel() {
           </div>
 
           {/* Agregar producto existente */}
+          {canEdit && (
           <div className="overflow-hidden rounded-[1.75rem] border border-black/8 bg-white shadow-[0_14px_28px_rgba(15,23,42,0.05)]">
             <div className="border-b border-black/8 p-5">
               <h2 className="mb-4 text-base font-bold text-[#1f2328]">Agregar producto existente a Outlet</h2>
@@ -644,6 +662,7 @@ export default function OutletPanel() {
               />
             </div>
           </div>
+          )}
         </>
       )}
 

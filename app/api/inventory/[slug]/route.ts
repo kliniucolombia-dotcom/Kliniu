@@ -1,12 +1,13 @@
 import { adjustProductInventory } from "@/lib/products";
-import { requireAdminOrSeller } from "@/lib/admin";
+import { requirePermission } from "@/lib/permissions";
 
 export async function PATCH(
   request: Request,
   context: { params: Promise<{ slug: string }> },
 ) {
   try {
-    await requireAdminOrSeller("MODULE_PRODUCTOS", "edit");
+    const access = await requirePermission("MODULE_PRODUCTOS", "edit");
+    if (!access.ok) throw new Error(access.status === 401 ? "UNAUTHORIZED" : "FORBIDDEN");
     const { slug } = await context.params;
     const body = (await request.json()) as {
       quantity?: number;

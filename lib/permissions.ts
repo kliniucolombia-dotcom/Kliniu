@@ -75,6 +75,26 @@ export async function requirePermission(module: PanelModule, action: PermissionA
   return { ok: true, session, user };
 }
 
+// Para pantallas que viven en dos módulos a la vez: un producto de Outlet lo
+// administra tanto quien maneja el catálogo (MODULE_PRODUCTOS) como quien
+// maneja Outlet (MODULE_OUTLET). Basta con que uno de los dos lo conceda.
+export async function requireAnyPermission(
+  checks: Array<{ module: PanelModule; action: PermissionAction }>,
+): Promise<AuthResult> {
+  const resolved = await resolveActiveUser();
+  if (!resolved.ok) return resolved;
+
+  const { session, user } = resolved;
+  if (isSuperAdmin(user)) return { ok: true, session, user };
+
+  for (const { module, action } of checks) {
+    const perm = await getEffectivePermission(user, module);
+    if (perm[ACTION_FIELD[action]]) return { ok: true, session, user };
+  }
+
+  return { ok: false, status: 403 };
+}
+
 // Módulo → ruta del panel, en orden de prioridad para decidir a dónde aterriza
 // un usuario según lo que sí puede ver. Evita el loop de redirect que ocurre
 // si se manda a alguien a una ruta fija (ej. /panel) sin permiso para verla.
