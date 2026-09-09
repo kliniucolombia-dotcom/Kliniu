@@ -20,7 +20,7 @@ export default async function CombosPage() {
 
   return (
     <>
-      <main className="min-h-screen bg-white pt-16 text-[#111]">
+      <main className="min-h-screen bg-white text-[#111]">
         {/* Hero banner — se configura en /panel/banners */}
         {heroDesktop && (
           <section className="home-reveal relative overflow-hidden bg-white">
