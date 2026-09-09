@@ -1496,6 +1496,8 @@ model MaterialFile {
 enum VehicleType {
   CAMIONETA
   MOTO
+  FURGON
+  CAMION
 }
 
 enum DeliveryRouteStatus {

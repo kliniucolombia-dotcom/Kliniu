@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  MdAdd, MdLocalShipping, MdAttachMoney, MdReportProblem, MdDirectionsCar, MdTwoWheeler,
+  MdAdd, MdLocalShipping, MdAttachMoney, MdReportProblem, MdDirectionsCar, MdTwoWheeler, MdAirportShuttle,
   MdAssignment, MdClose, MdDelete, MdCheckCircle, MdPerson, MdRoute,
   MdCalendarMonth, MdChevronLeft, MdChevronRight, MdPlace,
 } from "react-icons/md";
@@ -14,7 +14,14 @@ import {
 } from "../_components/ops-ui";
 
 type Driver = { id: string; fullName: string; phone: string | null; active: boolean };
-type Vehicle = { id: string; plate: string; type: "CAMIONETA" | "MOTO"; active: boolean };
+type VehicleType = "CAMIONETA" | "MOTO" | "FURGON" | "CAMION";
+type Vehicle = { id: string; plate: string; type: VehicleType; active: boolean };
+const VEHICLE_TYPE_LABEL: Record<VehicleType, string> = {
+  CAMIONETA: "Camioneta", MOTO: "Moto", FURGON: "Furgón", CAMION: "Camión",
+};
+const VEHICLE_TYPE_ICON: Record<VehicleType, typeof MdDirectionsCar> = {
+  CAMIONETA: MdDirectionsCar, MOTO: MdTwoWheeler, FURGON: MdAirportShuttle, CAMION: MdLocalShipping,
+};
 type RouteStatus = "PLANNED" | "IN_PROGRESS" | "DONE";
 type OrderLite = {
   id: string;
@@ -110,7 +117,7 @@ const COST_LABEL: Record<CostCategory, string> = {
 };
 
 function vehicleLabel(v: Vehicle) {
-  return `${v.type === "MOTO" ? "Moto" : "Camioneta"} · ${v.plate}`;
+  return `${VEHICLE_TYPE_LABEL[v.type]} · ${v.plate}`;
 }
 
 /* ── Calendario: helpers de mes civil Bogotá ── */
@@ -270,7 +277,7 @@ export default function LogisticaPanel() {
                           <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${ROUTE_STATUS[r.status].cls}`}>{ROUTE_STATUS[r.status].label}</span>
                         </div>
                         <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#64748B]">
-                          <span className="inline-flex items-center gap-1">{r.vehicle.type === "MOTO" ? <MdTwoWheeler size={14} /> : <MdDirectionsCar size={14} />}{vehicleLabel(r.vehicle)}</span>
+                          <span className="inline-flex items-center gap-1">{(() => { const Icon = VEHICLE_TYPE_ICON[r.vehicle.type]; return <Icon size={14} />; })()}{vehicleLabel(r.vehicle)}</span>
                           <span className="inline-flex items-center gap-1"><MdPerson size={14} />{r.driver.fullName}</span>
                           <span>{r.orders.length} pedido{r.orders.length === 1 ? "" : "s"}</span>
                         </p>
@@ -387,7 +394,7 @@ export default function LogisticaPanel() {
                 <Table
                   head={["Placa", "Tipo", "Estado", perm.canEdit ? "" : null]}
                   rows={data.vehicles.map((v) => [
-                    <b key="p">{v.plate}</b>, v.type === "MOTO" ? "Moto" : "Camioneta",
+                    <b key="p">{v.plate}</b>, VEHICLE_TYPE_LABEL[v.type],
                     <span key="s" className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${v.active ? "bg-[#DCFCE7] text-[#15803D]" : "bg-[#F1F5F9] text-[#64748B]"}`}>{v.active ? "Activo" : "Inactivo"}</span>,
                     perm.canEdit ? <button key="t" className="text-xs font-bold text-[#27B1B8]" onClick={() => patch(`/api/panel/logistica/vehiculos/${v.id}`, { active: !v.active }, v.active ? "Vehículo desactivado" : "Vehículo activado")}>{v.active ? "Desactivar" : "Activar"}</button> : null,
                   ])}
@@ -614,7 +621,7 @@ function RouteCalendar({
                   <div key={r.id} className="rounded-xl border border-[#E2E8F0] p-3">
                     <div className="mb-1.5 flex items-center justify-between gap-2">
                       <span className="inline-flex items-center gap-1.5 text-xs font-black text-[#1A1A1A]">
-                        {r.vehicle.type === "MOTO" ? <MdTwoWheeler size={14} /> : <MdDirectionsCar size={14} />}
+                        {(() => { const Icon = VEHICLE_TYPE_ICON[r.vehicle.type]; return <Icon size={14} />; })()}
                         {r.vehicle.plate}
                       </span>
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${ROUTE_STATUS[r.status].cls}`}>
@@ -811,7 +818,7 @@ function VehicleModal({ onClose, onDone, onError }: ModalProps) {
   return (
     <Modal title="Nuevo vehículo" onClose={onClose} footer={<Footer onClose={onClose} onSubmit={submit} submitting={submitting} disabled={!plate.trim()} />}>
       <div><label className={labelCls}>Placa</label><input value={plate} onChange={(e) => setPlate(e.target.value.toUpperCase())} className={inputCls} placeholder="ABC123" /></div>
-      <div><label className={labelCls}>Tipo</label><SimpleSelect value={type} options={[{ value: "CAMIONETA", label: "Camioneta" }, { value: "MOTO", label: "Moto" }]} onChange={(v) => setType(v as Vehicle["type"])} /></div>
+      <div><label className={labelCls}>Tipo</label><SimpleSelect value={type} options={[{ value: "CAMIONETA", label: "Camioneta" }, { value: "MOTO", label: "Moto" }, { value: "FURGON", label: "Furgón" }, { value: "CAMION", label: "Camión" }]} onChange={(v) => setType(v as Vehicle["type"])} /></div>
     </Modal>
   );
 }
