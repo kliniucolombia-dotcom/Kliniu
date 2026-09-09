@@ -127,6 +127,9 @@ export const PANEL_NO_ACCESS_PATH = "/panel/sin-acceso";
 export async function getPanelLandingPath(user: PublicUser): Promise<string> {
   if (isSuperAdmin(user)) return "/panel";
   if (user.role === "JEFE_OPERACIONES" || user.role === "DIRECTOR_OPERACIONES") return "/panel/operaciones";
+  if (user.role === "LOGISTICA") return "/panel/logistica";
+  if (user.role === "LIDER_ENSAMBLE" || user.role === "LIDER_INYECCION") return "/panel/produccion";
+  if (user.role === "BODEGA") return "/panel/bodegas";
 
   const perms = await getEffectivePermissions(user);
   for (const { module, path } of PANEL_LANDING_ROUTES) {
