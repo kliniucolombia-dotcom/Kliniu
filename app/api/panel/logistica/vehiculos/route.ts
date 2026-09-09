@@ -7,7 +7,8 @@ export async function POST(request: Request) {
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   const body = (await request.json()) as { plate?: string; type?: VehicleType };
-  if (!body.plate?.trim() || (body.type !== "CAMIONETA" && body.type !== "MOTO")) {
+  const validTypes: VehicleType[] = ["CAMIONETA", "MOTO", "FURGON", "CAMION"];
+  if (!body.plate?.trim() || !body.type || !validTypes.includes(body.type)) {
     return Response.json({ error: "Faltan datos (plate, type)" }, { status: 400 });
   }
 
