@@ -284,27 +284,27 @@ export default function EnsamblePanel() {
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               <div>
                 <label className={labelCls}>Unidades ensambladas</label>
-                <input type="number" min={0} value={form.assembled} onChange={(e) => set("assembled", e.target.value)} className={`no-spinner ${inputCls}`} />
+                <input type="number" min={0} value={form.assembled} onChange={(e) => set("assembled", e.target.value)} onWheel={(e) => e.currentTarget.blur()} className={`no-spinner ${inputCls}`} />
               </div>
               <div>
                 <label className={labelCls}>Defectuosas</label>
-                <input type="number" min={0} value={form.defective} onChange={(e) => set("defective", e.target.value)} className={`no-spinner ${inputCls}`} />
+                <input type="number" min={0} value={form.defective} onChange={(e) => set("defective", e.target.value)} onWheel={(e) => e.currentTarget.blur()} className={`no-spinner ${inputCls}`} />
               </div>
               <div>
                 <label className={labelCls}>No conformes</label>
-                <input type="number" min={0} value={form.nonConforming} onChange={(e) => set("nonConforming", e.target.value)} className={`no-spinner ${inputCls}`} />
+                <input type="number" min={0} value={form.nonConforming} onChange={(e) => set("nonConforming", e.target.value)} onWheel={(e) => e.currentTarget.blur()} className={`no-spinner ${inputCls}`} />
               </div>
               <div>
                 <label className={labelCls}>Reprocesadas</label>
-                <input type="number" min={0} value={form.reworked} onChange={(e) => set("reworked", e.target.value)} className={`no-spinner ${inputCls}`} />
+                <input type="number" min={0} value={form.reworked} onChange={(e) => set("reworked", e.target.value)} onWheel={(e) => e.currentTarget.blur()} className={`no-spinner ${inputCls}`} />
               </div>
               <div>
                 <label className={labelCls}>N° de operarios</label>
-                <input type="number" min={1} value={form.workerCount} onChange={(e) => set("workerCount", e.target.value)} className={`no-spinner ${inputCls}`} />
+                <input type="number" min={1} value={form.workerCount} onChange={(e) => set("workerCount", e.target.value)} onWheel={(e) => e.currentTarget.blur()} className={`no-spinner ${inputCls}`} />
               </div>
               <div>
                 <label className={labelCls}>Horas trabajadas</label>
-                <input type="number" min={0} step="0.5" value={form.laborHours} onChange={(e) => set("laborHours", e.target.value)} className={`no-spinner ${inputCls}`} />
+                <input type="number" min={0} step="0.5" value={form.laborHours} onChange={(e) => set("laborHours", e.target.value)} onWheel={(e) => e.currentTarget.blur()} className={`no-spinner ${inputCls}`} />
               </div>
               <div className="col-span-2 sm:col-span-3">
                 <label className={labelCls}>Motivo del defecto</label>
