@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import {
   MdAdd, MdLocalShipping, MdAttachMoney, MdReportProblem, MdDirectionsCar, MdTwoWheeler,
   MdAssignment, MdClose, MdDelete, MdCheckCircle, MdPerson, MdRoute,
+  MdCalendarMonth, MdChevronLeft, MdChevronRight, MdPlace,
 } from "react-icons/md";
 import { SimpleSelect } from "../_components/simple-select";
 import {
@@ -79,9 +80,10 @@ type Data = {
   permission: Permission;
 };
 
-type Tab = "rutas" | "costos" | "novedades" | "flota" | "informes";
+type Tab = "rutas" | "calendario" | "costos" | "novedades" | "flota" | "informes";
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: "rutas", label: "Rutas", icon: <MdRoute size={16} /> },
+  { key: "calendario", label: "Calendario", icon: <MdCalendarMonth size={16} /> },
   { key: "costos", label: "Costos", icon: <MdAttachMoney size={16} /> },
   { key: "novedades", label: "Novedades", icon: <MdReportProblem size={16} /> },
   { key: "flota", label: "Flota", icon: <MdDirectionsCar size={16} /> },
@@ -111,6 +113,45 @@ function vehicleLabel(v: Vehicle) {
   return `${v.type === "MOTO" ? "Moto" : "Camioneta"} · ${v.plate}`;
 }
 
+/* ── Calendario: helpers de mes civil Bogotá ── */
+const MONTH_NAMES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const DOW_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+
+/** Día civil en Bogotá (YYYY-MM-DD) de un DateTime ISO. */
+function bogotaDay(iso: string) {
+  return new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+}
+function shiftMonth(month: string, delta: number) {
+  const [y, m] = month.split("-").map(Number);
+  const d = new Date(Date.UTC(y, m - 1 + delta, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+function monthRange(month: string) {
+  const [y, m] = month.split("-").map(Number);
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return { from: `${month}-01`, to: `${month}-${String(last).padStart(2, "0")}` };
+}
+function monthLabel(month: string) {
+  const [y, m] = month.split("-").map(Number);
+  return `${MONTH_NAMES[m - 1]} ${y}`;
+}
+/** Celdas de lunes a domingo; recorta la sexta semana si queda fuera del mes. */
+function monthGrid(month: string) {
+  const [y, m] = month.split("-").map(Number);
+  const offset = (new Date(Date.UTC(y, m - 1, 1)).getUTCDay() + 6) % 7;
+  const start = Date.UTC(y, m - 1, 1 - offset);
+  const cells = Array.from({ length: 42 }, (_, i) => {
+    const d = new Date(start + i * 86400000);
+    const iso = d.toISOString().slice(0, 10);
+    return { iso, day: d.getUTCDate(), inMonth: iso.slice(0, 7) === month };
+  });
+  return cells.slice(-7).every((c) => !c.inMonth) ? cells.slice(0, 35) : cells;
+}
+function longDayLabel(iso: string) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("es-CO", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" });
+}
+
 export default function LogisticaPanel() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("rutas");
@@ -120,8 +161,10 @@ export default function LogisticaPanel() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
+  const [month, setMonth] = useState(() => todayBogota().slice(0, 7));
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [modal, setModal] = useState<
-    | { kind: "route" }
+    | { kind: "route"; date?: string }
     | { kind: "assign"; route: Route }
     | { kind: "cost" }
     | { kind: "incident" }
@@ -154,6 +197,14 @@ export default function LogisticaPanel() {
     return () => clearTimeout(t);
   }, [alert]);
 
+  // En el calendario el rango lo manda el mes visible, no el selector de fechas.
+  useEffect(() => {
+    if (tab !== "calendario") return;
+    const range = monthRange(month);
+    setFrom(range.from);
+    setTo(range.to);
+  }, [tab, month]);
+
   const perm = data?.permission ?? { canView: true, canCreate: false, canEdit: false, canDelete: false };
 
   const done = (msg: string) => { setModal(null); setAlert({ type: "ok", msg }); load(); };
@@ -179,7 +230,7 @@ export default function LogisticaPanel() {
           <h1 className="mt-1 text-2xl font-black text-[#1A1A1A]">Logística</h1>
           <p className="mt-1 text-sm text-[#64748B]">Rutas de distribución, costos de transporte, novedades e informe quincenal.</p>
         </div>
-        <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} />
+        {tab !== "calendario" && <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} />}
       </div>
 
       {alert && (
@@ -263,6 +314,18 @@ export default function LogisticaPanel() {
                 ))}
               </div>
             </Section>
+          )}
+
+          {tab === "calendario" && (
+            <RouteCalendar
+              routes={data.routes}
+              month={month}
+              onMonth={setMonth}
+              selectedDay={selectedDay}
+              onSelectDay={setSelectedDay}
+              canCreate={perm.canCreate}
+              onNewRoute={(date) => setModal({ kind: "route", date })}
+            />
           )}
 
           {tab === "costos" && (
@@ -376,7 +439,7 @@ export default function LogisticaPanel() {
       )}
 
       {modal?.kind === "route" && data && (
-        <RouteModal vehicles={activeVehicles} drivers={activeDrivers} orders={data.assignableOrders} onClose={() => setModal(null)} onDone={done} onError={fail} />
+        <RouteModal initialDate={modal.date} vehicles={activeVehicles} drivers={activeDrivers} orders={data.assignableOrders} onClose={() => setModal(null)} onDone={done} onError={fail} />
       )}
       {modal?.kind === "assign" && data && (
         <AssignModal route={modal.route} orders={data.assignableOrders} onClose={() => setModal(null)} onDone={done} onError={fail} />
@@ -398,6 +461,203 @@ const REPORT_KPI_LABELS: Record<string, string> = {
   costoTotal: "Costo transporte",
   novedadesAbiertas: "Novedades abiertas",
 };
+
+const LEGEND: { label: string; dot: string }[] = [
+  { label: "Disponible", dot: "bg-[#CBD5E1]" },
+  { label: "Planificada", dot: "bg-[#94A3B8]" },
+  { label: "En curso", dot: "bg-[#1D4ED8]" },
+  { label: "Finalizada", dot: "bg-[#15803D]" },
+];
+
+function RouteCalendar({
+  routes, month, onMonth, selectedDay, onSelectDay, canCreate, onNewRoute,
+}: {
+  routes: Route[];
+  month: string;
+  onMonth: (m: string) => void;
+  selectedDay: string | null;
+  onSelectDay: (d: string | null) => void;
+  canCreate: boolean;
+  onNewRoute: (date: string) => void;
+}) {
+  const byDay = useMemo(() => {
+    const map = new Map<string, Route[]>();
+    for (const r of routes) {
+      const day = bogotaDay(r.date);
+      const list = map.get(day);
+      if (list) list.push(r);
+      else map.set(day, [r]);
+    }
+    return map;
+  }, [routes]);
+
+  const cells = useMemo(() => monthGrid(month), [month]);
+  const today = todayBogota();
+  const dayRoutes = selectedDay ? byDay.get(selectedDay) ?? [] : [];
+
+  return (
+    <div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onMonth(shiftMonth(month, -1))}
+            aria-label="Mes anterior"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E2E8F0] bg-white text-[#64748B] hover:border-[#27B1B8] hover:text-[#27B1B8]"
+          >
+            <MdChevronLeft size={18} />
+          </button>
+          <p className="min-w-[150px] text-base font-black text-[#1A1A1A] first-letter:uppercase">{monthLabel(month)}</p>
+          <button
+            onClick={() => onMonth(shiftMonth(month, 1))}
+            aria-label="Mes siguiente"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E2E8F0] bg-white text-[#64748B] hover:border-[#27B1B8] hover:text-[#27B1B8]"
+          >
+            <MdChevronRight size={18} />
+          </button>
+          <button
+            onClick={() => { onMonth(today.slice(0, 7)); onSelectDay(today); }}
+            className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-1.5 text-xs font-bold text-[#27B1B8] hover:bg-[#F8FAFC]"
+          >
+            Hoy
+          </button>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-[#475569]">
+          {LEGEND.map((l) => (
+            <span key={l.label} className="inline-flex items-center gap-1.5">
+              <i className={`h-2.5 w-2.5 rounded-full ${l.dot}`} />
+              {l.label}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-5 xl:flex-row xl:items-start">
+        {/* Rejilla mensual */}
+        <div className="min-w-0 flex-1 rounded-2xl border border-[#E2E8F0] bg-white p-3">
+          <div className="mb-1.5 grid grid-cols-7">
+            {DOW_LABELS.map((d) => (
+              <p key={d} className="px-1 py-1.5 text-[10px] font-black uppercase tracking-wide text-[#94A3B8]">{d}</p>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-1.5">
+            {cells.map((cell) => {
+              const list = byDay.get(cell.iso) ?? [];
+              const isSelected = cell.iso === selectedDay;
+              const isToday = cell.iso === today;
+              return (
+                <button
+                  key={cell.iso}
+                  type="button"
+                  onClick={() => onSelectDay(isSelected ? null : cell.iso)}
+                  aria-pressed={isSelected}
+                  className={`flex h-20 flex-col rounded-xl border p-1.5 text-left transition sm:h-24 ${
+                    isSelected
+                      ? "border-2 border-[#27B1B8] bg-[#E8FAFB] shadow-[0_0_0_3px_rgba(39,177,184,0.12)]"
+                      : cell.inMonth
+                        ? "border-[#E2E8F0] bg-white hover:border-[#27B1B8]"
+                        : "border-[#F1F5F9] bg-[#FAFBFC] opacity-50"
+                  }`}
+                >
+                  <span className={`text-xs font-bold ${
+                    isSelected ? "text-[#0C535B]" : isToday ? "text-[#27B1B8]" : cell.inMonth ? "text-[#1A1A1A]" : "text-[#CBD5E1]"
+                  }`}>
+                    {cell.day}
+                  </span>
+                  {list.length > 0 && (
+                    <>
+                      <span className="mt-1 inline-flex w-fit rounded-md bg-[#EFF6FF] px-1.5 py-0.5 text-[10px] font-bold text-[#1D4ED8] sm:hidden">
+                        {list.length}
+                      </span>
+                      <span className="mt-1 hidden min-h-0 flex-col gap-0.5 overflow-hidden sm:flex">
+                        {list.slice(0, 2).map((r) => (
+                          <span key={r.id} className={`truncate rounded-md px-1.5 py-0.5 text-[10px] font-bold ${ROUTE_STATUS[r.status].cls}`}>
+                            {r.vehicle.plate} · {r.orders.length}
+                          </span>
+                        ))}
+                        {list.length > 2 && (
+                          <span className="px-1 text-[10px] font-bold text-[#64748B]">+{list.length - 2} más</span>
+                        )}
+                      </span>
+                    </>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Detalle del día */}
+        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-4 xl:w-80 xl:shrink-0">
+          {!selectedDay ? (
+            <p className="py-8 text-center text-sm text-[#94A3B8]">Selecciona un día para ver sus rutas.</p>
+          ) : (
+            <>
+              <div className="mb-3 flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-wide text-[#94A3B8]">
+                    {dayRoutes.length === 0 ? "Disponible" : `${dayRoutes.length} ruta${dayRoutes.length === 1 ? "" : "s"}`}
+                  </p>
+                  <p className="text-lg font-black text-[#1A1A1A] first-letter:uppercase">{longDayLabel(selectedDay)}</p>
+                </div>
+                <button onClick={() => onSelectDay(null)} aria-label="Cerrar detalle" className="text-[#94A3B8] hover:text-[#1A1A1A]">
+                  <MdClose size={16} />
+                </button>
+              </div>
+
+              <div className="space-y-2.5">
+                {dayRoutes.length === 0 && (
+                  <p className="rounded-xl border border-dashed border-[#E2E8F0] py-6 text-center text-xs text-[#94A3B8]">
+                    Sin rutas programadas este día.
+                  </p>
+                )}
+                {dayRoutes.map((r) => (
+                  <div key={r.id} className="rounded-xl border border-[#E2E8F0] p-3">
+                    <div className="mb-1.5 flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-black text-[#1A1A1A]">
+                        {r.vehicle.type === "MOTO" ? <MdTwoWheeler size={14} /> : <MdDirectionsCar size={14} />}
+                        {r.vehicle.plate}
+                      </span>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${ROUTE_STATUS[r.status].cls}`}>
+                        {ROUTE_STATUS[r.status].label}
+                      </span>
+                    </div>
+                    <p className="inline-flex items-center gap-1 text-[11px] text-[#64748B]">
+                      <MdPerson size={13} />{r.driver.fullName}
+                    </p>
+                    {r.orders.length === 0 ? (
+                      <p className="mt-1.5 text-[11px] text-[#94A3B8]">Sin pedidos asignados.</p>
+                    ) : (
+                      <div className="mt-2 space-y-1.5 border-t border-[#F1F5F9] pt-2">
+                        {r.orders.map((o) => (
+                          <div key={o.id}>
+                            <p className="text-xs font-bold text-[#1A1A1A]">{o.customerName}</p>
+                            <p className="flex items-start gap-1 text-[11px] text-[#64748B]">
+                              <MdPlace size={12} className="mt-0.5 shrink-0 text-[#94A3B8]" />
+                              <span>{o.addressLine1}, {o.city}</span>
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {canCreate && (
+                <button
+                  onClick={() => onNewRoute(selectedDay)}
+                  className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#CBD5E1] bg-[#F8FAFC] py-2.5 text-xs font-bold text-[#475569] hover:border-[#27B1B8] hover:text-[#27B1B8]"
+                >
+                  <MdAdd size={15} />Nueva ruta este día
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function OrderPicker({ orders, selected, onToggle }: { orders: OrderLite[]; selected: Set<string>; onToggle: (id: string) => void }) {
   const [q, setQ] = useState("");
@@ -422,8 +682,8 @@ function OrderPicker({ orders, selected, onToggle }: { orders: OrderLite[]; sele
   );
 }
 
-function RouteModal({ vehicles, drivers, orders, onClose, onDone, onError }: ModalProps & { vehicles: Vehicle[]; drivers: Driver[]; orders: OrderLite[] }) {
-  const [date, setDate] = useState(todayBogota());
+function RouteModal({ initialDate, vehicles, drivers, orders, onClose, onDone, onError }: ModalProps & { initialDate?: string; vehicles: Vehicle[]; drivers: Driver[]; orders: OrderLite[] }) {
+  const [date, setDate] = useState(initialDate ?? todayBogota());
   const [vehicleId, setVehicleId] = useState(vehicles[0]?.id ?? "");
   const [driverId, setDriverId] = useState(drivers[0]?.id ?? "");
   const [notes, setNotes] = useState("");
