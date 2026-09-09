@@ -80,7 +80,6 @@ type Report = {
 type Data = {
   drivers: Driver[];
   vehicles: Vehicle[];
-  customers: Customer[];
   routes: Route[];
   assignableOrders: OrderLite[];
   costs: Cost[];
@@ -166,9 +165,10 @@ export default function LogisticaPanel() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("rutas");
   const [from, setFrom] = useState(todayBogota(-14));
-  const [to, setTo] = useState(todayBogota());
+  const [to, setTo] = useState(todayBogota(14));
   const [data, setData] = useState<Data | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [month, setMonth] = useState(() => todayBogota().slice(0, 7));
@@ -186,16 +186,27 @@ export default function LogisticaPanel() {
   >(null);
 
   const load = useCallback(async () => {
-    const [r, rr] = await Promise.all([
-      fetch(`/api/panel/logistica?from=${from}&to=${to}`),
-      fetch("/api/panel/operaciones/informes?module=MODULE_LOGISTICA"),
-    ]);
+    const r = await fetch(`/api/panel/logistica?from=${from}&to=${to}`);
     if (r.status === 401 || r.status === 403) { router.push("/login"); return; }
     if (!r.ok) { setAlert({ type: "err", msg: (await r.json()).error ?? "Error al cargar" }); setLoading(false); return; }
     setData(await r.json());
-    if (rr.ok) setReports((await rr.json()).reports);
     setLoading(false);
   }, [from, to, router]);
+
+  const loadReports = useCallback(async () => {
+    const rr = await fetch("/api/panel/operaciones/informes?module=MODULE_LOGISTICA");
+    if (rr.ok) setReports((await rr.json()).reports);
+  }, []);
+
+  const loadCustomers = useCallback(async () => {
+    const rc = await fetch("/api/panel/logistica/clientes");
+    if (rc.ok) setCustomers((await rc.json()).customers);
+  }, []);
+
+  useEffect(() => {
+    if (tab === "informes") void loadReports();
+    if (tab === "clientes") void loadCustomers();
+  }, [tab, loadReports, loadCustomers]);
 
   useEffect(() => {
     const task = window.setTimeout(() => void load(), 0);
@@ -218,7 +229,13 @@ export default function LogisticaPanel() {
 
   const perm = data?.permission ?? { canView: true, canCreate: false, canEdit: false, canDelete: false };
 
-  const done = (msg: string) => { setModal(null); setAlert({ type: "ok", msg }); load(); };
+  const done = (msg: string) => {
+    setModal(null);
+    setAlert({ type: "ok", msg });
+    load();
+    if (tab === "informes") loadReports();
+    if (tab === "clientes") loadCustomers();
+  };
   const fail = (msg: string) => setAlert({ type: "err", msg });
 
   async function patch(url: string, body: unknown, okMsg: string) {
@@ -425,10 +442,10 @@ export default function LogisticaPanel() {
             <Section title="Clientes" action={perm.canCreate && <button className={btnPrimary} onClick={() => setModal({ kind: "customer" })}><MdAdd size={16} />Cliente</button>}>
               <Table
                 head={["Nombre", "Teléfono", "Dirección", "Ciudad", perm.canDelete ? "" : null]}
-                rows={data.customers.map((c) => [
+                rows={customers.map((c) => [
                   <b key="n">{c.name}</b>, c.phone ?? "—", c.address, c.city,
                   perm.canDelete && c.source === "manual"
-                    ? <button key="d" className="text-[#94A3B8] hover:text-[#DC2626]" onClick={() => del(`/api/panel/logistica/clientes/${c.id}`, "Cliente eliminado")} aria-label="Eliminar cliente"><MdDelete size={16} /></button>
+                    ? <button key="d" className="text-[#94A3B8] hover:text-[#DC2626]" onClick={async () => { await del(`/api/panel/logistica/clientes/${c.id}`, "Cliente eliminado"); loadCustomers(); }} aria-label="Eliminar cliente"><MdDelete size={16} /></button>
                     : perm.canDelete ? <span key="d" className="text-[10px] font-bold text-[#94A3B8]">De pedidos</span> : null,
                 ])}
                 empty="Sin clientes registrados."

@@ -1,5 +1,12 @@
 import { requirePermission } from "@/lib/permissions";
-import { createCustomer } from "@/lib/logistics";
+import { createCustomer, listCustomers } from "@/lib/logistics";
+
+export async function GET() {
+  const access = await requirePermission("MODULE_LOGISTICA", "view");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
+
+  return Response.json({ customers: await listCustomers() });
+}
 
 export async function POST(request: Request) {
   const access = await requirePermission("MODULE_LOGISTICA", "create");
