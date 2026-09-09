@@ -3,6 +3,7 @@ import {
   getLogisticsKpis,
   listAssignableOrders,
   listCosts,
+  listCustomers,
   listDrivers,
   listIncidents,
   listRoutes,
@@ -21,9 +22,10 @@ export async function GET(request: Request) {
     return Response.json({ error: "Rango de fechas inválido" }, { status: 400 });
   }
 
-  const [drivers, vehicles, routes, assignableOrders, costs, incidents, kpis, permission] = await Promise.all([
+  const [drivers, vehicles, customers, routes, assignableOrders, costs, incidents, kpis, permission] = await Promise.all([
     listDrivers(),
     listVehicles(),
+    listCustomers(),
     listRoutes(from, to),
     listAssignableOrders(),
     listCosts(from, to),
@@ -35,6 +37,7 @@ export async function GET(request: Request) {
   return Response.json({
     drivers,
     vehicles,
+    customers,
     routes,
     assignableOrders,
     costs,

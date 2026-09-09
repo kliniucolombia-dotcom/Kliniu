@@ -45,6 +45,7 @@ type Route = {
   createdBy: { fullName: string };
   orders: OrderLite[];
 };
+type Customer = { id: string; name: string; phone: string | null; address: string; city: string; source: "manual" | "orders" };
 type CostCategory = "COMBUSTIBLE" | "MANTENIMIENTO" | "PEAJES" | "OTRO";
 type Cost = { id: string; date: string; category: CostCategory; amount: number; notes: string | null; vehicle: Vehicle; createdBy: { fullName: string } };
 type Incident = {
@@ -79,6 +80,7 @@ type Report = {
 type Data = {
   drivers: Driver[];
   vehicles: Vehicle[];
+  customers: Customer[];
   routes: Route[];
   assignableOrders: OrderLite[];
   costs: Cost[];
@@ -87,18 +89,19 @@ type Data = {
   permission: Permission;
 };
 
-type Tab = "rutas" | "calendario" | "costos" | "novedades" | "flota" | "informes";
+type Tab = "rutas" | "calendario" | "costos" | "novedades" | "flota" | "clientes" | "informes";
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: "rutas", label: "Rutas", icon: <MdRoute size={16} /> },
   { key: "calendario", label: "Calendario", icon: <MdCalendarMonth size={16} /> },
   { key: "costos", label: "Costos", icon: <MdAttachMoney size={16} /> },
   { key: "novedades", label: "Novedades", icon: <MdReportProblem size={16} /> },
   { key: "flota", label: "Flota", icon: <MdDirectionsCar size={16} /> },
+  { key: "clientes", label: "Clientes", icon: <MdPerson size={16} /> },
   { key: "informes", label: "Informes", icon: <MdAssignment size={16} /> },
 ];
 
 const ROUTE_STATUS: Record<RouteStatus, { label: string; cls: string }> = {
-  PLANNED: { label: "Planificada", cls: "bg-[#F1F5F9] text-[#64748B]" },
+  PLANNED: { label: "Planificada", cls: "bg-[#FEF9C3] text-[#854D0E]" },
   IN_PROGRESS: { label: "En curso", cls: "bg-[#EFF6FF] text-[#1D4ED8]" },
   DONE: { label: "Finalizada", cls: "bg-[#DCFCE7] text-[#15803D]" },
 };
@@ -177,6 +180,7 @@ export default function LogisticaPanel() {
     | { kind: "incident" }
     | { kind: "vehicle" }
     | { kind: "driver" }
+    | { kind: "customer" }
     | { kind: "report" }
     | null
   >(null);
@@ -332,6 +336,8 @@ export default function LogisticaPanel() {
               onSelectDay={setSelectedDay}
               canCreate={perm.canCreate}
               onNewRoute={(date) => setModal({ kind: "route", date })}
+              canEdit={perm.canEdit}
+              onPatch={patch}
             />
           )}
 
@@ -415,6 +421,21 @@ export default function LogisticaPanel() {
             </div>
           )}
 
+          {tab === "clientes" && (
+            <Section title="Clientes" action={perm.canCreate && <button className={btnPrimary} onClick={() => setModal({ kind: "customer" })}><MdAdd size={16} />Cliente</button>}>
+              <Table
+                head={["Nombre", "Teléfono", "Dirección", "Ciudad", perm.canDelete ? "" : null]}
+                rows={data.customers.map((c) => [
+                  <b key="n">{c.name}</b>, c.phone ?? "—", c.address, c.city,
+                  perm.canDelete && c.source === "manual"
+                    ? <button key="d" className="text-[#94A3B8] hover:text-[#DC2626]" onClick={() => del(`/api/panel/logistica/clientes/${c.id}`, "Cliente eliminado")} aria-label="Eliminar cliente"><MdDelete size={16} /></button>
+                    : perm.canDelete ? <span key="d" className="text-[10px] font-bold text-[#94A3B8]">De pedidos</span> : null,
+                ])}
+                empty="Sin clientes registrados."
+              />
+            </Section>
+          )}
+
           {tab === "informes" && (
             <Section
               title="Informes quincenales al Jefe de Operaciones"
@@ -455,6 +476,7 @@ export default function LogisticaPanel() {
       {modal?.kind === "incident" && <IncidentModal vehicles={activeVehicles} drivers={activeDrivers} onClose={() => setModal(null)} onDone={done} onError={fail} />}
       {modal?.kind === "vehicle" && <VehicleModal onClose={() => setModal(null)} onDone={done} onError={fail} />}
       {modal?.kind === "driver" && <DriverModal onClose={() => setModal(null)} onDone={done} onError={fail} />}
+      {modal?.kind === "customer" && <CustomerModal onClose={() => setModal(null)} onDone={done} onError={fail} />}
       {modal?.kind === "report" && data && <ReportModal from={from} to={to} kpis={data.kpis} onClose={() => setModal(null)} onDone={done} onError={fail} />}
     </div>
   );
@@ -470,14 +492,14 @@ const REPORT_KPI_LABELS: Record<string, string> = {
 };
 
 const LEGEND: { label: string; dot: string }[] = [
-  { label: "Disponible", dot: "bg-[#CBD5E1]" },
-  { label: "Planificada", dot: "bg-[#94A3B8]" },
+  { label: "Disponible", dot: "bg-[#E2E8F0]" },
+  { label: "Planificada", dot: "bg-[#CA8A04]" },
   { label: "En curso", dot: "bg-[#1D4ED8]" },
   { label: "Finalizada", dot: "bg-[#15803D]" },
 ];
 
 function RouteCalendar({
-  routes, month, onMonth, selectedDay, onSelectDay, canCreate, onNewRoute,
+  routes, month, onMonth, selectedDay, onSelectDay, canCreate, onNewRoute, canEdit, onPatch,
 }: {
   routes: Route[];
   month: string;
@@ -486,6 +508,8 @@ function RouteCalendar({
   onSelectDay: (d: string | null) => void;
   canCreate: boolean;
   onNewRoute: (date: string) => void;
+  canEdit: boolean;
+  onPatch: (url: string, body: unknown, okMsg: string) => Promise<void>;
 }) {
   const byDay = useMemo(() => {
     const map = new Map<string, Route[]>();
@@ -644,6 +668,16 @@ function RouteCalendar({
                             </p>
                           </div>
                         ))}
+                      </div>
+                    )}
+                    {canEdit && r.status !== "DONE" && (
+                      <div className="mt-2 border-t border-[#F1F5F9] pt-2">
+                        {r.status === "PLANNED" && (
+                          <button className="text-[11px] font-bold text-[#27B1B8]" onClick={() => onPatch(`/api/panel/logistica/rutas/${r.id}`, { status: "IN_PROGRESS" }, "Ruta iniciada")}>Iniciar</button>
+                        )}
+                        {r.status === "IN_PROGRESS" && (
+                          <button className="text-[11px] font-bold text-[#15803D]" onClick={() => onPatch(`/api/panel/logistica/rutas/${r.id}`, { status: "DONE" }, "Ruta finalizada")}>Finalizar</button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -837,6 +871,28 @@ function DriverModal({ onClose, onDone, onError }: ModalProps) {
     <Modal title="Nuevo conductor" onClose={onClose} footer={<Footer onClose={onClose} onSubmit={submit} submitting={submitting} disabled={!fullName.trim()} />}>
       <div><label className={labelCls}>Nombre completo</label><input value={fullName} onChange={(e) => setFullName(e.target.value)} className={inputCls} /></div>
       <div><label className={labelCls}>Teléfono (opcional)</label><input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} /></div>
+    </Modal>
+  );
+}
+
+function CustomerModal({ onClose, onDone, onError }: ModalProps) {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const submit = async () => {
+    setSubmitting(true);
+    const res = await post("/api/panel/logistica/clientes", { name, phone, address, city });
+    setSubmitting(false);
+    if (res.ok) onDone("Cliente registrado"); else onError(res.error!);
+  };
+  return (
+    <Modal title="Nuevo cliente" onClose={onClose} footer={<Footer onClose={onClose} onSubmit={submit} submitting={submitting} disabled={!name.trim() || !address.trim() || !city.trim()} />}>
+      <div><label className={labelCls}>Nombre</label><input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} /></div>
+      <div><label className={labelCls}>Teléfono (opcional)</label><input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} /></div>
+      <div><label className={labelCls}>Dirección</label><input value={address} onChange={(e) => setAddress(e.target.value)} className={inputCls} /></div>
+      <div><label className={labelCls}>Ciudad</label><input value={city} onChange={(e) => setCity(e.target.value)} className={inputCls} /></div>
     </Modal>
   );
 }

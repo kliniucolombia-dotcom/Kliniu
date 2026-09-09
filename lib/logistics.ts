@@ -63,6 +63,38 @@ export async function updateVehicle(id: string, data: { plate?: string; type?: V
   });
 }
 
+export async function listCustomers() {
+  const db = requirePrisma();
+  const [manual, orderCustomers] = await Promise.all([
+    db.logisticsCustomer.findMany({ orderBy: { name: "asc" } }),
+    db.order.findMany({
+      distinct: ["customerName", "addressLine1"],
+      select: { id: true, customerName: true, customerPhone: true, addressLine1: true, city: true },
+    }),
+  ]);
+
+  const fromOrders = orderCustomers.map((o) => ({
+    id: `order:${o.id}`,
+    name: o.customerName,
+    phone: o.customerPhone as string | null,
+    address: o.addressLine1,
+    city: o.city,
+    source: "orders" as const,
+  }));
+  const fromManual = manual.map((c) => ({ ...c, source: "manual" as const }));
+
+  return [...fromManual, ...fromOrders].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function createCustomer(data: { name: string; phone?: string; address: string; city: string }) {
+  return requirePrisma().logisticsCustomer.create({ data });
+}
+
+export async function deleteCustomer(id: string) {
+  if (id.startsWith("order:")) throw new Error("Cliente derivado de pedidos, no se puede eliminar aquí.");
+  return requirePrisma().logisticsCustomer.delete({ where: { id } });
+}
+
 export async function listRoutes(from: string, to: string) {
   return requirePrisma().deliveryRoute.findMany({
     where: { date: { gte: parseBogotaDate(from), lte: endOfBogotaDay(to) } },
