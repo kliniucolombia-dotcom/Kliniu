@@ -6,7 +6,7 @@ export async function GET() {
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   const users = await listUsers();
-  return Response.json({ users });
+  return Response.json({ users, currentUserId: access.user.id });
 }
 
 export async function POST(request: Request) {

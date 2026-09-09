@@ -318,6 +318,7 @@ function StatCard({ icon, iconClass, label, value, hint }: { icon: React.ReactNo
 
 export default function UsuariosPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
@@ -348,6 +349,7 @@ export default function UsuariosPage() {
     if (res.ok) {
       const data = await res.json();
       setUsers(data.users);
+      setCurrentUserId(data.currentUserId ?? null);
     } else {
       setError(
         res.status === 401 || res.status === 403
@@ -743,7 +745,7 @@ export default function UsuariosPage() {
                       <IconKey /> <span className="hidden md:inline">Clave</span>
                     </button>
                     <span className="mx-1 h-4 w-px shrink-0 bg-[#E2E8F0]" />
-                    <button onClick={() => { setDeleteTarget(u); setDeleteImpact(null); }} aria-label="Eliminar usuario" title="Eliminar" className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-xs font-bold text-red-500 hover:bg-red-50 md:px-2">
+                    <button disabled={u.id === currentUserId} onClick={() => { setDeleteTarget(u); setDeleteImpact(null); }} aria-label="Eliminar usuario" title={u.id === currentUserId ? "No puedes eliminar tu propio usuario" : "Eliminar"} className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-xs font-bold text-red-500 hover:bg-red-50 disabled:cursor-not-allowed disabled:text-[#CBD5E1] disabled:hover:bg-transparent md:px-2">
                       <IconTrash /> <span className="hidden md:inline">Eliminar</span>
                     </button>
                   </div>
