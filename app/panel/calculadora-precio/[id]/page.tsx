@@ -222,7 +222,7 @@ export default function SaleCalculatorEditorPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             onBlur={() => patchCalculator({ name })}
-            className="mt-1 block w-full max-w-md rounded-lg border border-transparent bg-transparent text-2xl font-black text-[#1A1A1A] outline-none transition-all duration-200 hover:cursor-pointer hover:border-[#E2E8F0] hover:bg-[#F8FAFC] hover:px-2 hover:py-1 focus:border-[#E2E8F0] focus:bg-white focus:px-2 focus:py-1"
+            className="mt-1 block w-full max-w-md rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-2 py-1 text-2xl font-black text-[#1A1A1A] outline-none transition-all duration-200 hover:cursor-pointer hover:bg-white focus:border-[#94A3B8] focus:bg-white"
           />
         </div>
         <button

@@ -2,12 +2,14 @@ import { requirePermission } from "@/lib/permissions";
 import { getCombosForPanel, createCombo, updateCombo, deleteCombo } from "@/lib/combos";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
-export async function GET() {
-  const access = await requirePermission("MODULE_COMBOS", "view");
+export async function GET(request: Request) {
+  const mine = new URL(request.url).searchParams.get("mine") === "1";
+  const access = await requirePermission(mine ? "MODULE_MIS_COMBOS" : "MODULE_COMBOS", "view");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   const combos = await getCombosForPanel();
-  return Response.json(combos);
+  const isSuperAdmin = access.user.role === "SUPERADMIN";
+  return Response.json(mine && !isSuperAdmin ? combos.filter((c) => c.createdByName === access.user.fullName) : combos);
 }
 
 export async function POST(request: Request) {

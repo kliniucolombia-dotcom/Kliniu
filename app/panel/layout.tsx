@@ -57,6 +57,7 @@ const NAV: NavItem[] = [
     children: [
       { href: "/panel/productos", label: "Productos", module: "MODULE_PRODUCTOS", icon: <MdCategory size={17} /> },
       { href: "/panel/combos", label: "Combos", module: "MODULE_COMBOS", icon: <MdCardGiftcard size={17} /> },
+      { href: "/panel/mis-combos", label: "Mis Combos", module: "MODULE_MIS_COMBOS", icon: <MdLocalOffer size={17} /> },
       { href: "/panel/outlet", label: "Outlet", module: "MODULE_OUTLET", icon: <MdLocalOffer size={17} /> },
       { href: "/panel/banners", label: "Diseño", module: "MODULE_BANNERS", icon: <MdImage size={17} /> },
       { href: "/panel/videos-soluciones", label: "Videos", module: "MODULE_BANNERS", icon: <MdVideocam size={17} /> },
