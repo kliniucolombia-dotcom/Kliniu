@@ -1133,7 +1133,7 @@ function ChecklistView({
               <table className="w-max border-separate border-spacing-0 text-xs">
                 <thead>
                   <tr>
-                    <th className="sticky left-0 z-10 min-w-[240px] border-b border-[#E2E8F0] bg-white px-4 py-3 text-left shadow-[2px_0_4px_rgba(15,23,42,0.03)]">
+                    <th className="sticky left-0 z-10 min-w-[140px] border-b border-[#E2E8F0] bg-white px-2 py-3 text-left shadow-[2px_0_4px_rgba(15,23,42,0.03)] sm:min-w-[240px] sm:px-4">
                       <span className="text-[10px] font-extrabold uppercase tracking-wide text-[#94A3B8]">Ítem de revisión</span>
                     </th>
                     {days.map((d) => {
@@ -1141,7 +1141,7 @@ function ChecklistView({
                       return (
                         <th
                           key={d}
-                          className="w-14 px-1 py-2 text-center"
+                          className="w-9 px-0.5 py-2 text-center sm:w-14 sm:px-1"
                           style={{
                             borderBottom: isToday ? "2px solid #27B1B8" : "1px solid #E2E8F0",
                             background: isToday ? "rgba(39,177,184,0.07)" : isWeekend(d) ? "#F8FAFC" : undefined,
@@ -1170,7 +1170,7 @@ function ChecklistView({
                         </tr>
                         {template.filter((i) => i.category === cat).map((item) => (
                           <tr key={item.key}>
-                            <td className="sticky left-0 z-10 border-b border-[#F1F5F9] bg-white px-4 py-2.5 shadow-[2px_0_4px_rgba(15,23,42,0.03)]">
+                            <td className="sticky left-0 z-10 border-b border-[#F1F5F9] bg-white px-2 py-2.5 shadow-[2px_0_4px_rgba(15,23,42,0.03)] sm:px-4">
                               <span className="font-semibold text-[#1A1A1A]">{item.label}</span>
                             </td>
                             {days.map((d) => {
@@ -1178,11 +1178,11 @@ function ChecklistView({
                               const isToday = d === today;
                               const cellBg = isToday ? "rgba(39,177,184,0.07)" : isWeekend(d) ? "#F8FAFC" : undefined;
                               return (
-                                <td key={d} className="border-b border-[#F1F5F9] px-1 py-2 text-center" style={{ background: cellBg }}>
+                                <td key={d} className="border-b border-[#F1F5F9] px-0.5 py-2 text-center sm:px-1" style={{ background: cellBg }}>
                                   <button
                                     disabled={!canCreate}
                                     onClick={() => onDay(vehicle, d, entryByDate[d] ?? null)}
-                                    className="mx-auto flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-extrabold transition-transform hover:scale-105 disabled:cursor-default"
+                                    className="mx-auto flex h-6 w-6 items-center justify-center rounded-lg text-[10px] font-extrabold transition-transform hover:scale-105 disabled:cursor-default sm:h-7 sm:w-7"
                                     style={
                                       status
                                         ? { background: STATUS_CELL[status].bg, border: `${isToday ? "1.5px" : "1px"} solid ${isToday ? "#27B1B8" : STATUS_CELL[status].border}`, color: STATUS_CELL[status].text }
