@@ -43,6 +43,9 @@ export async function getAllWatiConversations() {
           odooOrderName: true,
           odooSyncStatus: true,
           odooSyncError: true,
+          subtotal: true,
+          totalItems: true,
+          items: { select: { name: true, quantity: true, lineTotal: true } },
         },
       })
     : [];
@@ -62,6 +65,9 @@ export async function getAllWatiConversations() {
     odooOrderName: order?.odooOrderName ?? null,
     odooSyncStatus: order?.odooSyncStatus ?? "NOT_SYNCED",
     odooSyncError: order?.odooSyncError ?? null,
+    orderSubtotal: order?.subtotal ?? null,
+    orderTotalItems: order?.totalItems ?? null,
+    orderItems: order?.items ?? [],
     followUpSentAt: c.followUpSentAt,
     updatedAt: c.updatedAt,
     lastMessage: c.messages[0] ?? null,

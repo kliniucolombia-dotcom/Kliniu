@@ -35,6 +35,9 @@ type ConversationSummary = {
   odooOrderName: string | null;
   odooSyncStatus: "NOT_SYNCED" | "SYNCED" | "FAILED";
   odooSyncError: string | null;
+  orderSubtotal: number | null;
+  orderTotalItems: number | null;
+  orderItems: { name: string; quantity: number; lineTotal: number }[];
   followUpSentAt: string | null;
   updatedAt: string;
   lastMessage: { content: string; role: "USER" | "ASSISTANT" | "AGENT"; createdAt: string } | null;
@@ -1521,11 +1524,40 @@ export default function WhatsappPanelPage() {
 
               <section className="rounded-2xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
                 <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#64748B]">Conversación</p>
-                <div className="mt-3 rounded-xl bg-[#F8FAFC] p-3">
-                  <p className="text-[11px] font-semibold text-[#334155]">{selected.orderId ? 'Pedido vinculado' : 'Sin pedido vinculado'}</p>
-                  <p className="mt-1 text-[10px] leading-relaxed text-[#64748B]">{selectedOdooStatusText}</p>
-                  {odooNotice ? <p className="mt-2 rounded-lg bg-[#EFFDFD] px-2 py-1.5 text-[10px] font-medium text-[#0E7C82]">{odooNotice}</p> : null}
-                </div>
+                {selected.orderId ? (
+                  <div className="mt-3 rounded-xl border border-[#CCFBF1] bg-[#F0FDFA] p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] font-bold text-[#0C6368]">Pedido vinculado</p>
+                      <span className="whitespace-nowrap rounded-full border border-[#99F0EC] bg-white px-2 py-0.5 text-[10px] font-bold text-[#0E7C82]">
+                        {selected.odooOrderName ?? `#${selected.orderId.slice(-6)}`}
+                      </span>
+                    </div>
+                    {selected.orderItems.length > 0 ? (
+                      <ul className="mt-2.5 space-y-1.5">
+                        {selected.orderItems.map((item, index) => (
+                          <li key={index} className="flex items-center justify-between gap-2 text-[11px]">
+                            <span className="min-w-0 truncate text-[#334155]">{item.name}</span>
+                            <span className="shrink-0 font-semibold text-[#64748B]">× {item.quantity}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    {selected.orderSubtotal != null ? (
+                      <div className="mt-2.5 flex items-baseline justify-between border-t border-[#CCFBF1] pt-2.5">
+                        <span className="text-[10px] font-semibold text-[#64748B]">Total</span>
+                        <span className="text-sm font-extrabold text-[#0C6368]">${selected.orderSubtotal.toLocaleString("es-CO")}</span>
+                      </div>
+                    ) : null}
+                    <p className="mt-2.5 text-[10px] leading-relaxed text-[#64748B]">{selectedOdooStatusText}</p>
+                    {odooNotice ? <p className="mt-2 rounded-lg bg-white px-2 py-1.5 text-[10px] font-medium text-[#0E7C82]">{odooNotice}</p> : null}
+                  </div>
+                ) : (
+                  <div className="mt-3 rounded-xl bg-[#F8FAFC] p-3">
+                    <p className="text-[11px] font-semibold text-[#334155]">Sin pedido vinculado</p>
+                    <p className="mt-1 text-[10px] leading-relaxed text-[#64748B]">{selectedOdooStatusText}</p>
+                    {odooNotice ? <p className="mt-2 rounded-lg bg-[#EFFDFD] px-2 py-1.5 text-[10px] font-medium text-[#0E7C82]">{odooNotice}</p> : null}
+                  </div>
+                )}
               </section>
             </div>
           ) : (
