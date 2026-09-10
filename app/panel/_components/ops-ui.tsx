@@ -45,7 +45,7 @@ export function Kpi({ icon, label, value, color }: { icon: React.ReactNode; labe
 
 export function Section({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div>
+    <div className="min-w-0">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-base font-black text-[#1A1A1A] sm:text-lg">{title}</h2>
         {action}
