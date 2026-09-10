@@ -1,12 +1,15 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   MdAdd, MdLocalShipping, MdAttachMoney, MdReportProblem, MdDirectionsCar, MdTwoWheeler, MdAirportShuttle,
   MdAssignment, MdClose, MdDelete, MdCheckCircle, MdPerson, MdRoute,
   MdCalendarMonth, MdChevronLeft, MdChevronRight, MdPlace,
+  MdBuild, MdControlCamera, MdVerticalAlignCenter, MdSecurity, MdInventory2,
+  MdElectricBolt, MdLocalGasStation, MdCable, MdLuggage, MdRemoveRedEye, MdWarningAmber,
 } from "react-icons/md";
 import { SimpleSelect } from "../_components/simple-select";
+import { useConfirm } from "@/app/components/confirm-dialog";
 import {
   COP, fmtDate, todayBogota, inputCls, labelCls, btnPrimary, btnGhost,
   type Permission, type ModalProps, post, patchReq,
@@ -15,7 +18,106 @@ import {
 
 type Driver = { id: string; fullName: string; phone: string | null; active: boolean };
 type VehicleType = "CAMIONETA" | "MOTO" | "FURGON" | "CAMION";
-type Vehicle = { id: string; plate: string; type: VehicleType; active: boolean };
+type Vehicle = {
+  id: string; plate: string; type: VehicleType; active: boolean;
+  soatDue: string | null; technicalReviewDue: string | null; policyDue: string | null;
+  operationCardDue: string | null; extinguisherDue: string | null;
+};
+type ChecklistStatus = "B" | "M" | "NA";
+type ChecklistItem = { key: string; category: string; label: string };
+type ChecklistEntry = {
+  id: string; vehicleId: string; driverId: string; date: string;
+  items: Record<string, ChecklistStatus>; initials: string | null; notes: string | null;
+  driver: Driver;
+};
+const CHECKLIST_TEMPLATE_MOTO: ChecklistItem[] = [
+  { key: "frenos_funcionamiento", category: "Frenos y llantas", label: "Funcionamiento adecuado de frenos" },
+  { key: "llantas_presion", category: "Frenos y llantas", label: "Presión, estado general de llantas" },
+  { key: "luces", category: "Frenos y llantas", label: "Luces delanteras/traseras" },
+  { key: "direccion_manillar", category: "Dirección y espejos", label: "Dirección/manillar y espejos" },
+  { key: "niveles_fluidos", category: "Dirección y espejos", label: "Niveles de fluidos" },
+  { key: "cadena_transmision", category: "Dirección y espejos", label: "Cadena/transmisión" },
+  { key: "suspension", category: "Suspensión", label: "Suspensión delantera y trasera" },
+  { key: "casco", category: "Protección conductor", label: "Casco de seguridad" },
+  { key: "elementos_prevencion", category: "Protección conductor", label: "Elementos de prevención" },
+  { key: "carga_asegurada", category: "Carga", label: "Carga asegurada" },
+];
+const CHECKLIST_TEMPLATE_VEHICULO: ChecklistItem[] = [
+  { key: "frenos_liquido", category: "Frenos", label: "Nivel y líquido de frenos" },
+  { key: "frenos_pastillas", category: "Frenos", label: "Grosor de pastillas / bandas" },
+  { key: "llantas_presion", category: "Llantas y ruedas", label: "Presión de aire" },
+  { key: "llantas_labrado", category: "Llantas y ruedas", label: "Profundidad de labrado" },
+  { key: "llantas_rines", category: "Llantas y ruedas", label: "Estado de rines" },
+  { key: "aceite", category: "Fluidos y motor", label: "Nivel y estado de aceite" },
+  { key: "fugas_carter", category: "Fluidos y motor", label: "Fugas en cárter o empaques" },
+  { key: "refrigerante", category: "Fluidos y motor", label: "Nivel de refrigerante" },
+  { key: "luces_altas_bajas", category: "Sistema eléctrico", label: "Luces altas/bajas y direccionales" },
+  { key: "luz_freno", category: "Sistema eléctrico", label: "Luz de freno" },
+  { key: "pito", category: "Sistema eléctrico", label: "Pito / bocina" },
+  { key: "bateria", category: "Sistema eléctrico", label: "Batería (bornes y sulfatación)" },
+  { key: "fugas_barras", category: "Suspensión y dirección", label: "Fugas de aceite en barras" },
+  { key: "copa_direccion", category: "Suspensión y dirección", label: "Juego en la copa de dirección" },
+  { key: "amortiguacion", category: "Suspensión y dirección", label: "Amortiguación trasera" },
+  { key: "acelerador", category: "Comandos y cables", label: "Juego libre del acelerador" },
+  { key: "embrague", category: "Comandos y cables", label: "Recorrido del embrague" },
+  { key: "guayas", category: "Comandos y cables", label: "Estado general de guayas" },
+  { key: "botiquin", category: "Equipo de carretera", label: "Botiquín y linterna" },
+  { key: "herramientas", category: "Equipo de carretera", label: "Herramientas" },
+  { key: "kit_carretera", category: "Equipo de carretera", label: "Kit de carretera / señales" },
+  { key: "extintor", category: "Equipo de carretera", label: "Extintor" },
+  { key: "espejos", category: "Espejos y otros", label: "Espejos laterales y retrovisor" },
+  { key: "filtros", category: "Espejos y otros", label: "Filtros (aire / combustible)" },
+];
+function checklistTemplateFor(type: VehicleType): ChecklistItem[] {
+  return type === "MOTO" ? CHECKLIST_TEMPLATE_MOTO : CHECKLIST_TEMPLATE_VEHICULO;
+}
+const CATEGORY_ICON: Record<string, typeof MdBuild> = {
+  "Frenos y llantas": MdBuild, "Frenos": MdBuild,
+  "Dirección y espejos": MdControlCamera, "Suspensión y dirección": MdControlCamera,
+  "Suspensión": MdVerticalAlignCenter,
+  "Protección conductor": MdSecurity,
+  "Carga": MdInventory2,
+  "Llantas y ruedas": MdBuild,
+  "Fluidos y motor": MdLocalGasStation,
+  "Sistema eléctrico": MdElectricBolt,
+  "Comandos y cables": MdCable,
+  "Equipo de carretera": MdLuggage,
+  "Espejos y otros": MdRemoveRedEye,
+};
+const DOW_SHORT = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+function dowShort(iso: string) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return DOW_SHORT[(new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7];
+}
+function isWeekend(iso: string) {
+  const label = dowShort(iso);
+  return label === "Sáb" || label === "Dom";
+}
+const STATUS_CELL: Record<ChecklistStatus, { bg: string; border: string; text: string; label: string }> = {
+  B: { bg: "#DCFCE7", border: "#BBF7D0", text: "#15803D", label: "B" },
+  M: { bg: "#FEE2E2", border: "#FCA5A5", text: "#DC2626", label: "M" },
+  NA: { bg: "#F1F5F9", border: "#E2E8F0", text: "#64748B", label: "NA" },
+};
+const DUE_FIELDS: { key: keyof Vehicle; label: string }[] = [
+  { key: "soatDue", label: "SOAT" },
+  { key: "technicalReviewDue", label: "Revisión técnico-mecánica" },
+  { key: "policyDue", label: "Póliza de responsabilidad" },
+  { key: "operationCardDue", label: "Tarjeta de operación" },
+  { key: "extinguisherDue", label: "Extintor" },
+];
+function dueStatus(dateIso: string | null): "ok" | "warn" | "expired" | null {
+  if (!dateIso) return null;
+  const days = (new Date(dateIso).getTime() - Date.now()) / 86400000;
+  if (days < 0) return "expired";
+  if (days < 30) return "warn";
+  return "ok";
+}
+function vehicleDueAlert(v: Vehicle): "warn" | "expired" | null {
+  const statuses = DUE_FIELDS.map((f) => dueStatus(v[f.key] as string | null));
+  if (statuses.includes("expired")) return "expired";
+  if (statuses.includes("warn")) return "warn";
+  return null;
+}
 const VEHICLE_TYPE_LABEL: Record<VehicleType, string> = {
   CAMIONETA: "Camioneta", MOTO: "Moto", FURGON: "Furgón", CAMION: "Camión",
 };
@@ -88,13 +190,14 @@ type Data = {
   permission: Permission;
 };
 
-type Tab = "rutas" | "calendario" | "costos" | "novedades" | "flota" | "clientes" | "informes";
+type Tab = "rutas" | "calendario" | "costos" | "novedades" | "flota" | "checklist" | "clientes" | "informes";
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: "rutas", label: "Rutas", icon: <MdRoute size={16} /> },
   { key: "calendario", label: "Calendario", icon: <MdCalendarMonth size={16} /> },
   { key: "costos", label: "Costos", icon: <MdAttachMoney size={16} /> },
   { key: "novedades", label: "Novedades", icon: <MdReportProblem size={16} /> },
   { key: "flota", label: "Flota", icon: <MdDirectionsCar size={16} /> },
+  { key: "checklist", label: "Checklist F21", icon: <MdCheckCircle size={16} /> },
   { key: "clientes", label: "Clientes", icon: <MdPerson size={16} /> },
   { key: "informes", label: "Informes", icon: <MdAssignment size={16} /> },
 ];
@@ -163,6 +266,7 @@ function longDayLabel(iso: string) {
 
 export default function LogisticaPanel() {
   const router = useRouter();
+  const confirm = useConfirm();
   const [tab, setTab] = useState<Tab>("rutas");
   const [from, setFrom] = useState(todayBogota(-14));
   const [to, setTo] = useState(todayBogota(14));
@@ -182,8 +286,23 @@ export default function LogisticaPanel() {
     | { kind: "driver" }
     | { kind: "customer" }
     | { kind: "report" }
+    | { kind: "vehicleDue"; vehicle: Vehicle }
+    | { kind: "checklistDay"; vehicle: Vehicle; date: string; entry: ChecklistEntry | null }
     | null
   >(null);
+  const [checklistVehicleId, setChecklistVehicleId] = useState<string>("");
+  const [checklistMonth, setChecklistMonth] = useState(() => todayBogota().slice(0, 7));
+  const [checklistEntries, setChecklistEntries] = useState<ChecklistEntry[]>([]);
+
+  const loadChecklist = useCallback(async () => {
+    if (!checklistVehicleId) { setChecklistEntries([]); return; }
+    const r = await fetch(`/api/panel/logistica/checklist?vehicleId=${checklistVehicleId}&month=${checklistMonth}`);
+    if (r.ok) setChecklistEntries((await r.json()).entries);
+  }, [checklistVehicleId, checklistMonth]);
+
+  useEffect(() => {
+    if (tab === "checklist") void loadChecklist();
+  }, [tab, loadChecklist]);
 
   const load = useCallback(async () => {
     const r = await fetch(`/api/panel/logistica?from=${from}&to=${to}`);
@@ -235,6 +354,7 @@ export default function LogisticaPanel() {
     load();
     if (tab === "informes") loadReports();
     if (tab === "clientes") loadCustomers();
+    if (tab === "checklist") loadChecklist();
   };
   const fail = (msg: string) => setAlert({ type: "err", msg });
 
@@ -249,6 +369,10 @@ export default function LogisticaPanel() {
 
   const activeVehicles = useMemo(() => (data?.vehicles ?? []).filter((v) => v.active), [data]);
   const activeDrivers = useMemo(() => (data?.drivers ?? []).filter((d) => d.active), [data]);
+
+  useEffect(() => {
+    if (!checklistVehicleId && activeVehicles.length > 0) setChecklistVehicleId(activeVehicles[0].id);
+  }, [activeVehicles, checklistVehicleId]);
 
   return (
     <div className="p-6 lg:p-8">
@@ -415,27 +539,56 @@ export default function LogisticaPanel() {
             <div className="grid gap-6 lg:grid-cols-2">
               <Section title="Vehículos" action={perm.canCreate && <button className={btnPrimary} onClick={() => setModal({ kind: "vehicle" })}><MdAdd size={16} />Vehículo</button>}>
                 <Table
-                  head={["Placa", "Tipo", "Estado", perm.canEdit ? "" : null]}
-                  rows={data.vehicles.map((v) => [
-                    <b key="p">{v.plate}</b>, VEHICLE_TYPE_LABEL[v.type],
-                    <span key="s" className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${v.active ? "bg-[#DCFCE7] text-[#15803D]" : "bg-[#F1F5F9] text-[#64748B]"}`}>{v.active ? "Activo" : "Inactivo"}</span>,
-                    perm.canEdit ? <button key="t" className="text-xs font-bold text-[#27B1B8]" onClick={() => patch(`/api/panel/logistica/vehiculos/${v.id}`, { active: !v.active }, v.active ? "Vehículo desactivado" : "Vehículo activado")}>{v.active ? "Desactivar" : "Activar"}</button> : null,
-                  ])}
+                  head={["Placa", "Tipo", "Vencimientos", "Estado", perm.canEdit ? "" : null, perm.canDelete ? "" : null]}
+                  rows={data.vehicles.map((v) => {
+                    const alertLevel = vehicleDueAlert(v);
+                    return [
+                      <b key="p">{v.plate}</b>, VEHICLE_TYPE_LABEL[v.type],
+                      <button
+                        key="d"
+                        className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${alertLevel === "expired" ? "bg-[#FEE2E2] text-[#DC2626]" : alertLevel === "warn" ? "bg-[#FEF9C3] text-[#854D0E]" : "bg-[#F1F5F9] text-[#64748B]"}`}
+                        onClick={() => setModal({ kind: "vehicleDue", vehicle: v })}
+                      >
+                        {alertLevel === "expired" ? "Vencido" : alertLevel === "warn" ? "Por vencer" : "Ver / editar"}
+                      </button>,
+                      <span key="s" className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${v.active ? "bg-[#DCFCE7] text-[#15803D]" : "bg-[#F1F5F9] text-[#64748B]"}`}>{v.active ? "Activo" : "Inactivo"}</span>,
+                      perm.canEdit ? <button key="t" className="text-xs font-bold text-[#27B1B8]" onClick={() => patch(`/api/panel/logistica/vehiculos/${v.id}`, { active: !v.active }, v.active ? "Vehículo desactivado" : "Vehículo activado")}>{v.active ? "Desactivar" : "Activar"}</button> : null,
+                      perm.canDelete
+                        ? <button key="del" className="text-[#94A3B8] hover:text-[#DC2626]" onClick={async () => { if (await confirm({ title: "Eliminar vehículo", message: `¿Eliminar el vehículo ${v.plate}?`, danger: true })) del(`/api/panel/logistica/vehiculos/${v.id}`, "Vehículo eliminado"); }} aria-label="Eliminar vehículo"><MdDelete size={16} /></button>
+                        : null,
+                    ];
+                  })}
                   empty="Sin vehículos. Registra la camioneta y la moto."
                 />
               </Section>
               <Section title="Conductores" action={perm.canCreate && <button className={btnPrimary} onClick={() => setModal({ kind: "driver" })}><MdAdd size={16} />Conductor</button>}>
                 <Table
-                  head={["Nombre", "Teléfono", "Estado", perm.canEdit ? "" : null]}
+                  head={["Nombre", "Teléfono", "Estado", perm.canEdit ? "" : null, perm.canDelete ? "" : null]}
                   rows={data.drivers.map((d) => [
                     <b key="n">{d.fullName}</b>, d.phone ?? "—",
                     <span key="s" className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${d.active ? "bg-[#DCFCE7] text-[#15803D]" : "bg-[#F1F5F9] text-[#64748B]"}`}>{d.active ? "Activo" : "Inactivo"}</span>,
                     perm.canEdit ? <button key="t" className="text-xs font-bold text-[#27B1B8]" onClick={() => patch(`/api/panel/logistica/conductores/${d.id}`, { active: !d.active }, d.active ? "Conductor desactivado" : "Conductor activado")}>{d.active ? "Desactivar" : "Activar"}</button> : null,
+                    perm.canDelete
+                      ? <button key="del" className="text-[#94A3B8] hover:text-[#DC2626]" onClick={async () => { if (await confirm({ title: "Eliminar conductor", message: `¿Eliminar el conductor ${d.fullName}?`, danger: true })) del(`/api/panel/logistica/conductores/${d.id}`, "Conductor eliminado"); }} aria-label="Eliminar conductor"><MdDelete size={16} /></button>
+                      : null,
                   ])}
                   empty="Sin conductores registrados."
                 />
               </Section>
             </div>
+          )}
+
+          {tab === "checklist" && (
+            <ChecklistView
+              vehicles={data.vehicles}
+              vehicleId={checklistVehicleId}
+              onVehicleId={setChecklistVehicleId}
+              month={checklistMonth}
+              onMonth={setChecklistMonth}
+              entries={checklistEntries}
+              canCreate={perm.canCreate}
+              onDay={(vehicle, date, entry) => setModal({ kind: "checklistDay", vehicle, date, entry })}
+            />
           )}
 
           {tab === "clientes" && (
@@ -495,6 +648,10 @@ export default function LogisticaPanel() {
       {modal?.kind === "driver" && <DriverModal onClose={() => setModal(null)} onDone={done} onError={fail} />}
       {modal?.kind === "customer" && <CustomerModal onClose={() => setModal(null)} onDone={done} onError={fail} />}
       {modal?.kind === "report" && data && <ReportModal from={from} to={to} kpis={data.kpis} onClose={() => setModal(null)} onDone={done} onError={fail} />}
+      {modal?.kind === "vehicleDue" && <VehicleDueModal vehicle={modal.vehicle} onClose={() => setModal(null)} onDone={done} onError={fail} />}
+      {modal?.kind === "checklistDay" && (
+        <ChecklistDayModal vehicle={modal.vehicle} date={modal.date} entry={modal.entry} drivers={activeDrivers} onClose={() => setModal(null)} onDone={done} onError={fail} />
+      )}
     </div>
   );
 }
@@ -853,6 +1010,250 @@ function ResolveIncident({ onResolve }: { onResolve: (action: string) => void })
         <button className={btnPrimary} onClick={() => onResolve(action.trim())}>Marcar resuelta</button>
       </div>
     </div>
+  );
+}
+
+function fmtDateShort(iso: string) {
+  return new Date(iso).toLocaleDateString("es-CO", { timeZone: "UTC", day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+function VehicleDueModal({ vehicle, onClose, onDone, onError }: ModalProps & { vehicle: Vehicle }) {
+  const [values, setValues] = useState<Record<string, string>>(() =>
+    Object.fromEntries(DUE_FIELDS.map((f) => [f.key, vehicle[f.key] ? String(vehicle[f.key]).slice(0, 10) : ""])),
+  );
+  const [submitting, setSubmitting] = useState(false);
+  const submit = async () => {
+    setSubmitting(true);
+    const body = Object.fromEntries(DUE_FIELDS.map((f) => [f.key, values[f.key as string] || null]));
+    const res = await patchReq(`/api/panel/logistica/vehiculos/${vehicle.id}`, body);
+    setSubmitting(false);
+    if (res.ok) onDone("Vencimientos actualizados"); else onError(res.error!);
+  };
+  const fields = vehicle.type === "MOTO" ? DUE_FIELDS.filter((f) => f.key !== "operationCardDue" && f.key !== "extinguisherDue") : DUE_FIELDS;
+  return (
+    <Modal title={`Vencimientos · ${vehicleLabel(vehicle)}`} onClose={onClose} footer={<Footer onClose={onClose} onSubmit={submit} submitting={submitting} />}>
+      {fields.map((f) => (
+        <div key={f.key as string}>
+          <label className={labelCls}>{f.label}</label>
+          <input type="date" value={values[f.key as string] ?? ""} onChange={(e) => setValues((v) => ({ ...v, [f.key as string]: e.target.value }))} className={inputCls} />
+        </div>
+      ))}
+    </Modal>
+  );
+}
+
+function ChecklistView({
+  vehicles, vehicleId, onVehicleId, month, onMonth, entries, canCreate, onDay,
+}: {
+  vehicles: Vehicle[]; vehicleId: string; onVehicleId: (id: string) => void;
+  month: string; onMonth: (m: string) => void; entries: ChecklistEntry[]; canCreate: boolean;
+  onDay: (vehicle: Vehicle, date: string, entry: ChecklistEntry | null) => void;
+}) {
+  const vehicle = vehicles.find((v) => v.id === vehicleId) ?? null;
+  const template = vehicle ? checklistTemplateFor(vehicle.type) : [];
+  const [y, m] = month.split("-").map(Number);
+  const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const days = Array.from({ length: daysInMonth }, (_, i) => `${month}-${String(i + 1).padStart(2, "0")}`);
+  const entryByDate = useMemo(() => Object.fromEntries(entries.map((e) => [e.date.slice(0, 10), e])), [entries]);
+  const categories = Array.from(new Set(template.map((i) => i.category)));
+  const today = todayBogota();
+
+  const alert = useMemo(() => {
+    for (const d of days) {
+      const items = entryByDate[d]?.items;
+      if (!items) continue;
+      for (const item of template) {
+        if (items[item.key] === "M") return { date: d, label: item.label };
+      }
+    }
+    return null;
+  }, [days, entryByDate, template]);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-black text-[#1A1A1A]">Checklist F21</h2>
+          <p className="text-xs text-[#64748B]">Revisión diaria pre-operacional · formato KL-SG-F21</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {(() => {
+            const selectedVehicle = vehicles.find((v) => v.id === vehicleId);
+            const VIcon = selectedVehicle ? VEHICLE_TYPE_ICON[selectedVehicle.type] : MdDirectionsCar;
+            return (
+              <div className="flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-white pl-4 pr-1 shadow-sm">
+                <VIcon size={16} className="text-[#0C535B]" />
+                <SimpleSelect
+                  value={vehicleId}
+                  options={vehicles.map((v) => ({ value: v.id, label: vehicleLabel(v) }))}
+                  onChange={onVehicleId}
+                  triggerClassName="flex items-center gap-1.5 py-2 pr-3 text-sm font-bold text-[#1A1A1A]"
+                />
+              </div>
+            );
+          })()}
+          <div className="flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-white px-4 py-2 shadow-sm">
+            <MdCalendarMonth size={16} className="text-[#64748B]" />
+            <input type="month" value={month} onChange={(e) => onMonth(e.target.value)} className="border-0 bg-transparent p-0 text-sm font-bold text-[#1A1A1A] outline-none" />
+          </div>
+        </div>
+      </div>
+
+      {!vehicle && (
+        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-6">
+          <Empty text="Selecciona un vehículo." />
+        </div>
+      )}
+
+      {vehicle && (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3">
+            <div className="flex flex-wrap items-center gap-5">
+              {(["B", "M", "NA"] as ChecklistStatus[]).map((s) => (
+                <div key={s} className="flex items-center gap-2">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-md text-[10px] font-black" style={{ background: STATUS_CELL[s].bg, border: `1px solid ${STATUS_CELL[s].border}`, color: STATUS_CELL[s].text }}>{STATUS_CELL[s].label}</div>
+                  <span className="text-xs font-semibold text-[#334155]">{s === "B" ? "Bien" : s === "M" ? "Mal" : "No aplica"}</span>
+                </div>
+              ))}
+              <div className="flex items-center gap-2">
+                <div className="h-5 w-5 rounded-md border-[1.5px] border-dashed border-[#CBD5E1]" />
+                <span className="text-xs font-semibold text-[#94A3B8]">Sin revisar</span>
+              </div>
+            </div>
+            {alert && (
+              <div className="flex items-center gap-2 rounded-full bg-[#FEF2F2] px-3 py-1.5">
+                <MdWarningAmber size={15} className="text-[#DC2626]" />
+                <span className="text-xs font-bold text-[#B91C1C]">1 alerta este mes · {alert.label.toLowerCase()}, {fmtDateShort(alert.date)}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-max border-separate border-spacing-0 text-xs">
+                <thead>
+                  <tr>
+                    <th className="sticky left-0 z-10 min-w-[240px] border-b border-[#E2E8F0] bg-white px-4 py-3 text-left shadow-[2px_0_4px_rgba(15,23,42,0.03)]">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wide text-[#94A3B8]">Ítem de revisión</span>
+                    </th>
+                    {days.map((d) => {
+                      const isToday = d === today;
+                      return (
+                        <th
+                          key={d}
+                          className="w-14 px-1 py-2 text-center"
+                          style={{
+                            borderBottom: isToday ? "2px solid #27B1B8" : "1px solid #E2E8F0",
+                            background: isToday ? "rgba(39,177,184,0.07)" : isWeekend(d) ? "#F8FAFC" : undefined,
+                          }}
+                        >
+                          <div className="text-[9px] font-bold uppercase" style={{ color: isToday ? "#0C535B" : "#94A3B8" }}>{dowShort(d)}</div>
+                          <div className="mt-0.5 text-[13px] font-extrabold" style={{ color: isToday ? "#0C535B" : "#1A1A1A" }}>{d.slice(8, 10)}</div>
+                          {isToday && <div className="mt-0.5 text-[8px] font-extrabold tracking-wide text-[#27B1B8]">HOY</div>}
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {categories.map((cat) => {
+                    const Icon = CATEGORY_ICON[cat] ?? MdBuild;
+                    return (
+                      <React.Fragment key={cat}>
+                        <tr>
+                          <td colSpan={days.length + 1} className="sticky left-0 z-10 p-0">
+                            <div className="flex items-center gap-2 border-y border-[#F1F5F9] bg-[#F8FAFC] px-4 py-2.5">
+                              <Icon size={14} className="text-[#0C535B]" />
+                              <span className="text-[10px] font-extrabold uppercase tracking-wide text-[#0C535B]">{cat}</span>
+                            </div>
+                          </td>
+                        </tr>
+                        {template.filter((i) => i.category === cat).map((item) => (
+                          <tr key={item.key}>
+                            <td className="sticky left-0 z-10 border-b border-[#F1F5F9] bg-white px-4 py-2.5 shadow-[2px_0_4px_rgba(15,23,42,0.03)]">
+                              <span className="font-semibold text-[#1A1A1A]">{item.label}</span>
+                            </td>
+                            {days.map((d) => {
+                              const status = entryByDate[d]?.items?.[item.key];
+                              const isToday = d === today;
+                              const cellBg = isToday ? "rgba(39,177,184,0.07)" : isWeekend(d) ? "#F8FAFC" : undefined;
+                              return (
+                                <td key={d} className="border-b border-[#F1F5F9] px-1 py-2 text-center" style={{ background: cellBg }}>
+                                  <button
+                                    disabled={!canCreate}
+                                    onClick={() => onDay(vehicle, d, entryByDate[d] ?? null)}
+                                    className="mx-auto flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-extrabold transition-transform hover:scale-105 disabled:cursor-default"
+                                    style={
+                                      status
+                                        ? { background: STATUS_CELL[status].bg, border: `${isToday ? "1.5px" : "1px"} solid ${isToday ? "#27B1B8" : STATUS_CELL[status].border}`, color: STATUS_CELL[status].text }
+                                        : { border: `1.5px dashed ${isToday ? "#27B1B8" : "#E2E8F0"}` }
+                                    }
+                                  >
+                                    {status ?? ""}
+                                  </button>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-center gap-1.5 border-t border-[#F1F5F9] bg-[#F8FAFC] py-2.5">
+              <MdChevronRight size={13} className="text-[#94A3B8]" />
+              <span className="text-[11px] font-bold text-[#94A3B8]">Desliza para ver el resto del mes</span>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ChecklistDayModal({
+  vehicle, date, entry, drivers, onClose, onDone, onError,
+}: ModalProps & { vehicle: Vehicle; date: string; entry: ChecklistEntry | null; drivers: Driver[] }) {
+  const template = checklistTemplateFor(vehicle.type);
+  const [driverId, setDriverId] = useState(entry?.driverId ?? drivers[0]?.id ?? "");
+  const [items, setItems] = useState<Record<string, ChecklistStatus>>(() => {
+    const base = Object.fromEntries(template.map((i) => [i.key, "B" as ChecklistStatus]));
+    return { ...base, ...(entry?.items ?? {}) };
+  });
+  const [initials, setInitials] = useState(entry?.initials ?? "");
+  const [notes, setNotes] = useState(entry?.notes ?? "");
+  const [submitting, setSubmitting] = useState(false);
+  const submit = async () => {
+    setSubmitting(true);
+    const res = await post("/api/panel/logistica/checklist", { vehicleId: vehicle.id, driverId, date, items, initials, notes });
+    setSubmitting(false);
+    if (res.ok) onDone("Checklist guardado"); else onError(res.error!);
+  };
+  return (
+    <Modal title={`Checklist ${fmtDateShort(date)} · ${vehicleLabel(vehicle)}`} onClose={onClose} footer={<Footer onClose={onClose} onSubmit={submit} submitting={submitting} disabled={!driverId} />} wide>
+      <div><label className={labelCls}>Conductor</label><SimpleSelect value={driverId} options={drivers.map((d) => ({ value: d.id, label: d.fullName }))} onChange={setDriverId} /></div>
+      <div className="grid gap-2">
+        {template.map((item) => (
+          <div key={item.key} className="flex items-center justify-between gap-3 rounded-xl border border-[#E2E8F0] px-3 py-2">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-[#94A3B8]">{item.category}</p>
+              <p className="text-sm text-[#1A1A1A]">{item.label}</p>
+            </div>
+            <SimpleSelect
+              value={items[item.key] ?? "B"}
+              options={[{ value: "B", label: "Bien" }, { value: "M", label: "Mal" }, { value: "NA", label: "No aplica" }]}
+              onChange={(v) => setItems((it) => ({ ...it, [item.key]: v as ChecklistStatus }))}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div><label className={labelCls}>Iniciales</label><input value={initials} onChange={(e) => setInitials(e.target.value)} className={inputCls} /></div>
+        <div><label className={labelCls}>Notas</label><input value={notes} onChange={(e) => setNotes(e.target.value)} className={inputCls} /></div>
+      </div>
+    </Modal>
   );
 }
 

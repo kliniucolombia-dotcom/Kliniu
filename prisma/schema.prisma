@@ -119,6 +119,7 @@ model User {
   assignedTickets          Ticket[]           @relation("TicketResponsible")
   ticketComments           TicketComment[]
   deliveryRoutesCreated    DeliveryRoute[]    @relation("DeliveryRouteCreatedBy")
+  vehicleChecklistsCreated VehicleChecklistEntry[] @relation("VehicleChecklistCreatedBy")
   transportCostsCreated    TransportCost[]    @relation("TransportCostCreatedBy")
   transportIncidentsCreated TransportIncident[] @relation("TransportIncidentCreatedBy")
   moldChanges              MoldChange[]       @relation("MoldChangeChangedBy")
@@ -1546,18 +1547,43 @@ model Driver {
   updatedAt  DateTime            @updatedAt
   routes     DeliveryRoute[]
   incidents  TransportIncident[]
+  checklistEntries VehicleChecklistEntry[]
 }
 
 model Vehicle {
-  id        String              @id @default(cuid())
-  plate     String              @unique
-  type      VehicleType
-  active    Boolean             @default(true)
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
-  routes    DeliveryRoute[]
-  costs     TransportCost[]
-  incidents TransportIncident[]
+  id                 String              @id @default(cuid())
+  plate              String              @unique
+  type               VehicleType
+  active             Boolean             @default(true)
+  soatDue            DateTime?
+  technicalReviewDue DateTime?
+  policyDue          DateTime?
+  operationCardDue   DateTime?
+  extinguisherDue    DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  routes             DeliveryRoute[]
+  costs              TransportCost[]
+  incidents          TransportIncident[]
+  checklistEntries   VehicleChecklistEntry[]
+}
+
+model VehicleChecklistEntry {
+  id          String   @id @default(cuid())
+  vehicleId   String
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id])
+  driverId    String
+  driver      Driver   @relation(fields: [driverId], references: [id])
+  date        DateTime
+  items       Json
+  initials    String?
+  notes       String?
+  createdById String
+  createdBy   User     @relation("VehicleChecklistCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@unique([vehicleId, date])
+  @@index([date])
 }
 
 model DeliveryRoute {

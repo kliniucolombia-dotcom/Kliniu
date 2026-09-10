@@ -56,11 +56,126 @@ export async function createVehicle(data: { plate: string; type: VehicleType }) 
   return requirePrisma().vehicle.create({ data: { ...data, plate: data.plate.trim().toUpperCase() } });
 }
 
-export async function updateVehicle(id: string, data: { plate?: string; type?: VehicleType; active?: boolean }) {
+export async function updateVehicle(
+  id: string,
+  data: {
+    plate?: string;
+    type?: VehicleType;
+    active?: boolean;
+    soatDue?: string | null;
+    technicalReviewDue?: string | null;
+    policyDue?: string | null;
+    operationCardDue?: string | null;
+    extinguisherDue?: string | null;
+  },
+) {
+  const { soatDue, technicalReviewDue, policyDue, operationCardDue, extinguisherDue, ...rest } = data;
   return requirePrisma().vehicle.update({
     where: { id },
-    data: { ...data, plate: data.plate ? data.plate.trim().toUpperCase() : undefined },
+    data: {
+      ...rest,
+      plate: data.plate ? data.plate.trim().toUpperCase() : undefined,
+      soatDue: soatDue === undefined ? undefined : soatDue ? parseBogotaDate(soatDue) : null,
+      technicalReviewDue: technicalReviewDue === undefined ? undefined : technicalReviewDue ? parseBogotaDate(technicalReviewDue) : null,
+      policyDue: policyDue === undefined ? undefined : policyDue ? parseBogotaDate(policyDue) : null,
+      operationCardDue: operationCardDue === undefined ? undefined : operationCardDue ? parseBogotaDate(operationCardDue) : null,
+      extinguisherDue: extinguisherDue === undefined ? undefined : extinguisherDue ? parseBogotaDate(extinguisherDue) : null,
+    },
   });
+}
+
+// Ítems fijos del formato KL-SG-F21 "Revisión Diaria Pre-Operacional".
+export type ChecklistItem = { key: string; category: string; label: string };
+export const CHECKLIST_TEMPLATE_MOTO: ChecklistItem[] = [
+  { key: "frenos_funcionamiento", category: "Frenos y llantas", label: "Funcionamiento adecuado de frenos" },
+  { key: "llantas_presion", category: "Frenos y llantas", label: "Presión, estado general de llantas" },
+  { key: "luces", category: "Frenos y llantas", label: "Luces delanteras/traseras" },
+  { key: "direccion_manillar", category: "Dirección y espejos", label: "Dirección/manillar y espejos" },
+  { key: "niveles_fluidos", category: "Dirección y espejos", label: "Niveles de fluidos" },
+  { key: "cadena_transmision", category: "Dirección y espejos", label: "Cadena/transmisión" },
+  { key: "suspension", category: "Suspensión", label: "Suspensión delantera y trasera" },
+  { key: "casco", category: "Protección conductor", label: "Casco de seguridad" },
+  { key: "elementos_prevencion", category: "Protección conductor", label: "Elementos de prevención" },
+  { key: "carga_asegurada", category: "Carga", label: "Carga asegurada" },
+];
+export const CHECKLIST_TEMPLATE_VEHICULO: ChecklistItem[] = [
+  { key: "frenos_liquido", category: "Frenos", label: "Nivel y líquido de frenos" },
+  { key: "frenos_pastillas", category: "Frenos", label: "Grosor de pastillas / bandas" },
+  { key: "llantas_presion", category: "Llantas y ruedas", label: "Presión de aire" },
+  { key: "llantas_labrado", category: "Llantas y ruedas", label: "Profundidad de labrado" },
+  { key: "llantas_rines", category: "Llantas y ruedas", label: "Estado de rines" },
+  { key: "aceite", category: "Fluidos y motor", label: "Nivel y estado de aceite" },
+  { key: "fugas_carter", category: "Fluidos y motor", label: "Fugas en cárter o empaques" },
+  { key: "refrigerante", category: "Fluidos y motor", label: "Nivel de refrigerante" },
+  { key: "luces_altas_bajas", category: "Sistema eléctrico", label: "Luces altas/bajas y direccionales" },
+  { key: "luz_freno", category: "Sistema eléctrico", label: "Luz de freno" },
+  { key: "pito", category: "Sistema eléctrico", label: "Pito / bocina" },
+  { key: "bateria", category: "Sistema eléctrico", label: "Batería (bornes y sulfatación)" },
+  { key: "fugas_barras", category: "Suspensión y dirección", label: "Fugas de aceite en barras" },
+  { key: "copa_direccion", category: "Suspensión y dirección", label: "Juego en la copa de dirección" },
+  { key: "amortiguacion", category: "Suspensión y dirección", label: "Amortiguación trasera" },
+  { key: "acelerador", category: "Comandos y cables", label: "Juego libre del acelerador" },
+  { key: "embrague", category: "Comandos y cables", label: "Recorrido del embrague" },
+  { key: "guayas", category: "Comandos y cables", label: "Estado general de guayas" },
+  { key: "botiquin", category: "Equipo de carretera", label: "Botiquín y linterna" },
+  { key: "herramientas", category: "Equipo de carretera", label: "Herramientas" },
+  { key: "kit_carretera", category: "Equipo de carretera", label: "Kit de carretera / señales" },
+  { key: "extintor", category: "Equipo de carretera", label: "Extintor" },
+  { key: "espejos", category: "Espejos y otros", label: "Espejos laterales y retrovisor" },
+  { key: "filtros", category: "Espejos y otros", label: "Filtros (aire / combustible)" },
+];
+export function checklistTemplateFor(type: VehicleType): ChecklistItem[] {
+  return type === "MOTO" ? CHECKLIST_TEMPLATE_MOTO : CHECKLIST_TEMPLATE_VEHICULO;
+}
+
+export async function listChecklistEntries(vehicleId: string, month: string) {
+  const start = parseBogotaDate(`${month}-01`);
+  const end = new Date(start);
+  end.setUTCMonth(end.getUTCMonth() + 1);
+  return requirePrisma().vehicleChecklistEntry.findMany({
+    where: { vehicleId, date: { gte: start, lt: end } },
+    orderBy: { date: "asc" },
+    include: { driver: true },
+  });
+}
+
+export async function upsertChecklistEntry(input: {
+  vehicleId: string;
+  driverId: string;
+  date: string;
+  items: Record<string, "B" | "M" | "NA">;
+  initials?: string;
+  notes?: string;
+  userId: string;
+}) {
+  const day = parseBogotaDate(input.date);
+  return requirePrisma().vehicleChecklistEntry.upsert({
+    where: { vehicleId_date: { vehicleId: input.vehicleId, date: day } },
+    create: {
+      vehicleId: input.vehicleId,
+      driverId: input.driverId,
+      date: day,
+      items: input.items,
+      initials: input.initials || null,
+      notes: input.notes || null,
+      createdById: input.userId,
+    },
+    update: {
+      driverId: input.driverId,
+      items: input.items,
+      initials: input.initials || null,
+      notes: input.notes || null,
+      createdById: input.userId,
+    },
+  });
+}
+
+export async function deleteVehicle(id: string) {
+  return requirePrisma().vehicle.delete({ where: { id } });
+}
+
+export async function deleteDriver(id: string) {
+  return requirePrisma().driver.delete({ where: { id } });
 }
 
 export async function listCustomers() {
