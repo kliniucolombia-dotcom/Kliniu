@@ -7,7 +7,6 @@ import { useSaleMode } from "../components/sale-mode-provider";
 import WhatsAppBuyCTA, { WHATSAPP_ICON } from "../components/whatsapp-buy-cta";
 import type { ProductoCatalogo } from "../data/catalog";
 import SiteFooter from "../components/site-footer";
-import { MdHourglassBottom } from "react-icons/md";
 
 function isOutletProduct(product: ProductoCatalogo) {
   if (product.esOutlet !== true) return false;
@@ -25,17 +24,40 @@ function outletDaysLeft(product: ProductoCatalogo): number | null {
   return Math.max(0, Math.ceil(ms / (24 * 60 * 60 * 1000)));
 }
 
+const OUTLET_RING_RADIUS = 22;
+const OUTLET_RING_CIRCUMFERENCE = 2 * Math.PI * OUTLET_RING_RADIUS;
+const OUTLET_COUNTDOWN_TOTAL_DAYS = 15;
+
+function outletRingColor(days: number) {
+  if (days <= 2) return "#DC2626";
+  if (days <= 6) return "#F59E0B";
+  return "#27B1B8";
+}
+
 function OutletCountdownBadge({ product }: { product: ProductoCatalogo }) {
   const days = outletDaysLeft(product);
   if (days === null) return null;
+  const frac = Math.min(1, Math.max(0, days / OUTLET_COUNTDOWN_TOTAL_DAYS));
+  const offset = OUTLET_RING_CIRCUMFERENCE * (1 - frac);
+  const color = outletRingColor(days);
   return (
-    <span
-      className="absolute right-4 top-4 z-10 rounded-lg px-2.5 py-1 text-[11px] font-black text-white"
+    <div
+      className="absolute right-4 top-4 z-10 flex h-[52px] w-[52px] items-center justify-center rounded-full"
       style={{ background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.25)" }}
     >
-      <MdHourglassBottom className="mr-1 inline-block align-[-2px]" size={12} />
-      {days === 0 ? "Último día" : `${days} ${days === 1 ? "día" : "días"}`}
-    </span>
+      <svg width="52" height="52" viewBox="0 0 52 52" className="absolute" style={{ transform: "rotate(-90deg)" }}>
+        <circle cx="26" cy="26" r={OUTLET_RING_RADIUS} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="4" />
+        <circle
+          cx="26" cy="26" r={OUTLET_RING_RADIUS} fill="none" stroke={color} strokeWidth="4" strokeLinecap="round"
+          strokeDasharray={OUTLET_RING_CIRCUMFERENCE} strokeDashoffset={offset}
+          style={{ transition: "stroke-dashoffset 0.4s ease, stroke 0.4s ease" }}
+        />
+      </svg>
+      <div className="flex flex-col items-center leading-none">
+        <span className="text-[15px] font-extrabold text-white">{days}</span>
+        <span className="text-[8px] font-bold uppercase text-white/70">{days === 1 ? "día" : "días"}</span>
+      </div>
+    </div>
   );
 }
 

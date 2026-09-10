@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-
-const fmt = (n: number) =>
-  n.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
+import { SimpleSelect } from "../_components/simple-select";
+import { useCurrencyDisplay } from "@/lib/useCurrencyDisplay";
+import { LATAM_CURRENCIES } from "@/lib/currencies";
 
 type CalculatorListItem = {
   id: string;
@@ -14,6 +14,7 @@ type CalculatorListItem = {
 
 export default function CalculadoraPrecioListPage() {
   const router = useRouter();
+  const { currency, setCurrency, format: fmt } = useCurrencyDisplay();
   const [calculators, setCalculators] = useState<CalculatorListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -67,13 +68,21 @@ export default function CalculadoraPrecioListPage() {
           <h1 className="mt-1 text-2xl font-black text-[#1A1A1A]">Calculadora de Precio de Venta</h1>
           <p className="mt-0.5 text-sm text-[#64748B]">Arma combos de productos y calcula el precio de venta final</p>
         </div>
-        <button
-          onClick={create}
-          disabled={creating}
-          className="rounded-xl bg-[#27B1B8] px-4 py-2.5 text-sm font-black text-white shadow-[0_2px_8px_rgba(39,177,184,0.3)] transition hover:bg-[#1F9AA0] disabled:opacity-60"
-        >
-          {creating ? "Creando…" : "+ Nueva calculadora"}
-        </button>
+        <div className="flex items-center gap-3">
+          <SimpleSelect
+            value={currency}
+            options={LATAM_CURRENCIES.map((c) => ({ value: c.code, label: c.code }))}
+            onChange={(v) => setCurrency(v as typeof currency)}
+            className="w-24 text-xs"
+          />
+          <button
+            onClick={create}
+            disabled={creating}
+            className="rounded-xl bg-[#27B1B8] px-4 py-2.5 text-sm font-black text-white shadow-[0_2px_8px_rgba(39,177,184,0.3)] transition hover:bg-[#1F9AA0] disabled:opacity-60"
+          >
+            {creating ? "Creando…" : "+ Nueva calculadora"}
+          </button>
+        </div>
       </div>
 
       {error && (

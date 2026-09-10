@@ -3,9 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { buildSaleCalculatorSummary, type SaleCalcConfig, type SaleCalcItemInput } from "@/lib/sale-calculator";
 import { SimpleSelect } from "../../_components/simple-select";
+import { useCurrencyDisplay } from "@/lib/useCurrencyDisplay";
+import { LATAM_CURRENCIES } from "@/lib/currencies";
 
-const fmt = (n: number) =>
-  (n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 const fmtPct = (n: number) => `${(n || 0).toFixed(2)}%`;
 
 const MAX_NUM = 999_999_999;
@@ -84,6 +84,7 @@ function PctCell({ value, onCommit }: { value: number; onCommit: (n: number) => 
 export default function SaleCalculatorEditorPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { currency, setCurrency, format: fmt } = useCurrencyDisplay();
 
   const [name, setName] = useState("");
   const [items, setItems] = useState<Item[]>([]);
@@ -338,7 +339,16 @@ export default function SaleCalculatorEditorPage() {
 
         {/* Bloque 3: Resumen */}
         <div className="rounded-2xl border border-[#E2E8F0] bg-white p-6">
-          <h2 className="mb-4 text-sm font-black uppercase tracking-widest text-[#64748B]">Resumen</h2>
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <h2 className="text-sm font-black uppercase tracking-widest text-[#64748B]">Resumen</h2>
+            <SimpleSelect
+              value={currency}
+              options={LATAM_CURRENCIES.map((c) => ({ value: c.code, label: c.code }))}
+              onChange={(v) => setCurrency(v as typeof currency)}
+              className="w-24 text-xs"
+              portal
+            />
+          </div>
           <div className="space-y-2">
             {cascadeRows.map((row) => (
               <div key={row.label} className={`flex items-center justify-between rounded-lg px-2 py-1.5 ${row.positive ? "bg-[#F0FAFA]" : ""}`}>

@@ -104,6 +104,8 @@ export default function OutletPanel() {
   const [removeTarget, setRemoveTarget] = useState<PanelProduct | null>(null);
   const [editTarget, setEditTarget] = useState<PanelProduct | null>(null);
   const [editForm, setEditForm] = useState({ precioNormal: "", precioOutlet: "", stock: "", stockMinimo: "" });
+  const [addTarget, setAddTarget] = useState<PanelProduct | null>(null);
+  const [addPrice, setAddPrice] = useState("");
   const [canCreate, setCanCreate] = useState(false);
   const [canEdit, setCanEdit] = useState(false);
   const router = useRouter();
@@ -287,6 +289,42 @@ export default function OutletPanel() {
     if (!r.ok) { setAlert({ type: "err", msg: d.error || "Error al actualizar" }); setSaving(false); return; }
     setAlert({ type: "ok", msg: "Producto outlet actualizado" });
     setEditTarget(null);
+    await load();
+    setSaving(false);
+  };
+
+  const openAddToOutlet = (p: PanelProduct) => {
+    setAddPrice(String(p.price));
+    setAddTarget(p);
+  };
+
+  const confirmAddKeepPrice = async () => {
+    if (!addTarget) return;
+    const p = addTarget;
+    setAddTarget(null);
+    await setProductOutlet(p, true);
+  };
+
+  const confirmAddWithDiscount = async () => {
+    if (!addTarget) return;
+    const p = addTarget;
+    const newPrice = Number(addPrice);
+    if (!newPrice || newPrice <= 0) { setAlert({ type: "err", msg: "Precio rebajado inválido" }); return; }
+    setSaving(true);
+    setAlert(null);
+    const r1 = await fetch(`/api/products/${p.slug}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isOutlet: true }),
+    });
+    if (!r1.ok) { setAlert({ type: "err", msg: "Error al agregar a Outlet" }); setSaving(false); return; }
+    if (newPrice !== p.price) {
+      const r2 = await fetch(`/api/products/${p.slug}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ precioValor: newPrice, precioAnteriorValor: p.price, stock: p.stock, stockMinimo: p.minimumStock }),
+      });
+      if (!r2.ok) { setAlert({ type: "err", msg: "Se agregó a Outlet pero no se pudo rebajar el precio" }); setAddTarget(null); await load(); setSaving(false); return; }
+    }
+    setAlert({ type: "ok", msg: "Producto agregado a Outlet" });
+    setAddTarget(null);
     await load();
     setSaving(false);
   };
@@ -620,7 +658,7 @@ export default function OutletPanel() {
                         <td className="p-4 font-semibold text-[#1f2328]">{fmt(p.price)}</td>
                         <td className={`p-4 font-semibold ${p.stock === 0 ? "text-[#DC2626]" : "text-[#16A34A]"}`}>{p.stock.toLocaleString("es-CO")} unidades</td>
                         <td className="p-4 text-right">
-                          <button disabled={saving} onClick={() => setProductOutlet(p, true)} className="rounded-full bg-[#27B1B8] px-4 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:opacity-90 disabled:opacity-50">
+                          <button disabled={saving} onClick={() => openAddToOutlet(p)} className="rounded-full bg-[#27B1B8] px-4 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:opacity-90 disabled:opacity-50">
                             Agregar a Outlet
                           </button>
                         </td>
@@ -735,6 +773,47 @@ export default function OutletPanel() {
               </button>
               <button onClick={createOutletProduct} disabled={saving} className="flex-1 rounded-xl bg-[#27B1B8] py-2.5 text-sm font-bold text-white hover:opacity-80 disabled:opacity-50">
                 {saving ? "Guardando…" : "Crear producto outlet"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {addTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-4 flex items-start justify-between">
+              <div>
+                <h3 className="font-black text-[#1A1A1A]">Agregar a Outlet</h3>
+                <p className="mt-0.5 text-sm text-[#64748B]">{addTarget.name}</p>
+              </div>
+              <button onClick={() => setAddTarget(null)} className="text-[#94A3B8] hover:text-[#1A1A1A]">✕</button>
+            </div>
+            <p className="mb-3 text-sm text-[#64748B]">¿Quieres bajar el precio para la oferta outlet?</p>
+            <div>
+              <label className="mb-1 block text-xs font-bold text-[#64748B]">Precio outlet</label>
+              <input
+                type="number"
+                value={addPrice}
+                onChange={(e) => setAddPrice(e.target.value)}
+                className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]"
+              />
+              <p className="mt-1 text-[10px] text-[#94A3B8]">Precio actual: {fmt(addTarget.price)}</p>
+              {Number(addPrice) > 0 && Number(addPrice) < addTarget.price && (
+                <p className="mt-1 text-xs font-semibold text-[#16A34A]">
+                  Descuento: {Math.round((1 - Number(addPrice) / addTarget.price) * 100)}% vs precio actual
+                </p>
+              )}
+            </div>
+            <div className="mt-5 flex flex-col gap-2">
+              <button onClick={confirmAddWithDiscount} disabled={saving} className="rounded-xl bg-[#27B1B8] py-2.5 text-sm font-bold text-white hover:opacity-80 disabled:opacity-50">
+                {saving ? "Guardando…" : "Agregar con este precio"}
+              </button>
+              <button onClick={confirmAddKeepPrice} disabled={saving} className="rounded-xl border border-[#E2E8F0] py-2.5 text-sm font-bold text-[#64748B] hover:bg-[#F8FAFC] disabled:opacity-50">
+                Agregar sin cambiar el precio
+              </button>
+              <button onClick={() => setAddTarget(null)} className="py-1 text-xs font-semibold text-[#94A3B8] hover:text-[#1A1A1A]">
+                Cancelar
               </button>
             </div>
           </div>
