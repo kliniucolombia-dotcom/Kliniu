@@ -18,6 +18,17 @@ function renderTemplate(
   return body.replace(/\{\{([^}]+)\}\}/g, (_match, key: string) => values.get(key.trim()) ?? `{{${key}}}`);
 }
 
+export async function pickSellerForNewConversation() {
+  if (!prisma) return null;
+  const sellers = await prisma.user.findMany({
+    where: { role: "SELLER", whatsappPhone: { not: null } },
+    select: { id: true, _count: { select: { assignedWatiConversations: true } } },
+    orderBy: { fullName: "asc" },
+  });
+  if (sellers.length === 0) return null;
+  return sellers.sort((a, b) => a._count.assignedWatiConversations - b._count.assignedWatiConversations)[0].id;
+}
+
 export async function getAllWatiConversations() {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
 
@@ -28,6 +39,7 @@ export async function getAllWatiConversations() {
         orderBy: { createdAt: "desc" },
         take: 1,
       },
+      assignedSeller: { select: { id: true, fullName: true } },
     },
   });
 
@@ -61,6 +73,8 @@ export async function getAllWatiConversations() {
     notes: c.notes,
     botPaused: c.botPaused,
     orderId: c.orderId,
+    assignedSellerId: c.assignedSellerId,
+    assignedSellerName: c.assignedSeller?.fullName ?? null,
     odooOrderId: order?.odooOrderId ?? null,
     odooOrderName: order?.odooOrderName ?? null,
     odooSyncStatus: order?.odooSyncStatus ?? "NOT_SYNCED",
@@ -153,7 +167,7 @@ export async function getWatiConversationMessages(conversationId: string) {
   return conversation;
 }
 
-export async function sendAgentReply(conversationId: string, text: string) {
+export async function sendAgentReply(conversationId: string, text: string, senderId: string) {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
 
   const conversation = await prisma.watiConversation.findUnique({ where: { id: conversationId } });
@@ -162,7 +176,7 @@ export async function sendAgentReply(conversationId: string, text: string) {
   await sendWatiMessage(conversation.phone, text);
 
   const message = await prisma.watiMessage.create({
-    data: { conversationId, role: "AGENT", content: text },
+    data: { conversationId, role: "AGENT", content: text, senderId },
   });
 
   await prisma.watiConversation.update({
@@ -182,7 +196,7 @@ export type StartWatiConversationInput =
       parameters: Array<{ name: string; value: string }>;
     };
 
-export async function startWatiConversation(input: StartWatiConversationInput) {
+export async function startWatiConversation(input: StartWatiConversationInput, senderId: string) {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
 
   const phone = normalizeWhatsappPhone(input.phone);
@@ -234,10 +248,12 @@ export async function startWatiConversation(input: StartWatiConversationInput) {
             }
           : { status: "ACTIVE", updatedAt: new Date() },
       })
-    : await prisma.watiConversation.create({ data: { phone } });
+    : await prisma.watiConversation.create({
+        data: { phone, assignedSellerId: await pickSellerForNewConversation() },
+      });
 
   await prisma.watiMessage.create({
-    data: { conversationId: conversation.id, role: "AGENT", content: storedContent },
+    data: { conversationId: conversation.id, role: "AGENT", content: storedContent, senderId },
   });
 
   await prisma.watiConversation.update({

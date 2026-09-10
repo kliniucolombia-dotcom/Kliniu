@@ -28,7 +28,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   try {
-    const message = await sendAgentReply(id, body.text.trim());
+    const message = await sendAgentReply(id, body.text.trim(), access.session.userId);
     await broadcastPanelUpdate("wati");
     return Response.json(message);
   } catch (error) {

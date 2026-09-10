@@ -95,6 +95,8 @@ model User {
   cartItems                CartItem[]
   assignedOrders           Order[]            @relation("AssignedOrders")
   orders                   Order[]
+  assignedWatiConversations WatiConversation[] @relation("WatiAssignedSeller")
+  watiMessagesSent         WatiMessage[]      @relation("WatiMessageSender")
   pointTransactions        PointTransaction[]
   priceChanges             PriceHistory[]     @relation("PriceChangedBy")
   rewardRedemptions        RewardRedemption[]
@@ -592,6 +594,8 @@ model WatiConversation {
   comboVideoSentAt   DateTime?
   aiContextStartedAt DateTime?
   orderId            String?
+  assignedSellerId   String?
+  assignedSeller     User?                  @relation("WatiAssignedSeller", fields: [assignedSellerId], references: [id])
   followUpSentAt     DateTime?
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
@@ -608,8 +612,12 @@ model WatiMessage {
   conversationId String
   role           WatiMessageRole
   content        String
+  senderId       String?
+  sender         User?            @relation("WatiMessageSender", fields: [senderId], references: [id])
   createdAt      DateTime         @default(now())
   conversation   WatiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, role, createdAt])
 }
 
 model Combo {

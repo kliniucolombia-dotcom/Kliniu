@@ -157,10 +157,24 @@ const tools = [
   },
 ];
 
+async function getSellerStyleExamples(sellerId: string | null | undefined) {
+  if (!sellerId || !prisma) return null;
+
+  const messages = await prisma.watiMessage.findMany({
+    where: { role: "AGENT", senderId: sellerId },
+    orderBy: { createdAt: "desc" },
+    take: 15,
+    select: { content: true },
+  });
+  if (messages.length === 0) return null;
+
+  return messages.map((m) => `- "${m.content.replace(/\s+/g, " ").trim().slice(0, 200)}"`).join("\n");
+}
+
 export async function runWatiAssistant(
   history: { role: "user" | "assistant"; content: string }[],
   newUserMessage: string,
-  options: { allowOrderCreation?: boolean } = {},
+  options: { allowOrderCreation?: boolean; sellerId?: string | null } = {},
 ) {
   if (history.length === 0) {
     return {
@@ -172,7 +186,10 @@ export async function runWatiAssistant(
   if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_NOT_CONFIGURED");
 
   const allowOrderCreation = options.allowOrderCreation !== false;
-  const [catalog] = await Promise.all([getLiveCatalogContext(newUserMessage)]);
+  const [catalog, styleExamples] = await Promise.all([
+    getLiveCatalogContext(newUserMessage),
+    getSellerStyleExamples(options.sellerId),
+  ]);
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const input = [
     { role: "system" as const, content: SYSTEM_PROMPT },
@@ -180,6 +197,12 @@ export async function runWatiAssistant(
       role: "system" as const,
       content: `CATÁLOGO VIGENTE DE KLINIU (fuente de verdad):\n${catalog}`,
     },
+    ...(styleExamples
+      ? [{
+          role: "system" as const,
+          content: `EJEMPLOS DE TONO DEL VENDEDOR ASIGNADO (no son parte de esta conversación, solo referencia de cómo escribe para que imites su estilo, sin copiar el contenido literal):\n${styleExamples}`,
+        }]
+      : []),
     ...(allowOrderCreation
       ? []
       : [{ role: "system" as const, content: "Esta conversación ya tiene un pedido registrado. No vuelvas a crear otro pedido; responde solo dudas de soporte o posventa." }]),

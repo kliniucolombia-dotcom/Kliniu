@@ -31,6 +31,8 @@ type ConversationSummary = {
   notes: string | null;
   botPaused: boolean;
   orderId: string | null;
+  assignedSellerId: string | null;
+  assignedSellerName: string | null;
   odooOrderId: number | null;
   odooOrderName: string | null;
   odooSyncStatus: "NOT_SYNCED" | "SYNCED" | "FAILED";
@@ -1507,6 +1509,7 @@ export default function WhatsappPanelPage() {
                 </div>
                 <dl className="mt-4 space-y-2 border-t border-[#F1F5F9] pt-3 text-[11px]">
                   <div className="space-y-1.5"><dt className="text-[#94A3B8]">Etapa comercial</dt><dd><select aria-label="Etapa comercial" value={effectiveSalesStage} onChange={(event) => handleStageChange(event.target.value as SalesStage)} disabled={changingStage || Boolean(selected.orderId)} className="w-full rounded-lg border border-[#DCE5EA] bg-[#F8FAFC] px-2 py-1.5 text-[11px] font-semibold text-[#334155] outline-none focus:border-[#11AEB4] focus-visible:ring-2 focus-visible:ring-[#11AEB4]/30 disabled:cursor-not-allowed disabled:opacity-60"><option value="NEW">Nuevo</option><option value="IN_PROGRESS">En conversación</option><option value="SOLD">Vendido</option></select>{selected.orderId ? <p className="mt-1 text-[9px] text-[#16A34A]">Etapa bloqueada por pedido generado.</p> : null}</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-[#94A3B8]">Vendedor</dt><dd className="font-semibold text-[#475569]">{selected.assignedSellerName ?? 'Sin asignar'}</dd></div>
                   <div className="flex justify-between gap-3"><dt className="text-[#94A3B8]">Chat</dt><dd className="font-semibold text-[#475569]">{conversationStatus === 'ACTIVE' ? 'Abierto' : 'Cerrado'}</dd></div>
                   <div className="flex justify-between gap-3"><dt className="text-[#94A3B8]">Origen</dt><dd className="font-medium text-[#475569]">WhatsApp</dd></div>
                   <div className="flex justify-between gap-3"><dt className="text-[#94A3B8]">Última actividad</dt><dd className="font-medium text-[#475569]">{selected.lastMessage ? formatRelative(selected.lastMessage.createdAt) : 'Sin actividad'}</dd></div>

@@ -29,21 +29,27 @@ export async function POST(request: Request) {
 
     const conversation =
       body.mode === "session"
-        ? await startWatiConversation({
-            mode: "session",
-            phone: body.phone,
-            text: body.text ?? "",
-          })
-        : await startWatiConversation({
-            mode: "template",
-            phone: body.phone,
-            templateName: body.templateName ?? "",
-            parameters: (body.parameters ?? []).flatMap((parameter) =>
-              parameter.name && typeof parameter.value === "string"
-                ? [{ name: parameter.name, value: parameter.value }]
-                : [],
-            ),
-          });
+        ? await startWatiConversation(
+            {
+              mode: "session",
+              phone: body.phone,
+              text: body.text ?? "",
+            },
+            access.session.userId,
+          )
+        : await startWatiConversation(
+            {
+              mode: "template",
+              phone: body.phone,
+              templateName: body.templateName ?? "",
+              parameters: (body.parameters ?? []).flatMap((parameter) =>
+                parameter.name && typeof parameter.value === "string"
+                  ? [{ name: parameter.name, value: parameter.value }]
+                  : [],
+              ),
+            },
+            access.session.userId,
+          );
 
     await broadcastPanelUpdate("wati");
     return Response.json(conversation, { status: 201 });

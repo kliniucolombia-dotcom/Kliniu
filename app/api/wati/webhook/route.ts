@@ -1,6 +1,7 @@
 import { SITE_URL } from "@/lib/site";
 import { prisma } from "@/lib/prisma";
 import { runWatiAssistant } from "@/lib/wati-ai";
+import { pickSellerForNewConversation } from "@/lib/wati-conversations";
 import { sendWatiFileFromUrl, sendWatiMessage } from "@/lib/wati";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { syncOrderToOdoo } from "@/lib/orders";
@@ -171,7 +172,7 @@ export async function POST(request: Request) {
   let conversation = await prisma.watiConversation.upsert({
     where: { phone },
     update: { updatedAt: new Date() },
-    create: { phone },
+    create: { phone, assignedSellerId: await pickSellerForNewConversation() },
   });
 
   if (!conversation.orderId && conversation.salesStage !== "SOLD") {
@@ -249,6 +250,7 @@ export async function POST(request: Request) {
   const requestedMedia = getRequestedComboMedia(history, text);
   const { reply, orderCreated } = await runWatiAssistant(history, text, {
     allowOrderCreation: !conversation.orderId,
+    sellerId: conversation.assignedSellerId,
   });
 
   await prisma.watiMessage.create({
