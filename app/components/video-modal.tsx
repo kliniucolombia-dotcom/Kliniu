@@ -25,7 +25,7 @@ export default function VideoModal({ videos }: { videos: Video[] }) {
     >
       <div
         className="relative w-full max-w-sm overflow-hidden rounded-2xl bg-black"
-        style={{ maxHeight: "calc(100vh - 2rem)" }}
+        style={{ maxHeight: "calc(100dvh - 2rem)" }}
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -38,7 +38,7 @@ export default function VideoModal({ videos }: { videos: Video[] }) {
         <video
           src={activeHref}
           className="block w-full"
-          style={{ height: "min(600px, calc(100vh - 2rem))" }}
+          style={{ height: "min(600px, calc(100dvh - 2rem))" }}
           controls
           autoPlay
           playsInline

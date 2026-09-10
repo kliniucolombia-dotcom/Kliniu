@@ -316,7 +316,7 @@ export default function VideosSolucionesPage() {
         >
           <div
             className="relative w-full max-w-sm overflow-hidden rounded-2xl bg-black"
-            style={{ maxHeight: "calc(100vh - 2rem)" }}
+            style={{ maxHeight: "calc(100dvh - 2rem)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -326,7 +326,7 @@ export default function VideosSolucionesPage() {
             >
               ✕
             </button>
-            <video src={preview.videoUrl} className="block w-full" style={{ maxHeight: "calc(100vh - 2rem)" }} controls autoPlay playsInline />
+            <video src={preview.videoUrl} className="block w-full" style={{ maxHeight: "calc(100dvh - 2rem)" }} controls autoPlay playsInline />
           </div>
         </div>
       )}
