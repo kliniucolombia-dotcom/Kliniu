@@ -118,7 +118,9 @@ export default async function Home() {
               </p>
               <ComboCtaCard className="mt-5 hidden min-h-[420px] w-full lg:flex" />
             </div>
-            <ComboCarousel combos={combos} />
+            <div className="min-w-0 flex-1">
+              <ComboCarousel combos={combos} />
+            </div>
           </div>
         </div>
       </section>

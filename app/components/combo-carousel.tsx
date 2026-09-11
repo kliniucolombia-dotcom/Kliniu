@@ -31,12 +31,12 @@ export default function ComboCarousel({ combos }: { combos: ComboCardData[] }) {
         type="button"
         onClick={() => scroll("left")}
         aria-label="Anterior"
-        className="absolute -left-4 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white shadow-sm transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"
+        className="absolute left-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white shadow-md transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"
       >
         ‹
       </button>
 
-      <div ref={scrollRef} className="motion-list scrollbar-hidden flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2">
+      <div ref={scrollRef} className="motion-list scrollbar-hidden flex snap-x snap-mandatory gap-4 overflow-x-auto px-10 pb-2">
         {combos.map((combo) => (
           <ComboCard key={combo.id} combo={combo} className="w-[280px] min-w-[280px] shrink-0 snap-start" />
         ))}
@@ -49,7 +49,7 @@ export default function ComboCarousel({ combos }: { combos: ComboCardData[] }) {
         type="button"
         onClick={() => scroll("right")}
         aria-label="Siguiente"
-        className="absolute -right-4 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white shadow-sm transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"
+        className="absolute right-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white shadow-md transition-colors hover:border-[#27B1B8] hover:text-[#27B1B8]"
       >
         ›
       </button>
