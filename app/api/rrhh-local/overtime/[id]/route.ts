@@ -1,6 +1,7 @@
 import { requireActiveUser, requireManagerOf } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
+import { createNotification } from "@/lib/notifications";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
@@ -42,5 +43,30 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     include: { employee: { include: { user: { select: { fullName: true } } } } },
   });
   await broadcastPanelUpdate("timeoff");
+
+  const employeeName = updated.employee?.user?.fullName ?? "Empleado";
+
+  if (status === "APPROVED") {
+    createNotification({
+      eventKey: "hr.request_approved",
+      title: `Solicitud de horas extra aprobada`,
+      detail: employeeName,
+      href: "/panel/rrhh/horas-extras",
+      targetUserId: updated.employee.userId,
+      createdById: access.user.id,
+      metadata: { overtimeId: id },
+    }).catch(() => {});
+  } else if (status === "REJECTED") {
+    createNotification({
+      eventKey: "hr.request_rejected",
+      title: `Solicitud de horas extra rechazada`,
+      detail: employeeName,
+      href: "/panel/rrhh/horas-extras",
+      targetUserId: updated.employee.userId,
+      createdById: access.user.id,
+      metadata: { overtimeId: id, reason: reviewNote },
+    }).catch(() => {});
+  }
+
   return Response.json(updated);
 }

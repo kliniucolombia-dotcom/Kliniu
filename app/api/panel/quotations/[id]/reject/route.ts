@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { rejectQuotation } from "@/lib/panel";
+import { createNotification } from "@/lib/notifications";
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_COTIZACIONES", "edit");
@@ -17,6 +18,17 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
 
   try {
     const updated = await rejectQuotation(id);
+
+    createNotification({
+      eventKey: "quotation.rejected",
+      title: "Cotización rechazada",
+      detail: `La cotización ha sido rechazada`,
+      href: "/panel/cotizaciones",
+      targetUserId: quotation.sellerId,
+      createdById: session.userId,
+      metadata: { quotationId: id },
+    }).catch(() => {});
+
     return Response.json(updated);
   } catch (e) {
     if (e instanceof Error && e.message === "INVALID_TRANSITION") {

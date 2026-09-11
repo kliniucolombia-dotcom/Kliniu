@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { transferWarehouseStock } from "@/lib/warehouses";
 import { parsePositiveInteger } from "@/lib/operations-validation";
+import { createNotification } from "@/lib/notifications";
 
 export async function POST(request: Request) {
   const access = await requirePermission("MODULE_BODEGAS", "edit");
@@ -31,6 +32,16 @@ export async function POST(request: Request) {
       userId: access.user.id,
       note: body.note,
     });
+
+    createNotification({
+      eventKey: "inventory.warehouse_transfer",
+      title: "Transferencia entre bodegas",
+      detail: `${quantity} unidades`,
+      href: "/panel/bodegas",
+      createdById: access.user.id,
+      metadata: { productId: body.productId, from: body.fromWarehouseId, to: body.toWarehouseId, quantity },
+    }).catch(() => {});
+
     return Response.json({ stock });
   } catch (error) {
     const message =

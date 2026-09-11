@@ -12,6 +12,9 @@ import {
   MdLocalShipping, MdBuild,
 } from "react-icons/md";
 import { ConfirmProvider } from "@/app/components/confirm-dialog";
+import { NotificationBell } from "@/app/panel/_components/notification-bell";
+import { NotificationToast } from "@/app/panel/_components/notification-toast";
+import { NotificationDetailProvider } from "@/app/panel/_components/notification-detail-modal";
 
 type NavChild = {
   href: string;
@@ -111,6 +114,13 @@ const NAV: NavItem[] = [
     children: [
       { href: "/panel/tickets", label: "Ver solicitudes", module: "MODULE_TICKETS", icon: <MdConfirmationNumber size={17} /> },
     ],
+  },
+  {
+    key: "notificaciones",
+    href: "/panel/notificaciones",
+    label: "Notificaciones",
+    icon: <MdNotificationsNone size={18} />,
+    module: "MODULE_DASHBOARD",
   },
   {
     key: "rrhh",
@@ -269,6 +279,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   };
 
   return (
+    <NotificationDetailProvider>
     <div className="flex min-h-screen bg-[#F4F6F8] font-sans">
       {/* ── Topbar móvil ── */}
       <div className="fixed inset-x-0 top-0 z-[60] flex items-center justify-between border-b border-[#E2E8F0] bg-white px-4 py-3 md:hidden">
@@ -280,19 +291,22 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
             <p className="text-[10px] font-semibold text-[#27B1B8]">Comercial Kliniu</p>
           </div>
         </Link>
-        <button
-          onClick={() => setMobileOpen((o) => !o)}
-          aria-label="Abrir menú"
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#1A1A1A]"
-        >
-          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-            {mobileOpen ? (
-              <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
-            ) : (
-              <path d="M3 6h18M3 12h18M3 18h18" strokeLinecap="round" />
-            )}
-          </svg>
-        </button>
+        <div className="flex items-center gap-2">
+          <NotificationBell />
+          <button
+            onClick={() => setMobileOpen((o) => !o)}
+            aria-label="Abrir menú"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#1A1A1A]"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+              {mobileOpen ? (
+                <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+              ) : (
+                <path d="M3 6h18M3 12h18M3 18h18" strokeLinecap="round" />
+              )}
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* ── Overlay móvil ── */}
@@ -490,28 +504,32 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
         {/* User + logout + collapse */}
         <div className="border-t border-[#E2E8F0] p-3 space-y-2">
-          {/* User profile */}
-          {userInfo && (
-            <button
-              type="button"
-              onClick={openProfileModal}
-              className={`flex items-center gap-2.5 rounded-xl bg-[#F8FAFC] px-3 py-2 transition-colors hover:bg-[#F1F5F9] w-full text-left ${collapsed ? "justify-center" : ""}`}
-            >
-              {userInfo.avatarUrl ? (
-                <img src={userInfo.avatarUrl} alt={userInfo.fullName} className="h-8 w-8 shrink-0 rounded-full object-cover" />
-              ) : (
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#27B1B8] text-xs font-bold text-white">
-                  {userInfo.fullName.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()}
-                </div>
-              )}
-              {!collapsed && (
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-semibold text-[#1A1A1A]">{userInfo.fullName}</p>
-                  <p className="truncate text-[10px] text-[#94A3B8]">{userInfo.role}</p>
-                </div>
-              )}
-            </button>
-          )}
+          {/* Notification bell + User profile */}
+          <div className={`flex items-center gap-2 ${collapsed ? "flex-col" : ""}`}>
+            <NotificationBell />
+            {userInfo && (
+              <button
+                type="button"
+                onClick={openProfileModal}
+                title={collapsed ? userInfo.fullName : undefined}
+                className={`flex items-center gap-2.5 rounded-xl bg-[#F8FAFC] transition-colors hover:bg-[#F1F5F9] text-left ${collapsed ? "p-1" : "flex-1 px-3 py-2"}`}
+              >
+                {userInfo.avatarUrl ? (
+                  <img src={userInfo.avatarUrl} alt={userInfo.fullName} className="h-8 w-8 shrink-0 rounded-full object-cover" />
+                ) : (
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#27B1B8] text-xs font-bold text-white">
+                    {userInfo.fullName.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()}
+                  </div>
+                )}
+                {!collapsed && (
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-semibold text-[#1A1A1A]">{userInfo.fullName}</p>
+                    <p className="truncate text-[10px] text-[#94A3B8]">{userInfo.role}</p>
+                  </div>
+                )}
+              </button>
+            )}
+          </div>
 
           {/* Logout */}
           <button
@@ -610,6 +628,8 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
       )}
+      <NotificationToast />
     </div>
+    </NotificationDetailProvider>
   );
 }

@@ -2,6 +2,7 @@ import { requireActiveUser } from "@/lib/permissions";
 import { isRRHH } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
+import { createNotification } from "@/lib/notifications";
 
 const TICKET_INCLUDE = {
   category: { select: { name: true, icon: true } },
@@ -93,5 +94,15 @@ export async function POST(request: Request) {
     include: TICKET_INCLUDE,
   });
   await broadcastPanelUpdate("tickets");
+
+  createNotification({
+    eventKey: "ticket.new",
+    title: `Ticket ${code}: ${subject.trim()}`,
+    detail: `${category.name} · ${access.user.fullName}`,
+    href: "/panel/tickets",
+    createdById: access.user.id,
+    metadata: { ticketId: created.id, code, categoryId, priority: priorityValue },
+  }).catch(() => {});
+
   return Response.json(created, { status: 201 });
 }

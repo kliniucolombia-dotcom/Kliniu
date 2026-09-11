@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { markOrderPaidByWompiReference } from "@/lib/orders";
 import { verifyWompiEventSignature, type WompiEventPayload } from "@/lib/wompi";
 import { broadcastPanelUpdate } from "@/lib/realtime";
+import { createNotification } from "@/lib/notifications";
 
 export async function POST(request: Request) {
   const payload = (await request.json()) as WompiEventPayload;
@@ -18,6 +19,16 @@ export async function POST(request: Request) {
       revalidatePath("/mi-cuenta");
       revalidatePath("/admin");
       await broadcastPanelUpdate("orders");
+
+      if (status === "APPROVED") {
+        createNotification({
+          eventKey: "order.paid",
+          title: "Pedido pagado",
+          detail: `Referencia: ${reference}`,
+          href: "/panel/pedidos",
+          metadata: { reference, transactionId: id },
+        }).catch(() => {});
+      }
     } catch {
       // Referencia no encontrada u otro error: Wompi reintenta, respondemos 200 igual.
     }

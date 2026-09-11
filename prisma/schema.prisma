@@ -126,6 +126,9 @@ model User {
   maintenanceReported      MaintenanceOrder[] @relation("MaintenanceReportedBy")
   maintenanceAssigned      MaintenanceOrder[] @relation("MaintenanceAssignedTo")
   operationsReports        OperationsReport[] @relation("OperationsReportAuthor")
+  notifications            Notification[]      @relation("NotificationTarget")
+  notificationsCreated     Notification[]      @relation("NotificationCreator")
+  notificationReads        NotificationRead[]
 }
 
 model CartItem {
@@ -1821,4 +1824,44 @@ model OperationsReport {
   @@index([module])
   @@index([periodStart])
   @@index([authorId])
+}
+
+// ─── Notificaciones generales del panel ─────────────────────────────────
+
+model Notification {
+  id           String   @id @default(cuid())
+  type         String   // "order" | "quotation" | "ticket" | "production" | "inventory" | "logistics" | "maintenance" | "hr" | "user" | "campaign" | "announcement"
+  category     String   // sub-tipo: "new_order", "stock_low", etc.
+  title        String
+  detail       String
+  href         String?
+  severity     String   @default("info") // "info" | "warning" | "urgent"
+  targetRoles  String   @default("[]")   // JSON array de UserRole targets
+  targetUserId String?
+  createdById  String?
+  metadata     Json?
+  emailSent    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  targetUser User?    @relation("NotificationTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  creator    User?    @relation("NotificationCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  reads      NotificationRead[]
+
+  @@index([type, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([createdAt])
+}
+
+model NotificationRead {
+  id             String   @id @default(cuid())
+  notificationId String
+  userId         String
+  readAt         DateTime @default(now())
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationId, userId])
+  @@index([userId, readAt])
 }

@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { deleteProductionRun, getProductionRunById, updateProductionRun, type ProductionRunWriteData } from "@/lib/panel";
+import { createNotification } from "@/lib/notifications";
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_PRODUCCION", "view");
@@ -28,6 +29,27 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   try {
     const updated = await updateProductionRun(id, data);
+
+    if (data.endTime) {
+      createNotification({
+        eventKey: "production.run_completed",
+        title: "Corrida de producción completada",
+        detail: `Corrida finalizada`,
+        href: "/panel/produccion",
+        createdById: access.user.id,
+        metadata: { runId: id },
+      }).catch(() => {});
+    } else if (data.startTime && !data.endTime) {
+      createNotification({
+        eventKey: "production.order_started",
+        title: "Corrida de producción iniciada",
+        detail: `Corrida en proceso`,
+        href: "/panel/produccion",
+        createdById: access.user.id,
+        metadata: { runId: id },
+      }).catch(() => {});
+    }
+
     return Response.json(updated);
   } catch (e) {
     if (e instanceof Error && e.message === "DAMAGED_EXCEEDS_PRODUCED") {

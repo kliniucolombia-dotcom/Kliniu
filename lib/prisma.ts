@@ -17,7 +17,9 @@ function hasExpectedDelegates(client: PrismaClient | null) {
     "inventoryMovement" in client &&
     "pointTransaction" in client &&
     "reward" in client &&
-    "rewardRedemption" in client
+    "rewardRedemption" in client &&
+    "notification" in client &&
+    "notificationRead" in client
   );
 }
 

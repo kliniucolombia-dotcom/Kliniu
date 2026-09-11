@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { adjustWarehouseStock } from "@/lib/warehouses";
 import { parsePositiveInteger } from "@/lib/operations-validation";
+import { createNotification } from "@/lib/notifications";
 
 export async function POST(request: Request) {
   const access = await requirePermission("MODULE_BODEGAS", "edit");
@@ -28,6 +29,16 @@ export async function POST(request: Request) {
       userId: access.user.id,
       note: body.note,
     });
+
+    createNotification({
+      eventKey: "inventory.adjustment",
+      title: `Ajuste de inventario: ${body.type === "ENTRADA" ? "entrada" : "salida"}`,
+      detail: `${quantity} unidades`,
+      href: "/panel/bodegas",
+      createdById: access.user.id,
+      metadata: { productId: body.productId, warehouseId: body.warehouseId, type: body.type, quantity },
+    }).catch(() => {});
+
     return Response.json({ stock });
   } catch (error) {
     const message =

@@ -1,5 +1,6 @@
 import { requireSuperAdmin } from "@/lib/permissions";
 import { createUserByAdmin, listUsers } from "@/lib/users";
+import { createNotification } from "@/lib/notifications";
 
 export async function GET() {
   const access = await requireSuperAdmin();
@@ -29,6 +30,16 @@ export async function POST(request: Request) {
       password: body.password,
       role: body.role,
     });
+
+    createNotification({
+      eventKey: "user.created",
+      title: "Nuevo usuario creado",
+      detail: `${body.fullName} (${body.role})`,
+      href: "/panel/usuarios",
+      createdById: access.user.id,
+      metadata: { userId: user.id, role: body.role },
+    }).catch(() => {});
+
     return Response.json(user);
   } catch (e) {
     if (e instanceof Error && e.message === "EMAIL_ALREADY_EXISTS") {
