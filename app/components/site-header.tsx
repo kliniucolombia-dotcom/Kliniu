@@ -16,6 +16,7 @@ type SiteHeaderProps = {
   currentUser: {
     fullName: string;
     role: UserRole;
+    avatarUrl?: string | null;
   } | null;
 };
 
@@ -166,7 +167,14 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
       label: currentUser ? currentUser.fullName.split(" ")[0] : "Cuenta",
       href: currentUser ? getUserHref(currentUser.role) : "/login",
       active: pathname === "/mi-cuenta" || pathname === "/login",
-      icon: (
+      icon: currentUser?.avatarUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={currentUser.avatarUrl}
+          alt={currentUser.fullName}
+          className="h-5 w-5 rounded-full object-cover"
+        />
+      ) : (
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
           <path d="M20 21a8 8 0 0 0-16 0" />
           <circle cx="12" cy="8" r="4" />
@@ -404,10 +412,19 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
                   href={getUserHref(currentUser.role)}
                   className="flex flex-col items-center gap-0.5 text-[#0C535B] transition-colors hover:text-[#27B1B8]"
                 >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M20 21a8 8 0 0 0-16 0" />
-                    <circle cx="12" cy="8" r="4" />
-                  </svg>
+                  {currentUser.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={currentUser.avatarUrl}
+                      alt={currentUser.fullName}
+                      className="h-7 w-7 rounded-full object-cover"
+                    />
+                  ) : (
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                      <path d="M20 21a8 8 0 0 0-16 0" />
+                      <circle cx="12" cy="8" r="4" />
+                    </svg>
+                  )}
                   <span className="hidden text-[10px] font-semibold sm:block">{currentUser.fullName.split(" ")[0]}</span>
                 </Link>
               ) : (

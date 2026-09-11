@@ -93,7 +93,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               <ConditionalShell
                 currentUser={
                   currentUser
-                    ? { fullName: currentUser.fullName, role: currentUser.role }
+                    ? { fullName: currentUser.fullName, role: currentUser.role, avatarUrl: currentUser.avatarUrl }
                     : null
                 }
               >

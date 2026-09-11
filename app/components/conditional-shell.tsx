@@ -6,7 +6,7 @@ import SupportChat from "./support-chat";
 import type { UserRole } from "@/generated/prisma/client";
 
 type Props = {
-  currentUser: { fullName: string; role: UserRole } | null;
+  currentUser: { fullName: string; role: UserRole; avatarUrl?: string | null } | null;
   children: React.ReactNode;
 };
 

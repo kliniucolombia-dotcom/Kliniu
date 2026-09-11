@@ -20,6 +20,7 @@ type UserRow = {
   email: string;
   whatsappPhone: string | null;
   backupUserId: string | null;
+  avatarUrl: string | null;
   role: Role;
   status: Status;
   createdAt: string;
@@ -712,9 +713,18 @@ export default function UsuariosPage() {
               <tr key={u.id} className="border-b border-[#F1F5F9]">
                 <td className="sticky left-0 z-10 border-r border-[#E2E8F0] bg-white p-3">
                   <div className="flex items-center gap-3">
-                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${AVATAR_COLORS[idx % AVATAR_COLORS.length]}`}>
-                      {initials(u.fullName)}
-                    </div>
+                    {u.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={u.avatarUrl}
+                        alt={u.fullName}
+                        className="h-9 w-9 shrink-0 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${AVATAR_COLORS[idx % AVATAR_COLORS.length]}`}>
+                        {initials(u.fullName)}
+                      </div>
+                    )}
                     <div>
                       <p className="font-bold text-[#1A1A1A]">{u.fullName}</p>
                       <p className="text-xs text-[#94A3B8]">Creado {formatDate(u.createdAt)}</p>
