@@ -6,9 +6,14 @@ export async function GET() {
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
 
+  const employee = await prisma.employee.findUnique({ where: { userId: access.user.id } });
   const categories = await prisma.requestCategory.findMany({
     where: { active: true },
     orderBy: { name: "asc" },
   });
-  return Response.json(categories);
+
+  const visible = categories.filter(
+    (c) => c.allowedDepartmentIds.length === 0 || (employee?.departmentId && c.allowedDepartmentIds.includes(employee.departmentId)),
+  );
+  return Response.json(visible);
 }

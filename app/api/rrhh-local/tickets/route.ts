@@ -62,6 +62,9 @@ export async function POST(request: Request) {
   if (!category || !category.active) {
     return Response.json({ error: "Categoría no disponible" }, { status: 400 });
   }
+  if (category.allowedDepartmentIds.length > 0 && !(employee.departmentId && category.allowedDepartmentIds.includes(employee.departmentId))) {
+    return Response.json({ error: "No tienes acceso a esta categoría" }, { status: 403 });
+  }
 
   const priorityValue = ["BAJA", "MEDIA", "ALTA", "URGENTE"].includes(priority || "") ? priority : "MEDIA";
 

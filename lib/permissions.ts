@@ -121,6 +121,7 @@ const PANEL_LANDING_ROUTES: Array<{ module: PanelModule; path: string }> = [
   { module: "MODULE_LOGISTICA", path: "/panel/logistica" },
   { module: "MODULE_MANTENIMIENTO", path: "/panel/mantenimiento" },
   { module: "MODULE_RRHH", path: "/panel/rrhh" },
+  { module: "MODULE_TICKETS", path: "/panel/tickets" },
 ];
 
 export const PANEL_NO_ACCESS_PATH = "/panel/sin-acceso";

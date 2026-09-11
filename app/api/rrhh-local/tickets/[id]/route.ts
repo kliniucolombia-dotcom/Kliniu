@@ -1,7 +1,22 @@
-import { requireActiveUser } from "@/lib/permissions";
+import { requireActiveUser, getEffectivePermission } from "@/lib/permissions";
 import { isRRHH } from "@/lib/roles";
+import type { PublicUser } from "@/lib/users";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
+
+// Un miembro del departamento con permiso de edición en MODULE_TICKETS puede
+// gestionar tickets de una categoría habilitada para su departamento, aunque
+// no sea RRHH ni el responsable asignado.
+async function canManageByDepartment(user: PublicUser, categoryId: string) {
+  if (!prisma) return false;
+  const [perm, employee, category] = await Promise.all([
+    getEffectivePermission(user, "MODULE_TICKETS"),
+    prisma.employee.findUnique({ where: { userId: user.id } }),
+    prisma.requestCategory.findUnique({ where: { id: categoryId }, select: { allowedDepartmentIds: true } }),
+  ]);
+  if (!perm.canEdit || !employee?.departmentId || !category) return false;
+  return category.allowedDepartmentIds.includes(employee.departmentId);
+}
 
 const TICKET_INCLUDE = {
   category: { select: { name: true, icon: true } },
@@ -22,7 +37,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
   if (!isRRHH(access.user) && ticket.responsibleId !== access.user.id) {
     const employee = await prisma.employee.findUnique({ where: { userId: access.user.id } });
-    if (!employee || ticket.employeeId !== employee.id) {
+    const isOwner = employee && ticket.employeeId === employee.id;
+    if (!isOwner && !(await canManageByDepartment(access.user, ticket.categoryId))) {
       return Response.json({ error: "No autorizado" }, { status: 403 });
     }
   }
@@ -39,7 +55,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const existing = await prisma.ticket.findUnique({ where: { id } });
   if (!existing) return Response.json({ error: "Ticket no encontrado" }, { status: 404 });
 
-  const canManage = isRRHH(access.user) || existing.responsibleId === access.user.id;
+  const canManage = isRRHH(access.user) || existing.responsibleId === access.user.id || await canManageByDepartment(access.user, existing.categoryId);
   let ownerCancelOnly = false;
   if (!canManage) {
     const employee = await prisma.employee.findUnique({ where: { userId: access.user.id } });

@@ -104,6 +104,15 @@ const NAV: NavItem[] = [
     ],
   },
   {
+    key: "tickets",
+    href: "/panel/tickets",
+    label: "Solicitudes",
+    icon: <MdConfirmationNumber size={18} />,
+    children: [
+      { href: "/panel/tickets", label: "Ver solicitudes", module: "MODULE_TICKETS", icon: <MdConfirmationNumber size={17} /> },
+    ],
+  },
+  {
     key: "rrhh",
     href: "/panel/rrhh",
     label: "Recursos Humanos",

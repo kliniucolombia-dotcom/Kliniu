@@ -524,6 +524,7 @@ enum PanelModule {
   MODULE_LOGISTICA
   MODULE_MANTENIMIENTO
   MODULE_ENSAMBLE
+  MODULE_TICKETS
 }
 
 enum BannerType {
@@ -1385,6 +1386,7 @@ model RequestCategory {
   icon                 String?
   fieldsSchema         Json     @default("[]")
   defaultResponsibleId String?
+  allowedDepartmentIds String[] @default([])
   active               Boolean  @default(true)
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt

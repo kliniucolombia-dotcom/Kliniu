@@ -62,6 +62,7 @@ const MODULE_LABELS: Record<string, string> = {
   MODULE_LOGISTICA: "Logística",
   MODULE_MANTENIMIENTO: "Mantenimiento",
   MODULE_ENSAMBLE: "Ensamble",
+  MODULE_TICKETS: "Solicitudes (PQRS)",
 };
 
 const ROLES: Role[] = ["CUSTOMER", "ADMIN", "SELLER", "PACKING", "SUPERADMIN", "RRHH", "BODEGA", "DISENO", "MARKETING", "JEFE_VENTAS", "TESORERIA", "INGENIERIA", "LOGISTICA", "LIDER_ENSAMBLE", "LIDER_INYECCION", "MANTENIMIENTO", "JEFE_OPERACIONES", "DIRECTOR_OPERACIONES"];
@@ -150,6 +151,7 @@ const MODULE_ICON: Record<string, { path: string; className: string }> = {
   MODULE_LOGISTICA: { path: "M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a2 2 0 100-4 2 2 0 000 4zM18.5 21a2 2 0 100-4 2 2 0 000 4z", className: "bg-[#E0F2FE] text-[#0369A1]" },
   MODULE_ENSAMBLE: { path: "M12 2l9 5v10l-9 5-9-5V7zM3 7l9 5 9-5M12 12v10", className: "bg-[#EDE9FE] text-[#6D28D9]" },
   MODULE_MANTENIMIENTO: { path: "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z", className: "bg-[#FFEDD5] text-[#C2410C]" },
+  MODULE_TICKETS: { path: "M4 4h16v16H4zM4 9h16M9 4v5", className: "bg-[#D9F2F3] text-[#0E7C82]" },
 };
 
 function ModuleIcon({ module }: { module: string }) {

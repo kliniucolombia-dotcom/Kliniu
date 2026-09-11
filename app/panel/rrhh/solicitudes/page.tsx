@@ -1,10 +1,11 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   MdSchedule, MdAutorenew, MdCheckCircle, MdPriorityHigh,
   MdClose, MdSend, MdSearch, MdFileDownload, MdChair, MdComputer, MdCheckroom,
   MdApartment, MdBuild, MdShoppingCart, MdDirectionsCar, MdDescription, MdInventory2, MdMoreHoriz,
-  MdAttachFile, MdHistory, MdArticle, MdCheck,
+  MdAttachFile, MdHistory, MdArticle, MdCheck, MdSettings,
 } from "react-icons/md";
 import { DonutChart } from "@/app/panel/_components/mini-charts";
 import { SimpleSelect } from "@/app/panel/_components/simple-select";
@@ -229,6 +230,10 @@ export default function SolicitudesPanelPage() {
           <h1 className="text-xl font-black text-[#1A1A1A]">Solicitudes</h1>
           <p className="text-xs text-[#64748B]">Gestiona todas las solicitudes internas del equipo.</p>
         </div>
+        <Link href="/panel/rrhh/solicitudes/categorias"
+          className="flex items-center gap-1.5 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm font-bold text-[#64748B] hover:bg-[#F8FAFC]">
+          <MdSettings size={16} /> Categorías
+        </Link>
       </div>
 
       {error && <p className="text-sm text-red-500">{error}</p>}
