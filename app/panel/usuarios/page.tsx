@@ -3,6 +3,13 @@ import { useEffect, useMemo, useState } from "react";
 import { DEFAULT_PERMISSIONS } from "@/lib/permission-defaults";
 import { SimpleSelect } from "../_components/simple-select";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import {
+  MdDashboard, MdInventory2, MdCategory, MdBarChart, MdCampaign, MdAttachMoney,
+  MdCalculate, MdDescription, MdPrecisionManufacturing, MdSync, MdPeople,
+  MdViewCarousel, MdGridView, MdLocalOffer, MdBadge, MdSell, MdWarehouse,
+  MdChat, MdFolder, MdLocalShipping, MdBuild, MdConfirmationNumber,
+} from "react-icons/md";
+import type { IconType } from "react-icons";
 
 type Role = "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "BODEGA" | "DISENO" | "MARKETING" | "JEFE_VENTAS" | "TESORERIA" | "INGENIERIA" | "LOGISTICA" | "LIDER_ENSAMBLE" | "LIDER_INYECCION" | "MANTENIMIENTO" | "JEFE_OPERACIONES" | "DIRECTOR_OPERACIONES";
 type Status = "ACTIVE" | "INACTIVE" | "SUSPENDED";
@@ -128,39 +135,38 @@ const STATUS_TEXT: Record<Status, string> = {
   SUSPENDED: "text-[#DC2626]",
 };
 
-const MODULE_ICON: Record<string, { path: string; className: string }> = {
-  MODULE_DASHBOARD: { path: "M4 19V10M11 19V5M18 19v-7", className: "bg-[#DBEAFE] text-[#1D4ED8]" },
-  MODULE_PEDIDOS: { path: "M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7M12 11v10", className: "bg-[#DCFCE7] text-[#15803D]" },
-  MODULE_PRODUCTOS: { path: "M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8", className: "bg-[#EDE9FE] text-[#6D28D9]" },
-  MODULE_METRICAS: { path: "M3 17l6-6 4 4 8-8M21 7h-6v6", className: "bg-[#FFEDD5] text-[#C2410C]" },
-  MODULE_CAMPANAS: { path: "M3 11v2a1 1 0 001 1h2l8 4V6l-8 4H4a1 1 0 00-1 1zM17 9a3 3 0 010 6", className: "bg-[#FCE7F3] text-[#BE185D]" },
-  MODULE_COSTOS: { path: "M12 2v20M17 6.5c0-1.7-2.2-3-5-3s-5 1.3-5 3 2.2 3 5 3 5 1.3 5 3-2.2 3-5 3-5-1.3-5-3", className: "bg-[#FEF3C7] text-[#B45309]" },
-  MODULE_CALCULADORA_PRECIO: { path: "M20.6 12L12 20.6a2 2 0 01-2.8 0L3.4 14.8a2 2 0 010-2.8L12 3.4a2 2 0 012.8 0l5.8 5.8a2 2 0 010 2.8zM8.5 8.5h.01", className: "bg-[#DBEAFE] text-[#1D4ED8]" },
-  MODULE_COTIZACIONES: { path: "M6 2h9l5 5v15a1 1 0 01-1 1H6a1 1 0 01-1-1V3a1 1 0 011-1zM14 2v6h6M9 13h6M9 17h6", className: "bg-[#D9F2F3] text-[#0E7C82]" },
-  MODULE_PRODUCCION: { path: "M3 17l6-6 4 4 8-8M14 7h7v7", className: "bg-[#DBEAFE] text-[#1D4ED8]" },
-  MODULE_ODOO: { path: "M12 2a10 10 0 100 20 10 10 0 000-20z", className: "bg-[#FEE2E2] text-[#DC2626]" },
-  MODULE_USUARIOS: { path: "M17 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75", className: "bg-[#F1F5F9] text-[#64748B]" },
-  MODULE_BANNERS: { path: "M3 5h18v14H3zM3 15l5-5 4 4 5-5 4 4", className: "bg-[#EDE9FE] text-[#6D28D9]" },
-  MODULE_COMBOS: { path: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", className: "bg-[#FEE2E2] text-[#DC2626]" },
-  MODULE_MIS_COMBOS: { path: "M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71", className: "bg-[#FDE68A] text-[#B45309]" },
-  MODULE_RRHH: { path: "M17 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75", className: "bg-[#DCFCE7] text-[#15803D]" },
-  MODULE_OUTLET: { path: "M20.6 12L12 20.6a2 2 0 01-2.8 0L3.4 14.8a2 2 0 010-2.8L12 3.4a2 2 0 012.8 0l5.8 5.8a2 2 0 010 2.8zM8.5 8.5h.01", className: "bg-[#FFEDD5] text-[#C2410C]" },
-  MODULE_BODEGAS: { path: "M3 21V9l9-6 9 6v12M9 21v-8h6v8", className: "bg-[#E0F2FE] text-[#0369A1]" },
-  MODULE_WHATSAPP: { path: "M3 21l1.65-4.95A9 9 0 1112 21a9 9 0 01-6.35-1.95L3 21zM8 10a4 4 0 008 0", className: "bg-[#DCFCE7] text-[#15803D]" },
-  MODULE_MATERIAL: { path: "M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z", className: "bg-[#FEF3C7] text-[#B45309]" },
-  MODULE_LOGISTICA: { path: "M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a2 2 0 100-4 2 2 0 000 4zM18.5 21a2 2 0 100-4 2 2 0 000 4z", className: "bg-[#E0F2FE] text-[#0369A1]" },
-  MODULE_ENSAMBLE: { path: "M12 2l9 5v10l-9 5-9-5V7zM3 7l9 5 9-5M12 12v10", className: "bg-[#EDE9FE] text-[#6D28D9]" },
-  MODULE_MANTENIMIENTO: { path: "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z", className: "bg-[#FFEDD5] text-[#C2410C]" },
-  MODULE_TICKETS: { path: "M4 4h16v16H4zM4 9h16M9 4v5", className: "bg-[#D9F2F3] text-[#0E7C82]" },
+const MODULE_ICON: Record<string, { Icon: IconType; className: string }> = {
+  MODULE_DASHBOARD: { Icon: MdDashboard, className: "bg-[#DBEAFE] text-[#1D4ED8]" },
+  MODULE_PEDIDOS: { Icon: MdInventory2, className: "bg-[#DCFCE7] text-[#15803D]" },
+  MODULE_PRODUCTOS: { Icon: MdCategory, className: "bg-[#EDE9FE] text-[#6D28D9]" },
+  MODULE_METRICAS: { Icon: MdBarChart, className: "bg-[#FFEDD5] text-[#C2410C]" },
+  MODULE_CAMPANAS: { Icon: MdCampaign, className: "bg-[#FCE7F3] text-[#BE185D]" },
+  MODULE_COSTOS: { Icon: MdAttachMoney, className: "bg-[#FEF3C7] text-[#B45309]" },
+  MODULE_CALCULADORA_PRECIO: { Icon: MdCalculate, className: "bg-[#DBEAFE] text-[#1D4ED8]" },
+  MODULE_COTIZACIONES: { Icon: MdDescription, className: "bg-[#D9F2F3] text-[#0E7C82]" },
+  MODULE_PRODUCCION: { Icon: MdPrecisionManufacturing, className: "bg-[#DBEAFE] text-[#1D4ED8]" },
+  MODULE_ODOO: { Icon: MdSync, className: "bg-[#FEE2E2] text-[#DC2626]" },
+  MODULE_USUARIOS: { Icon: MdPeople, className: "bg-[#F1F5F9] text-[#64748B]" },
+  MODULE_BANNERS: { Icon: MdViewCarousel, className: "bg-[#EDE9FE] text-[#6D28D9]" },
+  MODULE_COMBOS: { Icon: MdGridView, className: "bg-[#FEE2E2] text-[#DC2626]" },
+  MODULE_MIS_COMBOS: { Icon: MdLocalOffer, className: "bg-[#FDE68A] text-[#B45309]" },
+  MODULE_RRHH: { Icon: MdBadge, className: "bg-[#DCFCE7] text-[#15803D]" },
+  MODULE_OUTLET: { Icon: MdSell, className: "bg-[#FFEDD5] text-[#C2410C]" },
+  MODULE_BODEGAS: { Icon: MdWarehouse, className: "bg-[#E0F2FE] text-[#0369A1]" },
+  MODULE_WHATSAPP: { Icon: MdChat, className: "bg-[#DCFCE7] text-[#15803D]" },
+  MODULE_MATERIAL: { Icon: MdFolder, className: "bg-[#FEF3C7] text-[#B45309]" },
+  MODULE_LOGISTICA: { Icon: MdLocalShipping, className: "bg-[#E0F2FE] text-[#0369A1]" },
+  MODULE_ENSAMBLE: { Icon: MdPrecisionManufacturing, className: "bg-[#EDE9FE] text-[#6D28D9]" },
+  MODULE_MANTENIMIENTO: { Icon: MdBuild, className: "bg-[#FFEDD5] text-[#C2410C]" },
+  MODULE_TICKETS: { Icon: MdConfirmationNumber, className: "bg-[#D9F2F3] text-[#0E7C82]" },
 };
 
 function ModuleIcon({ module }: { module: string }) {
-  const icon = MODULE_ICON[module] ?? { path: "M12 2a10 10 0 100 20 10 10 0 000-20z", className: "bg-[#F1F5F9] text-[#64748B]" };
+  const icon = MODULE_ICON[module] ?? { Icon: MdDashboard, className: "bg-[#F1F5F9] text-[#64748B]" };
+  const { Icon } = icon;
   return (
     <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${icon.className}`}>
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d={icon.path} />
-      </svg>
+      <Icon size={16} />
     </span>
   );
 }
