@@ -12,5 +12,5 @@ export async function GET() {
   }
 
   const permissions = await getEffectivePermissions(user);
-  return Response.json({ role: user.role, fullName: user.fullName, permissions });
+  return Response.json({ role: user.role, fullName: user.fullName, email: user.email, avatarUrl: user.avatarUrl, permissions });
 }
