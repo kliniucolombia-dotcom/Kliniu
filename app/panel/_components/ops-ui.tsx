@@ -59,7 +59,7 @@ export function Empty({ text }: { text: string }) {
   return <p className="rounded-2xl border border-dashed border-[#E2E8F0] py-8 text-center text-sm text-[#94A3B8]">{text}</p>;
 }
 
-export function Table({ head, rows, empty }: { head: (string | null)[]; rows: React.ReactNode[][]; empty: string }) {
+export function Table({ head, rows, empty, onRowClick }: { head: (string | null)[]; rows: React.ReactNode[][]; empty: string; onRowClick?: (index: number) => void }) {
   const cols = head.filter((h) => h !== null);
   return (
     <div className="overflow-x-auto rounded-2xl border border-[#E2E8F0] bg-white">
@@ -69,7 +69,11 @@ export function Table({ head, rows, empty }: { head: (string | null)[]; rows: Re
         </thead>
         <tbody>
           {rows.map((cells, i) => (
-            <tr key={i} className="border-b border-[#F1F5F9]">
+            <tr
+              key={i}
+              onClick={onRowClick ? () => onRowClick(i) : undefined}
+              className={`border-b border-[#F1F5F9]${onRowClick ? " cursor-pointer hover:bg-[#F8FAFC]" : ""}`}
+            >
               {cells.filter((c) => c !== null).map((c, j) => <td key={j} className="px-4 py-3 text-[#1A1A1A]">{c}</td>)}
             </tr>
           ))}

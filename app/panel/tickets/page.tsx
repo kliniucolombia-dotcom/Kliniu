@@ -211,8 +211,9 @@ export default function TicketsPanelPage() {
           ) : (
             <Table
               head={["Ticket", "Tipo", "Solicitante", "Fecha", "Prioridad", "Vence", "Estado", "Responsable"]}
+              onRowClick={(i) => setDetailId(filtered[i].id)}
               rows={filtered.map((t) => [
-                <button key="c" onClick={() => setDetailId(t.id)} className="font-mono text-xs font-bold text-[#27B1B8] hover:underline">{t.code}</button>,
+                <span key="c" className="font-mono text-xs font-bold text-[#27B1B8]">{t.code}</span>,
                 <span key="t" className="flex items-center gap-2"><CategoryIcon name={t.category.name} size={22} />{t.category.name}</span>,
                 t.employee.user.fullName,
                 fmt(t.createdAt),
@@ -273,6 +274,7 @@ function TicketDetailModal({ id, staff, canManageAssignment, onClose, onChanged 
     if (res.ok) setDetail(await res.json());
   };
   useEffect(() => { refresh(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useRealtimeRefresh(["tickets"], refresh);
 
   const updateStatus = async (status: string) => {
     setSaving(true);

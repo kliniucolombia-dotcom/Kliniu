@@ -41,6 +41,7 @@ export const NOTIFICATION_EVENTS: Record<string, Omit<NotificationEvent, "title"
   // ─── Tickets / Solicitudes ──
   "ticket.new":         { type: "ticket", category: "ticket_new",      targetRoles: ["RRHH", "ADMIN", "SUPERADMIN"], severity: "info" },
   "ticket.assigned":    { type: "ticket", category: "ticket_assigned", targetRoles: [], severity: "info" }, // targetUserId dinámico
+  "ticket.comment":     { type: "ticket", category: "ticket_comment",  targetRoles: [], severity: "info" }, // targetUserId dinámico
   "ticket.resolved":    { type: "ticket", category: "ticket_resolved", targetRoles: ["RRHH", "ADMIN"], severity: "info" },
 
   // ─── RRHH ──
