@@ -1,7 +1,11 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MdSearch, MdAdd, MdAttachFile, MdSend } from "react-icons/md";
+import {
+  MdSearch, MdAdd, MdAttachFile, MdSend, MdCheckCircle, MdUploadFile, MdClose, MdInsertDriveFile,
+  MdShoppingBag, MdDescription, MdCheckroom, MdConstruction, MdChair, MdMoreHoriz, MdDesignServices, MdComputer, MdDirectionsCar, MdCategory,
+} from "react-icons/md";
+import type { IconType } from "react-icons";
 import { SimpleSelect } from "../_components/simple-select";
 import { Section, Empty, Table, Badge, Modal, Footer, btnPrimary, labelCls, inputCls, post, patchReq } from "../_components/ops-ui";
 import { TICKET_SLA_LABELS } from "@/lib/tickets";
@@ -23,7 +27,7 @@ type Category = { id: string; name: string };
 type Comment = { id: string; message: string; createdAt: string; user: { fullName: string } };
 type TicketDetail = Ticket & {
   description: string;
-  attachments?: { url: string; name: string }[];
+  attachments?: { id: string; url: string; name: string; size: number | null }[];
   comments?: Comment[];
   responsible: { id: string; fullName: string } | null;
 };
@@ -35,6 +39,12 @@ const PRIORITY_BADGE: Record<string, string> = {
   MEDIA: "bg-[#DBEAFE] text-[#2563EB]",
   ALTA: "bg-[#FEF3C7] text-[#B45309]",
   URGENTE: "bg-[#FEE2E2] text-[#DC2626]",
+};
+const PRIORITY_DOT: Record<string, string> = {
+  BAJA: "bg-[#94A3B8]",
+  MEDIA: "bg-[#2563EB]",
+  ALTA: "bg-[#F59E0B]",
+  URGENTE: "bg-[#DC2626]",
 };
 const STATUS_LABELS: Record<string, string> = {
   PENDIENTE: "Pendiente",
@@ -53,6 +63,47 @@ const STATUS_BADGE: Record<string, string> = {
 
 function fmt(d: string) {
   return new Date(d).toLocaleDateString("es-CO", { timeZone: "America/Bogota", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+
+const CATEGORY_ICON: Record<string, { Icon: IconType; bg: string; fg: string }> = {
+  "Compras": { Icon: MdShoppingBag, bg: "bg-[#FFF1E6]", fg: "text-[#B45309]" },
+  "Documentación": { Icon: MdDescription, bg: "bg-[#DBEAFE]", fg: "text-[#2563EB]" },
+  "Dotación": { Icon: MdCheckroom, bg: "bg-[#EDE9FE]", fg: "text-[#7C3AED]" },
+  "Infraestructura": { Icon: MdConstruction, bg: "bg-[#FEF3C7]", fg: "text-[#B45309]" },
+  "Mobiliario": { Icon: MdChair, bg: "bg-[#FCE7F3]", fg: "text-[#BE185D]" },
+  "PQRS Diseño y Venta": { Icon: MdDesignServices, bg: "bg-[#E6FAFB]", fg: "text-[#0C535B]" },
+  "Soporte TI": { Icon: MdComputer, bg: "bg-[#DBEAFE]", fg: "text-[#2563EB]" },
+  "Vehículos": { Icon: MdDirectionsCar, bg: "bg-[#DCFCE7]", fg: "text-[#16A34A]" },
+  "Otro": { Icon: MdMoreHoriz, bg: "bg-[#F1F5F9]", fg: "text-[#64748B]" },
+};
+const DEFAULT_CATEGORY_ICON = { Icon: MdCategory, bg: "bg-[#F1F5F9]", fg: "text-[#64748B]" };
+
+function CategoryIcon({ name, size = 26 }: { name: string; size?: number }) {
+  const { Icon, bg, fg } = CATEGORY_ICON[name] ?? DEFAULT_CATEGORY_ICON;
+  return (
+    <span className={`flex shrink-0 items-center justify-center rounded-[7px] ${bg} ${fg}`} style={{ width: size, height: size }}>
+      <Icon size={Math.round(size * 0.52)} />
+    </span>
+  );
+}
+
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "?";
+}
+
+function fileSize(bytes: number | null) {
+  if (!bytes) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  return `${(bytes / 1024).toFixed(0)} KB`;
+}
+
+function Avatar({ name }: { name: string }) {
+  return (
+    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#E6FAFB] text-[11px] font-bold text-[#0C535B]">
+      {initials(name)}
+    </span>
+  );
 }
 
 export default function TicketsPanelPage() {
@@ -151,7 +202,7 @@ export default function TicketsPanelPage() {
               head={["Ticket", "Tipo", "Solicitante", "Fecha", "Prioridad", "Vence", "Estado", "Responsable"]}
               rows={filtered.map((t) => [
                 <button key="c" onClick={() => setDetailId(t.id)} className="font-mono text-xs font-bold text-[#27B1B8] hover:underline">{t.code}</button>,
-                t.category.name,
+                <span key="t" className="flex items-center gap-2"><CategoryIcon name={t.category.name} size={22} />{t.category.name}</span>,
                 t.employee.user.fullName,
                 fmt(t.createdAt),
                 <Badge key="p" label={PRIORITY_LABELS[t.priority]} cls={PRIORITY_BADGE[t.priority]} />,
@@ -200,6 +251,8 @@ function TicketDetailModal({ id, staff, onClose, onChanged }: {
   const [comment, setComment] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const refresh = async () => {
     const res = await fetch(`/api/rrhh-local/tickets/${id}`);
@@ -211,7 +264,12 @@ function TicketDetailModal({ id, staff, onClose, onChanged }: {
     setSaving(true);
     setError(null);
     const res = await patchReq(`/api/rrhh-local/tickets/${id}`, { status });
-    if (res.ok) { await refresh(); onChanged(); } else setError(res.error!);
+    if (res.ok) {
+      await refresh();
+      onChanged();
+      setToast(`Estado actualizado a "${STATUS_LABELS[status] ?? status}".`);
+      window.setTimeout(() => setToast(null), 3000);
+    } else setError(res.error!);
     setSaving(false);
   };
 
@@ -219,8 +277,47 @@ function TicketDetailModal({ id, staff, onClose, onChanged }: {
     setSaving(true);
     setError(null);
     const res = await patchReq(`/api/rrhh-local/tickets/${id}`, { responsibleId: responsibleId || null });
-    if (res.ok) { await refresh(); onChanged(); } else setError(res.error!);
+    if (res.ok) {
+      await refresh();
+      onChanged();
+      const name = responsibleId ? (staff.find((s) => s.id === responsibleId)?.fullName ?? "") : "Sin asignar";
+      setToast(`Responsable actualizado: ${name}.`);
+      window.setTimeout(() => setToast(null), 3000);
+    } else setError(res.error!);
     setSaving(false);
+  };
+
+  const updatePriority = async (priority: string) => {
+    setSaving(true);
+    setError(null);
+    const res = await patchReq(`/api/rrhh-local/tickets/${id}`, { priority });
+    if (res.ok) {
+      await refresh();
+      onChanged();
+      setToast(`Prioridad actualizada a "${PRIORITY_LABELS[priority] ?? priority}".`);
+      window.setTimeout(() => setToast(null), 3000);
+    } else setError(res.error!);
+    setSaving(false);
+  };
+
+  const resolve = () => updateStatus("FINALIZADO");
+
+  const openAttachment = async (path: string) => {
+    const res = await fetch(`/api/rrhh-local/tickets/download?path=${encodeURIComponent(path)}`);
+    if (!res.ok) { setError("No fue posible abrir el archivo"); return; }
+    const { url } = await res.json();
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const uploadAttachment = async (file: File) => {
+    setUploading(true);
+    setError(null);
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`/api/rrhh-local/tickets/${id}/attachments`, { method: "POST", body: formData });
+    if (res.ok) await refresh();
+    else setError((await res.json().catch(() => ({}))).error || "No fue posible subir el archivo");
+    setUploading(false);
   };
 
   const sendComment = async () => {
@@ -241,9 +338,32 @@ function TicketDetailModal({ id, staff, onClose, onChanged }: {
   }
 
   return (
-    <Modal title={`${detail.code} · ${detail.subject}`} onClose={onClose} wide>
+    <Modal
+      title={detail.code}
+      onClose={onClose}
+      wide
+      footer={
+        <div className="flex items-center justify-end gap-2">
+          <button
+            onClick={resolve}
+            disabled={saving || detail.status === "FINALIZADO"}
+            className="flex items-center gap-1.5 rounded-xl bg-[#27B1B8] px-4 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+          >
+            <MdCheckCircle size={16} /> Resolver solicitud
+          </button>
+        </div>
+      }
+    >
+      <div>
+        <p className="text-sm font-bold text-[#1A1A1A]">{detail.subject}</p>
+        <p className="mt-0.5 text-xs text-[#94A3B8]">
+          {detail.category.name} · Creado por {detail.employee.user.fullName} · {fmt(detail.createdAt)}
+        </p>
+      </div>
+
       {error && <p className="text-sm text-red-500">{error}</p>}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <label className={labelCls}>Estado</label>
           <SimpleSelect
@@ -268,31 +388,63 @@ function TicketDetailModal({ id, staff, onClose, onChanged }: {
             options={[{ value: "", label: "Sin asignar" }, ...staff.map((s) => ({ value: s.id, label: s.fullName }))]}
           />
         </div>
-      </div>
-
-      <div className="rounded-xl bg-[#F8FAFC] p-3 text-sm text-[#1A1A1A] whitespace-pre-wrap">{detail.description}</div>
-
-      {!!detail.attachments?.length && (
         <div>
-          <label className={labelCls}>Adjuntos</label>
-          <div className="flex flex-wrap gap-2">
-            {detail.attachments.map((a, i) => (
-              <a key={i} href={a.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-[#E2E8F0] px-2 py-1 text-xs text-[#64748B] hover:bg-[#F8FAFC]">
-                <MdAttachFile size={14} /> {a.name}
-              </a>
-            ))}
+          <label className={labelCls}>Prioridad</label>
+          <SimpleSelect
+            value={detail.priority}
+            disabled={saving}
+            onChange={updatePriority}
+            options={Object.entries(PRIORITY_LABELS).map(([value, label]) => ({ value, label }))}
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Vence</label>
+          <div className="flex h-[38px] items-center rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 text-sm text-[#64748B]">
+            {detail.dueDate ? fmt(detail.dueDate) : "—"}
           </div>
         </div>
-      )}
+      </div>
 
       <div>
-        <label className={labelCls}>Comentarios</label>
-        <div className="max-h-48 space-y-2 overflow-y-auto rounded-xl border border-[#E2E8F0] p-3">
+        <label className={labelCls}>Descripción de la solicitud</label>
+        <div className="rounded-xl bg-[#F8FAFC] p-3 text-sm text-[#1A1A1A] whitespace-pre-wrap">{detail.description}</div>
+      </div>
+
+      <div>
+        <label className={labelCls}>Adjuntos {detail.attachments?.length ? `(${detail.attachments.length})` : ""}</label>
+        <div className="flex flex-wrap items-center gap-2">
+          {detail.attachments?.map((a) => (
+            <button
+              key={a.id}
+              onClick={() => openAttachment(a.url)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#E2E8F0] px-2.5 py-1.5 text-xs text-[#64748B] hover:bg-[#F8FAFC]"
+            >
+              <MdAttachFile size={14} /> {a.name}{a.size ? ` · ${fileSize(a.size)}` : ""}
+            </button>
+          ))}
+          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-[#E2E8F0] px-2.5 py-1.5 text-xs font-bold text-[#27B1B8] hover:bg-[#F8FAFC]">
+            <MdUploadFile size={14} /> {uploading ? "Subiendo…" : "Adjuntar archivo"}
+            <input
+              type="file"
+              className="hidden"
+              disabled={uploading}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAttachment(f); e.target.value = ""; }}
+            />
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <label className={labelCls}>Comentarios {detail.comments?.length ? `(${detail.comments.length})` : ""}</label>
+        <div className="max-h-48 space-y-3 overflow-y-auto rounded-xl border border-[#E2E8F0] p-3">
           {detail.comments?.length ? detail.comments.map((c) => (
-            <div key={c.id} className="text-sm">
-              <span className="font-bold text-[#1A1A1A]">{c.user.fullName}</span>{" "}
-              <span className="text-xs text-[#94A3B8]">{fmt(c.createdAt)}</span>
-              <p className="text-[#64748B]">{c.message}</p>
+            <div key={c.id} className="flex items-start gap-2 text-sm">
+              <Avatar name={c.user.fullName} />
+              <div>
+                <span className="font-bold text-[#1A1A1A]">{c.user.fullName}</span>{" "}
+                <span className="text-xs text-[#94A3B8]">{fmt(c.createdAt)}</span>
+                <p className="text-[#64748B]">{c.message}</p>
+              </div>
             </div>
           )) : <p className="text-sm text-[#94A3B8]">Sin comentarios.</p>}
         </div>
@@ -301,7 +453,30 @@ function TicketDetailModal({ id, staff, onClose, onChanged }: {
           <button onClick={sendComment} disabled={saving || !comment.trim()} className={btnPrimary}><MdSend size={16} /></button>
         </div>
       </div>
+
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-[60] rounded-xl bg-[#16A34A] px-4 py-3 text-sm font-bold text-white shadow-2xl">
+          {toast}
+        </div>
+      )}
     </Modal>
+  );
+}
+
+type PendingFile = { path: string; name: string; size: number; uploading?: boolean };
+
+const FILE_ICON_STYLE: { test: (name: string) => boolean; bg: string; fg: string }[] = [
+  { test: (n) => /\.pdf$/i.test(n), bg: "bg-[#FEE2E2]", fg: "text-[#DC2626]" },
+  { test: (n) => /\.(jpe?g|png|webp)$/i.test(n), bg: "bg-[#DBEAFE]", fg: "text-[#2563EB]" },
+  { test: (n) => /\.(xlsx?|csv)$/i.test(n), bg: "bg-[#DCFCE7]", fg: "text-[#16A34A]" },
+];
+
+function FileIcon({ name }: { name: string }) {
+  const style = FILE_ICON_STYLE.find((s) => s.test(name)) ?? { bg: "bg-[#F1F5F9]", fg: "text-[#64748B]" };
+  return (
+    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${style.bg} ${style.fg}`}>
+      <MdInsertDriveFile size={15} />
+    </div>
   );
 }
 
@@ -316,10 +491,30 @@ function NewTicketModal({ categories, onClose, onDone, onError }: {
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [files, setFiles] = useState<PendingFile[]>([]);
+  const [dragOver, setDragOver] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
+
+  const uploadFiles = async (fileList: FileList | File[]) => {
+    setFileError(null);
+    for (const file of Array.from(fileList)) {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/rrhh-local/tickets/upload", { method: "POST", body: formData });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setFiles((prev) => [...prev, { path: data.path, name: data.name, size: data.size }]);
+      } else {
+        setFileError(data.error || "No fue posible subir el archivo");
+      }
+    }
+  };
+
+  const removeFile = (path: string) => setFiles((prev) => prev.filter((f) => f.path !== path));
 
   const submit = async () => {
     setSubmitting(true);
-    const res = await post("/api/rrhh-local/tickets", { categoryId, priority, subject, description });
+    const res = await post("/api/rrhh-local/tickets", { categoryId, priority, subject, description, attachments: files.map(({ path, name, size }) => ({ path, name, size })) });
     setSubmitting(false);
     if (res.ok) onDone("Solicitud enviada"); else onError(res.error!);
   };
@@ -328,20 +523,88 @@ function NewTicketModal({ categories, onClose, onDone, onError }: {
     <Modal title="Nueva solicitud" onClose={onClose} footer={<Footer onClose={onClose} onSubmit={submit} submitting={submitting} disabled={!categoryId || !subject.trim() || !description.trim()} />}>
       <div>
         <label className={labelCls}>Tipo de solicitud</label>
-        <SimpleSelect value={categoryId} options={categories.map((c) => ({ value: c.id, label: c.name }))} onChange={setCategoryId} />
+        <SimpleSelect
+          value={categoryId}
+          onChange={setCategoryId}
+          options={categories.map((c) => ({
+            value: c.id,
+            label: (
+              <span className="flex items-center gap-2.5">
+                <CategoryIcon name={c.name} />
+                {c.name}
+              </span>
+            ),
+          }))}
+        />
       </div>
+
       <div>
         <label className={labelCls}>Prioridad</label>
-        <SimpleSelect value={priority} options={Object.entries(PRIORITY_LABELS).map(([value, label]) => ({ value, label }))} onChange={setPriority} />
-        <p className="mt-1 text-xs text-[#94A3B8]">Plazo estimado: {TICKET_SLA_LABELS[priority]}</p>
+        <div className="grid grid-cols-4 gap-2">
+          {Object.entries(PRIORITY_LABELS).map(([value, label]) => {
+            const active = priority === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setPriority(value)}
+                className={`flex flex-col items-center gap-1 rounded-xl border px-1.5 py-2.5 ${active ? "border-[#27B1B8] bg-[#E6FAFB]" : "border-[#E2E8F0] bg-white hover:bg-[#F8FAFC]"}`}
+              >
+                <span className={`h-2 w-2 rounded-full ${PRIORITY_DOT[value]}`} />
+                <span className={`text-xs ${active ? "font-extrabold text-[#0C535B]" : "font-bold text-[#64748B]"}`}>{label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-1.5 text-xs text-[#94A3B8]">Plazo estimado de respuesta: <strong className="text-[#64748B]">{TICKET_SLA_LABELS[priority]}</strong></p>
       </div>
+
       <div>
         <label className={labelCls}>Asunto</label>
-        <input value={subject} onChange={(e) => setSubject(e.target.value)} className={inputCls} />
+        <input value={subject} onChange={(e) => setSubject(e.target.value)} className={inputCls} placeholder="Ej. Solicitud de resma de papel" />
       </div>
+
       <div>
         <label className={labelCls}>Descripción</label>
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} className={inputCls} />
+        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} className={inputCls} placeholder="Describe con detalle tu solicitud…" />
+      </div>
+
+      <div>
+        <label className={labelCls}>Adjuntos <span className="font-medium normal-case text-[#94A3B8]">(opcional)</span></label>
+        <label
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files); }}
+          className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed px-4 py-5 text-center ${dragOver ? "border-[#27B1B8] bg-[#E6FAFB]" : "border-[#CBD5E1] bg-[#F8FAFC] hover:bg-[#F1F5F9]"}`}
+        >
+          <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#E6FAFB]">
+            <MdUploadFile size={19} className="text-[#27B1B8]" />
+          </div>
+          <div>
+            <p className="text-[13.5px] font-bold text-[#1A1A1A]">Arrastra tus archivos aquí</p>
+            <p className="mt-0.5 text-xs text-[#94A3B8]">o <span className="font-bold text-[#27B1B8] underline">explora tus archivos</span> · PDF, Word, Excel, JPG, PNG · máx. 10 MB</p>
+          </div>
+          <input type="file" multiple className="hidden" onChange={(e) => { if (e.target.files?.length) uploadFiles(e.target.files); e.target.value = ""; }} />
+        </label>
+
+        {fileError && <p className="mt-1.5 text-xs font-semibold text-red-500">{fileError}</p>}
+
+        {files.length > 0 && (
+          <div className="mt-2 flex flex-col gap-1.5">
+            {files.map((f) => (
+              <div key={f.path} className="flex items-center gap-2.5 rounded-lg border border-[#E2E8F0] bg-white px-2.5 py-2">
+                <FileIcon name={f.name} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-bold text-[#1A1A1A]">{f.name}</p>
+                  <p className="text-[11.5px] text-[#94A3B8]">{fileSize(f.size)}</p>
+                </div>
+                <button type="button" onClick={() => removeFile(f.path)} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[#94A3B8] hover:text-[#1A1A1A]">
+                  <MdClose size={15} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </Modal>
   );

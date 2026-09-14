@@ -1,5 +1,5 @@
 import { requireActiveUser } from "@/lib/permissions";
-import { isRRHH } from "@/lib/roles";
+import { isAdmin, isRRHH } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { createNotification } from "@/lib/notifications";
@@ -42,8 +42,17 @@ export async function POST(request: Request) {
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
 
-  const employee = await prisma.employee.findUnique({ where: { userId: access.user.id } });
-  if (!employee) return Response.json({ error: "No tienes un perfil de empleado" }, { status: 403 });
+  let employee = await prisma.employee.findUnique({ where: { userId: access.user.id } });
+  if (!employee) {
+    employee = await prisma.employee.create({
+      data: {
+        userId: access.user.id,
+        employeeCode: `SYS-${access.user.id.slice(-8)}`,
+        jobTitle: access.user.role,
+        hireDate: new Date(),
+      },
+    });
+  }
 
   const body = await request.json();
   const { categoryId, priority, subject, description, location, extraFields, attachments } = body as {
@@ -64,7 +73,7 @@ export async function POST(request: Request) {
   if (!category || !category.active) {
     return Response.json({ error: "Categoría no disponible" }, { status: 400 });
   }
-  if (category.allowedDepartmentIds.length > 0 && !(employee.departmentId && category.allowedDepartmentIds.includes(employee.departmentId))) {
+  if (!isAdmin(access.user) && !isRRHH(access.user) && category.allowedDepartmentIds.length > 0 && !(employee.departmentId && category.allowedDepartmentIds.includes(employee.departmentId))) {
     return Response.json({ error: "No tienes acceso a esta categoría" }, { status: 403 });
   }
 

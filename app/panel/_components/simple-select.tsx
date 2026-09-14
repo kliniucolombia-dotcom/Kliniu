@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 export function SimpleSelect({
@@ -15,7 +16,7 @@ export function SimpleSelect({
   portal,
 }: {
   value: string;
-  options: { value: string; label: string }[];
+  options: { value: string; label: ReactNode }[];
   onChange: (value: string) => void;
   className?: string;
   triggerClassName?: string;
