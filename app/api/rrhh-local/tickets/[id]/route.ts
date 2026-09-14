@@ -1,24 +1,9 @@
-import { requireActiveUser, getEffectivePermission } from "@/lib/permissions";
-import { isRRHH } from "@/lib/roles";
-import type { PublicUser } from "@/lib/users";
+import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { createNotification } from "@/lib/notifications";
 import { computeTicketDueDate } from "@/lib/tickets";
-
-// Un miembro del departamento con permiso de edición en MODULE_TICKETS puede
-// gestionar tickets de una categoría habilitada para su departamento, aunque
-// no sea RRHH ni el responsable asignado.
-async function canManageByDepartment(user: PublicUser, categoryId: string) {
-  if (!prisma) return false;
-  const [perm, employee, category] = await Promise.all([
-    getEffectivePermission(user, "MODULE_TICKETS"),
-    prisma.employee.findUnique({ where: { userId: user.id } }),
-    prisma.requestCategory.findUnique({ where: { id: categoryId }, select: { allowedDepartmentIds: true } }),
-  ]);
-  if (!perm.canEdit || !employee?.departmentId || !category) return false;
-  return category.allowedDepartmentIds.includes(employee.departmentId);
-}
+import { canManageTicket, canManageTicketAssignment } from "@/lib/ticket-access";
 
 const TICKET_INCLUDE = {
   category: { select: { name: true, icon: true } },
@@ -37,12 +22,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const ticket = await prisma.ticket.findUnique({ where: { id }, include: TICKET_INCLUDE });
   if (!ticket) return Response.json({ error: "Ticket no encontrado" }, { status: 404 });
 
-  if (!isRRHH(access.user) && ticket.responsibleId !== access.user.id) {
-    const employee = await prisma.employee.findUnique({ where: { userId: access.user.id } });
-    const isOwner = employee && ticket.employeeId === employee.id;
-    if (!isOwner && !(await canManageByDepartment(access.user, ticket.categoryId))) {
-      return Response.json({ error: "No autorizado" }, { status: 403 });
-    }
+  if (!(await canManageTicket(access.user, ticket))) {
+    return Response.json({ error: "No autorizado" }, { status: 403 });
   }
 
   return Response.json(ticket);
@@ -60,7 +41,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   });
   if (!existing) return Response.json({ error: "Ticket no encontrado" }, { status: 404 });
 
-  const canManage = isRRHH(access.user) || existing.responsibleId === access.user.id || await canManageByDepartment(access.user, existing.categoryId);
+  const canManage = await canManageTicket(access.user, existing);
   let ownerCancelOnly = false;
   if (!canManage) {
     const employee = await prisma.employee.findUnique({ where: { userId: access.user.id } });
@@ -81,6 +62,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (status !== "CANCELADO" || existing.status !== "PENDIENTE" || priority !== undefined || responsibleId !== undefined) {
       return Response.json({ error: "Solo puedes cancelar una solicitud pendiente" }, { status: 400 });
     }
+  }
+
+  const privileged = canManageTicketAssignment(access.user);
+  if (!privileged && (priority !== undefined || responsibleId !== undefined)) {
+    return Response.json({ error: "Solo RRHH o Admin pueden cambiar la prioridad o el responsable" }, { status: 403 });
   }
 
   const validStatus = ["PENDIENTE", "EN_PROCESO", "ESPERANDO_RESPUESTA", "FINALIZADO", "CANCELADO"];

@@ -1,8 +1,8 @@
 import { requireActiveUser } from "@/lib/permissions";
-import { isRRHH } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { createSupabaseStorageClient } from "@/lib/supabase-storage";
+import { canManageTicket } from "@/lib/ticket-access";
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 const EXT_BY_TYPE: Record<string, string> = {
@@ -26,11 +26,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const ticket = await prisma.ticket.findUnique({ where: { id } });
   if (!ticket) return Response.json({ error: "Ticket no encontrado" }, { status: 404 });
 
-  if (!isRRHH(access.user) && ticket.responsibleId !== access.user.id) {
-    const employee = await prisma.employee.findUnique({ where: { userId: access.user.id } });
-    if (!employee || ticket.employeeId !== employee.id) {
-      return Response.json({ error: "No autorizado" }, { status: 403 });
-    }
+  if (!(await canManageTicket(access.user, ticket))) {
+    return Response.json({ error: "No autorizado" }, { status: 403 });
   }
 
   const supabase = createSupabaseStorageClient();

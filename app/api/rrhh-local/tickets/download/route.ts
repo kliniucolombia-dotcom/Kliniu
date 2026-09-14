@@ -1,6 +1,8 @@
 import { createSupabaseStorageClient } from "@/lib/supabase-storage";
 import { requireActiveUser } from "@/lib/permissions";
-import { isRRHH } from "@/lib/roles";
+import { isAdmin, isRRHH } from "@/lib/roles";
+import { prisma } from "@/lib/prisma";
+import { canManageTicket } from "@/lib/ticket-access";
 
 const BUCKET = "rrhh-soportes";
 
@@ -14,8 +16,17 @@ export async function GET(request: Request) {
     return Response.json({ error: "Ruta inválida" }, { status: 400 });
   }
 
-  if (!isRRHH(access.user) && !path.startsWith(`tickets/${access.user.id}/`)) {
-    return Response.json({ error: "No autorizado" }, { status: 403 });
+  const isPrivileged = isRRHH(access.user) || isAdmin(access.user);
+  const isOwnUpload = path.startsWith(`tickets/${access.user.id}/`);
+  if (!isPrivileged && !isOwnUpload) {
+    if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+    const attachment = await prisma.ticketAttachment.findFirst({
+      where: { url: path },
+      select: { ticket: { select: { employeeId: true, responsibleId: true, categoryId: true } } },
+    });
+    if (!attachment || !(await canManageTicket(access.user, attachment.ticket))) {
+      return Response.json({ error: "No autorizado" }, { status: 403 });
+    }
   }
 
   const supabase = createSupabaseStorageClient();

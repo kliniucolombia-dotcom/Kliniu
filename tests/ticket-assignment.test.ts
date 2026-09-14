@@ -6,6 +6,7 @@ import {
   responsiblesForCategory,
   isAssigneeAllowed,
 } from "../lib/tickets";
+import type { PublicUser } from "../lib/users";
 
 dotenv.config({ path: ".env.local", quiet: true });
 
@@ -155,4 +156,50 @@ test("crear un ticket asignado persiste el responsable y notifica al asignado", 
     if (notificationId) await prisma.notification.delete({ where: { id: notificationId } }).catch(() => undefined);
     if (ticketId) await prisma.ticket.delete({ where: { id: ticketId } }).catch(() => undefined);
   }
+});
+
+test("solo RRHH, Admin y SuperAdmin pueden reasignar responsable o cambiar prioridad", async () => {
+  const { canManageTicketAssignment } = await import("../lib/ticket-access");
+  const privileged = ["RRHH", "ADMIN", "SUPERADMIN"];
+  const restricted = [
+    "SELLER", "DISENO", "MARKETING", "BODEGA", "EMPLOYEE", "TESORERIA",
+    "JEFE_VENTAS", "LOGISTICA", "MANTENIMIENTO", "CUSTOMER", "PACKING",
+  ];
+  for (const role of privileged) {
+    assert.equal(canManageTicketAssignment({ role } as never), true, `${role} debe poder gestionar`);
+  }
+  for (const role of restricted) {
+    assert.equal(canManageTicketAssignment({ role } as never), false, `${role} no debe poder gestionar`);
+  }
+});
+
+test("un miembro del departamento puede gestionar los tickets de su categoría, un externo no", async (t) => {
+  if (!hasDb) return t.skip("DATABASE_URL no configurada");
+  const prisma = await getPrisma();
+  const { canManageTicket } = await import("../lib/ticket-access");
+
+  const category = await prisma.requestCategory.findUnique({ where: { name: "PQRS Venta" } });
+  assert.ok(category && category.allowedDepartmentIds.length === 1);
+  const departmentId = category.allowedDepartmentIds[0];
+
+  const member = await prisma.employee.findFirstOrThrow({
+    where: { status: "ACTIVE", departmentId, user: { role: { in: ["SELLER", "DISENO"] } } },
+    select: { userId: true, user: { select: { role: true } } },
+  });
+  const outsider = await prisma.employee.findFirstOrThrow({
+    where: { status: "ACTIVE", departmentId: { notIn: [departmentId] }, user: { role: { in: ["SELLER", "DISENO"] } } },
+    select: { userId: true, user: { select: { role: true } } },
+  });
+
+  const ticket = { employeeId: "otro-empleado", responsibleId: null, categoryId: category.id };
+  const memberUser = { id: member.userId, role: member.user.role } as unknown as PublicUser;
+  const outsiderUser = { id: outsider.userId, role: outsider.user.role } as unknown as PublicUser;
+
+  assert.equal(await canManageTicket(memberUser, ticket), true, "un miembro del depto debe poder gestionar");
+  assert.equal(await canManageTicket(outsiderUser, ticket), false, "un externo no debe poder gestionar");
+  assert.equal(
+    await canManageTicket(outsiderUser, { ...ticket, responsibleId: outsider.userId }),
+    true,
+    "el responsable asignado siempre puede gestionar",
+  );
 });

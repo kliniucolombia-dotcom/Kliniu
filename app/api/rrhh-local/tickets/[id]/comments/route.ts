@@ -1,7 +1,7 @@
 import { requireActiveUser } from "@/lib/permissions";
-import { isRRHH } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
+import { canManageTicket } from "@/lib/ticket-access";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requireActiveUser();
@@ -12,11 +12,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const ticket = await prisma.ticket.findUnique({ where: { id } });
   if (!ticket) return Response.json({ error: "Ticket no encontrado" }, { status: 404 });
 
-  if (!isRRHH(access.user) && ticket.responsibleId !== access.user.id) {
-    const employee = await prisma.employee.findUnique({ where: { userId: access.user.id } });
-    if (!employee || ticket.employeeId !== employee.id) {
-      return Response.json({ error: "No autorizado" }, { status: 403 });
-    }
+  if (!(await canManageTicket(access.user, ticket))) {
+    return Response.json({ error: "No autorizado" }, { status: 403 });
   }
 
   const body = await request.json();

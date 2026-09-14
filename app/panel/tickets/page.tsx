@@ -122,12 +122,14 @@ export default function TicketsPanelPage() {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [staff, setStaff] = useState<StaffUser[]>([]);
   const [responsiblesByDept, setResponsiblesByDept] = useState<Record<string, StaffUser[]>>({});
+  const [canManageAssignment, setCanManageAssignment] = useState(false);
 
   const load = async () => {
-    const [tRes, cRes, rRes] = await Promise.all([
+    const [tRes, cRes, rRes, pRes] = await Promise.all([
       fetch("/api/panel/tickets"),
       fetch("/api/rrhh-local/ticket-categories"),
       fetch("/api/rrhh-local/tickets/responsibles"),
+      fetch("/api/panel/permissions"),
     ]);
     if (tRes.status === 401 || tRes.status === 403) { router.push("/panel/sin-acceso"); return; }
     if (tRes.ok) {
@@ -138,6 +140,10 @@ export default function TicketsPanelPage() {
     }
     if (cRes.ok) setCategories(await cRes.json());
     if (rRes.ok) setResponsiblesByDept(await rRes.json());
+    if (pRes.ok) {
+      const { role } = await pRes.json();
+      setCanManageAssignment(role === "RRHH" || role === "ADMIN" || role === "SUPERADMIN");
+    }
     setLoading(false);
   };
 
@@ -239,6 +245,7 @@ export default function TicketsPanelPage() {
         <TicketDetailModal
           id={detailId}
           staff={staff}
+          canManageAssignment={canManageAssignment}
           onClose={() => setDetailId(null)}
           onChanged={load}
         />
@@ -247,9 +254,10 @@ export default function TicketsPanelPage() {
   );
 }
 
-function TicketDetailModal({ id, staff, onClose, onChanged }: {
+function TicketDetailModal({ id, staff, canManageAssignment, onClose, onChanged }: {
   id: string;
   staff: StaffUser[];
+  canManageAssignment: boolean;
   onClose: () => void;
   onChanged: () => void;
 }) {
@@ -387,21 +395,33 @@ function TicketDetailModal({ id, staff, onClose, onChanged }: {
         </div>
         <div>
           <label className={labelCls}>Responsable</label>
-          <SimpleSelect
-            value={detail.responsible?.id ?? ""}
-            disabled={saving}
-            onChange={assign}
-            options={[{ value: "", label: "Sin asignar" }, ...staff.map((s) => ({ value: s.id, label: s.fullName }))]}
-          />
+          {canManageAssignment ? (
+            <SimpleSelect
+              value={detail.responsible?.id ?? ""}
+              disabled={saving}
+              onChange={assign}
+              options={[{ value: "", label: "Sin asignar" }, ...staff.map((s) => ({ value: s.id, label: s.fullName }))]}
+            />
+          ) : (
+            <div className="flex h-[38px] items-center rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 text-sm text-[#64748B]">
+              {detail.responsible?.fullName ?? "Sin asignar"}
+            </div>
+          )}
         </div>
         <div>
           <label className={labelCls}>Prioridad</label>
-          <SimpleSelect
-            value={detail.priority}
-            disabled={saving}
-            onChange={updatePriority}
-            options={Object.entries(PRIORITY_LABELS).map(([value, label]) => ({ value, label }))}
-          />
+          {canManageAssignment ? (
+            <SimpleSelect
+              value={detail.priority}
+              disabled={saving}
+              onChange={updatePriority}
+              options={Object.entries(PRIORITY_LABELS).map(([value, label]) => ({ value, label }))}
+            />
+          ) : (
+            <div className="flex h-[38px] items-center rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 text-sm text-[#64748B]">
+              {PRIORITY_LABELS[detail.priority] ?? detail.priority}
+            </div>
+          )}
         </div>
         <div>
           <label className={labelCls}>Vence</label>
@@ -442,18 +462,22 @@ function TicketDetailModal({ id, staff, onClose, onChanged }: {
 
       <div>
         <label className={labelCls}>Comentarios {detail.comments?.length ? `(${detail.comments.length})` : ""}</label>
-        <div className="max-h-48 space-y-3 overflow-y-auto rounded-xl border border-[#E2E8F0] p-3">
-          {detail.comments?.length ? detail.comments.map((c) => (
-            <div key={c.id} className="flex items-start gap-2 text-sm">
-              <Avatar name={c.user.fullName} />
-              <div>
-                <span className="font-bold text-[#1A1A1A]">{c.user.fullName}</span>{" "}
-                <span className="text-xs text-[#94A3B8]">{fmt(c.createdAt)}</span>
-                <p className="text-[#64748B]">{c.message}</p>
+        {detail.comments?.length ? (
+          <div className="max-h-48 space-y-3 overflow-y-auto rounded-xl border border-[#E2E8F0] p-3">
+            {detail.comments.map((c) => (
+              <div key={c.id} className="flex items-start gap-2 text-sm">
+                <Avatar name={c.user.fullName} />
+                <div>
+                  <span className="font-bold text-[#1A1A1A]">{c.user.fullName}</span>{" "}
+                  <span className="text-xs text-[#94A3B8]">{fmt(c.createdAt)}</span>
+                  <p className="text-[#64748B]">{c.message}</p>
+                </div>
               </div>
-            </div>
-          )) : <p className="text-sm text-[#94A3B8]">Sin comentarios.</p>}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-[#94A3B8]">Sin comentarios.</p>
+        )}
         <div className="mt-2 flex gap-2">
           <input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Escribe un comentario…" className={inputCls} />
           <button onClick={sendComment} disabled={saving || !comment.trim()} className={btnPrimary}><MdSend size={16} /></button>
