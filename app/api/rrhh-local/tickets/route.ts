@@ -3,7 +3,7 @@ import { isAdmin, isRRHH } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { createNotification } from "@/lib/notifications";
-import { computeTicketDueDate } from "@/lib/tickets";
+import { computeTicketDueDate, groupResponsiblesByDepartment, isAssigneeAllowed } from "@/lib/tickets";
 
 const TICKET_INCLUDE = {
   category: { select: { name: true, icon: true } },
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { categoryId, priority, subject, description, location, extraFields, attachments } = body as {
+  const { categoryId, priority, subject, description, location, extraFields, attachments, responsibleId } = body as {
     categoryId?: string;
     priority?: string;
     subject?: string;
@@ -63,6 +63,7 @@ export async function POST(request: Request) {
     location?: string;
     extraFields?: Record<string, unknown>;
     attachments?: { path: string; name: string; size?: number }[];
+    responsibleId?: string | null;
   };
 
   if (!categoryId || !subject?.trim() || !description?.trim()) {
@@ -78,6 +79,19 @@ export async function POST(request: Request) {
   }
 
   const priorityValue = ["BAJA", "MEDIA", "ALTA", "URGENTE"].includes(priority || "") ? priority : "MEDIA";
+
+  let assigneeId: string | null = category.defaultResponsibleId;
+  if (responsibleId) {
+    const employees = await prisma.employee.findMany({
+      where: { status: "ACTIVE", departmentId: { not: null } },
+      select: { userId: true, departmentId: true, user: { select: { fullName: true } } },
+    });
+    const byDepartment = groupResponsiblesByDepartment(employees);
+    if (!isAssigneeAllowed(byDepartment, category.allowedDepartmentIds, responsibleId)) {
+      return Response.json({ error: "El responsable no pertenece a los departamentos de esta categoría" }, { status: 400 });
+    }
+    assigneeId = responsibleId;
+  }
 
   const safeAttachments = (attachments || []).filter(
     (a) => typeof a.path === "string" && a.path.startsWith(`tickets/${access.user.id}/`),
@@ -96,7 +110,7 @@ export async function POST(request: Request) {
       description: description.trim(),
       location: location?.trim() || null,
       extraFields: (extraFields ?? {}) as never,
-      responsibleId: category.defaultResponsibleId,
+      responsibleId: assigneeId,
       dueDate: computeTicketDueDate(priorityValue as string),
       attachments: safeAttachments.length
         ? { create: safeAttachments.map((a) => ({ url: a.path, name: a.name, size: a.size })) }
@@ -114,6 +128,18 @@ export async function POST(request: Request) {
     createdById: access.user.id,
     metadata: { ticketId: created.id, code, categoryId, priority: priorityValue },
   }).catch(() => {});
+
+  if (assigneeId && assigneeId !== access.user.id) {
+    createNotification({
+      eventKey: "ticket.assigned",
+      title: `Te asignaron la solicitud ${code}`,
+      detail: `${category.name}: ${subject.trim()} · ${access.user.fullName}`,
+      href: "/panel/tickets",
+      targetUserId: assigneeId,
+      createdById: access.user.id,
+      metadata: { ticketId: created.id, code, categoryId, priority: priorityValue },
+    }).catch(() => {});
+  }
 
   return Response.json(created, { status: 201 });
 }

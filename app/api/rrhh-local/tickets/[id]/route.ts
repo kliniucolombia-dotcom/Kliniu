@@ -126,5 +126,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
   }
 
+  if (responsibleId && responsibleId !== existing.responsibleId && responsibleId !== access.user.id) {
+    createNotification({
+      eventKey: "ticket.assigned",
+      title: `Te asignaron la solicitud ${updated.code}`,
+      detail: `${updated.category.name}: ${updated.subject} · ${access.user.fullName}`,
+      href: "/panel/tickets",
+      targetUserId: responsibleId,
+      createdById: access.user.id,
+      metadata: { ticketId: updated.id, code: updated.code },
+    }).catch(() => {});
+  }
+
   return Response.json(updated);
 }

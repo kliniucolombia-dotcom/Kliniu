@@ -3,12 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   MdSearch, MdAdd, MdAttachFile, MdSend, MdCheckCircle, MdUploadFile, MdClose, MdInsertDriveFile,
-  MdShoppingBag, MdDescription, MdCheckroom, MdConstruction, MdChair, MdMoreHoriz, MdDesignServices, MdComputer, MdDirectionsCar, MdCategory,
+  MdShoppingBag, MdDescription, MdCheckroom, MdConstruction, MdChair, MdMoreHoriz, MdDesignServices, MdStorefront, MdComputer, MdDirectionsCar, MdCategory,
 } from "react-icons/md";
 import type { IconType } from "react-icons";
 import { SimpleSelect } from "../_components/simple-select";
 import { Section, Empty, Table, Badge, Modal, Footer, btnPrimary, labelCls, inputCls, post, patchReq } from "../_components/ops-ui";
-import { TICKET_SLA_LABELS } from "@/lib/tickets";
+import { TICKET_SLA_LABELS, responsiblesForCategory } from "@/lib/tickets";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type Ticket = {
@@ -23,7 +23,7 @@ type Ticket = {
   employee: { user: { fullName: string } };
   responsible: { id: string; fullName: string } | null;
 };
-type Category = { id: string; name: string };
+type Category = { id: string; name: string; allowedDepartmentIds: string[] };
 type Comment = { id: string; message: string; createdAt: string; user: { fullName: string } };
 type TicketDetail = Ticket & {
   description: string;
@@ -72,6 +72,8 @@ const CATEGORY_ICON: Record<string, { Icon: IconType; bg: string; fg: string }> 
   "Infraestructura": { Icon: MdConstruction, bg: "bg-[#FEF3C7]", fg: "text-[#B45309]" },
   "Mobiliario": { Icon: MdChair, bg: "bg-[#FCE7F3]", fg: "text-[#BE185D]" },
   "PQRS Diseño y Venta": { Icon: MdDesignServices, bg: "bg-[#E6FAFB]", fg: "text-[#0C535B]" },
+  "PQRS Diseño": { Icon: MdDesignServices, bg: "bg-[#E6FAFB]", fg: "text-[#0C535B]" },
+  "PQRS Venta": { Icon: MdStorefront, bg: "bg-[#DCFCE7]", fg: "text-[#16A34A]" },
   "Soporte TI": { Icon: MdComputer, bg: "bg-[#DBEAFE]", fg: "text-[#2563EB]" },
   "Vehículos": { Icon: MdDirectionsCar, bg: "bg-[#DCFCE7]", fg: "text-[#16A34A]" },
   "Otro": { Icon: MdMoreHoriz, bg: "bg-[#F1F5F9]", fg: "text-[#64748B]" },
@@ -119,11 +121,13 @@ export default function TicketsPanelPage() {
   const [alert, setAlert] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [staff, setStaff] = useState<StaffUser[]>([]);
+  const [responsiblesByDept, setResponsiblesByDept] = useState<Record<string, StaffUser[]>>({});
 
   const load = async () => {
-    const [tRes, cRes] = await Promise.all([
+    const [tRes, cRes, rRes] = await Promise.all([
       fetch("/api/panel/tickets"),
       fetch("/api/rrhh-local/ticket-categories"),
+      fetch("/api/rrhh-local/tickets/responsibles"),
     ]);
     if (tRes.status === 401 || tRes.status === 403) { router.push("/panel/sin-acceso"); return; }
     if (tRes.ok) {
@@ -133,6 +137,7 @@ export default function TicketsPanelPage() {
       setDepartment(data.department);
     }
     if (cRes.ok) setCategories(await cRes.json());
+    if (rRes.ok) setResponsiblesByDept(await rRes.json());
     setLoading(false);
   };
 
@@ -223,6 +228,7 @@ export default function TicketsPanelPage() {
       {showNew && (
         <NewTicketModal
           categories={categories}
+          responsiblesByDept={responsiblesByDept}
           onClose={() => setShowNew(false)}
           onDone={(msg) => { setShowNew(false); setAlert({ type: "ok", msg }); load(); }}
           onError={(msg) => setAlert({ type: "err", msg })}
@@ -480,13 +486,15 @@ function FileIcon({ name }: { name: string }) {
   );
 }
 
-function NewTicketModal({ categories, onClose, onDone, onError }: {
+function NewTicketModal({ categories, responsiblesByDept, onClose, onDone, onError }: {
   categories: Category[];
+  responsiblesByDept: Record<string, StaffUser[]>;
   onClose: () => void;
   onDone: (msg: string) => void;
   onError: (msg: string) => void;
 }) {
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
+  const [responsibleId, setResponsibleId] = useState("");
   const [priority, setPriority] = useState("MEDIA");
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
@@ -494,6 +502,14 @@ function NewTicketModal({ categories, onClose, onDone, onError }: {
   const [files, setFiles] = useState<PendingFile[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
+
+  const category = categories.find((c) => c.id === categoryId);
+  const responsibles = category ? responsiblesForCategory(responsiblesByDept, category.allowedDepartmentIds) : [];
+
+  const changeCategory = (id: string) => {
+    setCategoryId(id);
+    setResponsibleId("");
+  };
 
   const uploadFiles = async (fileList: FileList | File[]) => {
     setFileError(null);
@@ -514,18 +530,18 @@ function NewTicketModal({ categories, onClose, onDone, onError }: {
 
   const submit = async () => {
     setSubmitting(true);
-    const res = await post("/api/rrhh-local/tickets", { categoryId, priority, subject, description, attachments: files.map(({ path, name, size }) => ({ path, name, size })) });
+    const res = await post("/api/rrhh-local/tickets", { categoryId, priority, subject, description, responsibleId: responsibleId || null, attachments: files.map(({ path, name, size }) => ({ path, name, size })) });
     setSubmitting(false);
     if (res.ok) onDone("Solicitud enviada"); else onError(res.error!);
   };
 
   return (
-    <Modal title="Nueva solicitud" onClose={onClose} footer={<Footer onClose={onClose} onSubmit={submit} submitting={submitting} disabled={!categoryId || !subject.trim() || !description.trim()} />}>
+    <Modal title="Nueva solicitud" onClose={onClose} footer={<Footer onClose={onClose} onSubmit={submit} submitting={submitting} disabled={!categoryId || !subject.trim() || !description.trim() || (responsibles.length > 0 && !responsibleId)} />}>
       <div>
         <label className={labelCls}>Tipo de solicitud</label>
         <SimpleSelect
           value={categoryId}
-          onChange={setCategoryId}
+          onChange={changeCategory}
           options={categories.map((c) => ({
             value: c.id,
             label: (
@@ -537,6 +553,18 @@ function NewTicketModal({ categories, onClose, onDone, onError }: {
           }))}
         />
       </div>
+
+      {responsibles.length > 0 && (
+        <div>
+          <label className={labelCls}>Asignar a</label>
+          <SimpleSelect
+            value={responsibleId}
+            onChange={setResponsibleId}
+            options={[{ value: "", label: "Selecciona un responsable" }, ...responsibles.map((s) => ({ value: s.id, label: s.fullName }))]}
+          />
+          <p className="mt-1.5 text-xs text-[#94A3B8]">Personas del departamento asociado a esta categoría.</p>
+        </div>
+      )}
 
       <div>
         <label className={labelCls}>Prioridad</label>

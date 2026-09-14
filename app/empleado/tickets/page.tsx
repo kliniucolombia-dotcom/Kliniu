@@ -6,6 +6,7 @@ import {
   MdApartment, MdBuild, MdShoppingCart, MdDirectionsCar, MdDescription, MdInventory2,
   MdMoreHoriz, MdHeadsetMic, MdOpenInNew, MdInbox, MdCalendarToday, MdPerson,
   MdArrowBack, MdArticle, MdHistory, MdMoreVert, MdCancel, MdPlace, MdCategory, MdFlag,
+  MdDesignServices, MdStorefront,
 } from "react-icons/md";
 import { DonutChart } from "@/app/panel/_components/mini-charts";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
@@ -90,6 +91,8 @@ const CATEGORY_ICON: Record<string, React.ElementType> = {
   Documentación: MdDescription,
   Inventario: MdInventory2,
   Otro: MdMoreHoriz,
+  "PQRS Diseño": MdDesignServices,
+  "PQRS Venta": MdStorefront,
 };
 const CATEGORY_COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#8B5CF6", "#27B1B8", "#EC4899", "#64748B", "#EF4444"];
 const QUICK_ACCESS = [

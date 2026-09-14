@@ -5,6 +5,7 @@ import {
   MdSchedule, MdAutorenew, MdCheckCircle, MdPriorityHigh,
   MdClose, MdSend, MdSearch, MdFileDownload, MdChair, MdComputer, MdCheckroom,
   MdApartment, MdBuild, MdShoppingCart, MdDirectionsCar, MdDescription, MdInventory2, MdMoreHoriz,
+  MdDesignServices, MdStorefront,
   MdAttachFile, MdHistory, MdArticle, MdCheck, MdSettings,
 } from "react-icons/md";
 import { DonutChart } from "@/app/panel/_components/mini-charts";
@@ -75,6 +76,8 @@ const CATEGORY_ICON: Record<string, React.ElementType> = {
   Documentación: MdDescription,
   Inventario: MdInventory2,
   Otro: MdMoreHoriz,
+  "PQRS Diseño": MdDesignServices,
+  "PQRS Venta": MdStorefront,
 };
 const CATEGORY_COLORS = ["#27B1B8", "#3B82F6", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899", "#64748B", "#EF4444"];
 
