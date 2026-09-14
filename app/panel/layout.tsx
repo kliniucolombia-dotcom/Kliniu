@@ -398,6 +398,10 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
               .filter((x) => childMatches(x.href))
               .sort((a, b) => b.href.length - a.href.length)[0]?.item;
 
+            if (q && items.length === 0) {
+              return <p className="px-3 py-4 text-center text-xs text-[#94A3B8]">Sin resultados</p>;
+            }
+
             return items.map((item) => {
               const active = item.key === activeItem?.key;
               const isOpen = item.children ? (q ? true : areaOverride[item.key] ?? active) : false;
