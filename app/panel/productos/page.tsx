@@ -70,6 +70,8 @@ export default function ProductosPanel() {
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [editSlug, setEditSlug] = useState<string | null>(null);
+  const [createToast, setCreateToast] = useState<string | null>(null);
   const [canCreate, setCanCreate] = useState(false);
   const [canEdit, setCanEdit] = useState(false);
   const router = useRouter();
@@ -85,6 +87,20 @@ export default function ProductosPanel() {
 
   useEffect(() => { load(); }, [load]);
   useRealtimeRefresh(["products"], load);
+
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type !== "kliniu:product-created") return;
+      setShowCreate(false);
+      setEditSlug(null);
+      setCreateToast(event.data.isEditing ? "Producto actualizado correctamente." : "Producto creado correctamente.");
+      load();
+      window.setTimeout(() => setCreateToast(null), 3000);
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [load]);
 
   useEffect(() => {
     fetch("/api/panel/permissions").then((r) => r.json()).then((d) => {
@@ -414,7 +430,7 @@ export default function ProductosPanel() {
                               {canEdit && (
                                 <button
                                   type="button"
-                                  onClick={() => openEdit(p)}
+                                  onClick={() => setEditSlug(p.slug)}
                                   className="inline-flex items-center gap-1.5 rounded-full bg-[#0C535B] px-3 py-1.5 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[#073D43]"
                                 >
                                   Editar producto
@@ -595,20 +611,26 @@ export default function ProductosPanel() {
         </div>
       )}
 
-      {/* Popup crear producto — carga el formulario completo de admin sin salir del panel */}
-      {showCreate && (
+      {/* Popup crear/editar producto — carga el formulario completo de admin (incluye imágenes) sin salir del panel */}
+      {(showCreate || editSlug) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-black/8 px-5 py-3">
-              <h3 className="font-black text-[#1A1A1A]">Crear producto</h3>
-              <button onClick={() => setShowCreate(false)} className="text-[#94A3B8] hover:text-[#1A1A1A]">✕</button>
+              <h3 className="font-black text-[#1A1A1A]">{editSlug ? "Editar producto" : "Crear producto"}</h3>
+              <button onClick={() => { setShowCreate(false); setEditSlug(null); }} className="text-[#94A3B8] hover:text-[#1A1A1A]">✕</button>
             </div>
             <iframe
-              src="/admin?tab=create&embed=1"
+              src={editSlug ? `/admin?tab=edit&embed=1&slug=${encodeURIComponent(editSlug)}` : "/admin?tab=create&embed=1"}
               className="min-h-0 flex-1"
-              title="Crear producto"
+              title={editSlug ? "Editar producto" : "Crear producto"}
             />
           </div>
+        </div>
+      )}
+
+      {createToast && (
+        <div className="fixed bottom-6 right-6 z-[60] rounded-xl bg-[#16A34A] px-4 py-3 text-sm font-bold text-white shadow-2xl">
+          {createToast}
         </div>
       )}
     </div>

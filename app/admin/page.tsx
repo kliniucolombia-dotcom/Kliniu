@@ -1400,6 +1400,12 @@ export default function AdminPage() {
           ? "Producto editado correctamente."
           : "Producto creado correctamente.",
       });
+      if (isEmbed && window.parent !== window) {
+        window.parent.postMessage(
+          { type: "kliniu:product-created", isEditing },
+          window.location.origin,
+        );
+      }
       window.setTimeout(() => setSaved(false), 1800);
     } catch (error) {
       setIsSavingProduct(false);
@@ -2152,6 +2158,12 @@ export default function AdminPage() {
 
           {activeTab === "edit" && (
             <div className="admin-fade-up space-y-8">
+              {isEmbed && embedSlug && !editingSlug && (
+                <div className="flex items-center justify-center rounded-[2rem] border border-black/8 bg-white p-16 text-sm text-[#6e7379]">
+                  Cargando producto…
+                </div>
+              )}
+              {!(isEmbed && embedSlug) && (
               <div className="grid gap-8 xl:grid-cols-[300px_minmax(0,1fr)]">
                 <aside className="space-y-5">
                   <div className="rounded-[1.75rem] border border-black/8 bg-white p-6 shadow-[0_14px_28px_rgba(15,23,42,0.05)]">
@@ -2333,6 +2345,7 @@ export default function AdminPage() {
                   )}
                 </div>
               </div>
+              )}
 
               {editingSlug && (
                 <form
