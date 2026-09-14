@@ -30,7 +30,7 @@ export function NotificationBell() {
   const [loading, setLoading] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
   const dropRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const [pos, setPos] = useState<{ left: number; maxHeight: number; top?: number; bottom?: number }>({ left: 0, maxHeight: 420 });
   const openDetail = useNotificationDetail();
 
   const loadRecent = useCallback(async () => {
@@ -49,14 +49,20 @@ export function NotificationBell() {
     if (!btnRef.current) return;
     const r = btnRef.current.getBoundingClientRect();
     const ddWidth = 320;
-    const ddMaxHeight = 420;
     let left = r.right - ddWidth;
     if (left < 8) left = r.left;
     if (left + ddWidth > window.innerWidth - 8) left = window.innerWidth - ddWidth - 8;
     if (left < 8) left = 8;
-    let top = r.bottom + 8;
-    if (top + ddMaxHeight > window.innerHeight - 8) top = Math.max(8, r.top - ddMaxHeight - 8);
-    setPos({ top, left });
+
+    const spaceBelow = window.innerHeight - r.bottom - 16;
+    const spaceAbove = r.top - 16;
+    const preferBelow = spaceBelow >= 200 || spaceBelow >= spaceAbove;
+    const maxHeight = Math.min(420, Math.max(120, preferBelow ? spaceBelow : spaceAbove));
+    if (preferBelow) {
+      setPos({ top: r.bottom + 8, left, maxHeight });
+    } else {
+      setPos({ bottom: window.innerHeight - r.top + 8, left, maxHeight });
+    }
   }, []);
 
   useEffect(() => {
@@ -115,8 +121,8 @@ export function NotificationBell() {
             <div className="fixed inset-0 z-[199]" onMouseDown={() => setOpen(false)} />
             <div
               ref={dropRef}
-              className="fixed z-[200] w-80 overflow-hidden rounded-xl border border-[#E2E8F0] bg-white shadow-2xl"
-              style={{ top: pos.top, left: pos.left }}
+              className="fixed z-[200] flex w-80 flex-col overflow-hidden rounded-xl border border-[#E2E8F0] bg-white shadow-2xl"
+              style={{ top: pos.top, bottom: pos.bottom, left: pos.left, maxHeight: pos.maxHeight + 44 }}
             >
               <div className="flex items-center justify-between border-b border-[#F1F5F9] px-4 py-3">
                 <p className="text-xs font-bold text-[#1A1A1A]">Notificaciones</p>
@@ -130,7 +136,7 @@ export function NotificationBell() {
                 )}
               </div>
 
-              <div className="max-h-80 overflow-y-auto">
+              <div className="overflow-y-auto" style={{ maxHeight: pos.maxHeight }}>
                 {loading && items.length === 0 && (
                   <p className="p-4 text-center text-xs text-[#94A3B8]">Cargando…</p>
                 )}
