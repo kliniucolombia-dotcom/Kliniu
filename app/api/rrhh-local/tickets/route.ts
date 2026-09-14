@@ -3,6 +3,7 @@ import { isRRHH } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { createNotification } from "@/lib/notifications";
+import { computeTicketDueDate } from "@/lib/tickets";
 
 const TICKET_INCLUDE = {
   category: { select: { name: true, icon: true } },
@@ -87,6 +88,7 @@ export async function POST(request: Request) {
       location: location?.trim() || null,
       extraFields: (extraFields ?? {}) as never,
       responsibleId: category.defaultResponsibleId,
+      dueDate: computeTicketDueDate(priorityValue as string),
       attachments: safeAttachments.length
         ? { create: safeAttachments.map((a) => ({ url: a.path, name: a.name, size: a.size })) }
         : undefined,

@@ -35,6 +35,7 @@ type Ticket = {
   location: string | null;
   extraFields: Record<string, string>;
   createdAt: string;
+  dueDate: string | null;
   category: { name: string };
   employee: { user: { fullName: string } };
   responsible: { id: string; fullName: string } | null;
@@ -292,6 +293,7 @@ export default function SolicitudesPanelPage() {
                   <th className="p-3">Solicitante</th>
                   <th className="p-3">Fecha</th>
                   <th className="p-3">Prioridad</th>
+                  <th className="p-3">Vence</th>
                   <th className="p-3">Estado</th>
                   <th className="p-3">Responsable</th>
                 </tr>
@@ -313,6 +315,9 @@ export default function SolicitudesPanelPage() {
                     <td className="p-3 text-[#64748B]">{fmt(t.createdAt)}</td>
                     <td className="p-3">
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${PRIORITY_STYLE[t.priority]}`}>{PRIORITY_LABELS[t.priority]}</span>
+                    </td>
+                    <td className={`p-3 ${t.dueDate && t.status !== "FINALIZADO" && t.status !== "CANCELADO" && new Date(t.dueDate) < new Date() ? "font-bold text-[#DC2626]" : "text-[#64748B]"}`}>
+                      {t.dueDate ? fmt(t.dueDate) : "—"}
                     </td>
                     <td className="p-3">
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_STYLE[t.status]}`}>{STATUS_LABELS[t.status]}</span>
@@ -431,6 +436,7 @@ export default function SolicitudesPanelPage() {
                         <Field label="Fecha de creación" value={fmt(detail.createdAt)} />
                         {detail.location && <Field label="Ubicación" value={detail.location} />}
                         <Field label="Prioridad" value={PRIORITY_LABELS[detail.priority]} />
+                        {detail.dueDate && <Field label="Vence" value={fmt(detail.dueDate)} />}
                       </div>
                     </div>
 

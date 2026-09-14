@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { MdSearch, MdAdd } from "react-icons/md";
 import { SimpleSelect } from "../_components/simple-select";
 import { Section, Empty, Table, Badge, Modal, Footer, btnPrimary, labelCls, inputCls, post } from "../_components/ops-ui";
+import { TICKET_SLA_LABELS } from "@/lib/tickets";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type Ticket = {
   id: string;
@@ -12,6 +14,7 @@ type Ticket = {
   priority: string;
   status: string;
   createdAt: string;
+  dueDate: string | null;
   category: { name: string };
   employee: { user: { fullName: string } };
   responsible: { id: string; fullName: string } | null;
@@ -73,6 +76,7 @@ export default function TicketsPanelPage() {
   };
 
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useRealtimeRefresh(["tickets"], load);
 
   useEffect(() => {
     if (!alert) return;
@@ -131,13 +135,18 @@ export default function TicketsPanelPage() {
             <Empty text="No tienes un departamento asignado. Pide a RRHH que lo configure en tu perfil de empleado." />
           ) : (
             <Table
-              head={["Ticket", "Tipo", "Solicitante", "Fecha", "Prioridad", "Estado", "Responsable"]}
+              head={["Ticket", "Tipo", "Solicitante", "Fecha", "Prioridad", "Vence", "Estado", "Responsable"]}
               rows={filtered.map((t) => [
                 <b key="c" className="font-mono text-xs text-[#27B1B8]">{t.code}</b>,
                 t.category.name,
                 t.employee.user.fullName,
                 fmt(t.createdAt),
                 <Badge key="p" label={PRIORITY_LABELS[t.priority]} cls={PRIORITY_BADGE[t.priority]} />,
+                t.dueDate ? (
+                  <span key="d" className={t.status !== "FINALIZADO" && t.status !== "CANCELADO" && new Date(t.dueDate) < new Date() ? "font-semibold text-[#DC2626]" : "text-[#64748B]"}>
+                    {fmt(t.dueDate)}
+                  </span>
+                ) : "—",
                 <Badge key="s" label={STATUS_LABELS[t.status]} cls={STATUS_BADGE[t.status]} />,
                 t.responsible?.fullName ?? "Sin asignar",
               ])}
@@ -187,6 +196,7 @@ function NewTicketModal({ categories, onClose, onDone, onError }: {
       <div>
         <label className={labelCls}>Prioridad</label>
         <SimpleSelect value={priority} options={Object.entries(PRIORITY_LABELS).map(([value, label]) => ({ value, label }))} onChange={setPriority} />
+        <p className="mt-1 text-xs text-[#94A3B8]">Plazo estimado: {TICKET_SLA_LABELS[priority]}</p>
       </div>
       <div>
         <label className={labelCls}>Asunto</label>

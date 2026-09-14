@@ -1410,6 +1410,7 @@ model Ticket {
   extraFields   Json           @default("{}")
   status        TicketStatus   @default(PENDIENTE)
   responsibleId String?
+  dueDate       DateTime?
   resolvedAt    DateTime?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt

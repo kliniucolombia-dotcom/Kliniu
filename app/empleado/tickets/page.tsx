@@ -9,6 +9,7 @@ import {
 } from "react-icons/md";
 import { DonutChart } from "@/app/panel/_components/mini-charts";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import { TICKET_SLA_LABELS } from "@/lib/tickets";
 
 type FieldDef = {
   key: string;
@@ -49,6 +50,7 @@ type Ticket = {
   location: string | null;
   extraFields?: Record<string, string>;
   createdAt: string;
+  dueDate: string | null;
   category: { name: string };
   responsible: { fullName: string } | null;
   attachments?: { url: string; name: string }[];
@@ -308,6 +310,7 @@ export default function TicketsPage() {
                       <DetailField icon={<MdCategory size={15} />} label="Tipo" value={detail.category.name} />
                       <DetailField icon={<MdFlag size={15} />} label="Prioridad" value={PRIORITY_LABELS[detail.priority]} />
                       <DetailField icon={<MdCalendarToday size={15} />} label="Fecha de creación" value={fmt(detail.createdAt)} />
+                      {detail.dueDate && <DetailField icon={<MdCalendarToday size={15} />} label="Vence" value={fmt(detail.dueDate)} />}
                       {detail.location && <DetailField icon={<MdPlace size={15} />} label="Ubicación" value={detail.location} />}
                     </div>
                   </div>
@@ -658,6 +661,7 @@ function NewTicketModal({ categories, presetCategoryId, onClose, onCreated, setE
                 className="mt-1 w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm font-normal text-[#1A1A1A]">
                 {Object.entries(PRIORITY_LABELS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
               </select>
+              <span className="mt-1 block text-[11px] font-normal text-[#94A3B8]">Plazo estimado: {TICKET_SLA_LABELS[priority]}</span>
             </label>
           </div>
 

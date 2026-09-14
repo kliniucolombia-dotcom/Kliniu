@@ -22,10 +22,10 @@ export async function GET() {
   const employee = await prisma.employee.findUnique({ where: { userId: access.user.id } });
   if (!employee?.departmentId) return Response.json({ tickets: [], scope: "department", department: null });
 
-  const categories = await prisma.requestCategory.findMany({
-    where: { allowedDepartmentIds: { has: employee.departmentId } },
-    select: { id: true },
-  });
+  const allCategories = await prisma.requestCategory.findMany({ select: { id: true, allowedDepartmentIds: true } });
+  const categories = allCategories.filter(
+    (c) => c.allowedDepartmentIds.length === 0 || c.allowedDepartmentIds.includes(employee.departmentId!),
+  );
   const department = await prisma.department.findUnique({ where: { id: employee.departmentId }, select: { name: true } });
 
   const tickets = await prisma.ticket.findMany({
