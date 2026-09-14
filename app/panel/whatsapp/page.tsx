@@ -39,7 +39,7 @@ type ConversationSummary = {
   odooSyncError: string | null;
   orderSubtotal: number | null;
   orderTotalItems: number | null;
-  orderItems: { name: string; quantity: number; lineTotal: number }[];
+  orderItems: { name: string; quantity: number; lineTotal: number; image: string }[];
   followUpSentAt: string | null;
   updatedAt: string;
   lastMessage: { content: string; role: "USER" | "ASSISTANT" | "AGENT"; createdAt: string } | null;
@@ -1538,8 +1538,12 @@ export default function WhatsappPanelPage() {
                     {selected.orderItems.length > 0 ? (
                       <ul className="mt-2.5 space-y-1.5">
                         {selected.orderItems.map((item, index) => (
-                          <li key={index} className="flex items-center justify-between gap-2 text-[11px]">
-                            <span className="min-w-0 truncate text-[#334155]">{item.name}</span>
+                          <li key={index} className="flex items-center gap-2 text-[11px]">
+                            {item.image ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={item.image} alt={item.name} className="h-8 w-8 shrink-0 rounded-md border border-[#CCFBF1] object-cover" />
+                            ) : null}
+                            <span className="min-w-0 flex-1 truncate text-[#334155]">{item.name}</span>
                             <span className="shrink-0 font-semibold text-[#64748B]">× {item.quantity}</span>
                           </li>
                         ))}

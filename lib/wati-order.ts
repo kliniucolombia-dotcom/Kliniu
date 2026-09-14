@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 const COMBO_NAME = "Combo Premium";
 const COMBO_PRICE = 309900;
 const COMBO_SKU = "COMBO-PREMIUM-WATI";
+const COMBO_IMAGE = "/whatsapp/combo-premium-kliniu.jpg";
 const WATI_SYSTEM_USER_EMAIL = "whatsapp-ia@kliniu.com";
 
 async function getWatiSystemUserId() {
@@ -59,7 +60,7 @@ export async function createWatiOrder(input: {
         create: [
           {
             name: COMBO_NAME,
-            image: "",
+            image: COMBO_IMAGE,
             unitPrice: COMBO_PRICE,
             quantity: input.quantity,
             lineTotal: subtotal,

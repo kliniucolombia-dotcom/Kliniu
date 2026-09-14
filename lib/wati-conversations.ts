@@ -57,7 +57,7 @@ export async function getAllWatiConversations() {
           odooSyncError: true,
           subtotal: true,
           totalItems: true,
-          items: { select: { name: true, quantity: true, lineTotal: true } },
+          items: { select: { name: true, quantity: true, lineTotal: true, image: true } },
         },
       })
     : [];
