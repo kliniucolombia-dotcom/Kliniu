@@ -40,7 +40,8 @@ export default function MaterialComercialPage() {
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadingFile, setUploadingFile] = useState<string | null>(null);
-  const [preview, setPreview] = useState<{ url: string; name: string; mimeType: string | null } | null>(null);
+  const [preview, setPreview] = useState<{ url: string | null; name: string; mimeType: string | null } | null>(null);
+  const urlCache = useRef<Map<string, { url: string; expiresAt: number }>>(new Map());
   const [saving, setSaving] = useState(false);
   const [newFolder, setNewFolder] = useState<string | null>(null);
   const [newFolderPrivate, setNewFolderPrivate] = useState(false);
@@ -146,22 +147,46 @@ export default function MaterialComercialPage() {
     }
   };
 
-  const download = async (file: FileItem) => {
-    const r = await fetch(`/api/panel/material/download?id=${file.id}`);
-    const d = await r.json();
-    if (!r.ok) { setError(d.error ?? "No se pudo abrir el archivo"); return; }
-    window.open(d.url, "_blank", "noopener,noreferrer");
-  };
-
   const isPreviewable = (mimeType: string | null) =>
     !!mimeType && (mimeType.startsWith("image/") || mimeType === "application/pdf");
 
-  const openFile = async (file: FileItem) => {
-    if (!isPreviewable(file.mimeType)) { download(file); return; }
+  // Los enlaces firmados viven 5 min: se cachean y se prefetchean al pasar el
+  // ratón para que el clic abra al instante.
+  const fetchUrl = useCallback(async (file: FileItem, silent = false): Promise<string | null> => {
+    const cached = urlCache.current.get(file.id);
+    if (cached && cached.expiresAt > Date.now() + 10_000) return cached.url;
     const r = await fetch(`/api/panel/material/download?id=${file.id}`);
     const d = await r.json();
-    if (!r.ok) { setError(d.error ?? "No se pudo abrir el archivo"); return; }
-    setPreview({ url: d.url, name: file.name, mimeType: file.mimeType });
+    if (!r.ok || !d.url) {
+      if (!silent) setError(d.error ?? "No se pudo abrir el archivo");
+      return null;
+    }
+    urlCache.current.set(file.id, { url: d.url, expiresAt: Date.now() + 290_000 });
+    return d.url;
+  }, []);
+
+  const prefetch = (file: FileItem) => {
+    if (urlCache.current.has(file.id)) return;
+    void fetchUrl(file, true);
+  };
+
+  const download = async (file: FileItem) => {
+    const url = await fetchUrl(file);
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const openFile = async (file: FileItem) => {
+    if (!isPreviewable(file.mimeType)) { await download(file); return; }
+    const cached = urlCache.current.get(file.id);
+    if (cached && cached.expiresAt > Date.now() + 10_000) {
+      setPreview({ url: cached.url, name: file.name, mimeType: file.mimeType });
+      return;
+    }
+    // Abre el modal al instante y rellena el enlace cuando llega.
+    setPreview({ url: null, name: file.name, mimeType: file.mimeType });
+    const url = await fetchUrl(file);
+    if (url) setPreview((p) => (p && p.name === file.name ? { ...p, url } : p));
+    else setPreview(null);
   };
 
   const empty = !data.folders.length && !data.files.length;
@@ -277,7 +302,12 @@ export default function MaterialComercialPage() {
               {data.files.map((f) => (
                 <tr key={f.id} className="transition hover:bg-[#F8FAFC]">
                   <td className="px-4 py-3">
-                    <button onClick={() => openFile(f)} className="flex items-center gap-2 text-left font-semibold text-[#1A1A1A]">
+                    <button
+                      onClick={() => openFile(f)}
+                      onMouseEnter={() => prefetch(f)}
+                      onFocus={() => prefetch(f)}
+                      className="flex items-center gap-2 text-left font-semibold text-[#1A1A1A]"
+                    >
                       {fileIcon(f.mimeType)} {f.name}
                     </button>
                   </td>
@@ -393,7 +423,11 @@ export default function MaterialComercialPage() {
               </button>
             </div>
             <div className="flex-1 overflow-auto">
-              {preview.mimeType?.startsWith("image/") ? (
+              {!preview.url ? (
+                <div className="flex h-[75vh] items-center justify-center">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#27B1B8] border-t-transparent" />
+                </div>
+              ) : preview.mimeType?.startsWith("image/") ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={preview.url} alt={preview.name} className="mx-auto max-h-[75vh] w-auto rounded-lg object-contain" />
               ) : (
