@@ -55,10 +55,15 @@ export function SimpleSelect({
     };
     place();
     const close = () => setOpen(false);
-    window.addEventListener("scroll", close, true);
+    const onScroll = (e: Event) => {
+      // Ignora el scroll dentro del propio menú (rueda del ratón / barra)
+      if (menuRef.current && e.target instanceof Node && menuRef.current.contains(e.target)) return;
+      close();
+    };
+    window.addEventListener("scroll", onScroll, true);
     window.addEventListener("resize", close);
     return () => {
-      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("scroll", onScroll, true);
       window.removeEventListener("resize", close);
     };
   }, [open, portal, openUp]);
