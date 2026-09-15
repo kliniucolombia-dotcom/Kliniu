@@ -1,26 +1,39 @@
 import { isRRHH } from "@/lib/roles";
 import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { computeRrhhCounts, rrhhCategoryKey, rrhhSeverity } from "@/lib/notifications/rrhh";
 
 /** Ventana del feed: eventos de los últimos 60 días. */
 const WINDOW_DAYS = 60;
-const PER_SOURCE = 25;
+const PER_SOURCE = 100;
+const DEFAULT_LIMIT = 50;
 
-export type NotificationItem = {
-  key: string;
+export type RrhhNotificationItem = {
+  id: string;
   type: "timeoff" | "overtime" | "benefit" | "certificate" | "ticket" | "announcement";
+  category: string;
   title: string;
   detail: string;
-  createdAt: string;
   href: string;
+  severity: "info" | "warning" | "urgent";
+  metadata: Record<string, unknown>;
+  createdAt: string;
   read: boolean;
 };
 
-export async function GET() {
-  const access = await requireActiveUser();
-  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
-  if (!isRRHH(access.user)) return Response.json({ error: "No autorizado" }, { status: 403 });
+type RawItem = Omit<RrhhNotificationItem, "category" | "read">;
+
+const TIME_OFF_LABELS: Record<string, string> = {
+  VACATION: "Vacaciones", PERMIT: "Permiso", LEAVE: "Licencia",
+  INCAPACITY: "Incapacidad", UNPAID: "Sin remuneración",
+};
+
+/**
+ * Construye el feed completo de RRHH a partir de los eventos reales del módulo.
+ * Las claves de lectura se aplican antes de paginar/contear.
+ */
+async function buildItems(userId: string): Promise<RrhhNotificationItem[]> {
+  if (!prisma) return [];
 
   const since = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000);
   const recent = { createdAt: { gte: since } };
@@ -42,84 +55,128 @@ export async function GET() {
       ...listArgs,
     }),
     prisma.announcement.findMany({ where: { ...recent, category: "RRHH", isActive: true }, ...listArgs }),
-    prisma.rrhhNotificationRead.findMany({ where: { userId: access.user.id }, select: { key: true } }),
+    prisma.rrhhNotificationRead.findMany({ where: { userId }, select: { key: true } }),
   ]);
 
   const readKeys = new Set(reads.map((r) => r.key));
-  const TIME_OFF_LABELS: Record<string, string> = {
-    VACATION: "Vacaciones", PERMIT: "Permiso", LEAVE: "Licencia",
-    INCAPACITY: "Incapacidad", UNPAID: "Sin remuneración",
-  };
 
-  const items: NotificationItem[] = [
+  const items: RawItem[] = [
     ...timeOff.map((r) => ({
-      key: `timeoff:${r.id}`,
+      id: `timeoff:${r.id}`,
       type: "timeoff" as const,
       title: `Nueva solicitud de ${(TIME_OFF_LABELS[r.type] ?? r.type).toLowerCase()}`,
       detail: r.employee.user.fullName,
-      createdAt: r.createdAt.toISOString(),
       href: "/panel/rrhh/ausencias",
+      severity: rrhhSeverity("timeoff", r.status),
+      metadata: { status: r.status },
+      createdAt: r.createdAt.toISOString(),
     })),
     ...overtime.map((r) => ({
-      key: `overtime:${r.id}`,
+      id: `overtime:${r.id}`,
       type: "overtime" as const,
       title: `Nueva solicitud de horas extra (${r.hours} h)`,
       detail: r.employee.user.fullName,
-      createdAt: r.createdAt.toISOString(),
       href: "/panel/rrhh/horas-extras",
+      severity: rrhhSeverity("overtime", r.status),
+      metadata: { status: r.status },
+      createdAt: r.createdAt.toISOString(),
     })),
     ...benefits.map((r) => ({
-      key: `benefit:${r.id}`,
+      id: `benefit:${r.id}`,
       type: "benefit" as const,
       title: `Solicitud de beneficio: ${r.benefit.title}`,
       detail: r.employee.user.fullName,
-      createdAt: r.createdAt.toISOString(),
       href: "/panel/rrhh/beneficios",
+      severity: rrhhSeverity("benefit", r.status),
+      metadata: { status: r.status },
+      createdAt: r.createdAt.toISOString(),
     })),
     ...certificates.map((r) => ({
-      key: `certificate:${r.id}`,
+      id: `certificate:${r.id}`,
       type: "certificate" as const,
       title: "Solicitud de certificado laboral",
       detail: r.employee.user.fullName,
-      createdAt: r.createdAt.toISOString(),
       href: "/panel/rrhh/certificados",
+      severity: rrhhSeverity("certificate", r.status),
+      metadata: { status: r.status },
+      createdAt: r.createdAt.toISOString(),
     })),
     ...tickets.map((r) => ({
-      key: `ticket:${r.id}`,
+      id: `ticket:${r.id}`,
       type: "ticket" as const,
       title: `Ticket ${r.code}: ${r.subject}`,
       detail: `${r.category.name} · ${r.employee.user.fullName}`,
-      createdAt: r.createdAt.toISOString(),
       href: "/panel/rrhh/solicitudes",
+      severity: rrhhSeverity("ticket", r.status, r.priority),
+      metadata: { status: r.status, priority: r.priority },
+      createdAt: r.createdAt.toISOString(),
     })),
     ...announcements.map((r) => ({
-      key: `announcement:${r.id}`,
+      id: `announcement:${r.id}`,
       type: "announcement" as const,
       title: `Comunicado: ${r.title}`,
       detail: r.authorName ?? "Recursos Humanos",
-      createdAt: r.createdAt.toISOString(),
       href: "/panel/rrhh/noticias",
+      severity: rrhhSeverity("announcement"),
+      metadata: { author: r.authorName ?? null },
+      createdAt: r.createdAt.toISOString(),
     })),
-  ]
-    .map((item) => ({ ...item, read: readKeys.has(item.key) }))
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  ];
 
-  return Response.json({ items, unread: items.filter((i) => !i.read).length, windowDays: WINDOW_DAYS });
+  return items
+    .map((item) => ({ ...item, category: rrhhCategoryKey(item.type), read: readKeys.has(item.id) }))
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
-/** Marca notificaciones como leídas. Body: { keys: string[] } o { all: true, keys: string[] } */
+export async function GET(request: Request) {
+  const access = await requireActiveUser();
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!isRRHH(access.user)) return Response.json({ error: "No autorizado" }, { status: 403 });
+
+  const { searchParams } = new URL(request.url);
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? String(DEFAULT_LIMIT), 10)));
+
+  const all = await buildItems(access.user.id);
+  const counts = computeRrhhCounts(all);
+  const items = all.slice((page - 1) * limit, (page - 1) * limit + limit);
+
+  return Response.json({
+    items,
+    unread: counts.unread,
+    total: counts.total,
+    counts,
+    page,
+    limit,
+    windowDays: WINDOW_DAYS,
+  });
+}
+
+/**
+ * Marca notificaciones como leídas.
+ * Body admitido: { ids: string[] } o { keys: string[] } o { all: true }.
+ */
 export async function POST(request: Request) {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
   if (!isRRHH(access.user)) return Response.json({ error: "No autorizado" }, { status: 403 });
 
-  const body = (await request.json()) as { keys?: unknown };
-  const keys = Array.isArray(body.keys)
-    ? body.keys.filter((k): k is string => typeof k === "string" && k.length > 0 && k.length <= 200)
-    : [];
+  const body = (await request.json()) as { ids?: unknown; keys?: unknown; all?: boolean };
+  const pickKeys = (value: unknown) =>
+    Array.isArray(value)
+      ? value.filter((k): k is string => typeof k === "string" && k.length > 0 && k.length <= 200)
+      : [];
 
-  if (keys.length === 0) return Response.json({ error: "keys es obligatorio" }, { status: 400 });
+  let keys = pickKeys(body.ids);
+  if (keys.length === 0) keys = pickKeys(body.keys);
+  if (keys.length === 0 && body.all) {
+    const all = await buildItems(access.user.id);
+    keys = all.filter((i) => !i.read).map((i) => i.id);
+  }
+
+  if (keys.length === 0) return Response.json({ marked: 0 });
 
   await prisma.rrhhNotificationRead.createMany({
     data: keys.map((key) => ({ userId: access.user.id, key })),

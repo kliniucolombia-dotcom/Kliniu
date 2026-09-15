@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useState } from "react";
+import { createContext, createElement, useCallback, useContext, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { MdClose } from "react-icons/md";
@@ -9,6 +9,7 @@ import {
   notificationCategory,
   notificationPriority,
   PRIORITY_THEME,
+  type CategoryTheme,
 } from "@/lib/notifications/ui";
 
 export type NotificationDetailItem = {
@@ -20,6 +21,9 @@ export type NotificationDetailItem = {
   severity: string;
   createdAt: string;
   read: boolean;
+  /** Taxonomía visual alternativa (p. ej. RRHH) para el ícono y el badge. */
+  theme?: CategoryTheme;
+  icon?: React.ElementType;
 };
 
 type OpenFn = (item: NotificationDetailItem) => void;
@@ -49,6 +53,8 @@ export function NotificationDetailProvider({ children }: { children: React.React
     router.push(href);
   };
 
+  const theme = item ? item.theme ?? notificationCategory(item.type) : null;
+
   const modal =
     item && typeof document !== "undefined"
       ? createPortal(
@@ -64,16 +70,13 @@ export function NotificationDetailProvider({ children }: { children: React.React
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
-                  <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${notificationCategory(item.type).icon}`}>
-                    {(() => {
-                      const Icon = notificationIcon(item.type);
-                      return <Icon size={20} />;
-                    })()}
+                  <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${theme?.icon ?? notificationCategory(item.type).icon}`}>
+                    {createElement(item.icon ?? notificationIcon(item.type), { size: 20 })}
                   </span>
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold ${notificationCategory(item.type).pill}`}>
-                        {notificationCategory(item.type).label}
+                      <span className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold ${theme?.pill ?? notificationCategory(item.type).pill}`}>
+                        {theme?.label ?? notificationCategory(item.type).label}
                       </span>
                       {notificationPriority(item.severity) !== "baja" && (
                         <span className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold ${PRIORITY_THEME[notificationPriority(item.severity)].badge}`}>
