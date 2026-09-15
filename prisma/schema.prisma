@@ -118,6 +118,7 @@ model User {
   defaultCategoryFor       RequestCategory[]
   assignedTickets          Ticket[]           @relation("TicketResponsible")
   ticketComments           TicketComment[]
+  ticketEvents             TicketEvent[]      @relation("TicketEventActor")
   deliveryRoutesCreated    DeliveryRoute[]    @relation("DeliveryRouteCreatedBy")
   vehicleChecklistsCreated VehicleChecklistEntry[] @relation("VehicleChecklistCreatedBy")
   transportCostsCreated    TransportCost[]    @relation("TransportCostCreatedBy")
@@ -1420,6 +1421,7 @@ model Ticket {
   responsible User?              @relation("TicketResponsible", fields: [responsibleId], references: [id])
   attachments TicketAttachment[]
   comments    TicketComment[]
+  events      TicketEvent[]
 
   @@index([employeeId])
   @@index([categoryId])
@@ -1449,6 +1451,22 @@ model TicketComment {
 
   ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   user   User   @relation(fields: [userId], references: [id])
+
+  @@index([ticketId])
+}
+
+model TicketEvent {
+  id        String   @id @default(cuid())
+  ticketId  String
+  actorId   String?
+  type      String
+  field     String?
+  fromValue String?
+  toValue   String?
+  createdAt DateTime @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  actor  User?  @relation("TicketEventActor", fields: [actorId], references: [id])
 
   @@index([ticketId])
 }

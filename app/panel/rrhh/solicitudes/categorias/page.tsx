@@ -1,17 +1,19 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MdAdd, MdArrowBack, MdClose, MdCheck } from "react-icons/md";
+import { MdAdd, MdArrowBack, MdClose, MdCheck, MdDeleteOutline } from "react-icons/md";
 import { SimpleSelect } from "@/app/panel/_components/simple-select";
 
 type StaffUser = { id: string; fullName: string };
 type Department = { id: string; name: string; code: string };
+type FieldDef = { key: string; label: string; type: string; options?: string[]; required?: boolean };
 type Category = {
   id: string;
   name: string;
   icon: string | null;
   active: boolean;
   allowedDepartmentIds: string[];
+  fieldsSchema: FieldDef[];
   defaultResponsible: { id: string; fullName: string } | null;
   _count: { tickets: number };
 };
@@ -35,7 +37,9 @@ export default function CategoriasPage() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    void (async () => { await load(); })();
+  }, []);
 
   if (loading) return <div className="p-6 text-sm text-[#64748B]">Cargando…</div>;
 
@@ -43,7 +47,7 @@ export default function CategoriasPage() {
     <div className="space-y-6 p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <Link href="/panel/rrhh/solicitudes" className="mb-1 flex items-center gap-1 text-xs font-bold text-[#64748B] hover:text-[#1A1A1A]">
+          <Link href="/panel/tickets" className="mb-1 flex items-center gap-1 text-xs font-bold text-[#64748B] hover:text-[#1A1A1A]">
             <MdArrowBack size={14} /> Solicitudes
           </Link>
           <h1 className="text-xl font-black text-[#1A1A1A]">Categorías</h1>
@@ -129,18 +133,25 @@ function CategoryModal({ category, departments, staff, onClose, onSaved }: {
   onSaved: () => void;
 }) {
   const [name, setName] = useState(category?.name ?? "");
+  const [icon, setIcon] = useState(category?.icon ?? "");
   const [responsibleId, setResponsibleId] = useState(category?.defaultResponsible?.id ?? "");
   const [deptIds, setDeptIds] = useState<string[]>(category?.allowedDepartmentIds ?? []);
   const [active, setActive] = useState(category?.active ?? true);
+  const [fields, setFields] = useState<FieldDef[]>(category?.fieldsSchema ?? []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   const toggleDept = (id: string) => setDeptIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
 
+  const addField = () => setFields((prev) => [...prev, { key: "", label: "", type: "text", required: false }]);
+  const updateField = (index: number, patch: Partial<FieldDef>) =>
+    setFields((prev) => prev.map((f, i) => (i === index ? { ...f, ...patch } : f)));
+  const removeField = (index: number) => setFields((prev) => prev.filter((_, i) => i !== index));
+
   const submit = async () => {
     setSaving(true);
     setError("");
-    const body = { name, defaultResponsibleId: responsibleId || null, allowedDepartmentIds: deptIds, active };
+    const body = { name, icon, defaultResponsibleId: responsibleId || null, allowedDepartmentIds: deptIds, active, fieldsSchema: fields };
     const res = await fetch(category ? `/api/rrhh-local/ticket-categories/admin/${category.id}` : "/api/rrhh-local/ticket-categories/admin", {
       method: category ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
@@ -172,6 +183,13 @@ function CategoryModal({ category, departments, staff, onClose, onSaved }: {
             </div>
 
             <div>
+              <label className="mb-1 block text-xs font-bold text-[#64748B]">Icono (opcional)</label>
+              <input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="Ej. 🛠️ o deja vacío para usar el icono por defecto"
+                className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm" />
+              <p className="mt-1 text-xs text-[#94A3B8]">Puede ser un emoji. Si está vacío, se usa el icono según el nombre.</p>
+            </div>
+
+            <div>
               <label className="mb-1 block text-xs font-bold text-[#64748B]">Responsable por defecto</label>
               <SimpleSelect
                 value={responsibleId}
@@ -195,6 +213,51 @@ function CategoryModal({ category, departments, staff, onClose, onSaved }: {
                   );
                 })}
               </div>
+            </div>
+
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <label className="block text-xs font-bold text-[#64748B]">Campos personalizados</label>
+                <button type="button" onClick={addField} className="inline-flex items-center gap-1 rounded-lg border border-[#E2E8F0] px-2 py-1 text-xs font-bold text-[#27B1B8] hover:bg-[#F8FAFC]">
+                  <MdAdd size={13} /> Agregar campo
+                </button>
+              </div>
+              <p className="mb-2 text-xs text-[#94A3B8]">Se muestran al crear la solicitud (solo si la categoría está activa).</p>
+              {fields.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-[#E2E8F0] py-3 text-center text-xs text-[#94A3B8]">Sin campos personalizados.</p>
+              ) : (
+                <div className="space-y-2">
+                  {fields.map((f, i) => (
+                    <div key={i} className="rounded-xl border border-[#E2E8F0] p-2.5">
+                      <div className="flex items-center gap-2">
+                        <input value={f.label} onChange={(e) => updateField(i, { label: e.target.value })} placeholder="Etiqueta"
+                          className="min-w-0 flex-1 rounded-lg border border-[#E2E8F0] px-2.5 py-1.5 text-sm" />
+                        <div className="w-28">
+                          <SimpleSelect
+                            value={f.type}
+                            onChange={(v) => updateField(i, { type: v })}
+                            options={[{ value: "text", label: "Texto" }, { value: "select", label: "Lista" }, { value: "boolean", label: "Sí/No" }]}
+                          />
+                        </div>
+                        <button type="button" onClick={() => removeField(i)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#94A3B8] hover:bg-[#FEE2E2] hover:text-[#DC2626]" aria-label="Eliminar campo">
+                          <MdDeleteOutline size={16} />
+                        </button>
+                      </div>
+                      <input value={f.key} onChange={(e) => updateField(i, { key: e.target.value })} placeholder="Clave (ej. color)"
+                        className="mt-2 w-full rounded-lg border border-[#E2E8F0] px-2.5 py-1.5 text-xs" />
+                      {f.type === "select" && (
+                        <input value={(f.options ?? []).join(", ")} onChange={(e) => updateField(i, { options: e.target.value.split(",").map((o) => o.trim()).filter(Boolean) })}
+                          placeholder="Opciones separadas por coma"
+                          className="mt-2 w-full rounded-lg border border-[#E2E8F0] px-2.5 py-1.5 text-xs" />
+                      )}
+                      <label className="mt-2 flex items-center gap-2 text-xs font-semibold text-[#64748B]">
+                        <input type="checkbox" checked={Boolean(f.required)} onChange={(e) => updateField(i, { required: e.target.checked })} className="h-3.5 w-3.5 accent-[#27B1B8]" />
+                        Obligatorio
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center justify-between rounded-xl bg-[#F8FAFC] px-3.5 py-2.5">

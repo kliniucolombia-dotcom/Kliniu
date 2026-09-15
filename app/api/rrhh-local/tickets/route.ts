@@ -3,7 +3,8 @@ import { isAdmin, isRRHH } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { createNotification } from "@/lib/notifications";
-import { computeTicketDueDate, groupResponsiblesByDepartment, isAssigneeAllowed } from "@/lib/tickets";
+import { recordTicketEvent } from "@/lib/ticket-events";
+import { computeTicketDueDate, groupResponsiblesByDepartment, isAssigneeAllowed, validateTicketExtraFields, sanitizeTicketExtraFields } from "@/lib/tickets";
 
 const TICKET_INCLUDE = {
   category: { select: { name: true, icon: true } },
@@ -78,6 +79,9 @@ export async function POST(request: Request) {
     return Response.json({ error: "No tienes acceso a esta categoría" }, { status: 403 });
   }
 
+  const extraFieldsError = validateTicketExtraFields(category.fieldsSchema, extraFields);
+  if (extraFieldsError) return Response.json({ error: extraFieldsError }, { status: 400 });
+
   const priorityValue = ["BAJA", "MEDIA", "ALTA", "URGENTE"].includes(priority || "") ? priority : "MEDIA";
 
   let assigneeId: string | null = category.defaultResponsibleId;
@@ -97,27 +101,44 @@ export async function POST(request: Request) {
     (a) => typeof a.path === "string" && a.path.startsWith(`tickets/${access.user.id}/`),
   );
 
-  const count = await prisma.ticket.count();
-  const code = `TK-${String(count + 1).padStart(6, "0")}`;
+  const safeExtraFields = sanitizeTicketExtraFields(category.fieldsSchema, extraFields);
 
-  const created = await prisma.ticket.create({
-    data: {
-      code,
-      employeeId: employee.id,
-      categoryId,
-      priority: priorityValue as never,
-      subject: subject.trim(),
-      description: description.trim(),
-      location: location?.trim() || null,
-      extraFields: (extraFields ?? {}) as never,
-      responsibleId: assigneeId,
-      dueDate: computeTicketDueDate(priorityValue as string),
-      attachments: safeAttachments.length
-        ? { create: safeAttachments.map((a) => ({ url: a.path, name: a.name, size: a.size })) }
-        : undefined,
-    },
-    include: TICKET_INCLUDE,
-  });
+  // Código secuencial derivado del último existente (tolera borrados) con reintento ante colisión.
+  const buildCode = async () => {
+    const last = await prisma!.ticket.findFirst({ orderBy: { code: "desc" }, select: { code: true } });
+    const lastNumber = last ? Number.parseInt(last.code.replace(/\D/g, ""), 10) : 0;
+    const next = Number.isFinite(lastNumber) ? lastNumber + 1 : 1;
+    return `TK-${String(next).padStart(6, "0")}`;
+  };
+
+  const ticketData = {
+    employeeId: employee.id,
+    categoryId,
+    priority: priorityValue as never,
+    subject: subject.trim(),
+    description: description.trim(),
+    location: location?.trim() || null,
+    extraFields: safeExtraFields as never,
+    responsibleId: assigneeId,
+    dueDate: computeTicketDueDate(priorityValue as string),
+    attachments: safeAttachments.length
+      ? { create: safeAttachments.map((a) => ({ url: a.path, name: a.name, size: a.size })) }
+      : undefined,
+  };
+
+  let created;
+  for (let attempt = 0; ; attempt++) {
+    const code = await buildCode();
+    try {
+      created = await prisma.ticket.create({ data: { code, ...ticketData }, include: TICKET_INCLUDE });
+      break;
+    } catch (e) {
+      if (attempt < 2 && (e as { code?: string }).code === "P2002") continue;
+      throw e;
+    }
+  }
+  const code = created.code;
+  await recordTicketEvent({ ticketId: created.id, actorId: access.user.id, type: "CREATED", toValue: code });
   await broadcastPanelUpdate("tickets");
 
   createNotification({

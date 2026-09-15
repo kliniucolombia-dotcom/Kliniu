@@ -143,7 +143,7 @@ const NAV: NavItem[] = [
 
       { href: "/panel/rrhh/documentos", label: "Documentos", module: "MODULE_RRHH", group: "Operación", groupIcon: <MdAssignment size={14} />, icon: <MdDescription size={17} /> },
       { href: "/panel/rrhh/certificados", label: "Certificados", module: "MODULE_RRHH", icon: <MdVerified size={17} /> },
-      { href: "/panel/rrhh/solicitudes", label: "Solicitudes", module: "MODULE_RRHH", icon: <MdConfirmationNumber size={17} /> },
+      { href: "/panel/rrhh/solicitudes/categorias", label: "Categorías de solicitud", module: "MODULE_RRHH", icon: <MdSettings size={17} /> },
       { href: "/panel/rrhh/noticias", label: "Noticias", module: "MODULE_RRHH", icon: <MdArticle size={17} /> },
       { href: "/panel/rrhh/flujos", label: "Flujos", module: "MODULE_RRHH", icon: <MdSwapHoriz size={17} /> },
       { href: "/panel/rrhh/inventario", label: "Inventario", module: "MODULE_RRHH", icon: <MdInventory2 size={17} /> },

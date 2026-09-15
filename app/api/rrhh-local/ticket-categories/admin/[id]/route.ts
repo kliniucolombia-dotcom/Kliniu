@@ -1,5 +1,6 @@
 import { requireRRHH } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { sanitizeFieldsSchema } from "@/lib/tickets";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requireRRHH();
@@ -8,12 +9,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await request.json();
-  const { name, icon, defaultResponsibleId, allowedDepartmentIds, active } = body as {
+  const { name, icon, defaultResponsibleId, allowedDepartmentIds, active, fieldsSchema } = body as {
     name?: string;
     icon?: string | null;
     defaultResponsibleId?: string | null;
     allowedDepartmentIds?: string[];
     active?: boolean;
+    fieldsSchema?: unknown;
   };
 
   const updated = await prisma.requestCategory.update({
@@ -24,6 +26,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       ...(defaultResponsibleId !== undefined ? { defaultResponsibleId: defaultResponsibleId || null } : {}),
       ...(allowedDepartmentIds !== undefined ? { allowedDepartmentIds } : {}),
       ...(active !== undefined ? { active } : {}),
+      ...(fieldsSchema !== undefined ? { fieldsSchema: sanitizeFieldsSchema(fieldsSchema) as never } : {}),
     },
   });
   return Response.json(updated);

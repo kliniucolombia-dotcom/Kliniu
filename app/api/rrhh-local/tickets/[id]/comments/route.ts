@@ -2,6 +2,7 @@ import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { createNotification } from "@/lib/notifications";
+import { recordTicketEvent } from "@/lib/ticket-events";
 import { canManageTicket } from "@/lib/ticket-access";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -29,6 +30,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     data: { ticketId: id, userId: access.user.id, message: trimmed },
     include: { user: { select: { fullName: true } } },
   });
+
+  await recordTicketEvent({ ticketId: id, actorId: access.user.id, type: "COMMENT", toValue: trimmed.length > 140 ? `${trimmed.slice(0, 140)}…` : trimmed });
 
   const priorComments = await prisma.ticketComment.findMany({
     where: { ticketId: id },

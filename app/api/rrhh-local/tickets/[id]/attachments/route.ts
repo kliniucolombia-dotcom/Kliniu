@@ -2,6 +2,7 @@ import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { createSupabaseStorageClient } from "@/lib/supabase-storage";
+import { recordTicketEvent } from "@/lib/ticket-events";
 import { canManageTicket } from "@/lib/ticket-access";
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -60,6 +61,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const attachment = await prisma.ticketAttachment.create({
     data: { ticketId: id, url: filePath, name: file.name, size: file.size },
   });
+  await recordTicketEvent({ ticketId: id, actorId: access.user.id, type: "ATTACHMENT", toValue: file.name });
   await broadcastPanelUpdate("tickets");
 
   return Response.json(attachment, { status: 201 });

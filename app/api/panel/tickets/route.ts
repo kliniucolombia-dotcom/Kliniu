@@ -4,9 +4,8 @@ import { prisma } from "@/lib/prisma";
 
 const TICKET_INCLUDE = {
   category: { select: { name: true, icon: true } },
-  employee: { include: { user: { select: { fullName: true } } } },
+  employee: { include: { user: { select: { id: true, fullName: true } } } },
   responsible: { select: { id: true, fullName: true } },
-  attachments: true,
 } as const;
 
 export async function GET() {
