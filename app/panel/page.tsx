@@ -54,7 +54,7 @@ export default async function PanelDashboard() {
         { label: "Vendido esta semana", value: fmt(stats.weekTotal),               sub: `${stats.weekOrderCount} pedidos`,  color: "#27B1B8", icon: MdShoppingCart, trend: monthSalesTrend },
         { label: "Vendido este mes",    value: fmt(stats.monthTotal),              sub: `${stats.monthOrderCount} pedidos`, color: "#27B1B8", icon: MdTrendingUp, trend: monthSalesTrend },
         { label: "Inversión pauta",     value: fmtUSD(stats.totalInvestment),      sub: "total campañas",                   color: "#FF6B00", icon: MdCampaign, trend: stats.campaignTrends.investment },
-        { label: "Retorno campañas",    value: fmtUSD(stats.totalSales),           sub: "ventas generadas",                 color: "#16A34A", icon: MdGpsFixed, trend: stats.campaignTrends.sales },
+        { label: "Retorno campañas",    value: fmt(stats.totalSales),           sub: "ventas generadas",                 color: "#16A34A", icon: MdGpsFixed, trend: stats.campaignTrends.sales },
         { label: "ROAS general",        value: `×${stats.roasGeneral.toFixed(1)}`, sub: "meta ×10",                        color: stats.roasGeneral >= 10 ? "#16A34A" : stats.roasGeneral >= 7 ? "#D97706" : "#DC2626", icon: MdTrendingUp, trend: stats.campaignTrends.roas },
         { label: "Campañas en riesgo",  value: stats.atRisk.toString(),            sub: "ROAS < 7×",                        color: stats.atRisk > 0 ? "#DC2626" : "#16A34A", icon: MdWarningAmber, trend: stats.campaignTrends.risk },
         { label: "Clientes nuevos",     value: stats.newCustomers.toString(),      sub: "este mes",                         color: "#27B1B8", icon: MdPeopleOutline, trend: stats.dailyNewCustomers },
@@ -285,7 +285,7 @@ export default async function PanelDashboard() {
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#C2410C]">Mejor vendedor</p>
                   <p className="text-sm font-black text-[#1A1A1A]">{stats.topSeller.name}</p>
-                  <p className="text-xs text-[#64748B]">{fmtUSD(stats.topSeller.total)} en campañas</p>
+                  <p className="text-xs text-[#64748B]">{fmt(stats.topSeller.total)} en campañas</p>
                 </div>
               </div>
             )}

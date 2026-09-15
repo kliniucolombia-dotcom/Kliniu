@@ -7,8 +7,6 @@ export const metadata = { title: "Métricas — Panel Comercial" };
 
 const fmt = (n: number) =>
   n.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
-const fmtUSD = (n: number) =>
-  n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 export default async function MetricasPanel() {
   const access = await requirePermissionWithFallback("MODULE_METRICAS", "view");
@@ -95,7 +93,7 @@ export default async function MetricasPanel() {
                     <p className="text-[10px] text-[#94A3B8]">{s.email}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-black text-[#16A34A]">{fmtUSD(s.totalSales)}</p>
+                    <p className="text-sm font-black text-[#16A34A]">{fmt(s.totalSales)}</p>
                     <p className="text-[10px] text-[#94A3B8]">ROAS ×{s.roas.toFixed(1)}</p>
                   </div>
                 </div>

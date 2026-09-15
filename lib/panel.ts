@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getTrmForDate } from "@/lib/trm";
 import { buildSaleCalculatorSummary, sanitizeSaleCalcNumber, sanitizePct } from "@/lib/sale-calculator";
 import { buildQuotationSummary, calcLineTotal, type QuotationTaxConfigInput } from "@/lib/quotation-calculator";
 import { buildProductionSummary, sanitizeProductionNumber, type ProductionRunInput } from "@/lib/production-calculator";
@@ -96,8 +97,14 @@ export async function getDashboardStats() {
     dailyNewCustomers.push(dailyCustomerMap[key] ?? 0);
   }
 
+  // La inversión se guarda en USD y las ventas en COP: unificamos a COP con la TRM de cada campaña.
+  const campaignTrm = new Map<string, number>();
+  await Promise.all(campaigns.map(async (c) => { campaignTrm.set(c.id, await getTrmForDate(c.startDate)); }));
+  const investmentCop = (c: { id: string; investment: number }) => c.investment * (campaignTrm.get(c.id) ?? 0);
+
   // Serie acumulada de campañas (en orden de creación) para inversión/retorno/ROAS/riesgo
   let cumInvestment = 0;
+  let cumInvestmentCop = 0;
   let cumSales = 0;
   let cumRisk = 0;
   const investmentTrend: number[] = [];
@@ -106,12 +113,13 @@ export async function getDashboardStats() {
   const riskTrend: number[] = [];
   for (const c of campaigns) {
     cumInvestment += c.investment;
+    cumInvestmentCop += investmentCop(c);
     cumSales += c.sales;
-    const r = calcROAS(c.sales, c.investment);
+    const r = calcROAS(c.sales, investmentCop(c));
     if (r > 0 && r < 7) cumRisk += 1;
     investmentTrend.push(cumInvestment);
     salesTrend.push(cumSales);
-    roasTrend.push(calcROAS(cumSales, cumInvestment));
+    roasTrend.push(calcROAS(cumSales, cumInvestmentCop));
     riskTrend.push(cumRisk);
   }
 
@@ -119,11 +127,12 @@ export async function getDashboardStats() {
   const weekTotal   = weekOrders.reduce((s, o) => s + o.subtotal, 0);
   const monthTotal  = monthOrders.reduce((s, o) => s + o.subtotal, 0);
   const totalInvestment = campaigns.reduce((s, c) => s + c.investment, 0);
+  const totalInvestmentCop = campaigns.reduce((s, c) => s + investmentCop(c), 0);
   const totalSales      = campaigns.reduce((s, c) => s + c.sales, 0);
-  const roasGeneral     = calcROAS(totalSales, totalInvestment);
+  const roasGeneral     = calcROAS(totalSales, totalInvestmentCop);
 
   const atRisk = campaigns.filter((c) => {
-    const r = calcROAS(c.sales, c.investment);
+    const r = calcROAS(c.sales, investmentCop(c));
     return r > 0 && r < 7;
   }).length;
 
@@ -291,7 +300,7 @@ export async function updateProductPrice(
 
 export async function getCampaignsForPanel(sellerId?: string) {
   if (!prisma) return [];
-  return prisma.campaign.findMany({
+  const campaigns = await prisma.campaign.findMany({
     where: sellerId ? { sellerId } : undefined,
     include: {
       seller: { select: { id: true, fullName: true, email: true } },
@@ -300,6 +309,12 @@ export async function getCampaignsForPanel(sellerId?: string) {
     },
     orderBy: { createdAt: "desc" },
   });
+
+  // La inversión se captura en USD y las ventas en COP: adjuntamos la TRM de la fecha
+  // de inicio para poder comparar ambas en pesos al calcular el KPI.
+  return Promise.all(
+    campaigns.map(async (c) => ({ ...c, trm: await getTrmForDate(c.startDate) })),
+  );
 }
 
 // ─── Matriz diaria de campaña ───────────────────────────────────
@@ -316,14 +331,17 @@ export async function getCampaignDailyEntries(campaignId: string) {
     where: { campaignId },
     orderBy: { fecha: "asc" },
   });
-  return rows.map((r) => ({
-    id: r.id,
-    fecha: r.fecha.toISOString(),
-    mensajes: r.mensajes,
-    transacciones: r.transacciones,
-    presupuestoPublicidad: r.presupuestoPublicidad,
-    ventaDelDia: r.ventaDelDia,
-  }));
+  return Promise.all(
+    rows.map(async (r) => ({
+      id: r.id,
+      fecha: r.fecha.toISOString(),
+      mensajes: r.mensajes,
+      transacciones: r.transacciones,
+      presupuestoPublicidad: r.presupuestoPublicidad,
+      ventaDelDia: r.ventaDelDia,
+      trm: await getTrmForDate(r.fecha),
+    })),
+  );
 }
 
 export async function createCampaignDailyEntry(
@@ -334,7 +352,7 @@ export async function createCampaignDailyEntry(
   const fecha = new Date(data.fecha);
   if (Number.isNaN(fecha.getTime())) throw new Error("FECHA_INVALIDA");
 
-  return prisma.campaignDaily.create({
+  const row = await prisma.campaignDaily.create({
     data: {
       campaignId,
       fecha,
@@ -344,6 +362,8 @@ export async function createCampaignDailyEntry(
       ventaDelDia: sanitizeNumber(data.ventaDelDia),
     },
   });
+
+  return { ...row, trm: await getTrmForDate(fecha) };
 }
 
 export async function updateCampaignDailyEntry(
@@ -362,7 +382,7 @@ export async function updateCampaignDailyEntry(
   }
 
   try {
-    return await prisma.campaignDaily.update({
+    const row = await prisma.campaignDaily.update({
       where: { id },
       data: {
         fecha,
@@ -372,6 +392,7 @@ export async function updateCampaignDailyEntry(
         ventaDelDia: data.ventaDelDia !== undefined ? sanitizeNumber(data.ventaDelDia) : existing.ventaDelDia,
       },
     });
+    return { ...row, trm: await getTrmForDate(fecha) };
   } catch (err) {
     if (err instanceof Error && err.message.includes("Unique constraint")) throw new Error("FECHA_DUPLICADA");
     throw err;
@@ -409,20 +430,24 @@ export async function getMetrics(sellerId?: string) {
 
   const sellers = await prisma.user.findMany({
     where: { role: "SELLER" },
-    select: { id: true, fullName: true, email: true, campaigns: { select: { sales: true, investment: true } } },
+    select: { id: true, fullName: true, email: true, campaigns: { select: { startDate: true, sales: true, investment: true } } },
   });
 
-  const sellerRanking = sellers.map((s) => ({
-    id: s.id,
-    name: s.fullName,
-    email: s.email,
-    totalSales: s.campaigns.reduce((sum, c) => sum + c.sales, 0),
-    totalInvestment: s.campaigns.reduce((sum, c) => sum + c.investment, 0),
-    roas: calcROAS(
-      s.campaigns.reduce((sum, c) => sum + c.sales, 0),
-      s.campaigns.reduce((sum, c) => sum + c.investment, 0),
-    ),
-  })).sort((a, b) => b.totalSales - a.totalSales);
+  const sellerRanking = (await Promise.all(sellers.map(async (s) => {
+    const totalSales = s.campaigns.reduce((sum, c) => sum + c.sales, 0);
+    const totalInvestment = s.campaigns.reduce((sum, c) => sum + c.investment, 0);
+    const totalInvestmentCop = (
+      await Promise.all(s.campaigns.map(async (c) => c.investment * (await getTrmForDate(c.startDate))))
+    ).reduce((sum, v) => sum + v, 0);
+    return {
+      id: s.id,
+      name: s.fullName,
+      email: s.email,
+      totalSales,
+      totalInvestment,
+      roas: calcROAS(totalSales, totalInvestmentCop),
+    };
+  }))).sort((a, b) => b.totalSales - a.totalSales);
 
   return { monthlyData, sellerRanking };
 }

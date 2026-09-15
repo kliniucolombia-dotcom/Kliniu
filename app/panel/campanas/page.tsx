@@ -8,6 +8,7 @@ type Campaign = {
   id: string; name: string; platform: string; investment: number; sales: number;
   leads: number; targetMultiple: number; status: string; startDate: string;
   endDate?: string; notes?: string;
+  trm: number; // COP por USD de la fecha de inicio
   seller: { id: string; fullName: string; email: string };
   combo?: { id: string; name: string; image: string | null };
 };
@@ -84,6 +85,7 @@ export default function CampanasPanel() {
   const [alert, setAlert]           = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [dailyCampaign, setDailyCampaign] = useState<Campaign | null>(null);
   const [trm, setTrm] = useState(4000);
+  const [formTrm, setFormTrm] = useState<number | null>(null);
   const [dateFilter, setDateFilter] = useState("all");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
@@ -109,6 +111,15 @@ export default function CampanasPanel() {
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => { fetch("/api/trm").then((r) => r.json()).then((d) => d.rate && setTrm(d.rate)).catch(() => {}); }, []);
+
+  // TRM correspondiente a la fecha de inicio de la campaña (o la de hoy si aún no hay fecha).
+  useEffect(() => {
+    if (!showForm) return;
+    const url = form.startDate ? `/api/trm?date=${form.startDate}` : "/api/trm";
+    fetch(url).then((r) => r.json()).then((d) => d.rate && setFormTrm(d.rate)).catch(() => {});
+  }, [showForm, form.startDate]);
+
+  const previewTrm = formTrm ?? trm;
 
   const openNew = () => {
     setEditing(null);
@@ -244,8 +255,8 @@ export default function CampanasPanel() {
             <thead className="border-b border-[#E2E8F0] bg-[#F8FAFC]">
               <tr>
                 <TH>Campaña</TH>
-                <TH>Invertido</TH>
-                <TH>Vendido</TH>
+                <TH>Invertido (USD)</TH>
+                <TH>Vendido (COP)</TH>
                 <TH>ROAS</TH>
                 <TH>Leads</TH>
                 <TH>CPL</TH>
@@ -255,7 +266,8 @@ export default function CampanasPanel() {
             </thead>
             <tbody className="divide-y divide-[#F1F5F9]">
               {filteredCampaigns.map((c) => {
-                const roas   = calcROAS(c.sales, c.investment);
+                const inversionCop = c.investment * (c.trm || 0);
+                const roas   = calcROAS(c.sales, inversionCop);
                 const status = getCampaignStatus(roas);
                 const meta   = STATUS_META[status];
                 const cpl    = c.leads > 0 ? Math.round(c.investment / c.leads) : null;
@@ -265,8 +277,11 @@ export default function CampanasPanel() {
                       <p className="font-bold text-[#1A1A1A]">{c.name}</p>
                       <p className="text-xs text-[#94A3B8]">{c.seller.fullName} · {c.platform}</p>
                     </td>
-                    <td className="px-4 py-4 text-sm font-semibold text-[#1A1A1A]">{fmtUSD(c.investment)}</td>
-                    <td className="px-4 py-4 text-sm font-semibold text-[#1A1A1A]">{fmtUSD(c.sales)}</td>
+                    <td className="px-4 py-4 text-sm font-semibold text-[#1A1A1A]">
+                      {fmtUSD(c.investment)}
+                      <span className="block text-xs font-normal text-[#94A3B8]">≈ {fmtCOP(inversionCop)}</span>
+                    </td>
+                    <td className="px-4 py-4 text-sm font-semibold text-[#1A1A1A]">{fmtCOP(c.sales)}</td>
                     <td className="px-4 py-4">
                       <span className="text-sm font-black" style={{ color: meta.color }}>{roas.toFixed(2)}x</span>
                     </td>
@@ -334,12 +349,12 @@ export default function CampanasPanel() {
                 <label className="mb-1 block text-xs font-bold text-[#64748B]">Inversión (USD)</label>
                 <input type="number" value={form.investment} onChange={(e) => setForm({ ...form, investment: e.target.value })} className="no-spinner w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" placeholder="0" />
                 {form.investment && (
-                  <p className="mt-1 text-xs text-[#94A3B8]">≈ {fmtCOP(parseFloat(form.investment) * trm)} (TRM ${Math.round(trm).toLocaleString("es-CO")})</p>
+                  <p className="mt-1 text-xs text-[#94A3B8]">≈ {fmtCOP(parseFloat(form.investment) * previewTrm)} (TRM ${Math.round(previewTrm).toLocaleString("es-CO")})</p>
                 )}
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-bold text-[#64748B]">Ventas generadas (USD)</label>
+                <label className="mb-1 block text-xs font-bold text-[#64748B]">Ventas generadas (COP)</label>
                 <input type="number" value={form.sales} onChange={(e) => setForm({ ...form, sales: e.target.value })} className="no-spinner w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" placeholder="0" />
               </div>
 
@@ -376,7 +391,7 @@ export default function CampanasPanel() {
               {form.investment && form.sales && (
                 <div className="sm:col-span-2 rounded-xl bg-[#F0F9F8] p-3">
                   {(() => {
-                    const r = calcROAS(parseFloat(form.sales), parseFloat(form.investment));
+                    const r = calcROAS(parseFloat(form.sales), parseFloat(form.investment) * previewTrm);
                     const s = getCampaignStatus(r);
                     const m = STATUS_META[s];
                     const leadsN = parseInt(form.leads) || 0;

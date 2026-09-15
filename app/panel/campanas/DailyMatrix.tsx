@@ -7,8 +7,9 @@ import {
 } from "@/lib/panel-utils";
 
 const fmtUSD = (n: number) => `$${Math.round(n || 0).toLocaleString("en-US")}`;
+const fmtCOP = (n: number) => `$${Math.round(n || 0).toLocaleString("es-CO")}`;
 const fmtPct = (n: number) => `${((n || 0) * 100).toFixed(2)}%`;
-const fmtX = (n: number) => (n || 0).toFixed(2);
+const fmtX = (n: number) => `${(n || 0).toFixed(2)}x`;
 
 function toDateInputValue(iso: string) {
   return iso.slice(0, 10);
@@ -172,7 +173,7 @@ export default function DailyMatrix({ campaignId, campaignName, onClose }: { cam
       if (!r.ok) { setError(d.error ?? "Error al crear día"); return; }
       setEntries((prev) => [...prev, {
         id: d.id, fecha: d.fecha, mensajes: d.mensajes, transacciones: d.transacciones,
-        presupuestoPublicidad: d.presupuestoPublicidad, ventaDelDia: d.ventaDelDia,
+        presupuestoPublicidad: d.presupuestoPublicidad, ventaDelDia: d.ventaDelDia, trm: d.trm,
       }]);
     } finally {
       setAdding(false);
@@ -199,22 +200,23 @@ export default function DailyMatrix({ campaignId, campaignName, onClose }: { cam
         ) : (
           <>
             <div className="overflow-x-auto rounded-xl border border-[#E2E8F0]">
-              <table className="w-full table-fixed border-collapse text-sm" style={{ minWidth: 900 }}>
+              <table className="w-full table-fixed border-collapse text-sm" style={{ minWidth: 1040 }}>
                 <colgroup>
                   <col style={{ width: 130 }} />
+                  <col style={{ width: 80 }} />
                   <col style={{ width: 90 }} />
-                  <col style={{ width: 90 }} />
                   <col style={{ width: 100 }} />
                   <col style={{ width: 100 }} />
+                  <col style={{ width: 120 }} />
                   <col style={{ width: 100 }} />
-                  <col style={{ width: 100 }} />
+                  <col style={{ width: 110 }} />
                   <col style={{ width: 100 }} />
                   <col style={{ width: 110 }} />
                   <col style={{ width: 70 }} />
                 </colgroup>
                 <thead className="bg-[#F8FAFC]">
                   <tr>
-                    {["Fecha", "Mensajes", "KPI Mensajes", "Transacciones", "Presupuesto", "KPI Conversión", "Venta del día", "Meta diaria", "Venta acumulada", ""].map((h) => (
+                    {["Fecha", "Mensajes", "KPI Mensajes", "Transacciones", "Presupuesto (USD)", "Presupuesto (COP)", "KPI Conversión", "Venta del día (COP)", "Meta diaria", "Venta acumulada", ""].map((h) => (
                       <th key={h} className="truncate border border-[#E2E8F0] px-2 py-2 text-left text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">{h}</th>
                     ))}
                   </tr>
@@ -235,10 +237,11 @@ export default function DailyMatrix({ campaignId, campaignName, onClose }: { cam
                       <td className="truncate border border-[#E2E8F0] px-2 py-1.5 text-right font-semibold text-[#1A1A1A]">{fmtPct(row.kpiMensajes)}</td>
                       <td className="border border-[#E2E8F0] px-2 py-1.5"><NumCell id={row.id} field="transacciones" value={row.transacciones} integer patchField={patchField} commitField={commitField} /></td>
                       <td className="border border-[#E2E8F0] px-2 py-1.5"><NumCell id={row.id} field="presupuestoPublicidad" value={row.presupuestoPublicidad} patchField={patchField} commitField={commitField} /></td>
-                      <td className="truncate border border-[#E2E8F0] px-2 py-1.5 text-right font-semibold text-[#1A1A1A]">{fmtPct(row.kpiConversion)}</td>
+                      <td className="truncate border border-[#E2E8F0] px-2 py-1.5 text-right text-[#64748B]" title={`TRM $${Math.round(row.trm).toLocaleString("es-CO")}`}>{fmtCOP(row.presupuestoCOP)}</td>
+                      <td className="truncate border border-[#E2E8F0] px-2 py-1.5 text-right font-semibold text-[#1A1A1A]">{fmtX(row.kpiConversion)}</td>
                       <td className="border border-[#E2E8F0] px-2 py-1.5"><NumCell id={row.id} field="ventaDelDia" value={row.ventaDelDia} patchField={patchField} commitField={commitField} /></td>
-                      <td className="truncate border border-[#E2E8F0] px-2 py-1.5 text-right font-semibold text-[#1A1A1A]">{fmtUSD(row.metaDiaria)}</td>
-                      <td className="truncate border border-[#E2E8F0] px-2 py-1.5 text-right font-semibold text-[#1A1A1A]">{fmtUSD(row.ventaAcumulada)}</td>
+                      <td className="truncate border border-[#E2E8F0] px-2 py-1.5 text-right font-semibold text-[#1A1A1A]">{fmtCOP(row.metaDiaria)}</td>
+                      <td className="truncate border border-[#E2E8F0] px-2 py-1.5 text-right font-semibold text-[#1A1A1A]">{fmtCOP(row.ventaAcumulada)}</td>
                       <td className="border border-[#E2E8F0] px-2 py-1.5 text-center">
                         <button onClick={() => removeRow(row.id)} className="text-xs font-bold text-[#DC2626] hover:opacity-70">Eliminar</button>
                       </td>
@@ -246,7 +249,7 @@ export default function DailyMatrix({ campaignId, campaignName, onClose }: { cam
                   ))}
                   {rows.length === 0 && (
                     <tr>
-                      <td colSpan={10} className="border border-[#E2E8F0] px-2 py-6 text-center text-sm text-[#94A3B8]">Sin días registrados todavía</td>
+                      <td colSpan={11} className="border border-[#E2E8F0] px-2 py-6 text-center text-sm text-[#94A3B8]">Sin días registrados todavía</td>
                     </tr>
                   )}
                 </tbody>
@@ -256,11 +259,11 @@ export default function DailyMatrix({ campaignId, campaignName, onClose }: { cam
                     <td className="truncate border border-[#E2E8F0] px-2 py-2 text-right">{totals.totalMensajes}</td>
                     <td className="truncate border border-[#E2E8F0] px-2 py-2 text-right">{fmtPct(totals.conversionGeneral)}</td>
                     <td className="truncate border border-[#E2E8F0] px-2 py-2 text-right">{totals.totalTransacciones}</td>
-                    <td className="truncate border border-[#E2E8F0] px-2 py-2 text-right">{fmtUSD(totals.totalInversion)}</td>
-                    <td className="truncate border border-[#E2E8F0] px-2 py-2 text-right">{fmtX(totals.roasPromedio)}</td>
-                    <td className="truncate border border-[#E2E8F0] px-2 py-2 text-right">{fmtUSD(totals.totalVentas)}</td>
-                    <td className="border border-[#E2E8F0] px-2 py-2" colSpan={2} />
-                    <td className="border border-[#E2E8F0] px-2 py-2" />
+                    <td className="truncate border border-[#E2E8F0] px-2 py-2 text-right">{fmtUSD(totals.totalInversionUSD)}</td>
+                    <td className="truncate border border-[#E2E8F0] px-2 py-2 text-right">{fmtCOP(totals.totalInversion)}</td>
+                    <td className="truncate border border-[#E2E8F0] px-2 py-2 text-right">{fmtX(totals.kpiGeneral)}</td>
+                    <td className="truncate border border-[#E2E8F0] px-2 py-2 text-right">{fmtCOP(totals.totalVentas)}</td>
+                    <td className="border border-[#E2E8F0] px-2 py-2" colSpan={3} />
                   </tr>
                 </tfoot>
               </table>
