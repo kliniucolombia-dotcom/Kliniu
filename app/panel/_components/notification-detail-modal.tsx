@@ -4,7 +4,12 @@ import { createContext, useCallback, useContext, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { MdClose } from "react-icons/md";
-import { notificationIcon, notificationModuleLabel, severityTheme } from "@/lib/notifications/ui";
+import {
+  notificationIcon,
+  notificationCategory,
+  notificationPriority,
+  PRIORITY_THEME,
+} from "@/lib/notifications/ui";
 
 export type NotificationDetailItem = {
   id: string;
@@ -59,16 +64,23 @@ export function NotificationDetailProvider({ children }: { children: React.React
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
-                  <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${severityTheme(item.severity).icon}`}>
+                  <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${notificationCategory(item.type).icon}`}>
                     {(() => {
                       const Icon = notificationIcon(item.type);
                       return <Icon size={20} />;
                     })()}
                   </span>
                   <div className="min-w-0">
-                    <span className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold ${severityTheme(item.severity).pill}`}>
-                      {notificationModuleLabel(item.type)}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold ${notificationCategory(item.type).pill}`}>
+                        {notificationCategory(item.type).label}
+                      </span>
+                      {notificationPriority(item.severity) !== "baja" && (
+                        <span className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold ${PRIORITY_THEME[notificationPriority(item.severity)].badge}`}>
+                          {PRIORITY_THEME[notificationPriority(item.severity)].label}
+                        </span>
+                      )}
+                    </div>
                     <h3 className="mt-1.5 text-base font-black text-[#1A1A1A]">{item.title}</h3>
                   </div>
                 </div>

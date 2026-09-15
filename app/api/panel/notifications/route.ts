@@ -1,6 +1,7 @@
 import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { isSuperAdmin } from "@/lib/roles";
+import { computeNotificationCounts } from "@/lib/notifications/categories";
 
 const WINDOW_DAYS = 60;
 const DEFAULT_LIMIT = 50;
@@ -79,13 +80,13 @@ export async function GET(request: Request) {
       : [];
     const readSet = new Set(readRecords.map((r) => r.notificationId));
 
-    // Paso 3: contar no leídas (total, sin paginación)
+    // Paso 3: totales y conteos por categoría/prioridad (sin paginación)
     const allNotifs = await prisma.notification.findMany({
       where: {
         createdAt: { gte: since },
         ...roleFilter,
       },
-      select: { id: true },
+      select: { id: true, type: true, category: true, severity: true },
     });
     const allIds = allNotifs.map((n) => n.id);
     const allReads = allIds.length > 0
@@ -95,7 +96,16 @@ export async function GET(request: Request) {
         })
       : [];
     const allReadSet = new Set(allReads.map((r) => r.notificationId));
-    const unread = allNotifs.filter((n) => !allReadSet.has(n.id)).length;
+    const isRead = (id: string) => allReadSet.has(id);
+
+    const counts = computeNotificationCounts(
+      allNotifs.map((n) => ({
+        type: n.type,
+        category: n.category,
+        severity: n.severity,
+        read: isRead(n.id),
+      })),
+    );
 
     const result: ApiNotificationItem[] = notifications.map((n) => ({
       id: n.id,
@@ -114,8 +124,9 @@ export async function GET(request: Request) {
 
     return Response.json({
       items: filtered,
-      unread,
-      total: unread + readSet.size,
+      unread: counts.unread,
+      total: counts.total,
+      counts,
       page,
       limit,
       windowDays: WINDOW_DAYS,

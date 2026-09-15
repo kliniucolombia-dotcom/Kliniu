@@ -47,13 +47,36 @@ export function SimpleSelect({
 
   // El menú portalizado va en coordenadas de viewport: se recalcula al abrir y
   // se cierra si algo scrollea debajo (así no queda flotando fuera de sitio).
+  // El ancho real del menú solo se conoce tras montarlo, así que se reposiciona
+  // en el siguiente frame para no salirse por el borde derecho de la pantalla.
   useEffect(() => {
     if (!open || !portal) return;
+    let raf = 0;
+    let attempts = 0;
     const place = () => {
       const rect = triggerRef.current?.getBoundingClientRect();
-      if (rect) setMenuPos({ top: openUp ? rect.top : rect.bottom + 4, left: rect.left, width: rect.width });
+      if (!rect) return;
+      const margin = 8;
+      const menuEl = menuRef.current;
+      // El ancho real solo se conoce tras montar el menú: se estima una primera
+      // vez (sin salirse) y se refina en el siguiente frame.
+      const estimate = Math.min(280, Math.max(rect.width, 160));
+      if (!menuEl && attempts < 3) {
+        attempts++;
+        let estLeft = rect.left;
+        if (estLeft + estimate > window.innerWidth - margin) estLeft = window.innerWidth - estimate - margin;
+        if (estLeft < margin) estLeft = margin;
+        setMenuPos({ top: openUp ? rect.top : rect.bottom + 4, left: estLeft, width: rect.width });
+        raf = requestAnimationFrame(place);
+        return;
+      }
+      const menuWidth = menuEl ? menuEl.getBoundingClientRect().width : estimate;
+      let left = rect.left;
+      if (left + menuWidth > window.innerWidth - margin) left = window.innerWidth - menuWidth - margin;
+      if (left < margin) left = margin;
+      setMenuPos({ top: openUp ? rect.top : rect.bottom + 4, left, width: rect.width });
     };
-    place();
+    raf = requestAnimationFrame(place);
     const close = () => setOpen(false);
     const onScroll = (e: Event) => {
       // Ignora el scroll dentro del propio menú (rueda del ratón / barra)
@@ -63,6 +86,7 @@ export function SimpleSelect({
     window.addEventListener("scroll", onScroll, true);
     window.addEventListener("resize", close);
     return () => {
+      cancelAnimationFrame(raf);
       window.removeEventListener("scroll", onScroll, true);
       window.removeEventListener("resize", close);
     };

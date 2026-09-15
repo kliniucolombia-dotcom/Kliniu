@@ -4,6 +4,8 @@ import {
   MdBuild, MdPeople, MdCampaign, MdAnnouncement,
 } from "react-icons/md";
 
+export * from "./categories";
+
 export const TYPE_ICON: Record<string, React.ElementType> = {
   order: MdShoppingCart,
   quotation: MdDescription,
