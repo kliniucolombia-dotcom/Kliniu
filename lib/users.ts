@@ -271,6 +271,7 @@ export type CreateUserByAdminInput = {
   email: string;
   password: string;
   role: UserRole;
+  avatarUrl?: string | null;
 };
 
 export async function createUserByAdmin(input: CreateUserByAdminInput): Promise<PublicUser> {
@@ -298,6 +299,7 @@ export async function createUserByAdmin(input: CreateUserByAdminInput): Promise<
       email,
       passwordHash,
       role: input.role,
+      avatarUrl: input.avatarUrl?.trim() || null,
     },
     select: {
       id: true, fullName: true, company: true, email: true, phone: true, whatsappPhone: true,

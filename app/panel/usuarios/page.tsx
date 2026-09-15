@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_PERMISSIONS } from "@/lib/permission-defaults";
 import { SimpleSelect } from "../_components/simple-select";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
@@ -95,6 +95,27 @@ const ROLE_LABELS: Record<Role, string> = {
   MANTENIMIENTO: "Mantenimiento",
   JEFE_OPERACIONES: "Jefe de Operaciones",
   DIRECTOR_OPERACIONES: "Director de Operaciones",
+};
+
+const ROLE_DESCRIPTIONS: Record<Role, string> = {
+  CUSTOMER: "Puede ver sus pedidos y compras.",
+  ADMIN: "Acceso completo a la administración del sistema.",
+  SELLER: "Puede gestionar ventas y sus pedidos.",
+  PACKING: "Encargado del empaque y despacho de pedidos.",
+  SUPERADMIN: "Control total, sin restricciones de permisos.",
+  RRHH: "Gestiona la información del personal.",
+  BODEGA: "Administra inventario y bodegas.",
+  DISENO: "Gestiona piezas y material de diseño.",
+  MARKETING: "Administra campañas y contenido.",
+  JEFE_VENTAS: "Supervisa al equipo de ventas y sus pedidos.",
+  TESORERIA: "Gestiona pagos y movimientos financieros.",
+  INGENIERIA: "Acceso a procesos técnicos y de producción.",
+  LOGISTICA: "Coordina envíos y entregas.",
+  LIDER_ENSAMBLE: "Supervisa la planta de ensamble.",
+  LIDER_INYECCION: "Supervisa la planta de inyección.",
+  MANTENIMIENTO: "Gestiona mantenimiento de equipos.",
+  JEFE_OPERACIONES: "Supervisa la operación general.",
+  DIRECTOR_OPERACIONES: "Dirige las operaciones de la empresa.",
 };
 
 const STATUS_LABELS: Record<Status, string> = {
@@ -335,6 +356,9 @@ export default function UsuariosPage() {
   const [toast, setToast] = useState("");
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ fullName: "", email: "", password: "", role: "SELLER" as Role });
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [permUserId, setPermUserId] = useState<string | null>(null);
   const [perms, setPerms] = useState<ModulePermission[]>([]);
@@ -379,16 +403,42 @@ export default function UsuariosPage() {
     setTimeout(() => setToast(""), 3000);
   };
 
+  const uploadAvatar = async (file: File) => {
+    setError("");
+    setAvatarUploading(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/panel/users/avatar", { method: "POST", body: fd });
+    if (res.ok) {
+      const data = await res.json();
+      setAvatarUrl(data.avatarUrl);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Error al subir la imagen");
+    }
+    setAvatarUploading(false);
+  };
+
+  const generatePassword = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+    const values = new Uint32Array(12);
+    crypto.getRandomValues(values);
+    const pwd = Array.from(values, (n) => chars[n % chars.length]).join("");
+    setForm((f) => ({ ...f, password: pwd }));
+    setShowPassword(true);
+  };
+
   const createUser = async () => {
     setError("");
     const res = await fetch("/api/panel/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, avatarUrl: avatarUrl || null }),
     });
     if (res.ok) {
       const newUser = await res.json();
       setForm({ fullName: "", email: "", password: "", role: "SELLER" });
+      setAvatarUrl("");
       setCreating(false);
       loadUsers();
       setPermUserId(newUser.id);
@@ -588,7 +638,7 @@ export default function UsuariosPage() {
           </div>
         </div>
         <button
-          onClick={() => setCreating(true)}
+          onClick={() => { setAvatarUrl(""); setError(""); setCreating(true); }}
           className="shrink-0 rounded-xl bg-[#27B1B8] px-4 py-2 text-sm font-bold text-white"
         >
           + Nuevo usuario
@@ -616,49 +666,127 @@ export default function UsuariosPage() {
       {creating && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 p-4">
           <div className="flex min-h-full items-center justify-center">
-            <div className="flex max-h-[85dvh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white">
-              <div className="flex items-center justify-between border-b border-[#E2E8F0] p-5">
-                <h3 className="font-black text-[#1A1A1A]">Nuevo usuario</h3>
-                <button onClick={() => setCreating(false)} className="text-[#94A3B8] hover:text-[#1A1A1A]">✕</button>
-              </div>
-              <div className="grid grid-cols-1 gap-3 overflow-y-auto p-5">
-                <input placeholder="Nombre completo" value={form.fullName}
-                  onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-                  className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
-                <input placeholder="Correo" value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm" />
-                <div className="relative">
-                  <input placeholder="Contraseña" type={showPassword ? "text" : "password"} value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2 pr-9 text-sm" />
-                  <button type="button" onClick={() => setShowPassword((v) => !v)}
-                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#27B1B8]">
-                    {showPassword ? (
-                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
-                        <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
-                        <path d="M3 3l18 18" />
-                        <path d="M10.6 5.2A10.6 10.6 0 0112 5c6 0 10 7 10 7a17.7 17.7 0 01-3.2 4M6.5 6.6C3.9 8.3 2 12 2 12s4 7 10 7a9.9 9.9 0 004.4-1" />
-                        <path d="M9.9 9.9a3 3 0 004.2 4.2" />
-                      </svg>
-                    )}
-                  </button>
+            <div className="flex max-h-[85dvh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white">
+              <div className="flex items-start justify-between gap-4 p-6 pb-4">
+                <div>
+                  <h3 className="text-lg font-black text-[#1A1A1A]">Nuevo usuario</h3>
+                  <p className="mt-0.5 text-sm text-[#64748B]">Completa la información para crear un nuevo acceso.</p>
                 </div>
-                <SimpleSelect
-                  value={form.role}
-                  options={ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
-                  onChange={(v) => setForm({ ...form, role: v as Role })}
-                />
+                <button onClick={() => setCreating(false)} aria-label="Cerrar"
+                  className="shrink-0 text-[#94A3B8] hover:text-[#1A1A1A]">
+                  <IconX />
+                </button>
               </div>
-              <div className="flex gap-2 border-t border-[#E2E8F0] p-5">
-                <button onClick={() => setCreating(false)} className="flex-1 rounded-lg border border-[#E2E8F0] py-2.5 text-sm font-bold text-[#64748B]">Cancelar</button>
-                <button onClick={createUser} className="flex-1 rounded-lg bg-[#27B1B8] py-2.5 text-sm font-bold text-white">
-                  Crear
+              <div className="flex flex-col gap-4 overflow-y-auto px-6 pb-6">
+                <div>
+                  <label className="mb-1.5 block text-sm font-bold text-[#1A1A1A]">Foto de perfil</label>
+                  <div className="flex items-center gap-4">
+                    <div className="relative shrink-0">
+                      <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-[#E2E8F0] text-[#94A3B8]">
+                        {avatarUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={avatarUrl} alt="Foto de perfil" className="h-full w-full object-cover" />
+                        ) : (
+                          <svg viewBox="0 0 24 24" className="h-10 w-10" fill="currentColor">
+                            <circle cx="12" cy="8" r="4" />
+                            <path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7v1H4v-1z" />
+                          </svg>
+                        )}
+                      </div>
+                      <button type="button" onClick={() => avatarInputRef.current?.click()} disabled={avatarUploading}
+                        aria-label="Subir foto"
+                        className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-[#27B1B8] text-white disabled:opacity-50">
+                        {avatarUploading ? (
+                          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 animate-spin" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 12a9 9 0 11-6.2-8.6" />
+                          </svg>
+                        ) : (
+                          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M12 5v14M5 12h14" />
+                          </svg>
+                        )}
+                      </button>
+                      <input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) uploadAvatar(file);
+                          e.target.value = "";
+                        }} />
+                    </div>
+                    <div>
+                      <button type="button" onClick={() => avatarInputRef.current?.click()} disabled={avatarUploading}
+                        className="flex items-center gap-2 rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm font-bold text-[#0E7C82] hover:bg-[#F8FAFC] disabled:opacity-50">
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
+                          <path d="M3 8a2 2 0 012-2h1.5l1-1.5h5l1 1.5H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+                          <circle cx="12" cy="12.5" r="3.2" />
+                        </svg>
+                        {avatarUploading ? "Subiendo…" : "Subir foto"}
+                      </button>
+                      <p className="mt-1.5 text-xs text-[#94A3B8]">JPG o PNG. Máx. 5 MB.</p>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-bold text-[#1A1A1A]">Nombre completo</label>
+                  <input placeholder="Ej. María González" value={form.fullName}
+                    onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                    className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2.5 text-sm text-[#1A1A1A] placeholder:text-[#94A3B8] focus:border-[#27B1B8] focus:outline-none" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-bold text-[#1A1A1A]">Correo electrónico</label>
+                  <input placeholder="Ej. maria@empresa.com" value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2.5 text-sm text-[#1A1A1A] placeholder:text-[#94A3B8] focus:border-[#27B1B8] focus:outline-none" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-bold text-[#1A1A1A]">Contraseña temporal</label>
+                  <div className="relative">
+                    <input placeholder="Ingresa una contraseña" type={showPassword ? "text" : "password"} value={form.password}
+                      onChange={(e) => setForm({ ...form, password: e.target.value })}
+                      className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2.5 pr-10 text-sm text-[#1A1A1A] placeholder:text-[#94A3B8] focus:border-[#27B1B8] focus:outline-none" />
+                    <button type="button" onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#27B1B8]">
+                      {showPassword ? (
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
+                          <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
+                          <path d="M3 3l18 18" />
+                          <path d="M10.6 5.2A10.6 10.6 0 0112 5c6 0 10 7 10 7a17.7 17.7 0 01-3.2 4M6.5 6.6C3.9 8.3 2 12 2 12s4 7 10 7a9.9 9.9 0 004.4-1" />
+                          <path d="M9.9 9.9a3 3 0 004.2 4.2" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between gap-2">
+                    <span className={`text-xs ${form.password && form.password.length < 8 ? "text-[#DC2626]" : "text-[#94A3B8]"}`}>Mínimo 8 caracteres</span>
+                    <button type="button" onClick={generatePassword}
+                      className="flex items-center gap-1 text-xs font-bold text-[#0E7C82] hover:text-[#27B1B8]">
+                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
+                        <path d="M12 2l1.6 4.9L18.5 8.5l-4.9 1.6L12 15l-1.6-4.9L5.5 8.5l4.9-1.6L12 2z" />
+                        <path d="M19 14l.8 2.4 2.4.8-2.4.8L19 20l-.8-2.4-2.4-.8 2.4-.8L19 14z" />
+                      </svg>
+                      Generar contraseña
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-bold text-[#1A1A1A]">Rol</label>
+                  <SimpleSelect
+                    value={form.role}
+                    options={ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
+                    onChange={(v) => setForm({ ...form, role: v as Role })}
+                  />
+                  <p className="mt-1.5 text-xs text-[#94A3B8]">{ROLE_DESCRIPTIONS[form.role]}</p>
+                </div>
+              </div>
+              <div className="flex gap-3 border-t border-[#E2E8F0] p-6 pt-4">
+                <button onClick={() => setCreating(false)} className="flex-1 rounded-lg border border-[#E2E8F0] py-3 text-sm font-bold text-[#64748B] hover:bg-[#F8FAFC]">Cancelar</button>
+                <button onClick={createUser} className="flex-1 rounded-lg bg-[#27B1B8] py-3 text-sm font-bold text-white hover:bg-[#0E7C82]">
+                  Crear usuario
                 </button>
               </div>
             </div>

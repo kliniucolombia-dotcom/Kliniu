@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   const body = await request.json().catch(() => ({})) as {
-    fullName?: string; email?: string; password?: string;
+    fullName?: string; email?: string; password?: string; avatarUrl?: string | null;
     role?: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "BODEGA" | "DISENO" | "MARKETING" | "JEFE_VENTAS" | "TESORERIA" | "INGENIERIA" | "LOGISTICA" | "LIDER_ENSAMBLE" | "LIDER_INYECCION" | "MANTENIMIENTO" | "JEFE_OPERACIONES" | "DIRECTOR_OPERACIONES";
   };
 
@@ -29,6 +29,7 @@ export async function POST(request: Request) {
       email: body.email,
       password: body.password,
       role: body.role,
+      avatarUrl: body.avatarUrl,
     });
 
     createNotification({
