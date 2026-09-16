@@ -516,7 +516,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                 type="button"
                 onClick={openProfileModal}
                 title={collapsed ? userInfo.fullName : undefined}
-                className={`flex items-center gap-2.5 rounded-xl bg-[#F8FAFC] transition-colors hover:bg-[#F1F5F9] text-left ${collapsed ? "p-1" : "flex-1 px-3 py-2"}`}
+                className={`flex items-center gap-2.5 rounded-xl bg-[#F8FAFC] transition-colors hover:bg-[#F1F5F9] text-left ${collapsed ? "p-1" : "min-w-0 flex-1 px-3 py-2"}`}
               >
                 {userInfo.avatarUrl ? (
                   <img src={userInfo.avatarUrl} alt={userInfo.fullName} className="h-8 w-8 shrink-0 rounded-full object-cover" />
