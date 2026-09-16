@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ADVISORS, formatAdvisorPhone, type Advisor } from "@/lib/advisors";
 
 type ContactItem = {
   label: string;
@@ -9,33 +10,22 @@ type ContactItem = {
   icon: React.ReactNode;
 };
 
-const ASESORES = ["573112088806", "573226556454", "573105750449"];
-const EMAILS = ["ventas@kliniu.com", "david.avila@kliniu.com"];
-
-function formatPhone(phone: string) {
-  const country = phone.slice(0, 2);
-  const rest = phone.slice(2);
-  return `+${country} ${rest.slice(0, 3)} ${rest.slice(3, 6)} ${rest.slice(6)}`;
-}
-
 export default function ContactBar({ items }: { items: ContactItem[] }) {
-  const [phone, setPhone] = useState<string | null>(null);
-  const [email, setEmail] = useState<string | null>(null);
+  const [advisor, setAdvisor] = useState<Advisor | null>(null);
 
   useEffect(() => {
-    setPhone(ASESORES[Math.floor(Math.random() * ASESORES.length)]);
-    setEmail(EMAILS[Math.floor(Math.random() * EMAILS.length)]);
+    setAdvisor(ADVISORS[Math.floor(Math.random() * ADVISORS.length)]);
   }, []);
 
   const resolved = items.map((item) => {
-    if (item.label === "Llámanos" && phone) {
-      return { ...item, value: formatPhone(phone), href: `tel:+${phone}` };
+    if (item.label === "Llámanos" && advisor) {
+      return { ...item, value: formatAdvisorPhone(advisor.phone), href: `tel:+${advisor.phone}` };
     }
-    if (item.label === "WhatsApp" && phone) {
-      return { ...item, value: formatPhone(phone), href: `https://wa.me/${phone}` };
+    if (item.label === "WhatsApp" && advisor) {
+      return { ...item, value: formatAdvisorPhone(advisor.phone), href: `https://wa.me/${advisor.phone}` };
     }
-    if (item.label === "Escríbenos" && email) {
-      return { ...item, value: email, href: `mailto:${email}` };
+    if (item.label === "Escríbenos" && advisor) {
+      return { ...item, value: advisor.email, href: `mailto:${advisor.email}` };
     }
     return item;
   });

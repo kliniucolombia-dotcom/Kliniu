@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { ADVISOR_PHONES } from "@/lib/advisors";
 
 export type AsesorBannerData = {
   desktopImage: string | null;
@@ -8,11 +9,9 @@ export type AsesorBannerData = {
   link: string | null;
 };
 
-const ASESORES = ["573112088806", "573226556454", "573105750449"];
-
 function pickAsesorLink(customLink: string | null | undefined) {
   if (customLink) return customLink;
-  const phone = ASESORES[Math.floor(Math.random() * ASESORES.length)];
+  const phone = ADVISOR_PHONES[Math.floor(Math.random() * ADVISOR_PHONES.length)];
   return `https://wa.me/${phone}`;
 }
 

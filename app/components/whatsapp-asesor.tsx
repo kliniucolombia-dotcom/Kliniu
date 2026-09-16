@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fbContact } from "@/lib/fbpixel";
+import { ADVISOR_PHONES } from "@/lib/advisors";
 
 type Props = {
   children: React.ReactNode;
@@ -15,7 +16,6 @@ type Props = {
 };
 
 const FALLBACK = "573125860921";
-const ASESORES = ["573112088806", "573226556454", "573105750449"];
 
 export default function WhatsAppAsesor({ children, className, message, randomAsesor, overrideLink, phone }: Props) {
   const [href, setHref] = useState(`https://wa.me/${FALLBACK}`);
@@ -38,7 +38,7 @@ export default function WhatsAppAsesor({ children, className, message, randomAse
 
     if (hasCustomLink || hasFixedPhone || !randomAsesor) return;
     e.preventDefault();
-    const p = ASESORES[Math.floor(Math.random() * ASESORES.length)];
+    const p = ADVISOR_PHONES[Math.floor(Math.random() * ADVISOR_PHONES.length)];
     const text = message ?? "Hola, tengo una consulta sobre un producto de Kliniu";
     window.open(`https://wa.me/${p}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
   };

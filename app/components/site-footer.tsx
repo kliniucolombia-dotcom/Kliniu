@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import FooterWhatsapp from "./footer-whatsapp";
-import FooterEmail from "./footer-email";
+import FooterContact from "./footer-contact";
 
 const colPoliticas = [
   { label: "Políticas de privacidad", href: "/politicas/privacidad" },
@@ -61,8 +60,7 @@ export default function SiteFooter() {
               Departamento comercial
             </p>
             <ul className="space-y-3">
-              <FooterWhatsapp />
-              <FooterEmail />
+              <FooterContact />
               {colContacto.map((item) => (
                 <li key={item.label}>
                   <a
