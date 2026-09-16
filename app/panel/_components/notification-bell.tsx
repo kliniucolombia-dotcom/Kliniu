@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { MdNotificationsNone } from "react-icons/md";
+import { MdNotificationsNone, MdClose } from "react-icons/md";
 import { useNotificationCount } from "@/lib/hooks/use-notification-count";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { useNotificationDetail, type NotificationDetailItem } from "@/app/panel/_components/notification-detail-modal";
@@ -100,6 +100,17 @@ export function NotificationBell() {
     if (open) loadRecent();
   };
 
+  const dismiss = async (id: string) => {
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    await fetch("/api/panel/notifications", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: [id] }),
+    });
+    refresh();
+    if (open) loadRecent();
+  };
+
   return (
     <>
       <button
@@ -144,15 +155,24 @@ export function NotificationBell() {
                   <p className="p-4 text-center text-xs text-[#94A3B8]">Sin notificaciones recientes</p>
                 )}
                 {items.map((item) => (
-                  <button
+                  <div
                     key={item.id}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => {
                       setOpen(false);
                       if (!item.read) markRead([item.id]);
                       openDetail(item);
                     }}
-                    className={`flex w-full items-start gap-3 border-b border-[#F1F5F9] px-4 py-3 text-left transition-colors hover:bg-[#F8FAFC] ${item.read ? "" : "bg-[#F0FDFF]"}`}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setOpen(false);
+                        if (!item.read) markRead([item.id]);
+                        openDetail(item);
+                      }
+                    }}
+                    className={`group flex w-full cursor-pointer items-start gap-3 border-b border-[#F1F5F9] px-4 py-3 text-left transition-colors hover:bg-[#F8FAFC] ${item.read ? "" : "bg-[#F0FDFF]"}`}
                   >
                     <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${severityTheme(item.severity).dot}`} />
                     <div className="min-w-0 flex-1">
@@ -161,8 +181,21 @@ export function NotificationBell() {
                       </p>
                       <p className="mt-0.5 truncate text-[11px] text-[#94A3B8]">{item.detail}</p>
                     </div>
-                    <span className="shrink-0 text-[10px] text-[#94A3B8]">{relativeTime(item.createdAt)}</span>
-                  </button>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <span className="text-[10px] text-[#94A3B8]">{relativeTime(item.createdAt)}</span>
+                      <button
+                        type="button"
+                        title="Eliminar notificación"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          dismiss(item.id);
+                        }}
+                        className="rounded p-0.5 text-[#CBD5E1] transition-colors hover:bg-[#FEF2F2] hover:text-[#DC2626]"
+                      >
+                        <MdClose size={13} />
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
 

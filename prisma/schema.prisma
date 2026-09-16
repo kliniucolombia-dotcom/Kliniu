@@ -112,6 +112,7 @@ model User {
   employee                 Employee?
   announcementReads        AnnouncementRead[]
   rrhhNotificationReads    RrhhNotificationRead[]
+  rrhhNotificationDismissals RrhhNotificationDismissal[]
   employeeAssetsCreated    EmployeeAsset[]        @relation("EmployeeAssetCreatedBy")
   employeeNotesAuthored    EmployeeNote[]         @relation("EmployeeNoteAuthor")
   candidatesCreated        Candidate[]            @relation("CandidateCreatedBy")
@@ -130,6 +131,7 @@ model User {
   notifications            Notification[]      @relation("NotificationTarget")
   notificationsCreated     Notification[]      @relation("NotificationCreator")
   notificationReads        NotificationRead[]
+  notificationDismissals   NotificationDismissal[]
 }
 
 model CartItem {
@@ -1248,6 +1250,21 @@ model RrhhNotificationRead {
   @@index([userId])
 }
 
+/// Descarte de un ítem del feed derivado de RRHH, por usuario. El feed no tiene
+/// filas propias (se deriva de solicitudes, tickets y comunicados), así que el
+/// borrado se guarda contra la clave "<tipo>:<id>" y solo oculta para quien borra.
+model RrhhNotificationDismissal {
+  id          String   @id @default(cuid())
+  userId      String
+  key         String
+  dismissedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+  @@index([userId, dismissedAt])
+}
+
 model EmployeeDocument {
   id             String               @id @default(cuid())
   employeeId     String
@@ -1866,6 +1883,7 @@ model Notification {
   targetUser User?    @relation("NotificationTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
   creator    User?    @relation("NotificationCreator", fields: [createdById], references: [id], onDelete: SetNull)
   reads      NotificationRead[]
+  dismissals NotificationDismissal[]
 
   @@index([type, createdAt])
   @@index([targetUserId, createdAt])
@@ -1883,4 +1901,19 @@ model NotificationRead {
 
   @@unique([notificationId, userId])
   @@index([userId, readAt])
+}
+
+/// Descarte de una notificación por usuario: la oculta solo para quien la
+/// elimina, sin borrarla para los demás destinatarios (rol o a otros usuarios).
+model NotificationDismissal {
+  id             String   @id @default(cuid())
+  notificationId String
+  userId         String
+  dismissedAt    DateTime @default(now())
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationId, userId])
+  @@index([userId, dismissedAt])
 }

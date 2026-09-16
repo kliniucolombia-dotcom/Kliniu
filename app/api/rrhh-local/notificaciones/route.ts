@@ -1,6 +1,7 @@
 import { isRRHH } from "@/lib/roles";
 import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 import { computeRrhhCounts, rrhhCategoryKey, rrhhSeverity } from "@/lib/notifications/rrhh";
 
 /** Ventana del feed: eventos de los últimos 60 días. */
@@ -40,7 +41,7 @@ async function buildItems(userId: string): Promise<RrhhNotificationItem[]> {
   const employeeInclude = { employee: { include: { user: { select: { fullName: true } } } } } as const;
   const listArgs = { orderBy: { createdAt: "desc" }, take: PER_SOURCE } as const;
 
-  const [timeOff, overtime, benefits, certificates, tickets, announcements, reads] = await Promise.all([
+  const [timeOff, overtime, benefits, certificates, tickets, announcements, reads, dismissals] = await Promise.all([
     prisma.timeOffRequest.findMany({ where: recent, include: employeeInclude, ...listArgs }),
     prisma.overtimeRequest.findMany({ where: recent, include: employeeInclude, ...listArgs }),
     prisma.benefitRequest.findMany({
@@ -56,9 +57,11 @@ async function buildItems(userId: string): Promise<RrhhNotificationItem[]> {
     }),
     prisma.announcement.findMany({ where: { ...recent, category: "RRHH", isActive: true }, ...listArgs }),
     prisma.rrhhNotificationRead.findMany({ where: { userId }, select: { key: true } }),
+    prisma.rrhhNotificationDismissal.findMany({ where: { userId }, select: { key: true } }),
   ]);
 
   const readKeys = new Set(reads.map((r) => r.key));
+  const dismissedKeys = new Set(dismissals.map((d) => d.key));
 
   const items: RawItem[] = [
     ...timeOff.map((r) => ({
@@ -124,6 +127,7 @@ async function buildItems(userId: string): Promise<RrhhNotificationItem[]> {
   ];
 
   return items
+    .filter((item) => !dismissedKeys.has(item.id))
     .map((item) => ({ ...item, category: rrhhCategoryKey(item.type), read: readKeys.has(item.id) }))
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
@@ -184,4 +188,39 @@ export async function POST(request: Request) {
   });
 
   return Response.json({ marked: keys.length });
+}
+
+/**
+ * Elimina (descarta) ítems del feed solo para el usuario que los borra.
+ * Body admitido: { ids: string[] } o { keys: string[] } o { all: true }.
+ */
+export async function DELETE(request: Request) {
+  const access = await requireActiveUser();
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!isRRHH(access.user)) return Response.json({ error: "No autorizado" }, { status: 403 });
+
+  const body = (await request.json().catch(() => ({}))) as { ids?: unknown; keys?: unknown; all?: boolean };
+  const pickKeys = (value: unknown) =>
+    Array.isArray(value)
+      ? value.filter((k): k is string => typeof k === "string" && k.length > 0 && k.length <= 200)
+      : [];
+
+  let keys = pickKeys(body.ids);
+  if (keys.length === 0) keys = pickKeys(body.keys);
+  if (keys.length === 0 && body.all) {
+    const all = await buildItems(access.user.id);
+    keys = all.map((i) => i.id);
+  }
+
+  if (keys.length === 0) return Response.json({ dismissed: 0 });
+
+  await prisma.rrhhNotificationDismissal.createMany({
+    data: keys.map((key) => ({ userId: access.user.id, key })),
+    skipDuplicates: true,
+  });
+
+  broadcastPanelUpdate("notifications").catch(() => {});
+
+  return Response.json({ dismissed: keys.length });
 }

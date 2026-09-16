@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import {
   MdDoneAll, MdSearch, MdClose, MdInbox,
   MdMarkEmailUnread, MdPriorityHigh, MdMoreVert, MdArrowForward,
-  MdAccessTime, MdCheck, MdOpenInNew,
+  MdAccessTime, MdCheck, MdOpenInNew, MdDeleteOutline,
 } from "react-icons/md";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { SimpleSelect } from "@/app/panel/_components/simple-select";
+import { useConfirm } from "@/app/components/confirm-dialog";
 import { useNotificationDetail } from "@/app/panel/_components/notification-detail-modal";
 import {
   PRIORITY_THEME, PRIORITY_ORDER, notificationPriority, isImportant,
@@ -68,6 +69,7 @@ export function NotificationFeed({
   headerIcon: HeaderIcon,
   iconOf,
   taxonomy,
+  canDelete = true,
 }: {
   endpoint: string;
   realtimeEvents: RealtimeResource[];
@@ -77,6 +79,7 @@ export function NotificationFeed({
   headerIcon: React.ElementType;
   iconOf: (type: string) => React.ElementType;
   taxonomy: FeedTaxonomy;
+  canDelete?: boolean;
 }) {
   const [feed, setFeed] = useState<Feed | null>(null);
   const [loading, setLoading] = useState(true);
@@ -92,6 +95,7 @@ export function NotificationFeed({
   const [page, setPage] = useState(1);
 
   const openDetail = useNotificationDetail();
+  const confirm = useConfirm();
 
   const themeFor = (item: FeedItem) => taxonomy.theme[taxonomy.categoryKeyOf(item)] ?? FALLBACK_THEME;
 
@@ -157,6 +161,46 @@ export function NotificationFeed({
     if (!res.ok) {
       setError("No fue posible marcar como leídas");
       await load(1);
+    }
+    setSaving(false);
+  };
+
+  const dismiss = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    setSaving(true);
+    const res = await fetch(endpoint, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    });
+    if (res.ok) {
+      setFeed((prev) => (prev ? { ...prev, items: prev.items.filter((i) => !ids.includes(i.id)) } : prev));
+      await load(1);
+    } else {
+      setError("No fue posible eliminar la notificación");
+    }
+    setSaving(false);
+  };
+
+  const dismissAll = async () => {
+    if (!feed || feed.total === 0) return;
+    const ok = await confirm({
+      title: "Limpiar notificaciones",
+      message: "Se eliminarán todas tus notificaciones de este panel. No se borran para los demás usuarios.",
+      confirmLabel: "Eliminar",
+      danger: true,
+    });
+    if (!ok) return;
+    setSaving(true);
+    const res = await fetch(endpoint, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ all: true }),
+    });
+    if (res.ok) {
+      await load(1);
+    } else {
+      setError("No fue posible eliminar las notificaciones");
     }
     setSaving(false);
   };
@@ -251,6 +295,16 @@ export function NotificationFeed({
           >
             <MdDoneAll size={16} /> Marcar todo como leído
           </button>
+          {canDelete && (
+            <button
+              type="button"
+              onClick={dismissAll}
+              disabled={saving || total === 0}
+              className="flex items-center gap-1.5 rounded-lg border border-[#FECACA] bg-white px-3.5 py-2 text-sm font-bold text-[#DC2626] hover:bg-[#FEF2F2] disabled:opacity-40"
+            >
+              <MdDeleteOutline size={16} /> Limpiar todo
+            </button>
+          )}
         </div>
       </div>
 
@@ -386,6 +440,7 @@ export function NotificationFeed({
                   theme={themeFor(item)}
                   typeIcon={iconOf(item.type)}
                   saving={saving}
+                  canDelete={canDelete}
                   onOpen={() => {
                     if (!item.read) markRead([item.id]);
                     openDetail({
@@ -402,6 +457,7 @@ export function NotificationFeed({
                     });
                   }}
                   onMarkRead={() => markRead([item.id])}
+                  onDelete={() => dismiss([item.id])}
                 />
               ))}
             </div>
@@ -441,15 +497,19 @@ function NotificationRow({
   theme,
   typeIcon,
   saving,
+  canDelete,
   onOpen,
   onMarkRead,
+  onDelete,
 }: {
   item: FeedItem;
   theme: CategoryTheme;
   typeIcon: React.ElementType;
   saving: boolean;
+  canDelete: boolean;
   onOpen: () => void;
   onMarkRead: () => void;
+  onDelete: () => void;
 }) {
   const priority = notificationPriority(item.severity);
   const pr = PRIORITY_THEME[priority];
@@ -466,7 +526,7 @@ function NotificationRow({
     return () => document.removeEventListener("mousedown", handler);
   }, [menuOpen]);
 
-  const showMenu = !item.read || !!item.href;
+  const showMenu = canDelete || !item.read || !!item.href;
 
   return (
     <div
@@ -560,6 +620,19 @@ function NotificationRow({
                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[#1A1A1A] hover:bg-[#F1F5F9]"
                 >
                   <MdOpenInNew size={15} /> Abrir en su sección
+                </button>
+              )}
+              {canDelete && (
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onDelete();
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[#DC2626] hover:bg-[#FEF2F2] disabled:opacity-40"
+                >
+                  <MdDeleteOutline size={15} /> Eliminar
                 </button>
               )}
             </div>
