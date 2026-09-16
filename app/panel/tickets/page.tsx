@@ -10,7 +10,7 @@ import {
 } from "react-icons/md";
 import type { IconType } from "react-icons";
 import { SimpleSelect } from "../_components/simple-select";
-import { Empty, Badge, Modal, Footer, btnPrimary, labelCls, inputCls, post, patchReq } from "../_components/ops-ui";
+import { Badge, Modal, Footer, btnPrimary, labelCls, inputCls, post, patchReq } from "../_components/ops-ui";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import { TICKET_SLA_LABELS, responsiblesForCategory, isTicketOverdue, bogotaMonthRange, growthPct, TICKET_LOCATIONS } from "@/lib/tickets";
 import type { TicketFieldDef } from "@/lib/tickets";
@@ -229,8 +229,7 @@ export default function TicketsPanelPage() {
   const router = useRouter();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [scope, setScope] = useState<"all" | "department">("department");
-  const [department, setDepartment] = useState<string | null>(null);
+  const [scope, setScope] = useState<"all" | "assigned">("assigned");
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -268,7 +267,6 @@ export default function TicketsPanelPage() {
       const data = await tRes.json();
       setTickets(data.tickets);
       setScope(data.scope);
-      setDepartment(data.department);
     }
     if (cRes.ok) setCategories(await cRes.json());
     if (rRes.ok) setResponsiblesByDept(await rRes.json());
@@ -483,10 +481,10 @@ export default function TicketsPanelPage() {
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8]">Solicitudes</p>
           <h1 className="mt-1 text-2xl font-black text-[#1A1A1A]">
-            {scope === "all" ? "Todas las solicitudes" : department ? `Solicitudes de ${department}` : "Solicitudes de mi departamento"}
+            {scope === "all" ? "Todas las solicitudes" : "Mis solicitudes"}
           </h1>
           <p className="mt-1 text-sm text-[#64748B]">
-            {scope === "all" ? "Vista completa (RRHH). Gestiona y da seguimiento a todas las PQRS." : "Categorías de PQRS habilitadas para tu departamento."}
+            {scope === "all" ? "Vista completa (RRHH). Gestiona y da seguimiento a todas las PQRS." : "Solicitudes asignadas a ti y las que tú radicaste."}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -509,8 +507,6 @@ export default function TicketsPanelPage() {
 
       {loading ? (
         <div className="flex h-40 items-center justify-center text-sm text-[#94A3B8]">Cargando…</div>
-      ) : !department && scope === "department" ? (
-        <Empty text="No tienes un departamento asignado. Pide a RRHH que lo configure en tu perfil de empleado." />
       ) : (
         <>
           <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

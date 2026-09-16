@@ -18,19 +18,17 @@ export async function GET() {
     return Response.json({ tickets, scope: "all" });
   }
 
+  // El resto solo ve las solicitudes asignadas a su usuario y las que él mismo radicó.
   const employee = await prisma.employee.findUnique({ where: { userId: access.user.id } });
-  if (!employee?.departmentId) return Response.json({ tickets: [], scope: "department", department: null });
-
-  const allCategories = await prisma.requestCategory.findMany({ select: { id: true, allowedDepartmentIds: true } });
-  const categories = allCategories.filter(
-    (c) => c.allowedDepartmentIds.length === 0 || c.allowedDepartmentIds.includes(employee.departmentId!),
-  );
-  const department = await prisma.department.findUnique({ where: { id: employee.departmentId }, select: { name: true } });
-
   const tickets = await prisma.ticket.findMany({
-    where: { categoryId: { in: categories.map((c) => c.id) } },
+    where: {
+      OR: [
+        { responsibleId: access.user.id },
+        ...(employee ? [{ employeeId: employee.id }] : []),
+      ],
+    },
     orderBy: { createdAt: "desc" },
     include: TICKET_INCLUDE,
   });
-  return Response.json({ tickets, scope: "department", department: department?.name ?? null });
+  return Response.json({ tickets, scope: "assigned" });
 }
