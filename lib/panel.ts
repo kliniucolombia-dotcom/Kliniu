@@ -266,6 +266,14 @@ export async function getProductsForPanel(sellerId?: string) {
   });
 }
 
+export async function setProductActive(productId: string, active: boolean) {
+  if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
+  await prisma.product.update({
+    where: { id: productId },
+    data: { active, updatedAt: new Date() },
+  });
+}
+
 export async function updateProductPackPrices(
   productId: string,
   packs: { id?: string; label: string; qty: number; totalPrice: number }[],

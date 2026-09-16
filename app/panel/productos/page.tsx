@@ -203,6 +203,31 @@ export default function ProductosPanel() {
     }
   };
 
+  const toggleActive = async (p: Product) => {
+    if (p.active) {
+      const ok = await confirm({
+        title: "Ocultar producto",
+        message: `"${p.name}" dejará de mostrarse en la tienda y en los demás canales públicos.`,
+        confirmLabel: "Ocultar",
+        danger: false,
+      });
+      if (!ok) return;
+    }
+    setSaving(true);
+    const r = await fetch("/api/panel/products", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productId: p.id, active: !p.active }),
+    });
+    setSaving(false);
+    if (r.ok) {
+      load();
+    } else {
+      const d = await r.json().catch(() => ({}));
+      setAlert({ type: "err", msg: d.error ?? "Error al actualizar" });
+    }
+  };
+
   const hasActiveFilters = search || categoryFilter !== "all" || statusFilter !== "all" || stockFilter !== "all" || sortBy !== "recent";
   const clearFilters = () => { setSearch(""); setCategoryFilter("all"); setStatusFilter("all"); setStockFilter("all"); setSortBy("recent"); };
 
@@ -269,7 +294,7 @@ export default function ProductosPanel() {
                 <span className="text-sm font-medium text-[#4f545a]">Estado</span>
                 <SimpleSelect
                   value={statusFilter}
-                  options={[{ value: "all", label: "Todos" }, { value: "active", label: "Activo" }, { value: "inactive", label: "Inactivo" }]}
+                  options={[{ value: "all", label: "Todos" }, { value: "active", label: "Visibles" }, { value: "inactive", label: "Ocultos" }]}
                   onChange={setStatusFilter}
                 />
               </label>
@@ -357,7 +382,7 @@ export default function ProductosPanel() {
             </div>
             <div className="rounded-[1.2rem] border border-black/8 bg-[#F8FAFC] px-4 py-4">
               <p className="text-2xl font-bold text-[#64748B]">{kpis.inactive}</p>
-              <p className="mt-1 text-xs font-semibold text-[#5d6167]">Inactivos</p>
+              <p className="mt-1 text-xs font-semibold text-[#5d6167]">Ocultos</p>
             </div>
           </div>
 
@@ -416,8 +441,8 @@ export default function ProductosPanel() {
                             </span>
                           </td>
                           <td className="p-4">
-                            <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${p.active ? "bg-[#DCFCE7] text-[#16A34A]" : p.stock === 0 ? "bg-[#FEE2E2] text-[#DC2626]" : "bg-[#F1F5F9] text-[#64748B]"}`}>
-                              {p.active ? "Activo" : p.stock === 0 ? "Sin stock" : "Inactivo"}
+                            <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${p.active ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#F1F5F9] text-[#64748B]"}`}>
+                              {p.active ? "Visible" : "Oculto"}
                             </span>
                           </td>
                           <td className="p-4 text-xs text-[#8b8d91]">
@@ -427,6 +452,16 @@ export default function ProductosPanel() {
                           </td>
                           <td className="p-4 text-right">
                             <div className="inline-flex items-center gap-2">
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleActive(p)}
+                                  disabled={saving}
+                                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200 disabled:opacity-50 ${p.active ? "border border-[#E2E8F0] text-[#64748B] hover:bg-[#F8FAFC]" : "bg-[#16A34A] text-white hover:bg-[#15803D]"}`}
+                                >
+                                  {p.active ? "Ocultar" : "Mostrar"}
+                                </button>
+                              )}
                               {canEdit && (
                                 <button
                                   type="button"

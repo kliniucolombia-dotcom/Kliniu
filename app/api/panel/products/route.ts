@@ -1,5 +1,5 @@
 import { requireAnyPermission, requirePermission } from "@/lib/permissions";
-import { getProductsForPanel, updateProductPrice, updateProductPackPrices } from "@/lib/panel";
+import { getProductsForPanel, setProductActive, updateProductPrice, updateProductPackPrices } from "@/lib/panel";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
@@ -38,9 +38,13 @@ export async function PATCH(request: Request) {
     newPrice?: number;
     note?: string;
     packPrices?: { label: string; qty: number; totalPrice: number }[];
+    active?: boolean;
   };
   if (!body.productId) {
     return Response.json({ error: "Faltan datos" }, { status: 400 });
+  }
+  if (typeof body.active === "boolean") {
+    await setProductActive(body.productId, body.active);
   }
   if (body.newPrice) {
     await updateProductPrice(body.productId, body.newPrice, session.userId, body.note);
