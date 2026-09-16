@@ -318,10 +318,34 @@ export async function getCampaignsForPanel(sellerId?: string) {
     orderBy: { createdAt: "desc" },
   });
 
+  // Totales de la matriz diaria (todos los días cargados) por campaña, para
+  // poder mostrar el vendido real acumulado sin abrir cada matriz.
+  const dailyAgg = await prisma.campaignDaily.groupBy({
+    by: ["campaignId"],
+    _sum: { ventaDelDia: true, presupuestoPublicidad: true, mensajes: true, transacciones: true },
+    _count: { _all: true },
+  });
+  const dailyByCampaign = new Map(
+    dailyAgg.map((d) => [
+      d.campaignId,
+      {
+        sales: d._sum.ventaDelDia ?? 0,
+        investmentUsd: d._sum.presupuestoPublicidad ?? 0,
+        mensajes: d._sum.mensajes ?? 0,
+        transacciones: d._sum.transacciones ?? 0,
+        days: d._count._all,
+      },
+    ]),
+  );
+
   // La inversión se captura en USD y las ventas en COP: adjuntamos la TRM de la fecha
   // de inicio para poder comparar ambas en pesos al calcular el KPI.
   return Promise.all(
-    campaigns.map(async (c) => ({ ...c, trm: await getTrmForDate(c.startDate) })),
+    campaigns.map(async (c) => ({
+      ...c,
+      trm: await getTrmForDate(c.startDate),
+      daily: dailyByCampaign.get(c.id) ?? { sales: 0, investmentUsd: 0, mensajes: 0, transacciones: 0, days: 0 },
+    })),
   );
 }
 

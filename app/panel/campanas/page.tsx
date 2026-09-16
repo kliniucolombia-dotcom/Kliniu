@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { calcROAS, getCampaignStatus, STATUS_META } from "@/lib/panel-utils";
 import { SimpleSelect } from "../_components/simple-select";
 import DailyMatrix from "./DailyMatrix";
@@ -9,6 +9,7 @@ type Campaign = {
   leads: number; targetMultiple: number; status: string; startDate: string;
   endDate?: string; notes?: string;
   trm: number; // COP por USD de la fecha de inicio
+  daily: { sales: number; investmentUsd: number; mensajes: number; transacciones: number; days: number };
   seller: { id: string; fullName: string; email: string };
   combo?: { id: string; name: string; image: string | null };
 };
@@ -148,6 +149,35 @@ export default function CampanasPanel() {
     return true;
   });
 
+  // Vendido real de la campaña: total de la matriz diaria; si no hay días
+  // cargados, cae al valor manual de la campaña.
+  const salesOf = (c: Campaign) => (c.daily.days > 0 ? c.daily.sales : c.sales);
+
+  const totals = useMemo(() => {
+    let inversionUsd = 0;
+    let inversionCop = 0;
+    let ventas = 0;
+    let leads = 0;
+    let dias = 0;
+    for (const c of filteredCampaigns) {
+      inversionUsd += c.investment;
+      inversionCop += c.investment * (c.trm || 0);
+      ventas += c.daily.days > 0 ? c.daily.sales : c.sales;
+      leads += c.leads ?? 0;
+      dias += c.daily.days;
+    }
+    return {
+      count: filteredCampaigns.length,
+      inversionUsd,
+      inversionCop,
+      ventas,
+      leads,
+      dias,
+      cpl: leads > 0 ? inversionUsd / leads : null,
+      roas: calcROAS(ventas, inversionCop),
+    };
+  }, [filteredCampaigns]);
+
   const save = async () => {
     if (form.startDate && form.endDate && form.endDate < form.startDate) {
       setAlert({ type: "err", msg: "La fecha final no puede ser anterior a la inicial" });
@@ -227,6 +257,33 @@ export default function CampanasPanel() {
         </span>
       </div>
 
+      {/* Totales del periodo (incluye todos los días de las matrices diarias) */}
+      {!loading && filteredCampaigns.length > 0 && (
+        <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">Campañas</p>
+            <p className="mt-1 text-xl font-black text-[#1A1A1A]">{totals.count}</p>
+          </div>
+          <div className="rounded-2xl border border-[#27B1B8]/30 bg-[#F0F9F8] px-4 py-3">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#0C6060]">Vendido total (COP)</p>
+            <p className="mt-1 text-xl font-black text-[#1A1A1A]">{fmtCOP(totals.ventas)}</p>
+            <p className="text-[11px] text-[#94A3B8]">{totals.dias} día{totals.dias === 1 ? "" : "s"} en matrices</p>
+          </div>
+          <div className="rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">Invertido total</p>
+            <p className="mt-1 text-xl font-black text-[#1A1A1A]">{fmtUSD(totals.inversionUsd)}</p>
+            <p className="text-[11px] text-[#94A3B8]">≈ {fmtCOP(totals.inversionCop)}</p>
+          </div>
+          <div className="rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">ROAS global</p>
+            <p className="mt-1 text-xl font-black" style={{ color: STATUS_META[getCampaignStatus(totals.roas)].color }}>
+              {totals.roas.toFixed(2)}x
+            </p>
+            <p className="text-[11px] text-[#94A3B8]">{totals.leads} leads</p>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex h-40 items-center justify-center text-sm text-[#94A3B8]">Cargando campañas…</div>
       ) : filteredCampaigns.length === 0 ? (
@@ -267,7 +324,8 @@ export default function CampanasPanel() {
             <tbody className="divide-y divide-[#F1F5F9]">
               {filteredCampaigns.map((c) => {
                 const inversionCop = c.investment * (c.trm || 0);
-                const roas   = calcROAS(c.sales, inversionCop);
+                const venta = salesOf(c);
+                const roas   = calcROAS(venta, inversionCop);
                 const status = getCampaignStatus(roas);
                 const meta   = STATUS_META[status];
                 const cpl    = c.leads > 0 ? Math.round(c.investment / c.leads) : null;
@@ -281,7 +339,12 @@ export default function CampanasPanel() {
                       {fmtUSD(c.investment)}
                       <span className="block text-xs font-normal text-[#94A3B8]">≈ {fmtCOP(inversionCop)}</span>
                     </td>
-                    <td className="px-4 py-4 text-sm font-semibold text-[#1A1A1A]">{fmtCOP(c.sales)}</td>
+                    <td className="px-4 py-4 text-sm font-semibold text-[#1A1A1A]">
+                      {fmtCOP(venta)}
+                      {c.daily.days > 0 && (
+                        <span className="block text-xs font-normal text-[#94A3B8]">Matriz · {c.daily.days} día{c.daily.days === 1 ? "" : "s"}</span>
+                      )}
+                    </td>
                     <td className="px-4 py-4">
                       <span className="text-sm font-black" style={{ color: meta.color }}>{roas.toFixed(2)}x</span>
                     </td>
@@ -306,6 +369,26 @@ export default function CampanasPanel() {
                 );
               })}
             </tbody>
+            <tfoot className="border-t-2 border-[#E2E8F0] bg-[#F8FAFC]">
+              <tr className="font-black text-[#1A1A1A]">
+                <td className="px-4 py-4 text-sm">Total · {totals.count} campaña{totals.count === 1 ? "" : "s"}</td>
+                <td className="px-4 py-4 text-sm">
+                  {fmtUSD(totals.inversionUsd)}
+                  <span className="block text-xs font-normal text-[#94A3B8]">≈ {fmtCOP(totals.inversionCop)}</span>
+                </td>
+                <td className="px-4 py-4 text-sm">
+                  {fmtCOP(totals.ventas)}
+                  <span className="block text-xs font-normal text-[#94A3B8]">{totals.dias} día{totals.dias === 1 ? "" : "s"} en matrices</span>
+                </td>
+                <td className="px-4 py-4">
+                  <span className="text-sm font-black" style={{ color: STATUS_META[getCampaignStatus(totals.roas)].color }}>{totals.roas.toFixed(2)}x</span>
+                </td>
+                <td className="px-4 py-4 text-sm">{totals.leads}</td>
+                <td className="px-4 py-4 text-sm">{totals.cpl !== null ? fmtUSD(totals.cpl) : "—"}</td>
+                <td className="px-4 py-4" />
+                <td className="sticky right-0 border-l border-[#E2E8F0] bg-[#F8FAFC] px-4 py-4" />
+              </tr>
+            </tfoot>
           </table>
         </div>
       )}
