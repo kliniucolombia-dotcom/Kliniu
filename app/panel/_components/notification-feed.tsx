@@ -116,7 +116,7 @@ export function NotificationFeed({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useRealtimeRefresh(realtimeEvents, () => load(1));
+  const { markLocalWrite } = useRealtimeRefresh(realtimeEvents, () => load(1));
 
   const applyReadLocally = (ids: string[]) => {
     setFeed((prev) => {
@@ -133,6 +133,7 @@ export function NotificationFeed({
 
   const markRead = async (ids: string[]) => {
     if (ids.length === 0) return;
+    markLocalWrite();
     setSaving(true);
     applyReadLocally(ids);
     const res = await fetch(endpoint, {
@@ -149,6 +150,7 @@ export function NotificationFeed({
 
   const markAllRead = async () => {
     if (!feed) return;
+    markLocalWrite();
     setSaving(true);
     const unreadIds = feed.items.filter((i) => !i.read).map((i) => i.id);
     applyReadLocally(feed.items.map((i) => i.id));
@@ -165,19 +167,58 @@ export function NotificationFeed({
     setSaving(false);
   };
 
+  const removeLocally = (ids: string[]) => {
+    const idSet = new Set(ids);
+    setFeed((prev) => {
+      if (!prev) return prev;
+      const removed = prev.items.filter((i) => idSet.has(i.id));
+      if (removed.length === 0) return prev;
+      const items = prev.items.filter((i) => !idSet.has(i.id));
+      const removedUnread = removed.filter((i) => !i.read).length;
+      const removedImportant = removed.filter((i) => isImportant(i.severity)).length;
+      const byCategory = prev.counts ? { ...prev.counts.byCategory } : undefined;
+      const byPriority = prev.counts ? { ...prev.counts.byPriority } : undefined;
+      if (byCategory && byPriority) {
+        for (const it of removed) {
+          const key = taxonomy.categoryKeyOf(it);
+          byCategory[key] = Math.max(0, (byCategory[key] ?? 0) - 1);
+          const pr = notificationPriority(it.severity);
+          byPriority[pr] = Math.max(0, (byPriority[pr] ?? 0) - 1);
+        }
+      }
+      const counts = prev.counts && byCategory && byPriority
+        ? {
+            ...prev.counts,
+            total: Math.max(0, prev.counts.total - removed.length),
+            unread: Math.max(0, prev.counts.unread - removedUnread),
+            important: Math.max(0, prev.counts.important - removedImportant),
+            byCategory,
+            byPriority,
+          }
+        : prev.counts;
+      return {
+        ...prev,
+        items,
+        counts,
+        total: Math.max(0, prev.total - removed.length),
+        unread: Math.max(0, prev.unread - removedUnread),
+      };
+    });
+  };
+
   const dismiss = async (ids: string[]) => {
     if (ids.length === 0) return;
+    markLocalWrite();
     setSaving(true);
+    removeLocally(ids);
     const res = await fetch(endpoint, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ids }),
     });
-    if (res.ok) {
-      setFeed((prev) => (prev ? { ...prev, items: prev.items.filter((i) => !ids.includes(i.id)) } : prev));
-      await load(1);
-    } else {
+    if (!res.ok) {
       setError("No fue posible eliminar la notificación");
+      await load(1);
     }
     setSaving(false);
   };
@@ -191,16 +232,30 @@ export function NotificationFeed({
       danger: true,
     });
     if (!ok) return;
+    markLocalWrite();
     setSaving(true);
+    const snapshot = feed;
+    setFeed((prev) =>
+      prev
+        ? {
+            ...prev,
+            items: [],
+            total: 0,
+            unread: 0,
+            counts: prev.counts
+              ? { total: 0, unread: 0, important: 0, byCategory: {}, byPriority: {} }
+              : prev.counts,
+          }
+        : prev,
+    );
     const res = await fetch(endpoint, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ all: true }),
     });
-    if (res.ok) {
-      await load(1);
-    } else {
+    if (!res.ok) {
       setError("No fue posible eliminar las notificaciones");
+      setFeed(snapshot);
     }
     setSaving(false);
   };

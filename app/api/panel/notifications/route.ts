@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
@@ -143,7 +144,9 @@ export async function DELETE(request: Request) {
     skipDuplicates: true,
   });
 
-  broadcastPanelUpdate("notifications").catch(() => {});
+  // Difunde el cambio después de responder, sin bloquear ni arriesgar que el
+  // runtime serverless cancele la tarea pendiente.
+  after(() => broadcastPanelUpdate("notifications").catch(() => {}));
 
   return Response.json({ dismissed: notificationIds.length });
 }

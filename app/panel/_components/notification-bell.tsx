@@ -65,12 +65,15 @@ export function NotificationBell() {
     }
   }, []);
 
-  useEffect(() => {
+  const toggleOpen = () => {
     if (open) {
-      calcPos();
-      loadRecent();
+      setOpen(false);
+      return;
     }
-  }, [open, loadRecent, calcPos]);
+    setOpen(true);
+    calcPos();
+    loadRecent();
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -84,13 +87,14 @@ export function NotificationBell() {
     return () => document.removeEventListener("mousedown", h);
   }, [open]);
 
-  useRealtimeRefresh(["notifications"], () => {
+  const { markLocalWrite } = useRealtimeRefresh(["notifications"], () => {
     refresh();
     if (open) loadRecent();
   });
 
   const markRead = async (ids: string[]) => {
     if (ids.length === 0) return;
+    markLocalWrite();
     await fetch("/api/panel/notifications", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -101,6 +105,7 @@ export function NotificationBell() {
   };
 
   const dismiss = async (id: string) => {
+    markLocalWrite();
     setItems((prev) => prev.filter((i) => i.id !== id));
     await fetch("/api/panel/notifications", {
       method: "DELETE",
@@ -115,7 +120,7 @@ export function NotificationBell() {
     <>
       <button
         ref={btnRef}
-        onClick={() => setOpen((o) => !o)}
+        onClick={toggleOpen}
         className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#E2E8F0] bg-white text-[#64748B] transition-colors hover:bg-[#F8FAFC] hover:text-[#1A1A1A]"
         title="Notificaciones"
       >

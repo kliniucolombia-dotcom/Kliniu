@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import type { RealtimeResource } from "@/lib/realtime";
@@ -11,6 +11,11 @@ type Listener = (resource: string) => void;
 // suscribirse ni hacer removeChannel por su cuenta sin romper a los demás.
 const listeners = new Set<Listener>();
 let channel: RealtimeChannel | null = null;
+
+// El cliente que origina un cambio recibe su propio broadcast. Cada instancia
+// del hook puede marcar su escritura local para ignorar ese eco y no recargar
+// dos veces (una por la acción y otra por realtime).
+const LOCAL_WRITE_TTL_MS = 1500;
 
 function ensureChannel() {
   if (channel) return;
@@ -30,17 +35,29 @@ function releaseChannel() {
   supabaseBrowser.removeChannel(c);
 }
 
-/** Ejecuta `onChange` cuando el servidor emite un cambio para alguno de los `resources` dados. */
+/**
+ * Ejecuta `onChange` cuando el servidor emite un cambio para alguno de los `resources` dados.
+ * Devuelve `markLocalWrite` para ignorar el eco del broadcast que originó este mismo componente.
+ */
 export function useRealtimeRefresh(resources: RealtimeResource[], onChange: () => void) {
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+  const localWriteRef = useRef(0);
+
+  const markLocalWrite = useCallback(() => {
+    localWriteRef.current = Date.now();
+  }, []);
 
   const resourcesKey = resources.join(",");
 
   useEffect(() => {
     const watched = new Set(resourcesKey.split(","));
     const listener: Listener = (resource) => {
-      if (watched.has(resource)) onChangeRef.current();
+      if (!watched.has(resource)) return;
+      if (Date.now() - localWriteRef.current < LOCAL_WRITE_TTL_MS) return;
+      onChangeRef.current();
     };
     listeners.add(listener);
     ensureChannel();
@@ -50,4 +67,6 @@ export function useRealtimeRefresh(resources: RealtimeResource[], onChange: () =
       releaseChannel();
     };
   }, [resourcesKey]);
+
+  return { markLocalWrite };
 }
