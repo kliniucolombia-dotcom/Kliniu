@@ -1,34 +1,172 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
-import { MdEdit, MdDelete, MdApartment } from "react-icons/md";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import {
+  MdEdit,
+  MdDelete,
+  MdApartment,
+  MdExpandMore,
+  MdExpandLess,
+  MdPeople,
+  MdBadge,
+  MdLayers,
+  MdSearch,
+  MdFolderOpen,
+  MdInventory2,
+  MdSettings,
+  MdHeadsetMic,
+  MdMoreHoriz,
+  MdPersonAdd,
+  MdMailOutline,
+} from "react-icons/md";
+import { ROLE_LABELS } from "@/lib/roles";
+import { SimpleSelect } from "../../_components/simple-select";
+
+type MemberAccount = {
+  id: string;
+  fullName: string;
+  role: string;
+  status: string;
+  avatarUrl: string | null;
+};
+
+type Member = {
+  name: string;
+  title: string;
+  kind: "holder" | "backup";
+  email: string;
+  account: MemberAccount | null;
+};
 
 type Department = {
   id: string;
   name: string;
   code: string;
   description: string | null;
+  area: string | null;
   isActive: boolean;
+  members: Member[];
+  backupName: string | null;
 };
 
-type FormState = { name: string; code: string; description: string; isActive: boolean };
+type Area = {
+  key: string;
+  name: string;
+  description: string;
+  departments: Department[];
+};
 
-const EMPTY_FORM: FormState = { name: "", code: "", description: "", isActive: true };
+type Stats = { areas: number; departments: number; units: number; people: number; responsables: number; activeAccounts: number };
+
+type View = "departments" | "units" | "people" | "accounts";
+
+type FormState = { name: string; code: string; description: string; area: string; isActive: boolean };
+
+type FlatDepartment = Department & { areaName: string; areaKey: string };
+
+type PersonRow = {
+  key: string;
+  name: string;
+  title: string;
+  role: string;
+  email: string;
+  status: string;
+  avatarUrl: string | null;
+  departments: string[];
+  areaKeys: string[];
+  backupName: string | null;
+};
+
+type AccountRow = {
+  id: string;
+  name: string;
+  role: string;
+  email: string;
+  status: string;
+  avatarUrl: string | null;
+  departments: string[];
+  areaKeys: string[];
+};
+
+const EMPTY_FORM: FormState = { name: "", code: "", description: "", area: "", isActive: true };
+
+const STATUS_LABELS: Record<string, string> = {
+  ACTIVE: "Activo",
+  INACTIVE: "Inactivo",
+  SUSPENDED: "Suspendido",
+};
+
+const STATUS_STYLES: Record<string, string> = {
+  ACTIVE: "bg-[#DCFCE7] text-[#16A34A]",
+  INACTIVE: "bg-[#F1F5F9] text-[#64748B]",
+  SUSPENDED: "bg-[#FEE2E2] text-[#DC2626]",
+};
+
+const AREA_ICONS: Record<string, React.ReactNode> = {
+  DIRECCION: <MdFolderOpen size={20} />,
+  ALMACENAMIENTO: <MdInventory2 size={20} />,
+  PRODUCCION: <MdSettings size={20} />,
+  SOPORTE: <MdHeadsetMic size={20} />,
+  OTROS: <MdMoreHoriz size={20} />,
+};
+
+function initials(name: string): string {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join("");
+}
+
+function roleLabel(role: string): string {
+  return ROLE_LABELS[role as keyof typeof ROLE_LABELS] ?? role;
+}
+
+function memberSubtitle(m: Member): string {
+  const role = m.account ? roleLabel(m.account.role) : "";
+  if (!role) return m.title;
+  if (m.title.toLowerCase() === role.toLowerCase()) return m.title;
+  return `${m.title} · ${role}`;
+}
+
+function Avatar({ name, url, size = 40 }: { name: string; url: string | null; size?: number }) {
+  if (url) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={url} alt={name} style={{ width: size, height: size }} className="shrink-0 rounded-full object-cover" />;
+  }
+  return (
+    <span
+      style={{ width: size, height: size }}
+      className="flex shrink-0 items-center justify-center rounded-full bg-[#27B1B8] text-xs font-black text-white"
+    >
+      {initials(name)}
+    </span>
+  );
+}
 
 export default function DepartamentosProduccionPage() {
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [stats, setStats] = useState<Stats>({ areas: 0, departments: 0, units: 0, people: 0, responsables: 0, activeAccounts: 0 });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modal, setModal] = useState<{ mode: "create" } | { mode: "edit"; id: string } | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [confirmDelete, setConfirmDelete] = useState<Department | null>(null);
+  const [showManage, setShowManage] = useState(false);
+  const [search, setSearch] = useState("");
+  const [areaFilter, setAreaFilter] = useState("ALL");
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [view, setView] = useState<View>("departments");
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const r = await fetch("/api/panel/departamentos");
       const d = await r.json();
-      setDepartments(Array.isArray(d) ? d : []);
+      setAreas(Array.isArray(d?.areas) ? d.areas : []);
+      if (d?.stats) setStats(d.stats);
     } finally {
       setLoading(false);
     }
@@ -39,10 +177,138 @@ export default function DepartamentosProduccionPage() {
     return () => window.clearTimeout(task);
   }, [load]);
 
-  const openCreate = () => { setForm(EMPTY_FORM); setError(null); setModal({ mode: "create" }); };
+  const allDepartments = useMemo<FlatDepartment[]>(
+    () => areas.flatMap((a) => a.departments.map((d) => ({ ...d, areaName: a.name, areaKey: a.key }))),
+    [areas],
+  );
+
+  const people = useMemo<PersonRow[]>(() => {
+    const map = new Map<string, PersonRow>();
+    allDepartments.forEach((d) => {
+      d.members
+        .filter((m) => m.kind === "holder")
+        .forEach((m) => {
+          const key = m.account?.id ?? m.email;
+          const existing = map.get(key);
+          if (existing) {
+            if (!existing.departments.includes(d.name)) existing.departments.push(d.name);
+            if (!existing.areaKeys.includes(d.areaKey)) existing.areaKeys.push(d.areaKey);
+            if (!existing.backupName && d.backupName) existing.backupName = d.backupName;
+            return;
+          }
+          map.set(key, {
+            key,
+            name: m.account?.fullName ?? m.name,
+            title: m.title,
+            role: m.account?.role ?? "",
+            email: m.email,
+            status: m.account?.status ?? "",
+            avatarUrl: m.account?.avatarUrl ?? null,
+            departments: [d.name],
+            areaKeys: [d.areaKey],
+            backupName: d.backupName,
+          });
+        });
+    });
+    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }, [allDepartments]);
+
+  const accounts = useMemo<AccountRow[]>(() => {
+    const map = new Map<string, AccountRow>();
+    allDepartments.forEach((d) => {
+      d.members.forEach((m) => {
+        if (!m.account) return;
+        const existing = map.get(m.account.id);
+        if (existing) {
+          if (!existing.departments.includes(d.name)) existing.departments.push(d.name);
+          if (!existing.areaKeys.includes(d.areaKey)) existing.areaKeys.push(d.areaKey);
+          return;
+        }
+        map.set(m.account.id, {
+          id: m.account.id,
+          name: m.account.fullName,
+          role: m.account.role,
+          email: m.email,
+          status: m.account.status,
+          avatarUrl: m.account.avatarUrl,
+          departments: [d.name],
+          areaKeys: [d.areaKey],
+        });
+      });
+    });
+    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }, [allDepartments]);
+
+  const q = search.trim().toLowerCase();
+  const matchText = useCallback((values: string[]) => !q || values.some((v) => v.toLowerCase().includes(q)), [q]);
+
+  const visibleAreas = useMemo(() => {
+    return areas
+      .filter((a) => areaFilter === "ALL" || a.key === areaFilter)
+      .map((a) => ({
+        ...a,
+        departments: a.departments.filter(
+          (d) =>
+            matchText([d.name, d.code, d.description ?? "", ...d.members.flatMap((m) => [m.name, m.email])]),
+        ),
+      }))
+      .filter((a) => a.departments.length > 0 || (!q && areaFilter === "ALL"));
+  }, [areas, areaFilter, matchText, q]);
+
+  const visibleDepartments = useMemo(
+    () =>
+      allDepartments.filter(
+        (d) =>
+          (areaFilter === "ALL" || d.areaKey === areaFilter) &&
+          matchText([d.name, d.code, d.areaName, d.description ?? ""]),
+      ),
+    [allDepartments, areaFilter, matchText],
+  );
+
+  const visiblePeople = useMemo(
+    () =>
+      people.filter(
+        (p) =>
+          (areaFilter === "ALL" || p.areaKeys.includes(areaFilter)) &&
+          matchText([p.name, p.email, roleLabel(p.role), p.title, ...p.departments]),
+      ),
+    [people, areaFilter, matchText],
+  );
+
+  const visibleAccounts = useMemo(
+    () =>
+      accounts.filter(
+        (a) =>
+          a.status === "ACTIVE" &&
+          (areaFilter === "ALL" || a.areaKeys.includes(areaFilter)) &&
+          matchText([a.name, a.email, roleLabel(a.role), ...a.departments]),
+      ),
+    [accounts, areaFilter, matchText],
+  );
+
+  const toggleArea = (key: string) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+
+  const kpis: { key: View; label: string; value: number; icon: React.ReactNode; tone: string }[] = [
+    { key: "departments", label: "Departamentos", value: stats.departments, icon: <MdApartment size={20} />, tone: "bg-[#D9F2F3] text-[#0E7C82]" },
+    { key: "units", label: "Unidades", value: stats.units, icon: <MdLayers size={20} />, tone: "bg-[#E0E7FF] text-[#4F46E5]" },
+    { key: "people", label: "Responsables", value: stats.responsables, icon: <MdPeople size={20} />, tone: "bg-[#DBEAFE] text-[#2563EB]" },
+    { key: "accounts", label: "Cuentas activas", value: stats.activeAccounts, icon: <MdBadge size={20} />, tone: "bg-[#DCFCE7] text-[#16A34A]" },
+  ];
+
+  const openCreate = (areaKey?: string) => {
+    setForm({ ...EMPTY_FORM, area: areaKey ?? "" });
+    setError(null);
+    setModal({ mode: "create" });
+  };
 
   const openEdit = (d: Department) => {
-    setForm({ name: d.name, code: d.code, description: d.description ?? "", isActive: d.isActive });
+    setForm({ name: d.name, code: d.code, description: d.description ?? "", area: d.area ?? "", isActive: d.isActive });
     setError(null);
     setModal({ mode: "edit", id: d.id });
   };
@@ -82,20 +348,41 @@ export default function DepartamentosProduccionPage() {
     }
   };
 
+  const areaOptions = [{ value: "ALL", label: "Todas las áreas" }, ...areas.map((a) => ({ value: a.key, label: a.name }))];
+  const formAreaOptions = areas.map((a) => ({ value: a.key, label: a.name }));
+
   return (
-    <div className="p-6 lg:p-8">
-      <div className="mb-8 flex items-center justify-between">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8]">Operaciones</p>
           <h1 className="mt-1 text-2xl font-black text-[#1A1A1A]">Departamentos</h1>
-          <p className="mt-0.5 text-sm text-[#64748B]">Departamentos internos del área de producción</p>
+          <p className="mt-0.5 text-sm text-[#64748B]">Estructura del área de operaciones y cuentas por departamento</p>
         </div>
-        <button
-          onClick={openCreate}
-          className="rounded-xl bg-[#27B1B8] px-4 py-2.5 text-sm font-black text-white shadow-[0_2px_8px_rgba(39,177,184,0.3)] transition hover:bg-[#1F9AA0]"
-        >
-          + Nuevo departamento
-        </button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <div className="relative">
+            <MdSearch size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar…"
+              className="w-full rounded-xl border border-[#E2E8F0] bg-white py-2.5 pl-9 pr-3 text-sm text-[#1A1A1A] outline-none focus:border-[#27B1B8] sm:w-64"
+            />
+          </div>
+          <SimpleSelect
+            value={areaFilter}
+            options={areaOptions}
+            onChange={setAreaFilter}
+            className="sm:w-52"
+            triggerClassName="flex w-full items-center justify-between rounded-xl border border-[#E2E8F0] bg-white px-3 py-2.5 text-left text-sm text-[#1A1A1A]"
+          />
+          <button
+            onClick={() => openCreate(areaFilter !== "ALL" ? areaFilter : undefined)}
+            className="rounded-xl bg-[#27B1B8] px-4 py-2.5 text-sm font-black text-white shadow-[0_2px_8px_rgba(39,177,184,0.3)] transition hover:bg-[#1F9AA0]"
+          >
+            + Nueva unidad
+          </button>
+        </div>
       </div>
 
       {error && !modal && !confirmDelete && (
@@ -106,56 +393,349 @@ export default function DepartamentosProduccionPage() {
         <div className="flex h-64 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#27B1B8] border-t-transparent" />
         </div>
-      ) : departments.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[#E2E8F0] bg-white p-10 text-center text-sm text-[#94A3B8]">
-          <MdApartment size={28} className="mx-auto mb-2 text-[#CBD5E1]" />
-          Sin departamentos todavía. Crea el primero.
-        </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-[#E2E8F0] bg-white">
-          <table className="w-full border-collapse text-sm">
-            <thead className="bg-[#F8FAFC]">
-              <tr>
-                {["Código", "Nombre", "Descripción", "Estado", ""].map((h) => (
-                  <th key={h} className="border-b border-[#E2E8F0] px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {departments.map((d) => (
-                <tr key={d.id} className="hover:bg-[#F8FAFC]">
-                  <td className="border-b border-[#F1F5F9] px-4 py-3 font-bold text-[#27B1B8]">{d.code}</td>
-                  <td className="border-b border-[#F1F5F9] px-4 py-3 font-semibold text-[#1A1A1A]">{d.name}</td>
-                  <td className="border-b border-[#F1F5F9] px-4 py-3 text-[#64748B]">{d.description || "—"}</td>
-                  <td className="border-b border-[#F1F5F9] px-4 py-3">
-                    <span
-                      className="rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest"
-                      style={d.isActive ? { color: "#16A34A", background: "#DCFCE7" } : { color: "#64748B", background: "#F1F5F9" }}
-                    >
-                      {d.isActive ? "Activo" : "Inactivo"}
-                    </span>
-                  </td>
-                  <td className="border-b border-[#F1F5F9] px-4 py-3">
-                    <div className="flex justify-end gap-1">
-                      <button onClick={() => openEdit(d)} aria-label={`Editar ${d.name}`} className="rounded-lg p-2 text-[#64748B] transition hover:bg-[#F1F5F9] hover:text-[#27B1B8]">
-                        <MdEdit size={16} />
-                      </button>
-                      <button onClick={() => { setError(null); setConfirmDelete(d); }} aria-label={`Eliminar ${d.name}`} className="rounded-lg p-2 text-[#64748B] transition hover:bg-[#FEE2E2] hover:text-[#DC2626]">
-                        <MdDelete size={16} />
-                      </button>
+        <>
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+            {kpis.map((k) => {
+              const active = view === k.key;
+              return (
+                <button
+                  key={k.key}
+                  onClick={() => setView(k.key)}
+                  aria-pressed={active}
+                  className={`flex items-center gap-2 rounded-2xl border p-3 text-left outline-none transition hover:shadow-[0_4px_16px_rgba(15,23,42,0.06)] focus-visible:border-[#27B1B8] focus-visible:ring-2 focus-visible:ring-[#27B1B8]/20 sm:gap-3 sm:p-4 ${
+                    active ? "border-[#27B1B8] bg-[#F0FAFA]" : "border-[#E2E8F0] bg-white"
+                  }`}
+                >
+                  <span className={`flex h-9 w-9 items-center justify-center rounded-xl sm:h-10 sm:w-10 ${k.tone}`}>{k.icon}</span>
+                  <div className="min-w-0">
+                    <p className="text-lg font-black text-[#1A1A1A] sm:text-xl">{k.value}</p>
+                    <p className={`truncate text-[11px] font-semibold sm:text-xs ${active ? "text-[#0E7C82]" : "text-[#94A3B8]"}`}>{k.label}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {(search.trim() !== "" || areaFilter !== "ALL") && (
+            <div className="mb-4 flex justify-end">
+              <button
+                onClick={() => { setSearch(""); setAreaFilter("ALL"); }}
+                className="text-xs font-bold text-[#27B1B8] transition hover:text-[#1F9AA0]"
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          )}
+
+          {view === "departments" && (
+            <>
+              {visibleAreas.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <div className="space-y-5">
+                  {visibleAreas.map((a) => {
+                    const isCollapsed = collapsed.has(a.key);
+                    return (
+                      <div key={a.key} className="rounded-2xl border border-[#E2E8F0] bg-white">
+                        <button onClick={() => toggleArea(a.key)} className="flex w-full items-center gap-2 px-4 py-3 text-left sm:gap-3 sm:px-5 sm:py-4">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F1F5F9] text-[#0E7C82] sm:h-10 sm:w-10">
+                            {AREA_ICONS[a.key] ?? <MdApartment size={20} />}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <h2 className="text-sm font-black text-[#1A1A1A] sm:text-base">{a.name}</h2>
+                            <p className="truncate text-xs text-[#64748B]">{a.description}</p>
+                          </div>
+                          <span className="shrink-0 text-xs font-semibold text-[#94A3B8]">
+                            {a.departments.length}
+                            <span className="hidden sm:inline"> {a.departments.length === 1 ? "unidad" : "unidades"}</span>
+                            <span className="sm:hidden"> u.</span>
+                          </span>
+                          <span className="shrink-0 text-[#94A3B8]">
+                            {isCollapsed ? <MdExpandMore size={22} /> : <MdExpandLess size={22} />}
+                          </span>
+                        </button>
+
+                        {!isCollapsed && (
+                          <div className="grid gap-3 border-t border-[#F1F5F9] p-3 sm:gap-4 sm:p-5 md:grid-cols-2 xl:grid-cols-3">
+                            {a.departments.map((d) => {
+                              const holders = d.members.filter((m) => m.kind === "holder");
+                              return (
+                                <div key={d.code} className="flex flex-col rounded-2xl border border-[#E2E8F0] bg-white p-3 sm:p-4">
+                                  <DepartmentHeader d={d} onEdit={() => openEdit(d)} onDelete={() => { setError(null); setConfirmDelete(d); }} />
+                                  {d.description && <p className="mt-1 text-xs text-[#64748B]">{d.description}</p>}
+                                  <div className="mt-3 space-y-2">
+                                    {holders.length === 0 ? (
+                                      <p className="rounded-xl bg-[#F8FAFC] px-3 py-3 text-center text-xs text-[#94A3B8]">
+                                        Sin responsables asignados
+                                      </p>
+                                    ) : (
+                                      holders.map((m, i) => (
+                                        <div key={`${m.email}-${i}`} className="flex items-center gap-2 rounded-xl bg-[#F1F5F9] px-2.5 py-2.5 sm:gap-3 sm:px-3">
+                                          <Avatar name={m.name} url={m.account?.avatarUrl ?? null} size={36} />
+                                          <div className="min-w-0 flex-1">
+                                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                              <p className="truncate text-sm font-bold text-[#1A1A1A]">{m.name}</p>
+                                              {m.account && <StatusBadge status={m.account.status} />}
+                                            </div>
+                                            <p className="truncate text-xs text-[#64748B]">{memberSubtitle(m)}</p>
+                                            <p className="truncate text-xs text-[#94A3B8]">{m.email}</p>
+                                          </div>
+                                        </div>
+                                      ))
+                                    )}
+                                  </div>
+                                  <p className="mt-3 text-xs font-semibold text-[#64748B]">
+                                    Respaldo: <span className="font-bold text-[#1A1A1A]">{d.backupName ?? "—"}</span>
+                                  </p>
+                                </div>
+                              );
+                            })}
+
+                            {!q && (
+                              <Link
+                                href="/panel/usuarios"
+                                className="flex min-h-[120px] flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-[#E2E8F0] p-4 text-center transition hover:border-[#27B1B8] hover:bg-[#F0FAFA]"
+                              >
+                                <MdPersonAdd size={26} className="text-[#94A3B8]" />
+                                <span className="text-sm font-bold text-[#1A1A1A]">Agregar persona</span>
+                                <span className="text-xs text-[#94A3B8]">Crea una cuenta y asígnala a esta área</span>
+                              </Link>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
+          {view === "units" && (
+            <>
+              {visibleDepartments.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <div className="overflow-x-auto rounded-2xl border border-[#E2E8F0] bg-white">
+                  <table className="w-full border-collapse text-sm">
+                    <thead className="bg-[#F8FAFC]">
+                      <tr>
+                        {["Unidad", "Departamento", "Responsable", "Cuentas", "Estado", ""].map((h) => (
+                          <th key={h} className="border-b border-[#E2E8F0] px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visibleDepartments.map((d) => {
+                        const holder = d.members.find((m) => m.kind === "holder");
+                        const count = d.members.filter((m) => m.account).length;
+                        return (
+                          <tr key={d.code} className="hover:bg-[#F8FAFC]">
+                            <td className="border-b border-[#F1F5F9] px-4 py-3">
+                              <p className="font-semibold text-[#1A1A1A]">{d.name}</p>
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">{d.code}</span>
+                            </td>
+                            <td className="border-b border-[#F1F5F9] px-4 py-3 text-[#64748B]">{d.areaName}</td>
+                            <td className="border-b border-[#F1F5F9] px-4 py-3">
+                              {holder ? (
+                                <div className="flex items-center gap-2">
+                                  <Avatar name={holder.name} url={holder.account?.avatarUrl ?? null} size={32} />
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-semibold text-[#1A1A1A]">{holder.name}</p>
+                                    <p className="truncate text-xs text-[#94A3B8]">{holder.email}</p>
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-[#94A3B8]">—</span>
+                              )}
+                            </td>
+                            <td className="border-b border-[#F1F5F9] px-4 py-3">
+                              <span className="rounded-full bg-[#F1F5F9] px-2.5 py-1 text-xs font-bold text-[#475569]">{count}</span>
+                            </td>
+                            <td className="border-b border-[#F1F5F9] px-4 py-3">
+                              <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${d.isActive ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#F1F5F9] text-[#64748B]"}`}>
+                                {d.isActive ? "Activo" : "Inactivo"}
+                              </span>
+                            </td>
+                            <td className="border-b border-[#F1F5F9] px-4 py-3">
+                              {d.id ? (
+                                <div className="flex justify-end gap-1">
+                                  <button onClick={() => openEdit(d)} aria-label={`Editar ${d.name}`} className="rounded-lg p-2 text-[#64748B] transition hover:bg-[#F1F5F9] hover:text-[#27B1B8]">
+                                    <MdEdit size={16} />
+                                  </button>
+                                  <button onClick={() => { setError(null); setConfirmDelete(d); }} aria-label={`Eliminar ${d.name}`} className="rounded-lg p-2 text-[#64748B] transition hover:bg-[#FEE2E2] hover:text-[#DC2626]">
+                                    <MdDelete size={16} />
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="block text-right text-[10px] font-bold uppercase tracking-widest text-[#CBD5E1]">Documento</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+          {view === "people" && (
+            <>
+              <div className="mb-4 flex items-center gap-2 rounded-xl bg-[#EFF6FF] px-4 py-3 text-xs font-semibold text-[#1D4ED8]">
+                <MdPeople size={18} />
+                Responsables titulares de cada departamento. {visiblePeople.length} en total.
+              </div>
+              {visiblePeople.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {visiblePeople.map((p) => (
+                    <div key={p.key} className="flex flex-col rounded-2xl border border-[#E2E8F0] bg-white p-3 sm:p-4">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <Avatar name={p.name} url={p.avatarUrl} size={48} />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-black text-[#1A1A1A]">{p.name}</p>
+                          <p className="truncate text-xs text-[#64748B]">{p.title}</p>
+                        </div>
+                        {p.status && <StatusBadge status={p.status} />}
+                      </div>
+                      <div className="mt-3 space-y-2 text-xs">
+                        <div className="flex items-center gap-2 text-[#64748B]">
+                          <MdBadge size={15} className="shrink-0 text-[#94A3B8]" />
+                          <span className="font-semibold text-[#1A1A1A]">{p.role ? roleLabel(p.role) : "—"}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[#64748B]">
+                          <MdMailOutline size={15} className="shrink-0 text-[#94A3B8]" />
+                          <span className="truncate">{p.email}</span>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {p.departments.map((name) => (
+                          <span key={name} className="rounded-full bg-[#F1F5F9] px-2.5 py-1 text-[10px] font-bold text-[#475569]">{name}</span>
+                        ))}
+                      </div>
+                      <p className="mt-3 border-t border-[#F1F5F9] pt-2 text-xs font-semibold text-[#64748B]">
+                        Respaldo: <span className="font-bold text-[#1A1A1A]">{p.backupName ?? "—"}</span>
+                      </p>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {view === "accounts" && (
+            <>
+              <div className="mb-4 flex items-center gap-2 rounded-xl bg-[#F0FDF4] px-4 py-3 text-xs font-semibold text-[#15803D]">
+                <MdBadge size={18} />
+                Cuentas con acceso activo en el área de operaciones. {visibleAccounts.length} en total.
+              </div>
+              {visibleAccounts.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <div className="overflow-x-auto rounded-2xl border border-[#E2E8F0] bg-white">
+                  <table className="w-full border-collapse text-sm">
+                    <thead className="bg-[#F8FAFC]">
+                      <tr>
+                        {["Cuenta", "Nombre", "Rol", "Departamentos", "Estado"].map((h) => (
+                          <th key={h} className="border-b border-[#E2E8F0] px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visibleAccounts.map((a) => (
+                        <tr key={a.id} className="hover:bg-[#F8FAFC]">
+                          <td className="border-b border-[#F1F5F9] px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <Avatar name={a.name} url={a.avatarUrl} size={32} />
+                              <span className="font-mono text-xs text-[#0E7C82]">{a.email}</span>
+                            </div>
+                          </td>
+                          <td className="border-b border-[#F1F5F9] px-4 py-3 font-semibold text-[#1A1A1A]">{a.name}</td>
+                          <td className="border-b border-[#F1F5F9] px-4 py-3">
+                            <span className="rounded-full bg-[#E0E7FF] px-2.5 py-1 text-[10px] font-bold text-[#4F46E5]">{roleLabel(a.role)}</span>
+                          </td>
+                          <td className="border-b border-[#F1F5F9] px-4 py-3">
+                            <div className="flex flex-wrap gap-1.5">
+                              {a.departments.map((name) => (
+                                <span key={name} className="rounded-full bg-[#F1F5F9] px-2.5 py-1 text-[10px] font-bold text-[#475569]">{name}</span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="border-b border-[#F1F5F9] px-4 py-3">
+                            <StatusBadge status={a.status} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+          <div className="mt-8">
+            <button
+              onClick={() => setShowManage((v) => !v)}
+              className="flex items-center gap-2 text-sm font-bold text-[#64748B] transition hover:text-[#27B1B8]"
+            >
+              {showManage ? <MdExpandLess size={18} /> : <MdExpandMore size={18} />}
+              Gestionar unidades
+            </button>
+
+            {showManage && (
+              <div className="mt-3 overflow-x-auto rounded-2xl border border-[#E2E8F0] bg-white">
+                <table className="w-full border-collapse text-sm">
+                  <thead className="bg-[#F8FAFC]">
+                    <tr>
+                      {["Código", "Nombre", "Área", "Descripción", "Estado", ""].map((h) => (
+                        <th key={h} className="border-b border-[#E2E8F0] px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allDepartments.map((d) => (
+                      <tr key={d.code} className="hover:bg-[#F8FAFC]">
+                        <td className="border-b border-[#F1F5F9] px-4 py-3 font-bold text-[#27B1B8]">{d.code}</td>
+                        <td className="border-b border-[#F1F5F9] px-4 py-3 font-semibold text-[#1A1A1A]">{d.name}</td>
+                        <td className="border-b border-[#F1F5F9] px-4 py-3 text-[#64748B]">{d.areaName}</td>
+                        <td className="border-b border-[#F1F5F9] px-4 py-3 text-[#64748B]">{d.description || "—"}</td>
+                        <td className="border-b border-[#F1F5F9] px-4 py-3">
+                          <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${d.isActive ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#F1F5F9] text-[#64748B]"}`}>
+                            {d.isActive ? "Activo" : "Inactivo"}
+                          </span>
+                        </td>
+                        <td className="border-b border-[#F1F5F9] px-4 py-3">
+                          {d.id ? (
+                            <div className="flex justify-end gap-1">
+                              <button onClick={() => openEdit(d)} aria-label={`Editar ${d.name}`} className="rounded-lg p-2 text-[#64748B] transition hover:bg-[#F1F5F9] hover:text-[#27B1B8]">
+                                <MdEdit size={16} />
+                              </button>
+                              <button onClick={() => { setError(null); setConfirmDelete(d); }} aria-label={`Eliminar ${d.name}`} className="rounded-lg p-2 text-[#64748B] transition hover:bg-[#FEE2E2] hover:text-[#DC2626]">
+                                <MdDelete size={16} />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="block text-right text-[10px] font-bold uppercase tracking-widest text-[#CBD5E1]">Documento</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <h3 className="font-black text-[#1A1A1A]">{modal.mode === "create" ? "Nuevo departamento" : "Editar departamento"}</h3>
+            <h3 className="font-black text-[#1A1A1A]">{modal.mode === "create" ? "Nueva unidad" : "Editar unidad"}</h3>
             <div className="mt-4 space-y-3">
               <div>
                 <label className="text-xs font-bold text-[#64748B]">Nombre</label>
@@ -171,6 +751,15 @@ export default function DepartamentosProduccionPage() {
                   value={form.code}
                   onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
                   className="mt-1 w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm uppercase outline-none focus:border-[#27B1B8]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-[#64748B]">Área</label>
+                <SimpleSelect
+                  value={form.area}
+                  options={[{ value: "", label: "— Sin área —" }, ...formAreaOptions]}
+                  onChange={(v) => setForm({ ...form, area: v })}
+                  className="mt-1"
                 />
               </div>
               <div>
@@ -208,7 +797,7 @@ export default function DepartamentosProduccionPage() {
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
-            <h3 className="font-black text-[#1A1A1A]">Eliminar departamento</h3>
+            <h3 className="font-black text-[#1A1A1A]">Eliminar unidad</h3>
             <p className="mt-2 text-sm text-[#64748B]">
               ¿Eliminar <span className="font-bold text-[#1A1A1A]">{confirmDelete.name}</span>? Esta acción no se puede deshacer.
             </p>
@@ -224,6 +813,49 @@ export default function DepartamentosProduccionPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  return (
+    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${STATUS_STYLES[status] ?? "bg-[#F1F5F9] text-[#64748B]"}`}>
+      {STATUS_LABELS[status] ?? status}
+    </span>
+  );
+}
+
+function DepartmentHeader({ d, onEdit, onDelete }: { d: Department; onEdit: () => void; onDelete: () => void }) {
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <h3 className="break-words text-sm font-black text-[#1A1A1A]">{d.name}</h3>
+        <span className="rounded-md bg-[#F1F5F9] px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-[#64748B]">{d.code}</span>
+      </div>
+      <div className="flex shrink-0 items-center gap-1">
+        {d.id && (
+          <>
+            <button onClick={onEdit} aria-label={`Editar ${d.name}`} className="rounded-lg p-1.5 text-[#CBD5E1] transition hover:bg-[#F1F5F9] hover:text-[#27B1B8]">
+              <MdEdit size={15} />
+            </button>
+            <button onClick={onDelete} aria-label={`Eliminar ${d.name}`} className="rounded-lg p-1.5 text-[#CBD5E1] transition hover:bg-[#FEE2E2] hover:text-[#DC2626]">
+              <MdDelete size={15} />
+            </button>
+          </>
+        )}
+        <span className={`rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-widest ${d.isActive ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#F1F5F9] text-[#64748B]"}`}>
+          {d.isActive ? "Activo" : "Inactivo"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="rounded-2xl border border-dashed border-[#E2E8F0] bg-white p-10 text-center text-sm text-[#94A3B8]">
+      <MdApartment size={28} className="mx-auto mb-2 text-[#CBD5E1]" />
+      Sin resultados.
     </div>
   );
 }

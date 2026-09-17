@@ -7,10 +7,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
 
   const { id } = await params;
-  const { name, code, description, isActive } = (await request.json()) as {
+  const { name, code, description, area, isActive } = (await request.json()) as {
     name?: string;
     code?: string;
     description?: string | null;
+    area?: string | null;
     isActive?: boolean;
   };
 
@@ -36,6 +37,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       name: name?.trim() || undefined,
       code: code?.trim().toUpperCase() || undefined,
       description: description !== undefined ? description?.trim() || null : undefined,
+      area: area !== undefined ? area?.trim() || null : undefined,
       isActive: isActive !== undefined ? isActive : undefined,
     },
   });
