@@ -258,6 +258,7 @@ export default function ProduccionPage() {
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [page, setPage] = useState(1);
   const [role, setRole] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
 
@@ -282,6 +283,7 @@ export default function ProduccionPage() {
         setOperators(Array.isArray(ops) ? ops : []);
         setProducts(Array.isArray(prods) ? prods : []);
         setRole(perms?.role ?? "");
+        setEmail(perms?.email ?? "");
       })
       .finally(() => {
         if (!cancelled) loadRuns().finally(() => setLoading(false));
@@ -451,6 +453,25 @@ export default function ProduccionPage() {
   // El jefe de operaciones supervisa la planta: solo necesita consultar el
   // historial de recorridas y exportarlo, no registrar corridas.
   const isOpsJefe = role === "JEFE_OPERACIONES";
+
+  // Solo el jefe de operaciones (correo específico) y los superadmin pueden ver
+  // la columna de acciones con el detalle de cada recorrida.
+  const canViewActions =
+    role === "SUPERADMIN" || email?.toLowerCase() === "jefeoperaciones@kliniu.com";
+
+  const historyColumns = [
+    "Fecha",
+    "N° Orden",
+    "Máquina",
+    "Marca",
+    "Operario",
+    "Producto",
+    "Producidas",
+    "Dañadas",
+    "No conf.",
+    "Buenas",
+    "% Calidad",
+  ];
 
   const historyStats = useMemo(() => {
     const produced = filteredRuns.reduce((s, r) => s + r.produced, 0);
@@ -1174,7 +1195,7 @@ export default function ProduccionPage() {
           <table className="w-full min-w-[980px] border-collapse text-sm">
             <thead className="bg-[#F8FAFC]">
               <tr>
-                {["Fecha", "N° Orden", "Máquina", "Marca", "Operario", "Producto", "Producidas", "Dañadas", "No conf.", "Buenas", "% Calidad", "Acciones"].map((h) => (
+                {(canViewActions ? [...historyColumns, "Acciones"] : historyColumns).map((h) => (
                   <th key={h} className="border border-[#E2E8F0] px-2 py-2 text-left text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">
                     {h}
                   </th>
@@ -1195,19 +1216,21 @@ export default function ProduccionPage() {
                   <td className="border border-[#E2E8F0] px-2 py-1.5 text-right">{run.nonConforming}</td>
                   <td className="border border-[#E2E8F0] px-2 py-1.5 text-right font-bold text-[#0C6060]">{run.summary.goodPieces}</td>
                   <td className="border border-[#E2E8F0] px-2 py-1.5 text-right font-bold text-[#27B1B8]">{fmtPct(run.summary.qualityPercentage)}</td>
-                  <td className="border border-[#E2E8F0] px-2 py-1.5">
-                    <button
-                      onClick={() => setDetail(run)}
-                      className="rounded-lg border border-[#E2E8F0] px-2.5 py-1 text-xs font-bold text-[#475569] hover:bg-[#F1F5F9]"
-                    >
-                      Ver detalle
-                    </button>
-                  </td>
+                  {canViewActions && (
+                    <td className="border border-[#E2E8F0] px-2 py-1.5">
+                      <button
+                        onClick={() => setDetail(run)}
+                        className="rounded-lg border border-[#E2E8F0] px-2.5 py-1 text-xs font-bold text-[#475569] hover:bg-[#F1F5F9]"
+                      >
+                        Ver detalle
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
               {filteredRuns.length === 0 && (
                 <tr>
-                  <td colSpan={12} className="border border-[#E2E8F0] px-2 py-6 text-center text-sm text-[#94A3B8]">
+                  <td colSpan={canViewActions ? 12 : 11} className="border border-[#E2E8F0] px-2 py-6 text-center text-sm text-[#94A3B8]">
                     Sin recorridas registradas todavía
                   </td>
                 </tr>
