@@ -54,13 +54,29 @@ export default function VideosSolucionesPage() {
     setUploadingVideo(true);
     setError(null);
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("label", title || "video");
-      const r = await fetch("/api/uploads/video", { method: "POST", body: fd });
-      const d = await r.json();
-      if (!r.ok) { setError(d.error ?? "No se pudo subir el video"); return; }
-      setVideoUrl(d.publicUrl);
+      const signRes = await fetch("/api/uploads/video/sign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          label: title || "video",
+          contentType: file.type,
+          fileName: file.name,
+          size: file.size,
+        }),
+      });
+      const sign = await signRes.json();
+      if (!signRes.ok) { setError(sign.error ?? "No se pudo preparar la subida"); return; }
+
+      const putRes = await fetch(sign.signedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": sign.contentType ?? file.type },
+        body: file,
+      });
+      if (!putRes.ok) { setError("No se pudo subir el video. Intenta de nuevo."); return; }
+
+      setVideoUrl(sign.publicUrl);
+    } catch {
+      setError("No se pudo subir el video. Revisa tu conexión.");
     } finally {
       setUploadingVideo(false);
     }
@@ -242,7 +258,7 @@ export default function VideosSolucionesPage() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-[#64748B]">Video (MP4, máx 60MB)</label>
+                <label className="text-xs font-bold text-[#64748B]">Video (MP4, WEBM o MOV · máx 500MB)</label>
                 {videoUrl && (
                   <video src={videoUrl} controls className="mt-1 mb-2 max-h-40 w-full rounded-lg bg-black" />
                 )}
