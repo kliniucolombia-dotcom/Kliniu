@@ -2,7 +2,15 @@ import { prisma } from "@/lib/prisma";
 import { getTrmForDate } from "@/lib/trm";
 import { buildSaleCalculatorSummary, sanitizeSaleCalcNumber, sanitizePct } from "@/lib/sale-calculator";
 import { buildQuotationSummary, calcLineTotal, type QuotationTaxConfigInput } from "@/lib/quotation-calculator";
-import { buildProductionSummary, sanitizeProductionNumber, type ProductionRunInput } from "@/lib/production-calculator";
+import {
+  buildProductionSummary,
+  sanitizeProductionNumber,
+  type CouplingStatus,
+  type CycleUnit,
+  type ProductionRunInput,
+  type TemperatureType,
+  type TemperatureZone,
+} from "@/lib/production-calculator";
 import { assertProductionCanComplete } from "@/lib/production-order-policy";
 
 // ─── ROAS helpers ───────────────────────────────────────────────
@@ -1033,20 +1041,49 @@ export type ProductionRunWriteData = {
   endTime: Date;
   material: string;
   pigment?: string | null;
+  pigmentQuantity?: number | null;
+  pigmentColor?: string | null;
   injectionWeight: number;
   pieceWeight: number;
   cycle: number;
+  cycleUnit?: CycleUnit;
   temperature: number;
+  temperatureType?: TemperatureType;
+  temperatureZones?: TemperatureZone[] | null;
+  manualProductName?: string | null;
   produced: number;
   damaged?: number;
   nonConforming?: number;
   couplingTest?: string | null;
+  couplingStatus?: CouplingStatus | null;
+  couplingTime?: string | null;
   observations?: string | null;
 };
+
+const ZONE_LABELS = ["A", "B", "C", "D", "E", "F"];
+
+export function normalizeTemperatureZones(input: unknown): TemperatureZone[] {
+  if (!Array.isArray(input)) return [];
+  return input
+    .map((raw, index) => {
+      if (!raw || typeof raw !== "object") return null;
+      const value = Number((raw as { value?: unknown }).value);
+      if (!Number.isFinite(value) || value < 0) return null;
+      const labelRaw = (raw as { label?: unknown }).label;
+      const label =
+        typeof labelRaw === "string" && labelRaw.trim()
+          ? labelRaw.trim().toUpperCase().slice(0, 3)
+          : ZONE_LABELS[index] ?? String(index + 1);
+      return { label, value: sanitizeProductionNumber(value, { min: 0 }) };
+    })
+    .filter((z): z is TemperatureZone => z !== null)
+    .slice(0, ZONE_LABELS.length);
+}
 
 function assertProductionQuantities(produced: number, damaged: number, nonConforming: number) {
   if (damaged > produced) throw new Error("DAMAGED_EXCEEDS_PRODUCED");
   if (nonConforming > produced) throw new Error("NON_CONFORMING_EXCEEDS_PRODUCED");
+  if (damaged + nonConforming > produced) throw new Error("DEFECTIVE_EXCEEDS_PRODUCED");
 }
 
 export async function createProductionRun(data: ProductionRunWriteData) {
@@ -1064,14 +1101,22 @@ export async function createProductionRun(data: ProductionRunWriteData) {
       endTime: data.endTime,
       material: data.material.trim(),
       pigment: data.pigment?.trim() || null,
+      pigmentQuantity: data.pigmentQuantity != null ? sanitizeProductionNumber(data.pigmentQuantity, { min: 0 }) : null,
+      pigmentColor: data.pigmentColor?.trim() || null,
       injectionWeight: sanitizeProductionNumber(data.injectionWeight, { min: 0 }),
       pieceWeight: sanitizeProductionNumber(data.pieceWeight, { min: 0 }),
       cycle: sanitizeProductionNumber(data.cycle, { min: 0 }),
+      cycleUnit: data.cycleUnit ?? "seconds",
       temperature: sanitizeProductionNumber(data.temperature, { min: 0 }),
+      temperatureType: data.temperatureType ?? "simple",
+      temperatureZones: normalizeTemperatureZones(data.temperatureZones),
+      manualProductName: data.manualProductName?.trim() || null,
       produced: sanitizeProductionNumber(data.produced, { min: 0, integer: true }),
       damaged: sanitizeProductionNumber(data.damaged ?? 0, { min: 0, integer: true }),
       nonConforming: sanitizeProductionNumber(data.nonConforming ?? 0, { min: 0, integer: true }),
       couplingTest: data.couplingTest?.trim() || null,
+      couplingStatus: data.couplingStatus ?? null,
+      couplingTime: data.couplingTime?.trim() || null,
       observations: data.observations?.trim() || null,
     },
   });
@@ -1101,14 +1146,22 @@ export async function updateProductionRun(id: string, data: Partial<ProductionRu
       ...(data.endTime !== undefined ? { endTime: data.endTime } : {}),
       ...(data.material !== undefined ? { material: data.material.trim() } : {}),
       ...(data.pigment !== undefined ? { pigment: data.pigment?.trim() || null } : {}),
+      ...(data.pigmentQuantity !== undefined ? { pigmentQuantity: data.pigmentQuantity != null ? sanitizeProductionNumber(data.pigmentQuantity, { min: 0 }) : null } : {}),
+      ...(data.pigmentColor !== undefined ? { pigmentColor: data.pigmentColor?.trim() || null } : {}),
       ...(data.injectionWeight !== undefined ? { injectionWeight: sanitizeProductionNumber(data.injectionWeight, { min: 0 }) } : {}),
       ...(data.pieceWeight !== undefined ? { pieceWeight: sanitizeProductionNumber(data.pieceWeight, { min: 0 }) } : {}),
       ...(data.cycle !== undefined ? { cycle: sanitizeProductionNumber(data.cycle, { min: 0 }) } : {}),
+      ...(data.cycleUnit !== undefined ? { cycleUnit: data.cycleUnit } : {}),
       ...(data.temperature !== undefined ? { temperature: sanitizeProductionNumber(data.temperature, { min: 0 }) } : {}),
+      ...(data.temperatureType !== undefined ? { temperatureType: data.temperatureType } : {}),
+      ...(data.temperatureZones !== undefined ? { temperatureZones: normalizeTemperatureZones(data.temperatureZones) } : {}),
+      ...(data.manualProductName !== undefined ? { manualProductName: data.manualProductName?.trim() || null } : {}),
       ...(data.produced !== undefined ? { produced: sanitizeProductionNumber(data.produced, { min: 0, integer: true }) } : {}),
       ...(data.damaged !== undefined ? { damaged: sanitizeProductionNumber(data.damaged, { min: 0, integer: true }) } : {}),
       ...(data.nonConforming !== undefined ? { nonConforming: sanitizeProductionNumber(data.nonConforming, { min: 0, integer: true }) } : {}),
       ...(data.couplingTest !== undefined ? { couplingTest: data.couplingTest?.trim() || null } : {}),
+      ...(data.couplingStatus !== undefined ? { couplingStatus: data.couplingStatus } : {}),
+      ...(data.couplingTime !== undefined ? { couplingTime: data.couplingTime?.trim() || null } : {}),
       ...(data.observations !== undefined ? { observations: data.observations?.trim() || null } : {}),
     },
   });

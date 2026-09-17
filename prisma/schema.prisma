@@ -127,11 +127,12 @@ model User {
   moldChanges              MoldChange[]       @relation("MoldChangeChangedBy")
   maintenanceReported      MaintenanceOrder[] @relation("MaintenanceReportedBy")
   maintenanceAssigned      MaintenanceOrder[] @relation("MaintenanceAssignedTo")
-  operationsReports        OperationsReport[] @relation("OperationsReportAuthor")
+  operationsReports        OperationsReport[]  @relation("OperationsReportAuthor")
   notifications            Notification[]      @relation("NotificationTarget")
   notificationsCreated     Notification[]      @relation("NotificationCreator")
   notificationReads        NotificationRead[]
   notificationDismissals   NotificationDismissal[]
+  departmentMembers        DepartmentMember[]
 }
 
 model CartItem {
@@ -408,13 +409,24 @@ model ProductionRun {
   injectionWeight Float
   pieceWeight     Float
   cycle           Float
+  cycleUnit       String @default("seconds")
   temperature     Float
+  temperatureType String @default("simple")
+  temperatureZones Json? @default("[]")
+
+  pigmentQuantity Float?
+  pigmentColor    String?
+
+  manualProductName String?
 
   produced      Int
   damaged       Int @default(0)
   nonConforming Int @default(0)
 
-  couplingTest String?
+  couplingTest   String?
+  couplingStatus String?
+  couplingTime   String?
+
   observations String?
 
   createdAt DateTime @default(now())
@@ -1497,6 +1509,32 @@ model ProductionDepartment {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  members DepartmentMember[]
+}
+
+enum DepartmentMemberKind {
+  HOLDER
+  BACKUP
+}
+
+model DepartmentMember {
+  id           String               @id @default(cuid())
+  departmentId String
+  userId       String?
+  name         String?
+  email        String?
+  title        String
+  kind         DepartmentMemberKind @default(HOLDER)
+  order        Int                  @default(0)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  department ProductionDepartment @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  user       User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([departmentId])
+  @@index([userId])
 }
 
 model SolutionVideo {

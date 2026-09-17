@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { MdCookie } from "react-icons/md";
 import GoogleTags from "./google-tags";
 
@@ -9,6 +10,7 @@ const STORAGE_KEY = "kliniu_cookie_consent";
 type Consent = "accepted" | "rejected" | null;
 
 export default function CookieConsent({ nonce }: { nonce?: string }) {
+  const pathname = usePathname();
   const [consent, setConsent] = useState<Consent>(null);
   const [ready, setReady] = useState(false);
 
@@ -22,6 +24,9 @@ export default function CookieConsent({ nonce }: { nonce?: string }) {
     window.localStorage.setItem(STORAGE_KEY, value);
     setConsent(value);
   };
+
+  // Rutas de impresión/PDF: no deben mostrar banners ni cargar analítica.
+  if (pathname.startsWith("/imprimir")) return null;
 
   return (
     <>

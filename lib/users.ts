@@ -336,6 +336,8 @@ export type UpdateUserByAdminInput = {
   newPassword?: string;
   /** Quién cubre a este usuario cuando falta; "" o null lo deja sin respaldo. */
   backupUserId?: string | null;
+  /** URL de la foto de perfil; "" o null la elimina. */
+  avatarUrl?: string | null;
 };
 
 export type UserDeletionImpact = {
@@ -426,6 +428,7 @@ export async function updateUserByAdmin(userId: string, input: UpdateUserByAdmin
     status?: "ACTIVE" | "INACTIVE" | "SUSPENDED";
     passwordHash?: string;
     backupUserId?: string | null;
+    avatarUrl?: string | null;
   } = {};
 
   if (input.fullName?.trim()) data.fullName = input.fullName.trim();
@@ -437,6 +440,7 @@ export async function updateUserByAdmin(userId: string, input: UpdateUserByAdmin
   if (input.role) data.role = input.role;
   if (input.status) data.status = input.status;
   if (input.whatsappPhone !== undefined) data.whatsappPhone = input.whatsappPhone?.trim() || null;
+  if (input.avatarUrl !== undefined) data.avatarUrl = input.avatarUrl?.trim() || null;
 
   if (input.email?.trim()) {
     const email = input.email.trim().toLowerCase();

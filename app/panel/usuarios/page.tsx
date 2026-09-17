@@ -359,6 +359,9 @@ export default function UsuariosPage() {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [editAvatarUrl, setEditAvatarUrl] = useState("");
+  const [editAvatarUploading, setEditAvatarUploading] = useState(false);
+  const editAvatarInputRef = useRef<HTMLInputElement>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [permUserId, setPermUserId] = useState<string | null>(null);
   const [perms, setPerms] = useState<ModulePermission[]>([]);
@@ -403,20 +406,20 @@ export default function UsuariosPage() {
     setTimeout(() => setToast(""), 3000);
   };
 
-  const uploadAvatar = async (file: File) => {
+  const uploadAvatar = async (file: File, apply: (url: string) => void, setBusy: (v: boolean) => void) => {
     setError("");
-    setAvatarUploading(true);
+    setBusy(true);
     const fd = new FormData();
     fd.append("file", file);
     const res = await fetch("/api/panel/users/avatar", { method: "POST", body: fd });
     if (res.ok) {
       const data = await res.json();
-      setAvatarUrl(data.avatarUrl);
+      apply(data.avatarUrl);
     } else {
       const data = await res.json().catch(() => ({}));
       setError(data.error ?? "Error al subir la imagen");
     }
-    setAvatarUploading(false);
+    setBusy(false);
   };
 
   const generatePassword = () => {
@@ -459,7 +462,7 @@ export default function UsuariosPage() {
     }
   };
 
-  const updateUser = async (id: string, patch: Partial<Pick<UserRow, "role" | "status" | "email" | "fullName" | "whatsappPhone" | "backupUserId">> & { newPassword?: string }, successMsg?: string) => {
+  const updateUser = async (id: string, patch: Partial<Pick<UserRow, "role" | "status" | "email" | "fullName" | "whatsappPhone" | "backupUserId" | "avatarUrl">> & { newPassword?: string }, successMsg?: string) => {
     const res = await fetch(`/api/panel/users/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -480,6 +483,7 @@ export default function UsuariosPage() {
     setFullNameValue(u.fullName);
     setWhatsappValue(u.whatsappPhone ?? "");
     setBackupValue(u.backupUserId ?? "");
+    setEditAvatarUrl(u.avatarUrl ?? "");
   };
 
   const confirmEditEmail = () => {
@@ -487,11 +491,12 @@ export default function UsuariosPage() {
     const email = emailValue.trim();
     const fullName = fullNameValue.trim();
     const whatsappPhone = whatsappValue.trim();
-    const patch: Partial<Pick<UserRow, "email" | "fullName" | "whatsappPhone" | "backupUserId">> = {};
+    const patch: Partial<Pick<UserRow, "email" | "fullName" | "whatsappPhone" | "backupUserId" | "avatarUrl">> = {};
     if (email && email !== emailTarget.email) patch.email = email;
     if (fullName && fullName !== emailTarget.fullName) patch.fullName = fullName;
     if (whatsappPhone !== (emailTarget.whatsappPhone ?? "")) patch.whatsappPhone = whatsappPhone || null;
     if (backupValue !== (emailTarget.backupUserId ?? "")) patch.backupUserId = backupValue || null;
+    if (editAvatarUrl !== (emailTarget.avatarUrl ?? "")) patch.avatarUrl = editAvatarUrl || null;
     if (Object.keys(patch).length > 0) updateUser(emailTarget.id, patch, "Usuario actualizado correctamente");
     setEmailTarget(null);
   };
@@ -709,7 +714,7 @@ export default function UsuariosPage() {
                       <input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
-                          if (file) uploadAvatar(file);
+                          if (file) uploadAvatar(file, setAvatarUrl, setAvatarUploading);
                           e.target.value = "";
                         }} />
                     </div>
@@ -1116,6 +1121,50 @@ export default function UsuariosPage() {
               <div>
                 <h2 className="text-sm font-black text-[#1A1A1A]">Editar usuario</h2>
                 <p className="text-xs text-[#94A3B8]">{emailTarget.fullName}</p>
+              </div>
+            </div>
+            <div className="mb-4 flex items-center gap-3">
+              <div className="relative shrink-0">
+                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-[#E2E8F0] text-[#94A3B8]">
+                  {editAvatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={editAvatarUrl} alt="Foto de perfil" className="h-full w-full object-cover" />
+                  ) : (
+                    <svg viewBox="0 0 24 24" className="h-8 w-8" fill="currentColor">
+                      <circle cx="12" cy="8" r="4" />
+                      <path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7v1H4v-1z" />
+                    </svg>
+                  )}
+                </div>
+                <button type="button" onClick={() => editAvatarInputRef.current?.click()} disabled={editAvatarUploading}
+                  aria-label="Subir foto"
+                  className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-[#27B1B8] text-white disabled:opacity-50">
+                  {editAvatarUploading ? (
+                    <svg viewBox="0 0 24 24" className="h-3 w-3 animate-spin" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 12a9 9 0 11-6.2-8.6" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                  )}
+                </button>
+                <input ref={editAvatarInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) uploadAvatar(file, setEditAvatarUrl, setEditAvatarUploading);
+                    e.target.value = "";
+                  }} />
+              </div>
+              <div className="text-xs">
+                <p className="font-bold text-[#1A1A1A]">Foto de perfil</p>
+                {editAvatarUrl ? (
+                  <button type="button" onClick={() => setEditAvatarUrl("")} className="font-bold text-red-500 hover:underline">
+                    Quitar foto
+                  </button>
+                ) : (
+                  <p className="text-[#94A3B8]">JPG o PNG. Máx. 5 MB.</p>
+                )}
               </div>
             </div>
             <label className="mb-1 block text-xs font-semibold text-[#64748B]">Nombre completo</label>

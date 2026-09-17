@@ -8,6 +8,14 @@ export function fmtDateOnly(d: string | Date, options?: Intl.DateTimeFormatOptio
 }
 
 /**
+ * Formatea la hora de un instante guardado en UTC (ej. startTime/endTime de las
+ * corridas). Se lee en UTC para que la hora de reloj no se corra en Bogotá.
+ */
+export function fmtTimeOnly(d: string | Date, options?: Intl.DateTimeFormatOptions) {
+  return new Date(d).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC", ...options });
+}
+
+/**
  * ¿Una fecha "de calendario" (startDate, date, hireDate…) cae en el mes actual?
  *
  * El campo se guarda como UTC medianoche, así que hay que leerlo en UTC: con

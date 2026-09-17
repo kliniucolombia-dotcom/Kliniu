@@ -11,6 +11,7 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
+    "db:seed:departments": "tsx scripts/seed-department-members.ts",
     "test:operations": "tsx --test tests/*.test.ts"
   },
   "prisma": {

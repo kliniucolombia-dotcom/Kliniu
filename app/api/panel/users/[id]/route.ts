@@ -13,6 +13,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     status?: "ACTIVE" | "INACTIVE" | "SUSPENDED";
     newPassword?: string;
     backupUserId?: string | null;
+    avatarUrl?: string | null;
   };
 
   try {
