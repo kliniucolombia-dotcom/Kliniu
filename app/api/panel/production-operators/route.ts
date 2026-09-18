@@ -6,7 +6,7 @@ export async function GET() {
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   if (!prisma) return Response.json([]);
   const operators = await prisma.user.findMany({
-    where: { role: { in: ["ADMIN", "SELLER", "PACKING"] } },
+    where: { status: "ACTIVE", department: "Inyección" },
     select: { id: true, fullName: true, role: true },
     orderBy: { fullName: "asc" },
   });

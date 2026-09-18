@@ -722,16 +722,18 @@ export default function ProduccionPage() {
                     onChange={(e) => set("cycleValue", e.target.value)}
                     onWheel={(e) => e.currentTarget.blur()}
                     placeholder="35"
-                    className={`no-spinner ${show(form.cycleValue === "") ? inputErrClass : inputClass}`}
+                    className={`no-spinner flex-1 min-w-0 ${show(form.cycleValue === "") ? inputErrClass : inputClass}`}
                   />
-                  <select
-                    value={form.cycleUnit}
-                    onChange={(e) => set("cycleUnit", e.target.value as CycleUnit)}
-                    className={`${inputClass} w-32 shrink-0`}
-                  >
-                    <option value="seconds">segundos</option>
-                    <option value="minutes">minutos</option>
-                  </select>
+                  <div className="w-32 shrink-0">
+                    <SimpleSelect
+                      value={form.cycleUnit}
+                      options={[
+                        { value: "seconds", label: "segundos" },
+                        { value: "minutes", label: "minutos" },
+                      ]}
+                      onChange={(v) => set("cycleUnit", v as CycleUnit)}
+                    />
+                  </div>
                 </div>
                 {show(form.cycleValue === "") && <p className={errorClass}>Ingresa el ciclo.</p>}
               </div>
@@ -1038,7 +1040,9 @@ export default function ProduccionPage() {
             <div>
               <h2 className="text-xl font-black text-[#1A1A1A]">Historial de recorridas</h2>
               <p className="mt-0.5 text-sm text-[#64748B]">
-                Visualiza y consulta el detalle de todas las recorridas realizadas en las máquinas.
+                {canViewActions
+                  ? "Visualiza y consulta el detalle de todas las recorridas realizadas en las máquinas."
+                  : "Recorridas registradas en las máquinas."}
               </p>
             </div>
           </div>
@@ -1052,6 +1056,8 @@ export default function ProduccionPage() {
           </div>
         </div>
 
+        {canViewActions && (
+        <>
         <div className="mb-3 flex flex-wrap items-end gap-3">
           <div className="min-w-[220px] flex-1">
             <div className="relative">
@@ -1190,6 +1196,8 @@ export default function ProduccionPage() {
           <HistoryStat label="Piezas buenas" value={historyStats.good.toLocaleString("es-CO")} />
           <HistoryStat label="% Calidad promedio" value={fmtPct(historyStats.quality)} accent />
         </div>
+        </>
+        )}
 
         <div className="overflow-x-auto rounded-xl border border-[#E2E8F0]">
           <table className="w-full min-w-[980px] border-collapse text-sm">
