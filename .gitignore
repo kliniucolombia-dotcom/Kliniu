@@ -96,8 +96,9 @@ next-env.d.ts
 # local git worktrees
 /.worktrees/
 
-# claude code local settings (puede contener credenciales de sesión)
-.claude/settings.local.json
+# claude code / agentes: no subir al repo
+.claude/
+.agents/
 
 # graphify generated output
 /graphify-out/
