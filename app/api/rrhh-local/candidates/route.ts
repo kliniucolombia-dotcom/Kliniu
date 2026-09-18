@@ -1,6 +1,7 @@
 import { isRRHH } from "@/lib/roles";
 import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET() {
   const access = await requireActiveUser();
@@ -50,5 +51,6 @@ export async function POST(request: Request) {
     include: { createdBy: { select: { fullName: true } } },
   });
 
+  broadcastPanelUpdate("rrhh").catch(() => {});
   return Response.json(candidate, { status: 201 });
 }

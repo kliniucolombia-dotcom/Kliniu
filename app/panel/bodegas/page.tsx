@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { SimpleSelect } from "../_components/simple-select";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type Warehouse = { id: string; key: string; name: string; order: number };
 type Product = {
@@ -68,6 +69,8 @@ export default function BodegasPanel() {
     const task = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(task);
   }, [load]);
+
+  const { markLocalWrite } = useRealtimeRefresh(["warehouse"], load);
 
   const warehouseStats = useMemo(() => {
     const stats: Record<string, { skuCount: number; totalUnits: number }> = {};
@@ -291,6 +294,7 @@ export default function BodegasPanel() {
           onClose={() => setModal(null)}
           onDone={(msg) => { setModal(null); setAlert({ type: "ok", msg }); load(); }}
           onError={(msg) => setAlert({ type: "err", msg })}
+          markLocalWrite={markLocalWrite}
         />
       )}
     </div>
@@ -304,6 +308,7 @@ function MovementModalView({
   onClose,
   onDone,
   onError,
+  markLocalWrite,
 }: {
   modal: MovementModal;
   warehouses: Warehouse[];
@@ -311,6 +316,7 @@ function MovementModalView({
   onClose: () => void;
   onDone: (msg: string) => void;
   onError: (msg: string) => void;
+  markLocalWrite: () => void;
 }) {
   const [warehouseId, setWarehouseId] = useState(defaultWarehouseId ?? warehouses[0]?.id ?? "");
   const [toWarehouseId, setToWarehouseId] = useState(
@@ -329,6 +335,7 @@ function MovementModalView({
         ? { productId: modal.product.id, warehouseId, type, quantity, note }
         : { productId: modal.product.id, fromWarehouseId: warehouseId, toWarehouseId, quantity, note };
 
+    markLocalWrite();
     const r = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

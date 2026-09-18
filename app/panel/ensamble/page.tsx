@@ -5,6 +5,7 @@ import { MdInventory2, MdVerified, MdGroups, MdReportProblem, MdDelete, MdSettin
 import { SimpleSelect } from "../_components/simple-select";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import { buildAssemblySummary } from "@/lib/assembly-calculator";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { fmtDateOnly } from "@/lib/date";
 
 type Station = { id: string; code: number; name: string; location: string | null };
@@ -92,6 +93,8 @@ export default function EnsamblePanel() {
     setLoading(false);
   }, [filterStation, from, to]);
 
+  const { markLocalWrite } = useRealtimeRefresh(["assembly"], loadRuns);
+
   useEffect(() => {
     fetch("/api/panel/assembly-runs/options")
       .then((r) => (r.ok ? r.json() : null))
@@ -148,6 +151,7 @@ export default function EnsamblePanel() {
       return;
     }
     setSaving(true);
+    markLocalWrite();
     const r = await fetch("/api/panel/assembly-runs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -187,6 +191,7 @@ export default function EnsamblePanel() {
       message: `Se descontarán ${run.summary.goodUnits} unidades de producto terminado. ¿Eliminar la corrida ${run.orderNumber}?`,
     });
     if (!ok) return;
+    markLocalWrite();
     const r = await fetch(`/api/panel/assembly-runs/${run.id}`, { method: "DELETE" });
     if (r.ok) {
       setAlert({ type: "ok", msg: "Corrida eliminada y stock revertido" });

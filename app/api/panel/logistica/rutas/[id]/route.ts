@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { addOrdersToRoute, deleteRoute, removeOrderFromRoute, updateRoute } from "@/lib/logistics";
 import type { DeliveryRouteStatus } from "@/generated/prisma/client";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 const STATUSES: DeliveryRouteStatus[] = ["PLANNED", "IN_PROGRESS", "DONE"];
 
@@ -33,6 +34,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     driverId: body.driverId,
     date: body.date,
   });
+  broadcastPanelUpdate("logistics").catch(() => {});
   return Response.json({ route });
 }
 
@@ -42,5 +44,6 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
 
   const { id } = await params;
   await deleteRoute(id);
+  broadcastPanelUpdate("logistics").catch(() => {});
   return Response.json({ ok: true });
 }

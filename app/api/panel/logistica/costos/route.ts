@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { createCost } from "@/lib/logistics";
 import type { TransportCostCategory } from "@/generated/prisma/client";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 const CATEGORIES: TransportCostCategory[] = ["COMBUSTIBLE", "MANTENIMIENTO", "PEAJES", "OTRO"];
 
@@ -30,5 +31,6 @@ export async function POST(request: Request) {
     notes: body.notes,
     userId: access.user.id,
   });
+  broadcastPanelUpdate("logistics").catch(() => {});
   return Response.json({ cost });
 }

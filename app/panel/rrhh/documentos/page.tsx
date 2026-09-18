@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { MdAttachFile, MdDownload, MdDescription, MdGroup, MdCalendarMonth, MdShield, MdSearch, MdRefresh, MdClose } from "react-icons/md";
 import { SimpleSelect } from "../../_components/simple-select";
 import { useConfirm } from "@/app/components/confirm-dialog";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type EmployeeOption = { id: string; userId: string; employeeCode: string; user: { fullName: string } };
 type DocumentRow = {
@@ -71,6 +72,8 @@ export default function DocumentosRRHHPage() {
     load();
   }, []);
 
+  const { markLocalWrite } = useRealtimeRefresh(["rrhh"], load);
+
   const uploadFile = async (file: File) => {
     const employee = employees.find((e) => e.id === form.employeeId);
     if (!employee) return setError("Selecciona el empleado primero");
@@ -96,6 +99,7 @@ export default function DocumentosRRHHPage() {
     if (!form.employeeId || !form.name.trim() || !form.filePath) {
       return setError("Empleado, nombre y archivo son obligatorios");
     }
+    markLocalWrite();
     const res = await fetch("/api/rrhh-local/documents", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -119,6 +123,7 @@ export default function DocumentosRRHHPage() {
 
   const remove = async (id: string) => {
     if (!(await confirm({ title: "Eliminar documento", message: "¿Eliminar este documento?" }))) return;
+    markLocalWrite();
     const res = await fetch(`/api/rrhh-local/documents/${id}`, { method: "DELETE" });
     if (res.ok) await load();
   };

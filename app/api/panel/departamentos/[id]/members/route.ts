@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 const KINDS = ["HOLDER", "BACKUP"] as const;
 type Kind = (typeof KINDS)[number];
@@ -52,5 +53,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     },
   });
 
+  broadcastPanelUpdate("production").catch(() => {});
   return Response.json(member, { status: 201 });
 }

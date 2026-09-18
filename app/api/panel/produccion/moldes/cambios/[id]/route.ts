@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { finishMoldChange } from "@/lib/molds";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_PRODUCCION", "edit");
@@ -10,6 +11,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   try {
     const change = await finishMoldChange(id, body.notes);
+    broadcastPanelUpdate("production").catch(() => {});
     return Response.json({ change });
   } catch (error) {
     const already = error instanceof Error && error.message === "ALREADY_FINISHED";

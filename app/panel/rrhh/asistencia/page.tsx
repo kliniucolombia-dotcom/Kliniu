@@ -4,6 +4,7 @@ import { SimpleSelect } from "../../_components/simple-select";
 import { fmtDateOnly } from "@/lib/date";
 import { MdEventNote, MdGroup, MdCheckCircle, MdSchedule, MdCalendarMonth, MdSearch, MdFileDownload, MdMoreVert, MdClose } from "react-icons/md";
 import { useConfirm } from "@/app/components/confirm-dialog";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type EmployeeOption = { id: string; employeeCode: string; jobTitle: string; user: { fullName: string } };
 
@@ -95,9 +96,12 @@ export default function AsistenciaPage() {
     load();
   }, []);
 
+  const { markLocalWrite } = useRealtimeRefresh(["rrhh"], load);
+
   const submit = async () => {
     setError("");
     setSaving(true);
+    markLocalWrite();
     const res = await fetch("/api/rrhh-local/attendance", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -115,6 +119,7 @@ export default function AsistenciaPage() {
   };
 
   const changeStatus = async (id: string, status: string) => {
+    markLocalWrite();
     const res = await fetch(`/api/rrhh-local/attendance/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -125,6 +130,7 @@ export default function AsistenciaPage() {
 
   const removeRecord = async (id: string) => {
     if (!(await confirm({ title: "Eliminar registro", message: "¿Eliminar este registro de asistencia?" }))) return;
+    markLocalWrite();
     await fetch(`/api/rrhh-local/attendance/${id}`, { method: "DELETE" });
     await load();
   };

@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { fmtDateOnly } from "@/lib/date";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { SimpleSelect } from "../../_components/simple-select";
 
 type ProductionOrderStatus = "DRAFT" | "APPROVED" | "IN_PRODUCTION" | "COMPLETED" | "CANCELLED";
@@ -51,6 +52,8 @@ export default function ProductionOrdersListPage() {
     }
   }, []);
 
+  const { markLocalWrite } = useRealtimeRefresh(["production"], load);
+
   useEffect(() => {
     const task = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(task);
@@ -61,6 +64,7 @@ export default function ProductionOrdersListPage() {
     setCreating(true);
     setError(null);
     try {
+      markLocalWrite();
       const r = await fetch("/api/panel/production-orders", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productionDate: newDate, area: newArea }),
       });

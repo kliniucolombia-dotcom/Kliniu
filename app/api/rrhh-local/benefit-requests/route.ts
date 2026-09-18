@@ -1,6 +1,7 @@
 import { requireActiveUser } from "@/lib/permissions";
 import { isRRHH } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET(request: Request) {
   const access = await requireActiveUser();
@@ -58,5 +59,6 @@ export async function POST(request: Request) {
     data: { benefitId, employeeId: employee.id, note: note?.trim() || null },
     include: { benefit: { select: { title: true, category: true } } },
   });
+  broadcastPanelUpdate("rrhh").catch(() => {});
   return Response.json(created, { status: 201 });
 }

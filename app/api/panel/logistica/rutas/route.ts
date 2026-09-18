@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { createRoute } from "@/lib/logistics";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function POST(request: Request) {
   const access = await requirePermission("MODULE_LOGISTICA", "create");
@@ -24,5 +25,6 @@ export async function POST(request: Request) {
     orderIds: Array.isArray(body.orderIds) ? body.orderIds.filter((id) => typeof id === "string") : [],
     userId: access.user.id,
   });
+  broadcastPanelUpdate("logistics").catch(() => {});
   return Response.json({ route });
 }

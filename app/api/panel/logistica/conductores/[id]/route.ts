@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { updateDriver, deleteDriver } from "@/lib/logistics";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_LOGISTICA", "edit");
@@ -8,6 +9,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { id } = await params;
   const body = (await request.json()) as { fullName?: string; phone?: string | null; active?: boolean };
   const driver = await updateDriver(id, body);
+  broadcastPanelUpdate("logistics").catch(() => {});
   return Response.json({ driver });
 }
 
@@ -18,6 +20,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   const { id } = await params;
   try {
     await deleteDriver(id);
+    broadcastPanelUpdate("logistics").catch(() => {});
     return Response.json({ ok: true });
   } catch (error) {
     const fk = typeof error === "object" && error !== null && (error as { code?: string }).code === "P2003";

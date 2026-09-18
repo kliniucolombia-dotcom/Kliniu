@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { deleteProductionOrder, getProductionOrderWithItems, updateProductionOrder } from "@/lib/panel";
 import { parseBogotaCivilDate } from "@/lib/operations-validation";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_PRODUCCION", "view");
@@ -22,6 +23,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       productionDate: body.productionDate ? parseBogotaCivilDate(body.productionDate) : undefined,
       notes: body.notes,
     });
+    broadcastPanelUpdate("production").catch(() => {});
     return Response.json(updated);
   } catch (e) {
     if (e instanceof Error && e.message === "NOT_FOUND") {
@@ -42,6 +44,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
 
   try {
     await deleteProductionOrder(id);
+    broadcastPanelUpdate("production").catch(() => {});
     return Response.json({ ok: true });
   } catch (e) {
     if (e instanceof Error && e.message === "NOT_FOUND") {

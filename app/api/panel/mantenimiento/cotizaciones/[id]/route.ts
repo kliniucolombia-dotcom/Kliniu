@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { updateQuote } from "@/lib/maintenance";
 import type { MaintenanceQuoteStatus } from "@/generated/prisma/client";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 const STATUSES: MaintenanceQuoteStatus[] = ["REQUESTED", "APPROVED", "REJECTED", "PURCHASED"];
 
@@ -14,5 +15,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (body.amount !== undefined && (typeof body.amount !== "number" || !Number.isFinite(body.amount) || body.amount <= 0)) return Response.json({ error: "Monto inválido" }, { status: 400 });
 
   const quote = await updateQuote(id, body);
+  broadcastPanelUpdate("maintenance").catch(() => {});
   return Response.json({ quote });
 }

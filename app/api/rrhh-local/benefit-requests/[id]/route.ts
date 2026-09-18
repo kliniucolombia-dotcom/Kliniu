@@ -1,6 +1,7 @@
 import { requireActiveUser } from "@/lib/permissions";
 import { isRRHH } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requireActiveUser();
@@ -36,5 +37,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       reviewNote: isRRHH(access.user) ? reviewNote?.trim() || null : existing.reviewNote,
     },
   });
+  broadcastPanelUpdate("rrhh").catch(() => {});
   return Response.json(updated);
 }

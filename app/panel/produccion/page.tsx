@@ -34,6 +34,7 @@ import {
   type ProductionRunFilters,
 } from "@/lib/production-filters";
 import { fmtDateOnly, fmtTimeOnly } from "@/lib/date";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { SimpleSelect } from "../_components/simple-select";
 
 const MAX_NUM = 999_999_999;
@@ -268,6 +269,8 @@ export default function ProduccionPage() {
     setRuns(d.runs ?? []);
   }, []);
 
+  const { markLocalWrite } = useRealtimeRefresh(["production"], loadRuns);
+
   useEffect(() => {
     let cancelled = false;
     setNow(new Date());
@@ -371,6 +374,7 @@ export default function ProduccionPage() {
     setSaving(true);
     setAlert(null);
     try {
+      markLocalWrite();
       const r = await fetch("/api/panel/production-runs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -4,6 +4,7 @@ import {
   MdBusiness, MdInventory2, MdPalette, MdCampaign, MdFactory, MdGroup, MdAttachMoney, MdTrendingUp, MdAssignment,
   MdPerson, MdWork, MdSearch, MdFileDownload, MdMoreVert, MdClose,
 } from "react-icons/md";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type DepartmentRow = {
   id: string;
@@ -52,9 +53,12 @@ export default function DepartamentosPage() {
     load();
   }, []);
 
+  const { markLocalWrite } = useRealtimeRefresh(["rrhh"], load);
+
   const submit = async () => {
     setError("");
     setSaving(true);
+    markLocalWrite();
     const res = await fetch("/api/rrhh-local/departments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -72,6 +76,7 @@ export default function DepartamentosPage() {
   };
 
   const toggleActive = async (id: string, isActive: boolean) => {
+    markLocalWrite();
     const res = await fetch(`/api/rrhh-local/departments/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

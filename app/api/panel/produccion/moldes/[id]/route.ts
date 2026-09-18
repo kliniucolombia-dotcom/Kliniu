@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { updateMold } from "@/lib/molds";
 import type { MoldStatus } from "@/generated/prisma/client";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 const STATUSES: MoldStatus[] = ["AVAILABLE", "IN_USE", "MAINTENANCE"];
 
@@ -14,6 +15,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   try {
     const mold = await updateMold(id, body);
+    broadcastPanelUpdate("production").catch(() => {});
     return Response.json({ mold });
   } catch (error) {
     const key = error instanceof Error ? error.message : "";

@@ -2,6 +2,7 @@ import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { approveQuotation } from "@/lib/panel";
 import { createNotification } from "@/lib/notifications";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_COTIZACIONES", "edit");
@@ -28,6 +29,8 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       createdById: session.userId,
       metadata: { quotationId: id },
     }).catch(() => {});
+
+    broadcastPanelUpdate("quotations").catch(() => {});
 
     return Response.json(updated);
   } catch (e) {

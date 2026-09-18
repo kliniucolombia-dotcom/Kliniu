@@ -106,7 +106,7 @@ export default function RrhhResumenPage() {
   };
 
   useEffect(load, []);
-  useRealtimeRefresh(["timeoff"], load);
+  useRealtimeRefresh(["timeoff", "rrhh"], load);
 
   const typeEntries = summary
     ? Object.entries(summary.timeOffByType).sort((a, b) => b[1] - a[1])

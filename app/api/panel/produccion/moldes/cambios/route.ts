@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { startMoldChange } from "@/lib/molds";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 const ERRORS: Record<string, string> = {
   MACHINE_BUSY: "Esa máquina ya tiene un molde montado sin desmontar.",
@@ -17,6 +18,7 @@ export async function POST(request: Request) {
 
   try {
     const change = await startMoldChange({ machineId: body.machineId, moldId: body.moldId, notes: body.notes, userId: access.user.id });
+    broadcastPanelUpdate("production").catch(() => {});
     return Response.json({ change });
   } catch (error) {
     const key = error instanceof Error ? error.message : "";

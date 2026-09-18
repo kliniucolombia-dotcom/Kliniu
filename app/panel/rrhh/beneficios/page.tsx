@@ -7,6 +7,7 @@ import {
   MdGroup, MdFavorite, MdCalendarMonth, MdCelebration, MdSearch, MdFileDownload, MdMoreVert, MdClose,
 } from "react-icons/md";
 import { useConfirm } from "@/app/components/confirm-dialog";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type Benefit = {
   id: string;
@@ -151,10 +152,13 @@ export default function BeneficiosRRHHPage() {
     load();
   }, []);
 
+  const { markLocalWrite } = useRealtimeRefresh(["rrhh"], load);
+
   const submit = async () => {
     setError("");
     if (!form.title.trim() || !form.description.trim()) return setError("Título y descripción son obligatorios");
     setSaving(true);
+    markLocalWrite();
     const body = {
       title: form.title, description: form.description, detail: form.detail || undefined,
       category: form.category, frequency: form.frequency || undefined, isFeatured: form.isFeatured,
@@ -184,6 +188,7 @@ export default function BeneficiosRRHHPage() {
   };
 
   const toggleActive = async (id: string, isActive: boolean) => {
+    markLocalWrite();
     const res = await fetch(`/api/rrhh-local/benefits/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -194,6 +199,7 @@ export default function BeneficiosRRHHPage() {
 
   const remove = async (id: string) => {
     if (!(await confirm({ title: "Eliminar beneficio", message: "¿Eliminar este beneficio?" }))) return;
+    markLocalWrite();
     const res = await fetch(`/api/rrhh-local/benefits/${id}`, { method: "DELETE" });
     if (res.ok) await load();
   };

@@ -2,6 +2,7 @@ import { requirePermission } from "@/lib/permissions";
 import { createAssemblyRun, getAssemblyRuns } from "@/lib/assembly";
 import { assemblyErrorResponse } from "@/lib/assembly-errors";
 import { isRecord, parseIsoDateTime, parseNonNegativeNumber, parseRequiredString } from "@/lib/operations-validation";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET(request: Request) {
   const access = await requirePermission("MODULE_ENSAMBLE", "view");
@@ -50,7 +51,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    return Response.json(await createAssemblyRun(data, access.user.id), { status: 201 });
+    const created = await createAssemblyRun(data, access.user.id);
+    broadcastPanelUpdate("assembly").catch(() => {});
+    return Response.json(created, { status: 201 });
   } catch (e) {
     return assemblyErrorResponse(e);
   }

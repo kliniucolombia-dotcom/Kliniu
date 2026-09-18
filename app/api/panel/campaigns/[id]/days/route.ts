@@ -2,6 +2,7 @@ import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { createCampaignDailyEntry, getCampaignDailyEntries } from "@/lib/panel";
 import { buildCampaignDailyRows, calcCampaignDailyTotals } from "@/lib/panel-utils";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 async function assertAccess(campaignId: string, session: { role: string; userId: string }) {
   if (!prisma) return null;
@@ -48,6 +49,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   try {
     const created = await createCampaignDailyEntry(id, body);
+    broadcastPanelUpdate("campaigns").catch(() => {});
     return Response.json(created);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Error";

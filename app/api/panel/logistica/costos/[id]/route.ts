@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { deleteCost } from "@/lib/logistics";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_LOGISTICA", "delete");
@@ -7,5 +8,6 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
 
   const { id } = await params;
   await deleteCost(id);
+  broadcastPanelUpdate("logistics").catch(() => {});
   return Response.json({ ok: true });
 }

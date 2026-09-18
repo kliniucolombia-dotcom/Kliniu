@@ -2,6 +2,7 @@ import { requirePermission, getEffectivePermission } from "@/lib/permissions";
 import { createMold, getMoldKpis, listMoldChanges, listMolds } from "@/lib/molds";
 import { getMachines } from "@/lib/panel";
 import { parseDateRange } from "@/lib/operations-validation";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET(request: Request) {
   const access = await requirePermission("MODULE_PRODUCCION", "view");
@@ -36,6 +37,7 @@ export async function POST(request: Request) {
 
   try {
     const mold = await createMold({ code: body.code, name: body.name });
+    broadcastPanelUpdate("production").catch(() => {});
     return Response.json({ mold });
   } catch (error) {
     const dup = typeof error === "object" && error !== null && (error as { code?: string }).code === "P2002";

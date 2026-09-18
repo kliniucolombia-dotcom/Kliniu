@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { createOrder } from "@/lib/maintenance";
 import type { MaintenancePriority, MaintenanceType } from "@/generated/prisma/client";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 const TYPES: MaintenanceType[] = ["PREVENTIVE", "CORRECTIVE"];
 const PRIORITIES: MaintenancePriority[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
@@ -29,5 +30,6 @@ export async function POST(request: Request) {
     assignedToId: body.assignedToId,
     reportedById: access.user.id,
   });
+  broadcastPanelUpdate("maintenance").catch(() => {});
   return Response.json({ order });
 }

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { SimpleSelect } from "../../_components/simple-select";
 import { fmtDateOnly } from "@/lib/date";
 import { MdSearch, MdBusiness, MdAttachMoney, MdCalendarToday, MdClose, MdFileDownload, MdRefresh, MdMoreVert, MdGroup } from "react-icons/md";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type EmployeeRow = {
   id: string;
@@ -156,10 +157,13 @@ export default function EmpleadosPage() {
     load();
   }, []);
 
+  const { markLocalWrite } = useRealtimeRefresh(["rrhh"], load);
+
   const submit = async () => {
     setError("");
     setSaving(true);
     try {
+      markLocalWrite();
       const res = await fetch("/api/rrhh-local/employees", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -195,6 +199,7 @@ export default function EmpleadosPage() {
 
   const updateEmployee = async (id: string, data: { managerId?: string | null; site?: string | null; status?: string }) => {
     setError("");
+    markLocalWrite();
     const res = await fetch(`/api/rrhh-local/employees/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

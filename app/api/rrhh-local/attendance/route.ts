@@ -1,5 +1,6 @@
 import { requireRRHH } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET() {
   const access = await requireRRHH();
@@ -43,5 +44,6 @@ export async function POST(request: Request) {
     include: { employee: { include: { user: { select: { fullName: true } } } } },
   });
 
+  broadcastPanelUpdate("rrhh").catch(() => {});
   return Response.json(record, { status: 201 });
 }

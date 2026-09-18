@@ -10,6 +10,7 @@ import {
 } from "react-icons/md";
 import { SimpleSelect } from "../_components/simple-select";
 import { useConfirm } from "@/app/components/confirm-dialog";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import {
   COP, fmtDate, todayBogota, inputCls, labelCls, btnPrimary, btnGhost,
   type Permission, type ModalProps, post, patchReq,
@@ -327,6 +328,13 @@ export default function LogisticaPanel() {
     if (tab === "clientes") void loadCustomers();
   }, [tab, loadReports, loadCustomers]);
 
+  const { markLocalWrite } = useRealtimeRefresh(["logistics"], () => {
+    load();
+    if (tab === "informes") loadReports();
+    if (tab === "clientes") loadCustomers();
+    if (tab === "checklist") loadChecklist();
+  });
+
   useEffect(() => {
     const task = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(task);
@@ -359,10 +367,12 @@ export default function LogisticaPanel() {
   const fail = (msg: string) => setAlert({ type: "err", msg });
 
   async function patch(url: string, body: unknown, okMsg: string) {
+    markLocalWrite();
     const r = await fetch(url, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (r.ok) { setAlert({ type: "ok", msg: okMsg }); load(); } else fail((await r.json()).error ?? "Error");
   }
   async function del(url: string, okMsg: string) {
+    markLocalWrite();
     const r = await fetch(url, { method: "DELETE" });
     if (r.ok) { setAlert({ type: "ok", msg: okMsg }); load(); } else fail((await r.json()).error ?? "Error");
   }
@@ -637,20 +647,20 @@ export default function LogisticaPanel() {
       )}
 
       {modal?.kind === "route" && data && (
-        <RouteModal initialDate={modal.date} vehicles={activeVehicles} drivers={activeDrivers} orders={data.assignableOrders} onClose={() => setModal(null)} onDone={done} onError={fail} />
+        <RouteModal initialDate={modal.date} vehicles={activeVehicles} drivers={activeDrivers} orders={data.assignableOrders} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />
       )}
       {modal?.kind === "assign" && data && (
-        <AssignModal route={modal.route} orders={data.assignableOrders} onClose={() => setModal(null)} onDone={done} onError={fail} />
+        <AssignModal route={modal.route} orders={data.assignableOrders} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />
       )}
-      {modal?.kind === "cost" && <CostModal vehicles={activeVehicles} onClose={() => setModal(null)} onDone={done} onError={fail} />}
-      {modal?.kind === "incident" && <IncidentModal vehicles={activeVehicles} drivers={activeDrivers} onClose={() => setModal(null)} onDone={done} onError={fail} />}
-      {modal?.kind === "vehicle" && <VehicleModal onClose={() => setModal(null)} onDone={done} onError={fail} />}
-      {modal?.kind === "driver" && <DriverModal onClose={() => setModal(null)} onDone={done} onError={fail} />}
-      {modal?.kind === "customer" && <CustomerModal onClose={() => setModal(null)} onDone={done} onError={fail} />}
+      {modal?.kind === "cost" && <CostModal vehicles={activeVehicles} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />}
+      {modal?.kind === "incident" && <IncidentModal vehicles={activeVehicles} drivers={activeDrivers} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />}
+      {modal?.kind === "vehicle" && <VehicleModal onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />}
+      {modal?.kind === "driver" && <DriverModal onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />}
+      {modal?.kind === "customer" && <CustomerModal onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />}
       {modal?.kind === "report" && data && <ReportModal from={from} to={to} kpis={data.kpis} onClose={() => setModal(null)} onDone={done} onError={fail} />}
-      {modal?.kind === "vehicleDue" && <VehicleDueModal vehicle={modal.vehicle} onClose={() => setModal(null)} onDone={done} onError={fail} />}
+      {modal?.kind === "vehicleDue" && <VehicleDueModal vehicle={modal.vehicle} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />}
       {modal?.kind === "checklistDay" && (
-        <ChecklistDayModal vehicle={modal.vehicle} date={modal.date} entry={modal.entry} drivers={activeDrivers} onClose={() => setModal(null)} onDone={done} onError={fail} />
+        <ChecklistDayModal vehicle={modal.vehicle} date={modal.date} entry={modal.entry} drivers={activeDrivers} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />
       )}
     </div>
   );
@@ -897,7 +907,7 @@ function OrderPicker({ orders, selected, onToggle }: { orders: OrderLite[]; sele
   );
 }
 
-function RouteModal({ initialDate, vehicles, drivers, orders, onClose, onDone, onError }: ModalProps & { initialDate?: string; vehicles: Vehicle[]; drivers: Driver[]; orders: OrderLite[] }) {
+function RouteModal({ initialDate, vehicles, drivers, orders, onClose, onDone, onError, markLocalWrite }: ModalProps & { initialDate?: string; vehicles: Vehicle[]; drivers: Driver[]; orders: OrderLite[]; markLocalWrite: () => void }) {
   const [date, setDate] = useState(initialDate ?? todayBogota());
   const [vehicleId, setVehicleId] = useState(vehicles[0]?.id ?? "");
   const [driverId, setDriverId] = useState(drivers[0]?.id ?? "");
@@ -909,6 +919,7 @@ function RouteModal({ initialDate, vehicles, drivers, orders, onClose, onDone, o
 
   const submit = async () => {
     setSubmitting(true);
+    markLocalWrite();
     const res = await post("/api/panel/logistica/rutas", { date, vehicleId, driverId, notes, orderIds: [...selected] });
     setSubmitting(false);
     if (res.ok) onDone("Ruta creada"); else onError(res.error!);
@@ -928,12 +939,13 @@ function RouteModal({ initialDate, vehicles, drivers, orders, onClose, onDone, o
   );
 }
 
-function AssignModal({ route, orders, onClose, onDone, onError }: ModalProps & { route: Route; orders: OrderLite[] }) {
+function AssignModal({ route, orders, onClose, onDone, onError, markLocalWrite }: ModalProps & { route: Route; orders: OrderLite[]; markLocalWrite: () => void }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const toggle = (id: string) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const submit = async () => {
     setSubmitting(true);
+    markLocalWrite();
     const res = await patchReq(`/api/panel/logistica/rutas/${route.id}`, { addOrderIds: [...selected] });
     setSubmitting(false);
     if (res.ok) onDone("Pedidos agregados a la ruta"); else onError(res.error!);
@@ -945,7 +957,7 @@ function AssignModal({ route, orders, onClose, onDone, onError }: ModalProps & {
   );
 }
 
-function CostModal({ vehicles, onClose, onDone, onError }: ModalProps & { vehicles: Vehicle[] }) {
+function CostModal({ vehicles, onClose, onDone, onError, markLocalWrite }: ModalProps & { vehicles: Vehicle[]; markLocalWrite: () => void }) {
   const [vehicleId, setVehicleId] = useState(vehicles[0]?.id ?? "");
   const [date, setDate] = useState(todayBogota());
   const [category, setCategory] = useState<CostCategory>("COMBUSTIBLE");
@@ -954,6 +966,7 @@ function CostModal({ vehicles, onClose, onDone, onError }: ModalProps & { vehicl
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     setSubmitting(true);
+    markLocalWrite();
     const res = await post("/api/panel/logistica/costos", { vehicleId, date, category, amount: Number(amount), notes });
     setSubmitting(false);
     if (res.ok) onDone("Costo registrado"); else onError(res.error!);
@@ -970,7 +983,7 @@ function CostModal({ vehicles, onClose, onDone, onError }: ModalProps & { vehicl
   );
 }
 
-function IncidentModal({ vehicles, drivers, onClose, onDone, onError }: ModalProps & { vehicles: Vehicle[]; drivers: Driver[] }) {
+function IncidentModal({ vehicles, drivers, onClose, onDone, onError, markLocalWrite }: ModalProps & { vehicles: Vehicle[]; drivers: Driver[]; markLocalWrite: () => void }) {
   const [date, setDate] = useState(todayBogota());
   const [type, setType] = useState("");
   const [description, setDescription] = useState("");
@@ -980,6 +993,7 @@ function IncidentModal({ vehicles, drivers, onClose, onDone, onError }: ModalPro
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     setSubmitting(true);
+    markLocalWrite();
     const res = await post("/api/panel/logistica/novedades", { date, type, description, correctiveAction, vehicleId: vehicleId || undefined, driverId: driverId || undefined });
     setSubmitting(false);
     if (res.ok) onDone("Novedad registrada"); else onError(res.error!);
@@ -1017,7 +1031,7 @@ function fmtDateShort(iso: string) {
   return new Date(iso).toLocaleDateString("es-CO", { timeZone: "UTC", day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-function VehicleDueModal({ vehicle, onClose, onDone, onError }: ModalProps & { vehicle: Vehicle }) {
+function VehicleDueModal({ vehicle, onClose, onDone, onError, markLocalWrite }: ModalProps & { vehicle: Vehicle; markLocalWrite: () => void }) {
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(DUE_FIELDS.map((f) => [f.key, vehicle[f.key] ? String(vehicle[f.key]).slice(0, 10) : ""])),
   );
@@ -1025,6 +1039,7 @@ function VehicleDueModal({ vehicle, onClose, onDone, onError }: ModalProps & { v
   const submit = async () => {
     setSubmitting(true);
     const body = Object.fromEntries(DUE_FIELDS.map((f) => [f.key, values[f.key as string] || null]));
+    markLocalWrite();
     const res = await patchReq(`/api/panel/logistica/vehiculos/${vehicle.id}`, body);
     setSubmitting(false);
     if (res.ok) onDone("Vencimientos actualizados"); else onError(res.error!);
@@ -1214,8 +1229,8 @@ function ChecklistView({
 }
 
 function ChecklistDayModal({
-  vehicle, date, entry, drivers, onClose, onDone, onError,
-}: ModalProps & { vehicle: Vehicle; date: string; entry: ChecklistEntry | null; drivers: Driver[] }) {
+  vehicle, date, entry, drivers, onClose, onDone, onError, markLocalWrite,
+}: ModalProps & { vehicle: Vehicle; date: string; entry: ChecklistEntry | null; drivers: Driver[]; markLocalWrite: () => void }) {
   const template = checklistTemplateFor(vehicle.type);
   const [driverId, setDriverId] = useState(entry?.driverId ?? drivers[0]?.id ?? "");
   const [items, setItems] = useState<Record<string, ChecklistStatus>>(() => {
@@ -1227,6 +1242,7 @@ function ChecklistDayModal({
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     setSubmitting(true);
+    markLocalWrite();
     const res = await post("/api/panel/logistica/checklist", { vehicleId: vehicle.id, driverId, date, items, initials, notes });
     setSubmitting(false);
     if (res.ok) onDone("Checklist guardado"); else onError(res.error!);
@@ -1257,12 +1273,13 @@ function ChecklistDayModal({
   );
 }
 
-function VehicleModal({ onClose, onDone, onError }: ModalProps) {
+function VehicleModal({ onClose, onDone, onError, markLocalWrite }: ModalProps & { markLocalWrite: () => void }) {
   const [plate, setPlate] = useState("");
   const [type, setType] = useState<Vehicle["type"]>("CAMIONETA");
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     setSubmitting(true);
+    markLocalWrite();
     const res = await post("/api/panel/logistica/vehiculos", { plate, type });
     setSubmitting(false);
     if (res.ok) onDone("Vehículo registrado"); else onError(res.error!);
@@ -1275,12 +1292,13 @@ function VehicleModal({ onClose, onDone, onError }: ModalProps) {
   );
 }
 
-function DriverModal({ onClose, onDone, onError }: ModalProps) {
+function DriverModal({ onClose, onDone, onError, markLocalWrite }: ModalProps & { markLocalWrite: () => void }) {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     setSubmitting(true);
+    markLocalWrite();
     const res = await post("/api/panel/logistica/conductores", { fullName, phone });
     setSubmitting(false);
     if (res.ok) onDone("Conductor registrado"); else onError(res.error!);
@@ -1293,7 +1311,7 @@ function DriverModal({ onClose, onDone, onError }: ModalProps) {
   );
 }
 
-function CustomerModal({ onClose, onDone, onError }: ModalProps) {
+function CustomerModal({ onClose, onDone, onError, markLocalWrite }: ModalProps & { markLocalWrite: () => void }) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -1301,6 +1319,7 @@ function CustomerModal({ onClose, onDone, onError }: ModalProps) {
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     setSubmitting(true);
+    markLocalWrite();
     const res = await post("/api/panel/logistica/clientes", { name, phone, address, city });
     setSubmitting(false);
     if (res.ok) onDone("Cliente registrado"); else onError(res.error!);

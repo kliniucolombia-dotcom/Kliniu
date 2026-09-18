@@ -1,5 +1,6 @@
 import { requirePermission, requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_CAMPANAS", "edit");
@@ -34,6 +35,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     },
   });
 
+  broadcastPanelUpdate("campaigns").catch(() => {});
+
   return Response.json(updated);
 }
 
@@ -43,5 +46,6 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
   const { id } = await params;
   await prisma.campaign.delete({ where: { id } });
+  broadcastPanelUpdate("campaigns").catch(() => {});
   return Response.json({ ok: true });
 }

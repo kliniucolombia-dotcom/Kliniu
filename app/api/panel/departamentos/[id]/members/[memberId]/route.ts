@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 const KINDS = ["HOLDER", "BACKUP"] as const;
 type Kind = (typeof KINDS)[number];
@@ -48,6 +49,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   const member = await prisma.departmentMember.update({ where: { id: memberId }, data });
+  broadcastPanelUpdate("production").catch(() => {});
   return Response.json(member);
 }
 
@@ -61,5 +63,6 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   if (!existing) return Response.json({ error: "Miembro no encontrado" }, { status: 404 });
 
   await prisma.departmentMember.delete({ where: { id: memberId } });
+  broadcastPanelUpdate("production").catch(() => {});
   return Response.json({ ok: true });
 }

@@ -2,6 +2,7 @@ import { requirePermission } from "@/lib/permissions";
 import { getCampaignsForPanel } from "@/lib/panel";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET() {
   const access = await requirePermission("MODULE_CAMPANAS", "view");
@@ -60,6 +61,8 @@ export async function POST(request: Request) {
     createdById: session.userId,
     metadata: { campaignId: campaign.id, platform: body.platform },
   }).catch(() => {});
+
+  broadcastPanelUpdate("campaigns").catch(() => {});
 
   return Response.json(campaign);
 }

@@ -1,10 +1,11 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   buildCampaignDailyRows,
   calcCampaignDailyTotals,
   type CampaignDailyInput,
 } from "@/lib/panel-utils";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 const fmtUSD = (n: number) => `$${Math.round(n || 0).toLocaleString("en-US")}`;
 const fmtCOP = (n: number) => `$${Math.round(n || 0).toLocaleString("es-CO")}`;
@@ -29,6 +30,7 @@ function NumCell({
   field,
   value,
   integer,
+  trm,
   patchField,
   commitField,
 }: {
@@ -36,31 +38,43 @@ function NumCell({
   field: keyof CampaignDailyInput;
   value: number;
   integer?: boolean;
+  trm?: number;
   patchField: (id: string, field: keyof CampaignDailyInput, value: number | string) => void;
   commitField: (id: string, field: keyof CampaignDailyInput, value: number | string) => void;
 }) {
-  const [local, setLocal] = useState(String(Number.isFinite(value) ? value : 0));
+  const scale = trm && trm > 0 ? trm : 0;
+  const toDisplay = (v: number) => (scale ? Number((v / scale).toFixed(2)) : v);
+  const toStore = (v: number) => (scale ? v * scale : v);
+  const inputRef = useRef<HTMLInputElement>(null);
   const focused = useRef(false);
+  const dirty = useRef(false);
 
   useEffect(() => {
-    if (!focused.current) setLocal(String(Number.isFinite(value) ? value : 0));
-  }, [value]);
+    if (focused.current || !inputRef.current) return;
+    const s = trm && trm > 0 ? trm : 0;
+    const shown = s ? Number((value / s).toFixed(2)) : value;
+    inputRef.current.value = String(Number.isFinite(shown) ? shown : 0);
+  }, [value, trm]);
 
   return (
     <input
+      ref={inputRef}
       type="number"
       min={0}
-      max={MAX_NUM}
-      value={local}
-      onFocus={() => { focused.current = true; }}
+      max={scale ? MAX_NUM / scale : MAX_NUM}
+      defaultValue={String(toDisplay(Number.isFinite(value) ? value : 0))}
+      onFocus={() => { focused.current = true; dirty.current = false; }}
       onChange={(e) => {
-        setLocal(e.target.value);
+        dirty.current = true;
         const n = sanitize(e.target.value);
-        patchField(id, field, integer ? Math.round(n) : n);
+        patchField(id, field, integer ? Math.round(toStore(n)) : toStore(n));
       }}
       onBlur={(e) => {
         focused.current = false;
-        commitField(id, field, integer ? Math.round(sanitize(e.target.value)) : sanitize(e.target.value));
+        if (!dirty.current) return;
+        dirty.current = false;
+        const n = sanitize(e.target.value);
+        commitField(id, field, integer ? Math.round(toStore(n)) : toStore(n));
       }}
       className="no-spinner w-full rounded-lg border border-[#E2E8F0] px-2 py-1.5 text-sm text-right outline-none focus:border-[#27B1B8]"
     />
@@ -86,17 +100,24 @@ export default function DailyMatrix({ campaignId, campaignName, onClose }: { cam
 
   const rows = useMemo(() => buildCampaignDailyRows(entries), [entries]);
   const totals = useMemo(() => calcCampaignDailyTotals(entries), [entries]);
+  const ventasUsd = useMemo(
+    () => entries.reduce((s, e) => s + (e.trm > 0 ? (e.ventaDelDia || 0) / e.trm : 0), 0),
+    [entries],
+  );
 
   const pendingTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   // Refresca desde el servidor para resincronizar frontend/backend tras un fallo.
-  const resync = async () => {
+  const resync = useCallback(async () => {
     const r = await fetch(`/api/panel/campaigns/${campaignId}/days`);
     const d = await r.json();
     setEntries(d.rows ?? []);
-  };
+  }, [campaignId]);
+
+  const { markLocalWrite } = useRealtimeRefresh(["campaigns"], resync);
 
   const saveField = async (id: string, field: keyof CampaignDailyInput, value: number | string) => {
+    markLocalWrite();
     try {
       const r = await fetch(`/api/panel/campaign-days/${id}`, {
         method: "PATCH",
@@ -147,6 +168,7 @@ export default function DailyMatrix({ campaignId, campaignName, onClose }: { cam
 
   const removeRow = async (id: string) => {
     setEntries((prev) => prev.filter((e) => e.id !== id));
+    markLocalWrite();
     try {
       const r = await fetch(`/api/panel/campaign-days/${id}`, { method: "DELETE" });
       if (!r.ok) {
@@ -163,6 +185,7 @@ export default function DailyMatrix({ campaignId, campaignName, onClose }: { cam
   const addRow = async () => {
     setAdding(true);
     setError(null);
+    markLocalWrite();
     try {
       const r = await fetch(`/api/panel/campaigns/${campaignId}/days`, {
         method: "POST",
@@ -216,7 +239,7 @@ export default function DailyMatrix({ campaignId, campaignName, onClose }: { cam
                 </colgroup>
                 <thead className="bg-[#F8FAFC]">
                   <tr>
-                    {["Fecha", "Mensajes", "KPI Mensajes", "Transacciones", "Presupuesto (USD)", "Presupuesto (COP)", "KPI Conversión", "Venta del día (COP)", "Meta diaria", "Venta acumulada", ""].map((h) => (
+                    {["Fecha", "Mensajes", "KPI Mensajes", "Transacciones", "Presupuesto (USD)", "Presupuesto (COP)", "KPI Conversión", "Venta del día (USD)", "Meta diaria", "Venta acumulada", ""].map((h) => (
                       <th key={h} className="truncate border border-[#E2E8F0] px-2 py-2 text-left text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">{h}</th>
                     ))}
                   </tr>
@@ -239,7 +262,7 @@ export default function DailyMatrix({ campaignId, campaignName, onClose }: { cam
                       <td className="border border-[#E2E8F0] px-2 py-1.5"><NumCell id={row.id} field="presupuestoPublicidad" value={row.presupuestoPublicidad} patchField={patchField} commitField={commitField} /></td>
                       <td className="truncate border border-[#E2E8F0] px-2 py-1.5 text-right text-[#64748B]" title={`TRM $${Math.round(row.trm).toLocaleString("es-CO")}`}>{fmtCOP(row.presupuestoCOP)}</td>
                       <td className="truncate border border-[#E2E8F0] px-2 py-1.5 text-right font-semibold text-[#1A1A1A]">{fmtX(row.kpiConversion)}</td>
-                      <td className="border border-[#E2E8F0] px-2 py-1.5"><NumCell id={row.id} field="ventaDelDia" value={row.ventaDelDia} patchField={patchField} commitField={commitField} /></td>
+                      <td className="border border-[#E2E8F0] px-2 py-1.5"><NumCell id={row.id} field="ventaDelDia" value={row.ventaDelDia} trm={row.trm} patchField={patchField} commitField={commitField} /></td>
                       <td className="truncate border border-[#E2E8F0] px-2 py-1.5 text-right font-semibold text-[#1A1A1A]">{fmtCOP(row.metaDiaria)}</td>
                       <td className="truncate border border-[#E2E8F0] px-2 py-1.5 text-right font-semibold text-[#1A1A1A]">{fmtCOP(row.ventaAcumulada)}</td>
                       <td className="border border-[#E2E8F0] px-2 py-1.5 text-center">
@@ -262,7 +285,7 @@ export default function DailyMatrix({ campaignId, campaignName, onClose }: { cam
                     <td className="truncate border border-[#E2E8F0] px-2 py-2 text-right">{fmtUSD(totals.totalInversionUSD)}</td>
                     <td className="truncate border border-[#E2E8F0] px-2 py-2 text-right">{fmtCOP(totals.totalInversion)}</td>
                     <td className="truncate border border-[#E2E8F0] px-2 py-2 text-right">{fmtX(totals.kpiGeneral)}</td>
-                    <td className="truncate border border-[#E2E8F0] px-2 py-2 text-right">{fmtCOP(totals.totalVentas)}</td>
+                    <td className="truncate border border-[#E2E8F0] px-2 py-2 text-right">{fmtUSD(ventasUsd)}</td>
                     <td className="border border-[#E2E8F0] px-2 py-2" colSpan={3} />
                   </tr>
                 </tfoot>

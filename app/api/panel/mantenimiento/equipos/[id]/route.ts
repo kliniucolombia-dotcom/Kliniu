@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { getEquipmentHistory, updateEquipment } from "@/lib/maintenance";
 import type { EquipmentStatus } from "@/generated/prisma/client";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 const STATUSES: EquipmentStatus[] = ["OPERATIVE", "DOWN", "MAINTENANCE"];
 
@@ -21,5 +22,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (body.status && !STATUSES.includes(body.status)) return Response.json({ error: "Estado inválido" }, { status: 400 });
 
   const equipment = await updateEquipment(id, body);
+  broadcastPanelUpdate("maintenance").catch(() => {});
   return Response.json({ equipment });
 }

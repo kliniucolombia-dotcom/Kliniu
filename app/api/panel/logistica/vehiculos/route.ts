@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { createVehicle } from "@/lib/logistics";
 import type { VehicleType } from "@/generated/prisma/client";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function POST(request: Request) {
   const access = await requirePermission("MODULE_LOGISTICA", "create");
@@ -14,6 +15,7 @@ export async function POST(request: Request) {
 
   try {
     const vehicle = await createVehicle({ plate: body.plate, type: body.type });
+    broadcastPanelUpdate("logistics").catch(() => {});
     return Response.json({ vehicle });
   } catch (error) {
     const dup = typeof error === "object" && error !== null && (error as { code?: string }).code === "P2002";

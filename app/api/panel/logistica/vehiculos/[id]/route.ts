@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { updateVehicle, deleteVehicle } from "@/lib/logistics";
 import type { VehicleType } from "@/generated/prisma/client";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_LOGISTICA", "edit");
@@ -18,6 +19,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     extinguisherDue?: string | null;
   };
   const vehicle = await updateVehicle(id, body);
+  broadcastPanelUpdate("logistics").catch(() => {});
   return Response.json({ vehicle });
 }
 
@@ -28,6 +30,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   const { id } = await params;
   try {
     await deleteVehicle(id);
+    broadcastPanelUpdate("logistics").catch(() => {});
     return Response.json({ ok: true });
   } catch (error) {
     const fk = typeof error === "object" && error !== null && (error as { code?: string }).code === "P2003";

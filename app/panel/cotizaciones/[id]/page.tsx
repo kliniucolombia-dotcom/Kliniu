@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { buildQuotationSummary, calcLineTotal, type QuotationTaxConfigInput } from "@/lib/quotation-calculator";
 import { SimpleSelect } from "../../_components/simple-select";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 const fmt = (n: number) =>
   (n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -88,6 +89,7 @@ export default function QuotationEditorPage() {
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
+  const { markLocalWrite } = useRealtimeRefresh(["quotations"], load);
 
   const summary = useMemo(() => {
     if (!quotation) return { subtotal: 0, reteIca: 0, reteFuente: 0, iva: 0, total: 0 };
@@ -97,6 +99,7 @@ export default function QuotationEditorPage() {
   const isDraft = quotation?.status === "DRAFT";
 
   const patchQuotation = async (data: Partial<Pick<Quotation, "paymentTerms" | "notes" | "validUntil">>) => {
+    markLocalWrite();
     const r = await fetch(`/api/panel/quotations/${id}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data),
     });
@@ -109,6 +112,7 @@ export default function QuotationEditorPage() {
   };
 
   const patchItem = async (itemId: string, data: Partial<Item>) => {
+    markLocalWrite();
     const r = await fetch(`/api/panel/quotations/items/${itemId}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data),
     });
@@ -129,6 +133,7 @@ export default function QuotationEditorPage() {
     const body = fromCatalog
       ? { productId: products[0]?.id ?? null }
       : { name: "Producto nuevo", quantity: 1, unitPrice: 0 };
+    markLocalWrite();
     const r = await fetch(`/api/panel/quotations/${id}/items`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     });
@@ -139,10 +144,12 @@ export default function QuotationEditorPage() {
 
   const removeItem = async (itemId: string) => {
     setQuotation((prev) => prev ? { ...prev, items: prev.items.filter((i) => i.id !== itemId) } : prev);
+    markLocalWrite();
     await fetch(`/api/panel/quotations/items/${itemId}`, { method: "DELETE" });
   };
 
   const selectProduct = async (itemId: string, productId: string) => {
+    markLocalWrite();
     await fetch(`/api/panel/quotations/items/${itemId}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId: productId || null }),
     });
@@ -175,6 +182,7 @@ export default function QuotationEditorPage() {
     setActionLoading(true);
     setError(null);
     try {
+      markLocalWrite();
       const r = await fetch(`/api/panel/quotations/${id}/${action}`, { method: "POST" });
       const d = await r.json();
       if (!r.ok) { setError(d.error ?? "No se pudo completar la acción"); return; }

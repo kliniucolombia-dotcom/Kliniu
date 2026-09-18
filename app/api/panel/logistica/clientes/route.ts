@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { createCustomer, listCustomers } from "@/lib/logistics";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET() {
   const access = await requirePermission("MODULE_LOGISTICA", "view");
@@ -23,5 +24,6 @@ export async function POST(request: Request) {
     address: body.address.trim(),
     city: body.city.trim(),
   });
+  broadcastPanelUpdate("logistics").catch(() => {});
   return Response.json({ customer });
 }

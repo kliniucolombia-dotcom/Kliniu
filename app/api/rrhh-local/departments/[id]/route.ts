@@ -1,5 +1,6 @@
 import { requireRRHH } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requireRRHH();
@@ -28,5 +29,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     },
   });
 
+  broadcastPanelUpdate("rrhh").catch(() => {});
   return Response.json(updated);
 }

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { SimpleSelect } from "../../_components/simple-select";
 import { MdCampaign, MdVisibility, MdGroup, MdCalendarMonth, MdSearch, MdRefresh, MdMoreVert, MdClose } from "react-icons/md";
 import { useConfirm } from "@/app/components/confirm-dialog";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type Announcement = {
   id: string;
@@ -62,6 +63,8 @@ export default function NoticiasRRHHPage() {
     load();
   }, []);
 
+  const { markLocalWrite } = useRealtimeRefresh(["rrhh"], load);
+
   const openCreate = () => {
     setEditing(null);
     setForm({ title: "", body: "", authorName: "", category: "GENERAL", isImportant: false, scheduledAt: "" });
@@ -83,6 +86,7 @@ export default function NoticiasRRHHPage() {
     setError("");
     if (!form.title.trim() || !form.body.trim()) return setError("Título y contenido son obligatorios");
     setSaving(true);
+    markLocalWrite();
     const res = await fetch(
       editing ? `/api/rrhh-local/announcements/${editing.id}` : "/api/rrhh-local/announcements",
       {
@@ -103,6 +107,7 @@ export default function NoticiasRRHHPage() {
   };
 
   const toggleActive = async (id: string, isActive: boolean) => {
+    markLocalWrite();
     const res = await fetch(`/api/rrhh-local/announcements/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -113,6 +118,7 @@ export default function NoticiasRRHHPage() {
 
   const remove = async (id: string) => {
     if (!(await confirm({ title: "Eliminar noticia", message: "¿Eliminar esta noticia?" }))) return;
+    markLocalWrite();
     const res = await fetch(`/api/rrhh-local/announcements/${id}`, { method: "DELETE" });
     if (res.ok) await load();
   };

@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { deleteProductionRun, getProductionRunById, updateProductionRun, type ProductionRunWriteData } from "@/lib/panel";
 import { createNotification } from "@/lib/notifications";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_PRODUCCION", "view");
@@ -50,6 +51,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       }).catch(() => {});
     }
 
+    broadcastPanelUpdate("production").catch(() => {});
     return Response.json(updated);
   } catch (e) {
     if (e instanceof Error && e.message === "DAMAGED_EXCEEDS_PRODUCED") {
@@ -72,6 +74,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
 
   try {
     await deleteProductionRun(id);
+    broadcastPanelUpdate("production").catch(() => {});
     return Response.json({ ok: true });
   } catch {
     return Response.json({ error: "Error interno" }, { status: 500 });

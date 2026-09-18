@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { deleteCampaignDailyEntry, updateCampaignDailyEntry } from "@/lib/panel";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 async function loadWithAccess(id: string, session: { role: string; userId: string }) {
   if (!prisma) return { error: "DB no disponible", status: 500 as const };
@@ -27,6 +28,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   try {
     const updated = await updateCampaignDailyEntry(id, body);
+    broadcastPanelUpdate("campaigns").catch(() => {});
     return Response.json(updated);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Error";
@@ -45,5 +47,6 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   if ("error" in scoped) return Response.json({ error: scoped.error }, { status: scoped.status });
 
   await deleteCampaignDailyEntry(id);
+  broadcastPanelUpdate("campaigns").catch(() => {});
   return Response.json({ ok: true });
 }

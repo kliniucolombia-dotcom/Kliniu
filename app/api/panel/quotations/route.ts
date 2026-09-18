@@ -2,6 +2,7 @@ import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { createQuotation, getQuotations } from "@/lib/panel";
 import { createNotification } from "@/lib/notifications";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET() {
   const access = await requirePermission("MODULE_COTIZACIONES", "view");
@@ -32,6 +33,8 @@ export async function POST(request: Request) {
     createdById: session.userId,
     metadata: { quotationId: created.id, clientId: body.clientId },
   }).catch(() => {});
+
+  broadcastPanelUpdate("quotations").catch(() => {});
 
   return Response.json(created);
 }

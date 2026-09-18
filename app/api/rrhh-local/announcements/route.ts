@@ -1,6 +1,7 @@
 import { isRRHH } from "@/lib/roles";
 import { requireActiveUser, requireRRHH } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET() {
   const access = await requireActiveUser();
@@ -59,5 +60,6 @@ export async function POST(request: Request) {
       scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
     },
   });
+  broadcastPanelUpdate("rrhh").catch(() => {});
   return Response.json(announcement, { status: 201 });
 }

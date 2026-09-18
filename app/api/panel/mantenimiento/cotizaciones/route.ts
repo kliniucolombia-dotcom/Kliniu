@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { createQuote } from "@/lib/maintenance";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function POST(request: Request) {
   const access = await requirePermission("MODULE_MANTENIMIENTO", "create");
@@ -14,5 +15,6 @@ export async function POST(request: Request) {
   }
 
   const quote = await createQuote({ supplier: body.supplier, description: body.description, amount: body.amount, maintenanceOrderId: body.maintenanceOrderId });
+  broadcastPanelUpdate("maintenance").catch(() => {});
   return Response.json({ quote });
 }

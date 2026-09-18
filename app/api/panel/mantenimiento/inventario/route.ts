@@ -2,6 +2,7 @@ import { requirePermission } from "@/lib/permissions";
 import { createInventoryItem } from "@/lib/maintenance";
 import type { InventoryItemCategory } from "@/generated/prisma/client";
 import { parseNonNegativeNumber } from "@/lib/operations-validation";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function POST(request: Request) {
   const access = await requirePermission("MODULE_MANTENIMIENTO", "create");
@@ -33,6 +34,7 @@ export async function POST(request: Request) {
       unit: body.unit,
       location: body.location,
     });
+    broadcastPanelUpdate("maintenance").catch(() => {});
     return Response.json({ item });
   } catch (error) {
     if (error instanceof Error && error.message === "INVALID_NUMBER") return Response.json({ error: "Stock inválido" }, { status: 400 });

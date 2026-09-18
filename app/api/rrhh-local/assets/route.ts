@@ -1,6 +1,7 @@
 import { isRRHH } from "@/lib/roles";
 import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 const TYPES = ["COMPUTO", "MOVIL", "UNIFORME", "EPP", "HERRAMIENTA", "MOBILIARIO", "VEHICULO", "OTRO"] as const;
 
@@ -78,5 +79,6 @@ export async function POST(request: Request) {
     },
   });
 
+  broadcastPanelUpdate("rrhh").catch(() => {});
   return Response.json(asset, { status: 201 });
 }

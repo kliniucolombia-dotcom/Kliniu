@@ -6,6 +6,7 @@ import {
 } from "react-icons/md";
 import { fmtDateOnly } from "@/lib/date";
 import { SimpleSelect } from "@/app/panel/_components/simple-select";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type Candidate = {
   id: string;
@@ -125,6 +126,8 @@ function Reclutamiento() {
     load();
   }, []);
 
+  const { markLocalWrite } = useRealtimeRefresh(["rrhh"], load);
+
   const filtered = useMemo(() => candidates.filter((c) => {
     if (!search) return true;
     const q = search.toLowerCase();
@@ -140,6 +143,7 @@ function Reclutamiento() {
 
   const moveStage = async (candidate: Candidate, stage: string) => {
     setCandidates((prev) => prev.map((c) => (c.id === candidate.id ? { ...c, stage } : c)));
+    markLocalWrite();
     const res = await fetch(`/api/rrhh-local/candidates/${candidate.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -158,6 +162,7 @@ function Reclutamiento() {
     }
     setSaving(true);
     setError("");
+    markLocalWrite();
     const res = await fetch("/api/rrhh-local/candidates", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -309,6 +314,8 @@ function Bitacora() {
     load();
   }, []);
 
+  const { markLocalWrite } = useRealtimeRefresh(["rrhh"], load);
+
   const filteredEmployees = useMemo(() => {
     const active = employees.filter((e) => e.status === "ACTIVE");
     if (!search) return active;
@@ -328,6 +335,7 @@ function Bitacora() {
     }
     setSaving(true);
     setError("");
+    markLocalWrite();
     const res = await fetch("/api/rrhh-local/employee-notes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

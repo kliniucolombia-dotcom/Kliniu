@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { MdAdd, MdArrowBack, MdDelete, MdEdit } from "react-icons/md";
 import { useConfirm } from "@/app/components/confirm-dialog";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type Station = { id: string; code: number; name: string; location: string | null; isActive: boolean };
 
@@ -21,6 +22,8 @@ export default function PuestosEnsamblePage() {
     if (r.ok) setStations((await r.json()).stations ?? []);
   }, []);
 
+  const { markLocalWrite } = useRealtimeRefresh(["assembly"], load);
+
   useEffect(() => {
     load();
   }, [load]);
@@ -29,6 +32,7 @@ export default function PuestosEnsamblePage() {
     if (!modal) return;
     setSaving(true);
     const payload = { code: Number(modal.code), name: modal.name, location: modal.location || null };
+    markLocalWrite();
     const r = modal.id
       ? await fetch(`/api/panel/assembly-stations/${modal.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
       : await fetch("/api/panel/assembly-stations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -44,6 +48,7 @@ export default function PuestosEnsamblePage() {
   };
 
   const toggleActive = async (station: Station) => {
+    markLocalWrite();
     const r = await fetch(`/api/panel/assembly-stations/${station.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -55,6 +60,7 @@ export default function PuestosEnsamblePage() {
   const remove = async (station: Station) => {
     const ok = await confirm({ title: "Eliminar puesto", message: `¿Eliminar el puesto ${station.name}?` });
     if (!ok) return;
+    markLocalWrite();
     const r = await fetch(`/api/panel/assembly-stations/${station.id}`, { method: "DELETE" });
     if (r.ok) {
       setAlert({ type: "ok", msg: "Puesto eliminado" });

@@ -7,6 +7,7 @@ import {
 } from "react-icons/md";
 import { fmtDateOnly } from "@/lib/date";
 import { SimpleSelect } from "@/app/panel/_components/simple-select";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type Asset = {
   id: string;
@@ -117,6 +118,8 @@ export default function InventarioPanelPage() {
     load();
   }, []);
 
+  const { markLocalWrite } = useRealtimeRefresh(["rrhh"], load);
+
   const kpis = useMemo(() => {
     const enPoder = assets.filter((a) => a.status === "ENTREGADO");
     return {
@@ -157,6 +160,7 @@ export default function InventarioPanelPage() {
     }
     setSaving(true);
     setError("");
+    markLocalWrite();
     const res = await fetch("/api/rrhh-local/assets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -178,6 +182,7 @@ export default function InventarioPanelPage() {
     if (!closing) return;
     setSaving(true);
     setError("");
+    markLocalWrite();
     const res = await fetch(`/api/rrhh-local/assets/${closing.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

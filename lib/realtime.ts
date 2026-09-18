@@ -10,7 +10,15 @@ export type RealtimeResource =
   | "tickets"
   | "wati"
   | "notifications"
-  | "payslips";
+  | "payslips"
+  | "campaigns"
+  | "quotations"
+  | "warehouse"
+  | "production"
+  | "logistics"
+  | "maintenance"
+  | "assembly"
+  | "rrhh";
 
 /** Notifica a los clientes suscritos al canal "panel-updates" que un recurso cambió. */
 export async function broadcastPanelUpdate(resource: RealtimeResource) {

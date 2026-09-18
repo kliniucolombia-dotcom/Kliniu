@@ -1,5 +1,6 @@
 import { requireRRHH } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET() {
   const access = await requireRRHH();
@@ -31,5 +32,6 @@ export async function POST(request: Request) {
     data: { name, code, description: description || null },
   });
 
+  broadcastPanelUpdate("rrhh").catch(() => {});
   return Response.json(department, { status: 201 });
 }

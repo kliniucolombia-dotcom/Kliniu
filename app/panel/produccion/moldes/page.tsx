@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MdAdd, MdSwapHoriz, MdTimer, MdPrecisionManufacturing, MdStopCircle, MdInventory2 } from "react-icons/md";
 import { SimpleSelect } from "../../_components/simple-select";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import {
   fmtDate, fmtDateTime, todayBogota, inputCls, labelCls, btnPrimary, btnGhost,
   type Permission, type ModalProps, post, patchReq,
@@ -61,6 +62,8 @@ export default function MoldesPanel() {
     setLoading(false);
   }, [from, to, router]);
 
+  const { markLocalWrite } = useRealtimeRefresh(["production"], load);
+
   useEffect(() => {
     const task = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(task);
@@ -75,6 +78,7 @@ export default function MoldesPanel() {
   const done = (msg: string) => { setModal(null); setAlert({ type: "ok", msg }); load(); };
   const fail = (msg: string) => setAlert({ type: "err", msg });
   async function patch(url: string, body: unknown, okMsg: string) {
+    markLocalWrite();
     const res = await patchReq(url, body);
     if (res.ok) { setAlert({ type: "ok", msg: okMsg }); load(); } else fail(res.error!);
   }
@@ -174,19 +178,20 @@ export default function MoldesPanel() {
         </Section>
       )}
 
-      {modal?.kind === "mold" && <MoldModal onClose={() => setModal(null)} onDone={done} onError={fail} />}
-      {modal?.kind === "mount" && data && <MountModal molds={availableMolds} machines={freeMachines} onClose={() => setModal(null)} onDone={done} onError={fail} />}
-      {modal?.kind === "finish" && <FinishModal change={modal.change} onClose={() => setModal(null)} onDone={done} onError={fail} />}
+      {modal?.kind === "mold" && <MoldModal markLocalWrite={markLocalWrite} onClose={() => setModal(null)} onDone={done} onError={fail} />}
+      {modal?.kind === "mount" && data && <MountModal markLocalWrite={markLocalWrite} molds={availableMolds} machines={freeMachines} onClose={() => setModal(null)} onDone={done} onError={fail} />}
+      {modal?.kind === "finish" && <FinishModal markLocalWrite={markLocalWrite} change={modal.change} onClose={() => setModal(null)} onDone={done} onError={fail} />}
     </div>
   );
 }
 
-function MoldModal({ onClose, onDone, onError }: ModalProps) {
+function MoldModal({ onClose, onDone, onError, markLocalWrite }: ModalProps & { markLocalWrite: () => void }) {
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     setSubmitting(true);
+    markLocalWrite();
     const res = await post("/api/panel/produccion/moldes", { code, name });
     setSubmitting(false);
     if (res.ok) onDone("Molde registrado"); else onError(res.error!);
@@ -199,13 +204,14 @@ function MoldModal({ onClose, onDone, onError }: ModalProps) {
   );
 }
 
-function MountModal({ molds, machines, onClose, onDone, onError }: ModalProps & { molds: Mold[]; machines: Machine[] }) {
+function MountModal({ molds, machines, onClose, onDone, onError, markLocalWrite }: ModalProps & { molds: Mold[]; machines: Machine[]; markLocalWrite: () => void }) {
   const [machineId, setMachineId] = useState(machines[0]?.id ?? "");
   const [moldId, setMoldId] = useState(molds[0]?.id ?? "");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     setSubmitting(true);
+    markLocalWrite();
     const res = await post("/api/panel/produccion/moldes/cambios", { machineId, moldId, notes });
     setSubmitting(false);
     if (res.ok) onDone("Montaje registrado"); else onError(res.error!);
@@ -220,11 +226,12 @@ function MountModal({ molds, machines, onClose, onDone, onError }: ModalProps & 
   );
 }
 
-function FinishModal({ change, onClose, onDone, onError }: ModalProps & { change: Change }) {
+function FinishModal({ change, onClose, onDone, onError, markLocalWrite }: ModalProps & { change: Change; markLocalWrite: () => void }) {
   const [notes, setNotes] = useState(change.notes ?? "");
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     setSubmitting(true);
+    markLocalWrite();
     const res = await patchReq(`/api/panel/produccion/moldes/cambios/${change.id}`, { notes });
     setSubmitting(false);
     if (res.ok) onDone("Molde desmontado"); else onError(res.error!);

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { SimpleSelect } from "../../../_components/simple-select";
 import { fmtDateOnly } from "@/lib/date";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type ProductionOrderStatus = "DRAFT" | "APPROVED" | "IN_PRODUCTION" | "COMPLETED" | "CANCELLED";
 
@@ -64,6 +65,8 @@ export default function ProductionOrderDetailPage() {
     setNotesDraft(d.notes ?? "");
   }, [params.id]);
 
+  const { markLocalWrite } = useRealtimeRefresh(["production"], load);
+
   useEffect(() => {
     let cancelled = false;
     Promise.all([
@@ -93,6 +96,7 @@ export default function ProductionOrderDetailPage() {
     setTransitioning(true);
     setError(null);
     try {
+      markLocalWrite();
       const r = await fetch(`/api/panel/production-orders/${params.id}/${action}`, { method: "POST" });
       const d = await r.json();
       if (!r.ok) { setError(d.error ?? "No se pudo cambiar el estado"); return; }
@@ -106,6 +110,7 @@ export default function ProductionOrderDetailPage() {
     setSavingNotes(true);
     setError(null);
     try {
+      markLocalWrite();
       const r = await fetch(`/api/panel/production-orders/${params.id}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ notes: notesDraft }),
       });
@@ -122,6 +127,7 @@ export default function ProductionOrderDetailPage() {
     setAddingItem(true);
     setError(null);
     try {
+      markLocalWrite();
       const r = await fetch(`/api/panel/production-orders/${params.id}/items`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -141,6 +147,7 @@ export default function ProductionOrderDetailPage() {
   };
 
   const removeItem = async (itemId: string) => {
+    markLocalWrite();
     const r = await fetch(`/api/panel/production-orders/items/${itemId}`, { method: "DELETE" });
     if (r.ok) await load();
   };

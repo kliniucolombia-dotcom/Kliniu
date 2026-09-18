@@ -1,6 +1,7 @@
 import { requireRRHH } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { sanitizeFieldsSchema } from "@/lib/tickets";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET() {
   const access = await requireRRHH();
@@ -50,5 +51,6 @@ export async function POST(request: Request) {
       fieldsSchema: sanitizeFieldsSchema(fieldsSchema) as never,
     },
   });
+  broadcastPanelUpdate("rrhh").catch(() => {});
   return Response.json(created, { status: 201 });
 }

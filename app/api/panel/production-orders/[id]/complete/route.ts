@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { completeProductionOrder } from "@/lib/panel";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_PRODUCCION", "edit");
@@ -8,6 +9,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
 
   try {
     const updated = await completeProductionOrder(id);
+    broadcastPanelUpdate("production").catch(() => {});
     return Response.json(updated);
   } catch (e) {
     if (e instanceof Error && e.message === "NOT_FOUND") {

@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { createQuotationItem } from "@/lib/panel";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_COTIZACIONES", "create");
@@ -22,6 +23,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   try {
     const created = await createQuotationItem(id, body);
+    broadcastPanelUpdate("quotations").catch(() => {});
     return Response.json(created);
   } catch (e) {
     if (e instanceof Error && e.message === "NOT_EDITABLE") {

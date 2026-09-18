@@ -1,6 +1,7 @@
 import { isRRHH } from "@/lib/roles";
 import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 const STATUSES = ["ENTREGADO", "DEVUELTO", "DANADO", "PERDIDO"] as const;
 type Status = (typeof STATUSES)[number];
@@ -46,6 +47,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     },
   });
 
+  broadcastPanelUpdate("rrhh").catch(() => {});
   return Response.json(updated);
 }
 
@@ -60,5 +62,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   if (!existing) return Response.json({ error: "Elemento no encontrado" }, { status: 404 });
 
   await prisma.employeeAsset.delete({ where: { id } });
+  broadcastPanelUpdate("rrhh").catch(() => {});
   return Response.json({ deleted: true });
 }

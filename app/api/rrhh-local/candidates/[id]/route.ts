@@ -1,6 +1,7 @@
 import { isRRHH } from "@/lib/roles";
 import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 const STAGES = ["POSTULADO", "ENTREVISTA", "PRUEBA", "OFERTA", "CONTRATADO", "DESCARTADO"] as const;
 type Stage = (typeof STAGES)[number];
@@ -31,6 +32,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     include: { createdBy: { select: { fullName: true } } },
   });
 
+  broadcastPanelUpdate("rrhh").catch(() => {});
   return Response.json(updated);
 }
 
@@ -45,5 +47,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   if (!existing) return Response.json({ error: "Candidato no encontrado" }, { status: 404 });
 
   await prisma.candidate.delete({ where: { id } });
+  broadcastPanelUpdate("rrhh").catch(() => {});
   return Response.json({ deleted: true });
 }

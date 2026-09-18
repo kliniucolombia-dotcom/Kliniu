@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { updateIncident } from "@/lib/logistics";
 import type { TransportIncidentStatus } from "@/generated/prisma/client";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_LOGISTICA", "edit");
@@ -13,5 +14,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   const incident = await updateIncident(id, body);
+  broadcastPanelUpdate("logistics").catch(() => {});
   return Response.json({ incident });
 }

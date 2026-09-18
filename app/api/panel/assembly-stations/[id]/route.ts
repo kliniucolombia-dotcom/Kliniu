@@ -2,6 +2,7 @@ import { requirePermission } from "@/lib/permissions";
 import { deleteAssemblyStation, updateAssemblyStation } from "@/lib/assembly";
 import { assemblyErrorResponse } from "@/lib/assembly-errors";
 import { isRecord, parsePositiveInteger, parseRequiredString } from "@/lib/operations-validation";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_ENSAMBLE", "edit");
@@ -18,6 +19,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       ...(body.location !== undefined ? { location: typeof body.location === "string" ? body.location : null } : {}),
       ...(typeof body.isActive === "boolean" ? { isActive: body.isActive } : {}),
     });
+    broadcastPanelUpdate("assembly").catch(() => {});
     return Response.json(station);
   } catch (e) {
     return assemblyErrorResponse(e);
@@ -30,6 +32,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   try {
     await deleteAssemblyStation(id);
+    broadcastPanelUpdate("assembly").catch(() => {});
     return Response.json({ ok: true });
   } catch (e) {
     return assemblyErrorResponse(e);

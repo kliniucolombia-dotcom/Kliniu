@@ -2,6 +2,7 @@ import { requirePermission } from "@/lib/permissions";
 import { createProductionRun, getProductionRuns, normalizeTemperatureZones } from "@/lib/panel";
 import { parseIsoDateTime, parseNonNegativeNumber, parseEnum } from "@/lib/operations-validation";
 import { COUPLING_STATUSES, CYCLE_UNITS, TEMPERATURE_TYPES } from "@/lib/production-calculator";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET(request: Request) {
   const access = await requirePermission("MODULE_PRODUCCION", "view");
@@ -107,6 +108,7 @@ export async function POST(request: Request) {
       couplingTime: body.couplingTime ?? null,
       observations: body.observations,
     });
+    broadcastPanelUpdate("production").catch(() => {});
     return Response.json(created);
   } catch (e) {
     if (e instanceof Error && e.message === "DAMAGED_EXCEEDS_PRODUCED") {

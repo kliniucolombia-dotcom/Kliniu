@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { deleteQuotationItem, updateQuotationItem } from "@/lib/panel";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 async function checkAccess(itemId: string, session: { role: string; userId: string }) {
   if (!prisma) return { error: "DB no disponible", status: 500 as const };
@@ -26,6 +27,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   try {
     const updated = await updateQuotationItem(id, body);
+    broadcastPanelUpdate("quotations").catch(() => {});
     return Response.json(updated);
   } catch (e) {
     if (e instanceof Error && e.message === "NOT_EDITABLE") {
@@ -48,6 +50,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
 
   try {
     await deleteQuotationItem(id);
+    broadcastPanelUpdate("quotations").catch(() => {});
     return Response.json({ ok: true });
   } catch (e) {
     if (e instanceof Error && e.message === "NOT_EDITABLE") {

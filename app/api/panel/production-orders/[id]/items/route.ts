@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { createProductionOrderItem } from "@/lib/panel";
 import { parsePositiveInteger } from "@/lib/operations-validation";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_PRODUCCION", "create");
@@ -21,6 +22,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       destination: body.destination,
       notes: body.notes,
     });
+    broadcastPanelUpdate("production").catch(() => {});
     return Response.json(created);
   } catch (e) {
     if (e instanceof Error && e.message === "NOT_FOUND") {

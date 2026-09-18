@@ -6,6 +6,7 @@ import {
   MdSearch, MdFilterList, MdChevronLeft, MdChevronRight, MdMoreHoriz,
 } from "react-icons/md";
 import { SimpleSelect } from "../_components/simple-select";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 const fmt = (n: number) =>
   n.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -67,12 +68,14 @@ export default function CotizacionesListPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  const { markLocalWrite } = useRealtimeRefresh(["quotations"], load);
 
   const create = async () => {
     if (!selectedClientId) { setError("Selecciona un cliente"); return; }
     setCreating(true);
     setError(null);
     try {
+      markLocalWrite();
       const r = await fetch("/api/panel/quotations", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clientId: selectedClientId }),
       });
@@ -88,6 +91,7 @@ export default function CotizacionesListPage() {
     if (!pendingDeleteId) return;
     const id = pendingDeleteId;
     setPendingDeleteId(null);
+    markLocalWrite();
     const r = await fetch(`/api/panel/quotations/${id}`, { method: "DELETE" });
     if (r.ok) setQuotations((prev) => prev.filter((q) => q.id !== id));
   };

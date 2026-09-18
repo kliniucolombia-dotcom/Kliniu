@@ -1,6 +1,7 @@
 import { requireRRHH } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { sanitizeFieldsSchema } from "@/lib/tickets";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requireRRHH();
@@ -29,5 +30,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       ...(fieldsSchema !== undefined ? { fieldsSchema: sanitizeFieldsSchema(fieldsSchema) as never } : {}),
     },
   });
+  broadcastPanelUpdate("rrhh").catch(() => {});
   return Response.json(updated);
 }

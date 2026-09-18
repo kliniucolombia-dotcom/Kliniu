@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { createEquipment } from "@/lib/maintenance";
 import type { EquipmentType } from "@/generated/prisma/client";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 const TYPES: EquipmentType[] = ["MACHINE", "MOLD", "TOOL", "INFRA"];
 
@@ -22,6 +23,7 @@ export async function POST(request: Request) {
 
   try {
     const equipment = await createEquipment({ ...body, name: body.name, code: body.code, type: body.type });
+    broadcastPanelUpdate("maintenance").catch(() => {});
     return Response.json({ equipment });
   } catch (error) {
     const dup = typeof error === "object" && error !== null && (error as { code?: string }).code === "P2002";

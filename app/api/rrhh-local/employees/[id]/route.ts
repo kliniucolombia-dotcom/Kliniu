@@ -1,5 +1,6 @@
 import { requireRRHH } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 /** Edición de datos laborales del empleado. Solo RRHH. */
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -53,5 +54,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     },
   });
 
+  broadcastPanelUpdate("rrhh").catch(() => {});
   return Response.json(updated);
 }

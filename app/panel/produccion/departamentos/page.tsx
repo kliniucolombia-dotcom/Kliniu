@@ -21,6 +21,7 @@ import {
   MdAdd,
 } from "react-icons/md";
 import { ROLE_LABELS } from "@/lib/roles";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { SimpleSelect } from "../../_components/simple-select";
 
 type MemberAccount = {
@@ -192,6 +193,8 @@ export default function DepartamentosProduccionPage() {
     }
   }, []);
 
+  const { markLocalWrite } = useRealtimeRefresh(["production"], load);
+
   useEffect(() => {
     const task = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(task);
@@ -344,6 +347,7 @@ export default function DepartamentosProduccionPage() {
     setError(null);
     try {
       const isEdit = modal?.mode === "edit";
+      markLocalWrite();
       const r = await fetch(isEdit ? `/api/panel/departamentos/${modal.id}` : "/api/panel/departamentos", {
         method: isEdit ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -363,6 +367,7 @@ export default function DepartamentosProduccionPage() {
     setSaving(true);
     setError(null);
     try {
+      markLocalWrite();
       const r = await fetch(`/api/panel/departamentos/${confirmDelete.id}`, { method: "DELETE" });
       const d = await r.json();
       if (!r.ok) { setError(d.error ?? "No se pudo eliminar"); return; }
@@ -416,6 +421,7 @@ export default function DepartamentosProduccionPage() {
       const url = editingMemberId
         ? `/api/panel/departamentos/${teamDepartment.id}/members/${editingMemberId}`
         : `/api/panel/departamentos/${teamDepartment.id}/members`;
+      markLocalWrite();
       const r = await fetch(url, {
         method: editingMemberId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -435,6 +441,7 @@ export default function DepartamentosProduccionPage() {
     setTeamBusy(true);
     setTeamError(null);
     try {
+      markLocalWrite();
       const r = await fetch(`/api/panel/departamentos/${teamDepartment.id}/members/${memberId}`, { method: "DELETE" });
       const data = await r.json().catch(() => ({}));
       if (!r.ok) { setTeamError(data.error ?? "No se pudo quitar"); return; }

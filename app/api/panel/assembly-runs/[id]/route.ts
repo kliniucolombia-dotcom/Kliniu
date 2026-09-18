@@ -2,6 +2,7 @@ import { requirePermission } from "@/lib/permissions";
 import { deleteAssemblyRun, getAssemblyRunById, updateAssemblyRun, type AssemblyRunWriteData } from "@/lib/assembly";
 import { assemblyErrorResponse } from "@/lib/assembly-errors";
 import { isRecord, parseIsoDateTime, parseNonNegativeNumber, parseRequiredString } from "@/lib/operations-validation";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_ENSAMBLE", "view");
@@ -43,7 +44,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   try {
-    return Response.json(await updateAssemblyRun(id, data, access.user.id));
+    const updated = await updateAssemblyRun(id, data, access.user.id);
+    broadcastPanelUpdate("assembly").catch(() => {});
+    return Response.json(updated);
   } catch (e) {
     return assemblyErrorResponse(e);
   }
@@ -55,6 +58,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   try {
     await deleteAssemblyRun(id, access.user.id);
+    broadcastPanelUpdate("assembly").catch(() => {});
     return Response.json({ ok: true });
   } catch (e) {
     return assemblyErrorResponse(e);

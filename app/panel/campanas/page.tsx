@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { calcROAS, getCampaignStatus, STATUS_META } from "@/lib/panel-utils";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { SimpleSelect } from "../_components/simple-select";
 import DailyMatrix from "./DailyMatrix";
 
@@ -111,6 +112,7 @@ export default function CampanasPanel() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  const { markLocalWrite } = useRealtimeRefresh(["campaigns"], load);
   useEffect(() => { fetch("/api/trm").then((r) => r.json()).then((d) => d.rate && setTrm(d.rate)).catch(() => {}); }, []);
 
   // TRM correspondiente a la fecha de inicio de la campaña (o la de hoy si aún no hay fecha).
@@ -189,7 +191,7 @@ export default function CampanasPanel() {
     const method = editing ? "PATCH" : "POST";
     const r = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     setSaving(false);
-    if (r.ok) { setAlert({ type: "ok", msg: editing ? "Campaña actualizada" : "Campaña creada" }); load(); setTimeout(() => setShowForm(false), 1000); }
+    if (r.ok) { setAlert({ type: "ok", msg: editing ? "Campaña actualizada" : "Campaña creada" }); markLocalWrite(); load(); setTimeout(() => setShowForm(false), 1000); }
     else { const d = await r.json(); setAlert({ type: "err", msg: d.error ?? "Error" }); }
   };
 

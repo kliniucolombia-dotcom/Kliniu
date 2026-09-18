@@ -2,6 +2,7 @@ import { requirePermission } from "@/lib/permissions";
 import { createAssemblyStation, getAssemblyStations } from "@/lib/assembly";
 import { assemblyErrorResponse } from "@/lib/assembly-errors";
 import { isRecord, parsePositiveInteger, parseRequiredString } from "@/lib/operations-validation";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET(request: Request) {
   const access = await requirePermission("MODULE_ENSAMBLE", "view");
@@ -23,6 +24,7 @@ export async function POST(request: Request) {
       name: parseRequiredString(body.name),
       location: typeof body.location === "string" ? body.location : null,
     });
+    broadcastPanelUpdate("assembly").catch(() => {});
     return Response.json(station, { status: 201 });
   } catch (e) {
     if (e instanceof Error && e.message.includes("Unique constraint")) {

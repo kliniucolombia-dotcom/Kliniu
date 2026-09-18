@@ -1,5 +1,6 @@
 import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 /** Marca una noticia como leída por el usuario actual. Idempotente. */
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -18,5 +19,6 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     update: {},
   });
 
+  broadcastPanelUpdate("rrhh").catch(() => {});
   return Response.json({ ok: true });
 }

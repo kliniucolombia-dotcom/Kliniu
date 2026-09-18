@@ -2,6 +2,7 @@ import { requirePermission } from "@/lib/permissions";
 import { adjustWarehouseStock } from "@/lib/warehouses";
 import { parsePositiveInteger } from "@/lib/operations-validation";
 import { createNotification } from "@/lib/notifications";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function POST(request: Request) {
   const access = await requirePermission("MODULE_BODEGAS", "edit");
@@ -38,6 +39,8 @@ export async function POST(request: Request) {
       createdById: access.user.id,
       metadata: { productId: body.productId, warehouseId: body.warehouseId, type: body.type, quantity },
     }).catch(() => {});
+
+    broadcastPanelUpdate("warehouse").catch(() => {});
 
     return Response.json({ stock });
   } catch (error) {

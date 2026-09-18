@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { DOC_DEPARTMENTS, PRODUCTION_AREAS, getDocDepartment } from "@/lib/production-departments";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 const OTHER_AREA = {
   key: "OTROS",
@@ -145,5 +146,6 @@ export async function POST(request: Request) {
     },
   });
 
+  broadcastPanelUpdate("production").catch(() => {});
   return Response.json(department, { status: 201 });
 }

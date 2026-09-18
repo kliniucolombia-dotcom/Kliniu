@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { adjustInventoryItem } from "@/lib/maintenance";
 import { parseNonNegativeNumber } from "@/lib/operations-validation";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_MANTENIMIENTO", "edit");
@@ -20,6 +21,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   try {
     const item = await adjustInventoryItem(id, body);
+    broadcastPanelUpdate("maintenance").catch(() => {});
     return Response.json({ item });
   } catch (error) {
     const msg = error instanceof Error && error.message === "INSUFFICIENT_STOCK" ? "No hay suficiente stock para esa salida." : "No fue posible actualizar el ítem.";

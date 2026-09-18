@@ -1,5 +1,6 @@
 import { requireRRHH } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requireRRHH();
@@ -28,6 +29,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       ...(expiresAt !== undefined ? { expiresAt: expiresAt ? new Date(expiresAt) : null } : {}),
     },
   });
+  broadcastPanelUpdate("rrhh").catch(() => {});
   return Response.json(benefit);
 }
 
@@ -38,5 +40,6 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
 
   const { id } = await params;
   await prisma.benefit.delete({ where: { id } });
+  broadcastPanelUpdate("rrhh").catch(() => {});
   return Response.json({ ok: true });
 }

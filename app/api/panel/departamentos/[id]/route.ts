@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_PRODUCCION", "edit");
@@ -42,6 +43,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     },
   });
 
+  broadcastPanelUpdate("production").catch(() => {});
   return Response.json(updated);
 }
 
@@ -55,5 +57,6 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   if (!department) return Response.json({ error: "Departamento no encontrado" }, { status: 404 });
 
   await prisma.productionDepartment.delete({ where: { id } });
+  broadcastPanelUpdate("production").catch(() => {});
   return Response.json({ ok: true });
 }

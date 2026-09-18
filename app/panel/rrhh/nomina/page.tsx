@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { MdAttachFile, MdDownload, MdPictureAsPdf, MdTableChart, MdAttachMoney, MdGroup, MdDescription, MdCalendarMonth, MdSearch, MdFileDownload, MdFileUpload, MdMoreVert, MdClose } from "react-icons/md";
 import { SimpleSelect } from "../../_components/simple-select";
 import { useConfirm } from "@/app/components/confirm-dialog";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type EmployeeRow = {
   id: string;
@@ -117,6 +118,8 @@ export default function NominaPage() {
     load();
   }, []);
 
+  const { markLocalWrite } = useRealtimeRefresh(["rrhh"], load);
+
   const uploadFile = async (file: File) => {
     const employee = rows.find((e) => e.id === form.employeeId);
     if (!employee) return setError("Selecciona el empleado primero");
@@ -145,6 +148,7 @@ export default function NominaPage() {
       return setError("Empleado, periodo, devengado y deducciones son obligatorios");
     }
     setSaving(true);
+    markLocalWrite();
     const res = await fetch("/api/rrhh-local/payslips", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -177,6 +181,7 @@ export default function NominaPage() {
 
   const remove = async (id: string) => {
     if (!(await confirm({ title: "Eliminar desprendible", message: "¿Eliminar este desprendible?" }))) return;
+    markLocalWrite();
     const res = await fetch(`/api/rrhh-local/payslips/${id}`, { method: "DELETE" });
     if (res.ok) await load();
   };

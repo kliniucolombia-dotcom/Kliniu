@@ -17,13 +17,31 @@ let channel: RealtimeChannel | null = null;
 // dos veces (una por la acción y otra por realtime).
 const LOCAL_WRITE_TTL_MS = 1500;
 
+// Los guardados por celda (ej. matriz diaria de campañas) emiten ráfagas de
+// broadcasts. Coalescemos por ventana corta para que cada cliente recargue una
+// sola vez ante varios cambios seguidos, con trailing garantizado.
+const COALESCE_MS = 250;
+let pendingResources = new Set<string>();
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+function enqueue(resource: string) {
+  pendingResources.add(resource);
+  if (flushTimer) clearTimeout(flushTimer);
+  flushTimer = setTimeout(() => {
+    const resources = Array.from(pendingResources);
+    pendingResources = new Set();
+    flushTimer = null;
+    listeners.forEach((l) => resources.forEach((r) => l(r)));
+  }, COALESCE_MS);
+}
+
 function ensureChannel() {
   if (channel) return;
   channel = supabaseBrowser
     .channel("panel-updates")
     .on("broadcast", { event: "changed" }, (payload) => {
       const resource = (payload.payload as { resource?: string } | undefined)?.resource;
-      if (resource) listeners.forEach((l) => l(resource));
+      if (resource) enqueue(resource);
     })
     .subscribe();
 }

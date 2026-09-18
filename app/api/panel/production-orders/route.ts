@@ -2,6 +2,7 @@ import { requirePermission } from "@/lib/permissions";
 import { createProductionOrder, getProductionOrders } from "@/lib/panel";
 import { parseBogotaCivilDate } from "@/lib/operations-validation";
 import type { ProductionArea, ProductionOrderStatus } from "@/generated/prisma/client";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 const STATUSES: ProductionOrderStatus[] = ["DRAFT", "APPROVED", "IN_PRODUCTION", "COMPLETED", "CANCELLED"];
 const AREAS: ProductionArea[] = ["INYECCION", "ENSAMBLE"];
@@ -40,6 +41,7 @@ export async function POST(request: Request) {
       area: (body.area as ProductionArea | undefined) ?? "INYECCION",
       notes: body.notes,
     });
+    broadcastPanelUpdate("production").catch(() => {});
     return Response.json(created);
   } catch (error) {
     if (error instanceof Error && error.message === "INVALID_DATE") return Response.json({ error: "Fecha de producción inválida" }, { status: 400 });

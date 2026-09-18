@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { listChecklistEntries, upsertChecklistEntry } from "@/lib/logistics";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET(request: Request) {
   const access = await requirePermission("MODULE_LOGISTICA", "view");
@@ -41,5 +42,6 @@ export async function POST(request: Request) {
     notes: body.notes,
     userId: access.user.id,
   });
+  broadcastPanelUpdate("logistics").catch(() => {});
   return Response.json({ entry });
 }

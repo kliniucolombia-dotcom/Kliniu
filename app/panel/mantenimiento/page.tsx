@@ -6,6 +6,7 @@ import {
   MdPlayArrow, MdCheckCircle, MdCancel, MdHistory, MdWarningAmber, MdTimerOff, MdRemove,
 } from "react-icons/md";
 import { SimpleSelect } from "../_components/simple-select";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import {
   COP, fmtDate, fmtDateTime, todayBogota, inputCls, labelCls, btnPrimary, btnGhost,
   type Permission, type ModalProps, post, patchReq,
@@ -127,6 +128,8 @@ export default function MantenimientoPanel() {
     setLoading(false);
   }, [from, to, router]);
 
+  const { markLocalWrite } = useRealtimeRefresh(["maintenance"], load);
+
   useEffect(() => {
     const task = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(task);
@@ -141,6 +144,7 @@ export default function MantenimientoPanel() {
   const done = (msg: string) => { setModal(null); setAlert({ type: "ok", msg }); load(); };
   const fail = (msg: string) => setAlert({ type: "err", msg });
   async function patch(url: string, body: unknown, okMsg: string) {
+    markLocalWrite();
     const res = await patchReq(url, body);
     if (res.ok) { setAlert({ type: "ok", msg: okMsg }); load(); } else fail(res.error!);
   }
@@ -312,13 +316,13 @@ export default function MantenimientoPanel() {
         </>
       )}
 
-      {modal?.kind === "order" && data && <OrderModal equipment={data.equipment} technicians={data.technicians} onClose={() => setModal(null)} onDone={done} onError={fail} />}
-      {modal?.kind === "complete" && <CompleteModal order={modal.order} openedAt={modal.openedAt} onClose={() => setModal(null)} onDone={done} onError={fail} />}
-      {modal?.kind === "equipment" && data && <EquipmentModal machines={data.machines} onClose={() => setModal(null)} onDone={done} onError={fail} />}
+      {modal?.kind === "order" && data && <OrderModal equipment={data.equipment} technicians={data.technicians} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />}
+      {modal?.kind === "complete" && <CompleteModal order={modal.order} openedAt={modal.openedAt} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />}
+      {modal?.kind === "equipment" && data && <EquipmentModal machines={data.machines} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />}
       {modal?.kind === "history" && <HistoryModal equipment={modal.equipment} onClose={() => setModal(null)} />}
-      {modal?.kind === "item" && <ItemModal onClose={() => setModal(null)} onDone={done} onError={fail} />}
-      {modal?.kind === "adjust" && <AdjustModal item={modal.item} sign={modal.sign} onClose={() => setModal(null)} onDone={done} onError={fail} />}
-      {modal?.kind === "quote" && data && <QuoteModal orders={openOrders} onClose={() => setModal(null)} onDone={done} onError={fail} />}
+      {modal?.kind === "item" && <ItemModal onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />}
+      {modal?.kind === "adjust" && <AdjustModal item={modal.item} sign={modal.sign} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />}
+      {modal?.kind === "quote" && data && <QuoteModal orders={openOrders} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />}
       {modal?.kind === "report" && data && <ReportModal from={from} to={to} kpis={data.kpis} onClose={() => setModal(null)} onDone={done} onError={fail} />}
     </div>
   );
@@ -355,7 +359,7 @@ function OrderCard({ order: o, canEdit, onStart, onComplete, onCancel }: { order
   );
 }
 
-function OrderModal({ equipment, technicians, onClose, onDone, onError }: ModalProps & { equipment: Equipment[]; technicians: Technician[] }) {
+function OrderModal({ equipment, technicians, onClose, onDone, onError, markLocalWrite }: ModalProps & { equipment: Equipment[]; technicians: Technician[]; markLocalWrite: () => void }) {
   const [equipmentId, setEquipmentId] = useState(equipment[0]?.id ?? "");
   const [type, setType] = useState<MaintType>("CORRECTIVE");
   const [priority, setPriority] = useState<Priority>("MEDIUM");
@@ -364,6 +368,7 @@ function OrderModal({ equipment, technicians, onClose, onDone, onError }: ModalP
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     setSubmitting(true);
+    markLocalWrite();
     const res = await post("/api/panel/mantenimiento/ordenes", { equipmentId, type, priority, description, assignedToId: assignedToId || undefined });
     setSubmitting(false);
     if (res.ok) onDone("Orden creada"); else onError(res.error!);
@@ -381,13 +386,14 @@ function OrderModal({ equipment, technicians, onClose, onDone, onError }: ModalP
   );
 }
 
-function CompleteModal({ order, openedAt, onClose, onDone, onError }: ModalProps & { order: Order; openedAt: number }) {
+function CompleteModal({ order, openedAt, onClose, onDone, onError, markLocalWrite }: ModalProps & { order: Order; openedAt: number; markLocalWrite: () => void }) {
   const elapsed = order.startedAt ? Math.max(0, Math.round((openedAt - new Date(order.startedAt).getTime()) / 60000)) : 0;
   const [resolution, setResolution] = useState("");
   const [downtime, setDowntime] = useState(String(elapsed));
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     setSubmitting(true);
+    markLocalWrite();
     const res = await patchReq(`/api/panel/mantenimiento/ordenes/${order.id}`, { action: "complete", resolution, downtimeMinutes: Number(downtime) });
     setSubmitting(false);
     if (res.ok) onDone(`Orden ${order.number} completada`); else onError(res.error!);
@@ -405,7 +411,7 @@ function CompleteModal({ order, openedAt, onClose, onDone, onError }: ModalProps
   );
 }
 
-function EquipmentModal({ machines, onClose, onDone, onError }: ModalProps & { machines: Machine[] }) {
+function EquipmentModal({ machines, onClose, onDone, onError, markLocalWrite }: ModalProps & { machines: Machine[]; markLocalWrite: () => void }) {
   const [type, setType] = useState<EquipmentType>("MACHINE");
   const [machineId, setMachineId] = useState("");
   const [name, setName] = useState("");
@@ -421,6 +427,7 @@ function EquipmentModal({ machines, onClose, onDone, onError }: ModalProps & { m
 
   const submit = async () => {
     setSubmitting(true);
+    markLocalWrite();
     const res = await post("/api/panel/mantenimiento/equipos", { name, code, type, location, machineId: type === "MACHINE" ? machineId || undefined : undefined });
     setSubmitting(false);
     if (res.ok) onDone("Equipo registrado"); else onError(res.error!);
@@ -474,7 +481,7 @@ function HistoryModal({ equipment, onClose }: { equipment: Equipment; onClose: (
   );
 }
 
-function ItemModal({ onClose, onDone, onError }: ModalProps) {
+function ItemModal({ onClose, onDone, onError, markLocalWrite }: ModalProps & { markLocalWrite: () => void }) {
   const [category, setCategory] = useState<Item["category"]>("SPARE_PART");
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
@@ -485,6 +492,7 @@ function ItemModal({ onClose, onDone, onError }: ModalProps) {
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     setSubmitting(true);
+    markLocalWrite();
     const res = await post("/api/panel/mantenimiento/inventario", { name, code, category, stock: Number(stock), minStock: Number(minStock), unit, location });
     setSubmitting(false);
     if (res.ok) onDone("Ítem registrado"); else onError(res.error!);
@@ -506,11 +514,12 @@ function ItemModal({ onClose, onDone, onError }: ModalProps) {
   );
 }
 
-function AdjustModal({ item, sign, onClose, onDone, onError }: ModalProps & { item: Item; sign: 1 | -1 }) {
+function AdjustModal({ item, sign, onClose, onDone, onError, markLocalWrite }: ModalProps & { item: Item; sign: 1 | -1; markLocalWrite: () => void }) {
   const [qty, setQty] = useState("1");
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     setSubmitting(true);
+    markLocalWrite();
     const res = await patchReq(`/api/panel/mantenimiento/inventario/${item.id}`, { delta: sign * Number(qty) });
     setSubmitting(false);
     if (res.ok) onDone(sign > 0 ? "Entrada registrada" : "Salida registrada"); else onError(res.error!);
@@ -523,7 +532,7 @@ function AdjustModal({ item, sign, onClose, onDone, onError }: ModalProps & { it
   );
 }
 
-function QuoteModal({ orders, onClose, onDone, onError }: ModalProps & { orders: Order[] }) {
+function QuoteModal({ orders, onClose, onDone, onError, markLocalWrite }: ModalProps & { orders: Order[]; markLocalWrite: () => void }) {
   const [supplier, setSupplier] = useState("");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
@@ -531,6 +540,7 @@ function QuoteModal({ orders, onClose, onDone, onError }: ModalProps & { orders:
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     setSubmitting(true);
+    markLocalWrite();
     const res = await post("/api/panel/mantenimiento/cotizaciones", { supplier, description, amount: Number(amount), maintenanceOrderId: maintenanceOrderId || undefined });
     setSubmitting(false);
     if (res.ok) onDone("Cotización registrada"); else onError(res.error!);

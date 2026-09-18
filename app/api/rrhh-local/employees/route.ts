@@ -1,6 +1,7 @@
 import { hash } from "bcryptjs";
 import { requireRRHH } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET() {
   const access = await requireRRHH();
@@ -118,5 +119,6 @@ export async function POST(request: Request) {
     },
   });
 
+  broadcastPanelUpdate("rrhh").catch(() => {});
   return Response.json(employee, { status: 201 });
 }

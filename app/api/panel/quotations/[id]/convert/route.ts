@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { convertQuotationToOrder } from "@/lib/panel";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_COTIZACIONES", "edit");
@@ -17,6 +18,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
 
   try {
     const order = await convertQuotationToOrder(id);
+    broadcastPanelUpdate("quotations").catch(() => {});
     return Response.json(order);
   } catch (e) {
     if (e instanceof Error && e.message === "INVALID_TRANSITION") {
