@@ -98,3 +98,6 @@ next-env.d.ts
 
 # claude code local settings (puede contener credenciales de sesión)
 .claude/settings.local.json
+
+# graphify generated output
+/graphify-out/
