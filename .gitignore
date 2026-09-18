@@ -99,6 +99,7 @@ next-env.d.ts
 # claude code / agentes: no subir al repo
 .claude/
 .agents/
+CLAUDE.md
 
 # graphify generated output
 /graphify-out/
