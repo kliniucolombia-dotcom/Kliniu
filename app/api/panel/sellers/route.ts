@@ -6,7 +6,15 @@ export async function GET() {
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   if (!prisma) return Response.json([]);
   const sellers = await prisma.user.findMany({
-    where: { role: { in: ["ADMIN", "SELLER"] } },
+    where: {
+      role: { in: ["ADMIN", "SELLER"] },
+      NOT: {
+        OR: [
+          { fullName: { equals: "kliniu1234", mode: "insensitive" } },
+          { fullName: { equals: "odoo", mode: "insensitive" } },
+        ],
+      },
+    },
     select: { id: true, fullName: true, email: true, role: true },
     orderBy: { fullName: "asc" },
   });
