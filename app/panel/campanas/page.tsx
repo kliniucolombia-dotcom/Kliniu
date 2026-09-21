@@ -6,11 +6,11 @@ import {
   MdMoreVert, MdFileDownload, MdViewColumn, MdClose, MdInfoOutline,
   MdChevronLeft, MdChevronRight, MdFilterList,
 } from "react-icons/md";
-import { calcROAS } from "@/lib/panel-utils";
+import { calcROAS, calcKpiMensajes } from "@/lib/panel-utils";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { SimpleSelect } from "../_components/simple-select";
 import { Sparkline } from "../_components/mini-charts";
-import DailyMatrix from "./DailyMatrix";
+import DailyMatrix, { kpiMensajesColor } from "./DailyMatrix";
 
 type Campaign = {
   id: string; name: string; platform: string; investment: number; sales: number;
@@ -125,7 +125,7 @@ const investmentUsdOf = (c: Campaign) => (c.daily.days > 0 ? c.daily.investmentU
 const investmentCopOf = (c: Campaign) => investmentUsdOf(c) * (c.trm || 0);
 const roasOf = (c: Campaign) => calcROAS(salesOf(c), investmentCopOf(c));
 
-type ColKey = "investment" | "sales" | "roas" | "leads" | "cpl" | "status";
+type ColKey = "investment" | "sales" | "roas" | "leads" | "cpl" | "kpiMensajes" | "status";
 
 const COLUMNS: { key: ColKey; label: string }[] = [
   { key: "investment", label: "Inversión (USD)" },
@@ -133,8 +133,11 @@ const COLUMNS: { key: ColKey; label: string }[] = [
   { key: "roas", label: "ROAS" },
   { key: "leads", label: "Leads" },
   { key: "cpl", label: "CPL" },
+  { key: "kpiMensajes", label: "KPI Mensajes" },
   { key: "status", label: "Estado" },
 ];
+
+const kpiMensajesOf = (c: Campaign) => calcKpiMensajes(c.daily.transacciones, c.daily.mensajes);
 
 // Popover genérico con cierre al hacer clic fuera.
 function Popover({
@@ -212,7 +215,7 @@ export default function CampanasPanel() {
     });
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [visibleCols, setVisibleCols] = useState<Record<ColKey, boolean>>({
-    investment: true, sales: true, roas: true, leads: true, cpl: true, status: true,
+    investment: true, sales: true, roas: true, leads: true, cpl: true, kpiMensajes: true, status: true,
   });
   const PAGE_SIZE = 8;
 
@@ -655,6 +658,7 @@ export default function CampanasPanel() {
                     {visibleCols.roas && <TH>ROAS</TH>}
                     {visibleCols.leads && <TH>Leads</TH>}
                     {visibleCols.cpl && <TH>CPL</TH>}
+                    {visibleCols.kpiMensajes && <TH>KPI Mensajes</TH>}
                     {visibleCols.status && <TH>Estado</TH>}
                     <TH className="text-right">Acciones</TH>
                   </tr>
@@ -670,6 +674,8 @@ export default function CampanasPanel() {
                     const target = c.targetMultiple || 10;
                     const barPct = Math.min(100, (roas / target) * 100);
                     const cpl = c.leads > 0 ? investmentUsdOf(c) / c.leads : null;
+                    const kpiMensajes = kpiMensajesOf(c);
+                    const kpiMensajesMeta = kpiMensajesColor(kpiMensajes);
                     const initials = c.name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
                     return (
                       <tr key={c.id} className="transition-colors hover:bg-[#F8FAFC]">
@@ -718,6 +724,17 @@ export default function CampanasPanel() {
                         )}
                         {visibleCols.leads && <td className="px-4 py-4 text-sm text-[#1A1A1A]">{c.leads ?? 0}</td>}
                         {visibleCols.cpl && <td className="px-4 py-4 text-sm text-[#1A1A1A]">{cpl !== null ? fmtUSD(cpl) : "—"}</td>}
+                        {visibleCols.kpiMensajes && (
+                          <td className="px-4 py-4">
+                            {c.daily.mensajes > 0 ? (
+                              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold" style={{ background: kpiMensajesMeta.bg, color: kpiMensajesMeta.color }}>
+                                {(kpiMensajes * 100).toFixed(1)}%
+                              </span>
+                            ) : (
+                              <span className="text-sm text-[#94A3B8]">—</span>
+                            )}
+                          </td>
+                        )}
                         {visibleCols.status && (
                           <td className="px-4 py-4">
                             <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold" style={{ background: meta.bg, color: meta.color }}>

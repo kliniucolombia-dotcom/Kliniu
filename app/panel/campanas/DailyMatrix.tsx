@@ -26,9 +26,9 @@ function sanitize(value: string): number {
 }
 
 // Colores de semáforo para los KPIs.
-function kpiMensajesColor(ratio: number) {
-  if (ratio >= 0.6) return { bg: "#DCFCE7", color: "#16A34A", bar: "#16A34A" };
-  if (ratio >= 0.4) return { bg: "#FEF3C7", color: "#B45309", bar: "#EAB308" };
+export function kpiMensajesColor(ratio: number) {
+  if (ratio >= 0.2) return { bg: "#DCFCE7", color: "#16A34A", bar: "#16A34A" };
+  if (ratio >= 0.1) return { bg: "#FEF3C7", color: "#B45309", bar: "#EAB308" };
   return { bg: "#FEE2E2", color: "#DC2626", bar: "#DC2626" };
 }
 function kpiConversionColor(x: number) {
