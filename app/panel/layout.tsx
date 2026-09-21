@@ -111,9 +111,7 @@ const NAV: NavItem[] = [
     href: "/panel/tickets",
     label: "Solicitudes",
     icon: <MdConfirmationNumber size={18} />,
-    children: [
-      { href: "/panel/tickets", label: "Ver solicitudes", module: "MODULE_TICKETS", icon: <MdConfirmationNumber size={17} /> },
-    ],
+    module: "MODULE_TICKETS",
   },
   {
     key: "notificaciones",

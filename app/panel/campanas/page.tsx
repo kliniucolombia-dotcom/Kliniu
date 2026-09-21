@@ -404,7 +404,7 @@ export default function CampanasPanel() {
     ...platforms.map((p) => ({ value: p, label: <span className="flex items-center gap-2"><MdPublic size={15} className="text-[#94A3B8]" />{p}</span> })),
   ];
 
-  const filterTrigger = "flex items-center justify-between gap-2 rounded-xl border border-[#E2E8F0] bg-white px-3 py-2 text-sm font-semibold text-[#334155] hover:border-[#27B1B8] transition-colors min-w-[120px]";
+  const filterTrigger = "flex w-full items-center justify-between gap-2 rounded-xl border border-[#E2E8F0] bg-white px-3 py-2 text-left text-sm font-semibold text-[#334155] hover:border-[#27B1B8] transition-colors sm:min-w-[120px]";
 
   const kpis = [
     {
@@ -489,35 +489,43 @@ export default function CampanasPanel() {
 
       {/* Filtros */}
       <div className="mb-5 rounded-2xl border border-[#E2E8F0] bg-white p-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-1 text-xs font-bold text-[#64748B]"><MdFilterList size={15} /> Periodo</span>
-          <div className="w-44">
-            <SimpleSelect value={dateFilter} options={dateOpts} onChange={setDateFilter} triggerClassName={filterTrigger} />
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+            <span className="inline-flex items-center gap-1.5 px-1 text-xs font-bold text-[#64748B]"><MdFilterList size={15} /> Periodo</span>
+            <div className="w-full sm:w-44">
+              <SimpleSelect value={dateFilter} options={dateOpts} onChange={setDateFilter} triggerClassName={filterTrigger} />
+            </div>
           </div>
 
           {dateFilter === "custom" && (
-            <>
-              <input type="date" value={customFrom} max={customTo || undefined} onChange={(e) => setCustomFrom(e.target.value)} className="rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" />
-              <input type="date" value={customTo} min={customFrom || undefined} onChange={(e) => setCustomTo(e.target.value)} className="rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" />
-            </>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <input type="date" value={customFrom} max={customTo || undefined} onChange={(e) => setCustomFrom(e.target.value)} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8] sm:w-auto" />
+              <input type="date" value={customTo} min={customFrom || undefined} onChange={(e) => setCustomTo(e.target.value)} className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8] sm:w-auto" />
+            </div>
           )}
 
-          <span className="inline-flex items-center gap-1.5 px-1 text-xs font-bold text-[#64748B]">Vendedor</span>
-          <div className="w-40">
-            <SimpleSelect value={sellerFilter} options={sellerOpts} onChange={setSellerFilter} triggerClassName={filterTrigger} />
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+            <span className="inline-flex items-center gap-1.5 px-1 text-xs font-bold text-[#64748B]">Vendedor</span>
+            <div className="w-full sm:w-40">
+              <SimpleSelect value={sellerFilter} options={sellerOpts} onChange={setSellerFilter} triggerClassName={filterTrigger} />
+            </div>
           </div>
 
-          <span className="inline-flex items-center gap-1.5 px-1 text-xs font-bold text-[#64748B]">Estado</span>
-          <div className="w-40">
-            <SimpleSelect value={statusFilter} options={statusOpts} onChange={setStatusFilter} triggerClassName={filterTrigger} />
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+            <span className="inline-flex items-center gap-1.5 px-1 text-xs font-bold text-[#64748B]">Estado</span>
+            <div className="w-full sm:w-40">
+              <SimpleSelect value={statusFilter} options={statusOpts} onChange={setStatusFilter} triggerClassName={filterTrigger} />
+            </div>
           </div>
 
-          <span className="inline-flex items-center gap-1.5 px-1 text-xs font-bold text-[#64748B]">Plataforma</span>
-          <div className="w-40">
-            <SimpleSelect value={platformFilter} options={platformOpts} onChange={setPlatformFilter} triggerClassName={filterTrigger} />
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+            <span className="inline-flex items-center gap-1.5 px-1 text-xs font-bold text-[#64748B]">Plataforma</span>
+            <div className="w-full sm:w-40">
+              <SimpleSelect value={platformFilter} options={platformOpts} onChange={setPlatformFilter} triggerClassName={filterTrigger} />
+            </div>
           </div>
 
-          <div className="relative min-w-[200px] flex-1">
+          <div className="relative w-full sm:min-w-[200px] sm:flex-1">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]"><MdSearch size={16} /></span>
             <input
               value={search}
@@ -527,7 +535,7 @@ export default function CampanasPanel() {
             />
           </div>
 
-          <span className="rounded-full bg-[#F1F5F9] px-3 py-1.5 text-xs font-bold text-[#475569]">
+          <span className="self-start rounded-full bg-[#F1F5F9] px-3 py-1.5 text-xs font-bold text-[#475569] sm:self-auto">
             {filteredCampaigns.length} campaña{filteredCampaigns.length === 1 ? "" : "s"}
           </span>
         </div>
