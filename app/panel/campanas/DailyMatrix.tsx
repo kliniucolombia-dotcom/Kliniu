@@ -124,10 +124,6 @@ export default function DailyMatrix({ campaignId, campaignName, onClose }: { cam
 
   const rows = useMemo(() => buildCampaignDailyRows(viewEntries), [viewEntries]);
   const totals = useMemo(() => calcCampaignDailyTotals(viewEntries), [viewEntries]);
-  const ventasUsd = useMemo(
-    () => viewEntries.reduce((s, e) => s + (e.trm > 0 ? (e.ventaDelDia || 0) / e.trm : 0), 0),
-    [viewEntries],
-  );
 
   const hasPendingEdits = Object.keys(draft).length > 0 || deletedIds.size > 0 || addedIds.size > 0;
 
@@ -296,7 +292,7 @@ export default function DailyMatrix({ campaignId, campaignName, onClose }: { cam
                           </span>
                         </td>
                         <td className="border-y border-[#E2E8F0] px-2 py-2 align-middle">
-                          <NumCell value={row.ventaDelDia} scale={row.trm} onChange={(v) => patch(row.id, "ventaDelDia", v)} className="w-[120px]" />
+                          <NumCell value={row.ventaDelDia} onChange={(v) => patch(row.id, "ventaDelDia", v)} className="w-[120px]" />
                         </td>
                         <td className="border-y border-[#E2E8F0] px-2 py-2 align-middle text-right font-semibold text-[#1A1A1A] whitespace-nowrap">
                           {fmtCOP(row.metaDiaria)}
@@ -330,7 +326,7 @@ export default function DailyMatrix({ campaignId, campaignName, onClose }: { cam
                       <td className="bg-[#E9F7F7] px-2 py-3.5 text-right">{fmtUSD(totals.totalInversionUSD)}</td>
                       <td className="bg-[#E9F7F7] px-2 py-3.5 text-right">{fmtCOP(totals.totalInversion)}</td>
                       <td className="bg-[#E9F7F7] px-2 py-3.5 text-right">{fmtX(totals.kpiGeneral)}</td>
-                      <td className="bg-[#E9F7F7] px-2 py-3.5 text-right">{fmtUSD(ventasUsd)}</td>
+                      <td className="bg-[#E9F7F7] px-2 py-3.5 text-right">{fmtCOP(totals.totalVentas)}</td>
                       <td className="bg-[#E9F7F7] px-2 py-3.5 text-right">{fmtCOP(rows.reduce((s, r) => s + r.metaDiaria, 0))}</td>
                       <td className="bg-[#E9F7F7] px-2 py-3.5 text-right">{fmtCOP(totals.totalVentas)}</td>
                       <td className="rounded-r-2xl bg-[#E9F7F7] px-4 py-3.5 text-right">—</td>

@@ -113,14 +113,17 @@ function displayStatusOf(c: Campaign, roas: number): DisplayStatus {
 
 const DISPLAY_STATUS: Record<DisplayStatus, { label: string; color: string; bg: string }> = {
   meta:     { label: "Meta cumplida", color: "#0F9D6A", bg: "#DCFCE7" },
-  rentable: { label: "Rentable",      color: "#0F9D6A", bg: "#DCFCE7" },
+  rentable: { label: "Aceptable",     color: "#0F9D6A", bg: "#DCFCE7" },
   revision: { label: "En revisión",   color: "#B45309", bg: "#FEF3C7" },
   riesgo:   { label: "En riesgo",     color: "#DC2626", bg: "#FEE2E2" },
   pausada:  { label: "Pausada",       color: "#64748B", bg: "#F1F5F9" },
 };
 
 const salesOf = (c: Campaign) => (c.daily.days > 0 ? c.daily.sales : c.sales);
-const roasOf = (c: Campaign) => calcROAS(salesOf(c), c.investment * (c.trm || 0));
+// Cuando hay matriz diaria, la inversión real sale de ahí (USD); si no, la manual del formulario.
+const investmentUsdOf = (c: Campaign) => (c.daily.days > 0 ? c.daily.investmentUsd : c.investment);
+const investmentCopOf = (c: Campaign) => investmentUsdOf(c) * (c.trm || 0);
+const roasOf = (c: Campaign) => calcROAS(salesOf(c), investmentCopOf(c));
 
 type ColKey = "investment" | "sales" | "roas" | "leads" | "cpl" | "status";
 
@@ -292,8 +295,8 @@ export default function CampanasPanel() {
   const totals = useMemo(() => {
     let inversionUsd = 0, inversionCop = 0, ventas = 0, leads = 0, dias = 0;
     for (const c of filteredCampaigns) {
-      inversionUsd += c.investment;
-      inversionCop += c.investment * (c.trm || 0);
+      inversionUsd += investmentUsdOf(c);
+      inversionCop += investmentCopOf(c);
       ventas += salesOf(c);
       leads += c.leads ?? 0;
       dias += c.daily.days;
@@ -316,8 +319,8 @@ export default function CampanasPanel() {
     const list = campaigns.filter((c) => inRange(c.startDate, from, to) && matchesFilters(c));
     let inversionUsd = 0, inversionCop = 0, ventas = 0, leads = 0;
     for (const c of list) {
-      inversionUsd += c.investment;
-      inversionCop += c.investment * (c.trm || 0);
+      inversionUsd += investmentUsdOf(c);
+      inversionCop += investmentCopOf(c);
       ventas += salesOf(c);
       leads += c.leads ?? 0;
     }
@@ -348,10 +351,10 @@ export default function CampanasPanel() {
     const lines = filteredCampaigns.map((c) => {
       const venta = salesOf(c);
       const roas = roasOf(c);
-      const cpl = c.leads > 0 ? c.investment / c.leads : "";
+      const cpl = c.leads > 0 ? investmentUsdOf(c) / c.leads : "";
       return [
         c.name, c.seller.fullName, c.platform,
-        Math.round(c.investment), Math.round(c.investment * (c.trm || 0)), Math.round(venta),
+        Math.round(investmentUsdOf(c)), Math.round(investmentCopOf(c)), Math.round(venta),
         roas.toFixed(2), c.leads ?? 0,
         cpl === "" ? "" : Math.round(Number(cpl)),
         DISPLAY_STATUS[displayStatusOf(c, roas)].label,
@@ -419,7 +422,7 @@ export default function CampanasPanel() {
       sub: `≈ ${fmtCOP(totals.inversionCop)}`,
       delta: prevTotals ? fmtDelta(totals.inversionUsd, prevTotals.inversionUsd) : null,
       icon: <MdPayments size={18} />, color: "#2563EB", tint: "#DBEAFE",
-      spark: filteredCampaigns.map((c) => c.investment), sparkColor: "#2563EB",
+      spark: filteredCampaigns.map((c) => investmentUsdOf(c)), sparkColor: "#2563EB",
     },
     {
       label: "ROAS global", value: `${totals.roas.toFixed(2)}x`,
@@ -658,14 +661,15 @@ export default function CampanasPanel() {
                 </thead>
                 <tbody className="divide-y divide-[#F1F5F9]">
                   {pageRows.map((c) => {
-                    const inversionCop = c.investment * (c.trm || 0);
+                    const inversionUsd = investmentUsdOf(c);
+                    const inversionCop = investmentCopOf(c);
                     const venta = salesOf(c);
                     const roas = roasOf(c);
                     const status = displayStatusOf(c, roas);
                     const meta = DISPLAY_STATUS[status];
                     const target = c.targetMultiple || 10;
                     const barPct = Math.min(100, (roas / target) * 100);
-                    const cpl = c.leads > 0 ? c.investment / c.leads : null;
+                    const cpl = c.leads > 0 ? investmentUsdOf(c) / c.leads : null;
                     const initials = c.name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
                     return (
                       <tr key={c.id} className="transition-colors hover:bg-[#F8FAFC]">
@@ -694,7 +698,7 @@ export default function CampanasPanel() {
                         </td>
                         {visibleCols.investment && (
                           <td className="px-4 py-4">
-                            <p className="text-sm font-bold text-[#2563EB]">{fmtUSD(c.investment)}</p>
+                            <p className="text-sm font-bold text-[#2563EB]">{fmtUSD(inversionUsd)}</p>
                             <p className="text-xs text-[#94A3B8]">≈ {fmtCOP(inversionCop)} COP</p>
                           </td>
                         )}
