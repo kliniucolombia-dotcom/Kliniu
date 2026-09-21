@@ -4,11 +4,11 @@ import { createCampaignDailyEntry, getCampaignDailyEntries } from "@/lib/panel";
 import { buildCampaignDailyRows, calcCampaignDailyTotals } from "@/lib/panel-utils";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
-async function assertAccess(campaignId: string, session: { role: string; userId: string }) {
+async function assertAccess(campaignId: string, session: { role: string; userId: string }, requireOwner = false) {
   if (!prisma) return null;
   const campaign = await prisma.campaign.findUnique({ where: { id: campaignId } });
   if (!campaign) return { error: "Campaña no encontrada", status: 404 as const };
-  if (session.role === "SELLER" && campaign.sellerId !== session.userId) {
+  if (requireOwner && session.role === "SELLER" && campaign.sellerId !== session.userId) {
     return { error: "Sin permiso", status: 403 as const };
   }
   return null;
@@ -38,7 +38,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
 
   const { id } = await params;
-  const denied = await assertAccess(id, session);
+  const denied = await assertAccess(id, session, true);
   if (denied) return Response.json({ error: denied.error }, { status: denied.status });
 
   const body = await request.json() as {

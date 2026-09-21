@@ -7,10 +7,8 @@ import { broadcastPanelUpdate } from "@/lib/realtime";
 export async function GET() {
   const access = await requirePermission("MODULE_CAMPANAS", "view");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  const { session } = access;
-  const sellerId = session.role === "SELLER" ? session.userId : undefined;
   try {
-    const campaigns = await getCampaignsForPanel(sellerId);
+    const campaigns = await getCampaignsForPanel();
     return Response.json(campaigns);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error al cargar campañas";
