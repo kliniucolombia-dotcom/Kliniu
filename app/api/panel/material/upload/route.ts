@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   }
 
   const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
-  const path = `${folderId ?? "raiz"}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const path = `${folderId ?? "raiz"}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
 
   const { error: uploadError } = await supabase.storage
     .from(MATERIAL_BUCKET)

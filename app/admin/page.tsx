@@ -123,7 +123,7 @@ function createTechnicalSpecItem(
   spec?: Partial<ProductoEspecificacion>,
 ): TechnicalSpecFormItem {
   return {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: crypto.randomUUID(),
     etiqueta: spec?.etiqueta || "",
     valor: spec?.valor || "",
   };

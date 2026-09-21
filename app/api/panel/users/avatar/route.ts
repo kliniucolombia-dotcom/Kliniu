@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     .toBuffer();
 
   const bucket = getStorageBucket();
-  const filePath = `avatars/new-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.webp`;
+  const filePath = `avatars/new-${Date.now()}-${crypto.randomUUID()}.webp`;
 
   const { error: uploadError } = await supabase.storage.from(bucket).upload(filePath, compressed, {
     contentType: "image/webp",
