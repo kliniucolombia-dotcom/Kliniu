@@ -7,7 +7,7 @@ import { DashboardLiveRefresher } from "./_components/dashboard-live-refresher";
 import {
   MdAccountBalanceWallet, MdShoppingCart, MdTrendingUp, MdCampaign,
   MdGpsFixed, MdWarningAmber, MdPeopleOutline, MdReceiptLong, MdRefresh,
-  MdInventory2, MdGroups,
+  MdInventory2, MdGroups, MdAssignmentLate, MdChatBubbleOutline,
 } from "react-icons/md";
 
 export const dynamic = "force-dynamic";
@@ -89,7 +89,7 @@ export default async function PanelDashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi) => {
           const Icon = kpi.icon;
           return (
@@ -251,6 +251,42 @@ export default async function PanelDashboard() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Atención comercial */}
+      {stats && (
+        <div className="mb-8 rounded-2xl border border-[#E2E8F0] bg-white p-6">
+          <h2 className="mb-4 text-sm font-black text-[#1A1A1A]">Atención comercial</h2>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <a href="/panel/pedidos" className="flex items-center gap-3 rounded-xl p-3 transition hover:brightness-95" style={{ background: stats.pendingOrders > 0 ? "#FEF3C7" : "#F8FAFC" }}>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ color: "#D97706", background: "#FDE68A" }}>
+                <MdAssignmentLate size={17} />
+              </span>
+              <div>
+                <p className="text-lg font-black text-[#1A1A1A]">{stats.pendingOrders}</p>
+                <p className="text-xs text-[#64748B]">pedidos pendientes</p>
+              </div>
+            </a>
+            <a href="/panel/cotizaciones" className="flex items-center gap-3 rounded-xl p-3 transition hover:brightness-95" style={{ background: stats.quotationsSent > 0 ? "#DBEAFE" : "#F8FAFC" }}>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ color: "#2563EB", background: "#BFDBFE" }}>
+                <MdChatBubbleOutline size={17} />
+              </span>
+              <div>
+                <p className="text-lg font-black text-[#1A1A1A]">{stats.quotationsSent}</p>
+                <p className="text-xs text-[#64748B]">cotizaciones sin responder</p>
+              </div>
+            </a>
+            <a href="/panel/productos" className="flex items-center gap-3 rounded-xl p-3 transition hover:brightness-95" style={{ background: stats.lowStockCount > 0 ? "#FEE2E2" : "#F8FAFC" }}>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ color: "#DC2626", background: "#FECACA" }}>
+                <MdInventory2 size={17} />
+              </span>
+              <div>
+                <p className="text-lg font-black text-[#1A1A1A]">{stats.lowStockCount}</p>
+                <p className="text-xs text-[#64748B]">productos con inventario bajo</p>
+              </div>
+            </a>
           </div>
         </div>
       )}

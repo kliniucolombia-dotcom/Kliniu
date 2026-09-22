@@ -17,7 +17,7 @@ type Campaign = {
   leads: number; targetMultiple: number; status: string; startDate: string;
   endDate?: string; notes?: string;
   trm: number; // COP por USD de la fecha de inicio
-  daily: { sales: number; investmentUsd: number; mensajes: number; transacciones: number; days: number };
+  daily: { sales: number; investmentUsd: number; mensajes: number; transacciones: number; days: number; firstDate: string | null; lastDate: string | null };
   seller: { id: string; fullName: string; email: string };
   combo?: { id: string; name: string; image: string | null };
 };
@@ -89,6 +89,21 @@ const inRange = (iso: string, from: Date | null, to: Date | null) => {
   if (from && d < from) return false;
   if (to && d > to) return false;
   return true;
+};
+
+// Una campaña queda dentro del periodo si inició en él, o si tiene actividad
+// (matriz diaria) que se solapa con el rango, para no ocultarla cuando el
+// filtro apunta a los días realmente cargados en su matriz.
+const campaignInPeriod = (c: Campaign, from: Date | null, to: Date | null) => {
+  if (inRange(c.startDate, from, to)) return true;
+  if (c.daily.days > 0 && c.daily.firstDate && c.daily.lastDate) {
+    const first = new Date(c.daily.firstDate);
+    const last = new Date(c.daily.lastDate);
+    if (from && last < from) return false;
+    if (to && first > to) return false;
+    return true;
+  }
+  return false;
 };
 
 const fmtUSD = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
@@ -278,7 +293,7 @@ export default function CampanasPanel() {
   // Filtro por fecha (base) y luego filtros de columna. Compara inicio de campaña.
   const dateCampaigns = useMemo(() => {
     const [from, to] = dateFilterRange(dateFilter, customFrom, customTo);
-    return campaigns.filter((c) => inRange(c.startDate, from, to));
+    return campaigns.filter((c) => campaignInPeriod(c, from, to));
   }, [campaigns, dateFilter, customFrom, customTo]);
 
   const matchesFilters = useCallback((c: Campaign) => {
@@ -319,7 +334,7 @@ export default function CampanasPanel() {
   const prevTotals = useMemo(() => {
     const [from, to] = previousRange(dateFilter, customFrom, customTo);
     if (!from) return null;
-    const list = campaigns.filter((c) => inRange(c.startDate, from, to) && matchesFilters(c));
+    const list = campaigns.filter((c) => campaignInPeriod(c, from, to) && matchesFilters(c));
     let inversionUsd = 0, inversionCop = 0, ventas = 0, leads = 0;
     for (const c of list) {
       inversionUsd += investmentUsdOf(c);

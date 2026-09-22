@@ -56,7 +56,7 @@ export async function getDashboardStats() {
   const dayOfWeek    = now.getDay() === 0 ? 6 : now.getDay() - 1; // Monday = 0
   const startOfWeek  = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
 
-  const [todayOrders, weekOrders, monthOrders, prevMonthOrders, campaigns, products, newCustomers, recentOrders, newCustomerRows] = await Promise.all([
+  const [todayOrders, weekOrders, monthOrders, prevMonthOrders, campaigns, products, newCustomers, recentOrders, newCustomerRows, pendingOrders, quotationsSent, lowStockProducts] = await Promise.all([
     prisma.order.findMany({ where: { createdAt: { gte: startOfDay }, status: "PAID" }, select: { subtotal: true } }),
     prisma.order.findMany({ where: { createdAt: { gte: startOfWeek }, status: "PAID" }, select: { subtotal: true } }),
     prisma.order.findMany({ where: { createdAt: { gte: startOfMonth }, status: "PAID" }, select: { subtotal: true, userId: true, createdAt: true, channel: true } }),
@@ -70,7 +70,11 @@ export async function getDashboardStats() {
       select: { id: true, customerName: true, subtotal: true, shippingStatus: true, status: true, createdAt: true },
     }),
     prisma.user.findMany({ where: { role: "CUSTOMER", createdAt: { gte: startOfMonth } }, select: { createdAt: true } }),
+    prisma.order.count({ where: { shippingStatus: "PENDING", status: "PAID" } }),
+    prisma.quotation.count({ where: { status: "SENT" } }),
+    prisma.$queryRaw<{ count: bigint }[]>`SELECT COUNT(*)::int AS count FROM "Product" WHERE active = true AND stock <= "minimumStock"`,
   ]);
+  const lowStockCount = Number(lowStockProducts[0]?.count ?? 0);
 
   // Serie diaria de ventas del mes (día 1 → hoy), para el gráfico de área
   const dailyMap: Record<string, number> = {};
@@ -203,6 +207,9 @@ export async function getDashboardStats() {
     campaignTrends: { investment: investmentTrend, sales: salesTrend, roas: roasTrend, risk: riskTrend },
     salesByChannel,
     monthChangePercent: prevMonthTotal > 0 ? Math.round(((monthTotal - prevMonthTotal) / prevMonthTotal) * 1000) / 10 : null,
+    pendingOrders,
+    quotationsSent,
+    lowStockCount,
     recentOrders: recentOrders.map((o) => ({
       id: o.id,
       customerName: o.customerName,
@@ -332,6 +339,8 @@ export async function getCampaignsForPanel(sellerId?: string) {
     by: ["campaignId"],
     _sum: { ventaDelDia: true, presupuestoPublicidad: true, mensajes: true, transacciones: true },
     _count: { _all: true },
+    _min: { fecha: true },
+    _max: { fecha: true },
   });
   const dailyByCampaign = new Map(
     dailyAgg.map((d) => [
@@ -342,6 +351,8 @@ export async function getCampaignsForPanel(sellerId?: string) {
         mensajes: d._sum.mensajes ?? 0,
         transacciones: d._sum.transacciones ?? 0,
         days: d._count._all,
+        firstDate: d._min.fecha,
+        lastDate: d._max.fecha,
       },
     ]),
   );
@@ -352,7 +363,7 @@ export async function getCampaignsForPanel(sellerId?: string) {
     campaigns.map(async (c) => ({
       ...c,
       trm: await getTrmForDate(c.startDate),
-      daily: dailyByCampaign.get(c.id) ?? { sales: 0, investmentUsd: 0, mensajes: 0, transacciones: 0, days: 0 },
+      daily: dailyByCampaign.get(c.id) ?? { sales: 0, investmentUsd: 0, mensajes: 0, transacciones: 0, days: 0, firstDate: null, lastDate: null },
     })),
   );
 }
