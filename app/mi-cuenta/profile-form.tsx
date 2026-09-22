@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 import WhatsAppAsesor from "../components/whatsapp-asesor";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -563,7 +564,14 @@ export default function AccountProfileForm({
                 {(() => {
                   if (!prize || timeLeft <= 0) return (
                     <div className="overflow-hidden rounded-2xl">
-                      <img src="/banners-web/TARJETA DE REGALO-43.png" alt="Tarjeta de regalo" className="block w-full" />
+                      <Image
+                        src="/banners-web/TARJETA DE REGALO-43.png"
+                        alt="Tarjeta de regalo"
+                        width={3550}
+                        height={2658}
+                        sizes="(min-width: 1024px) 38vw, 100vw"
+                        className="block h-auto w-full"
+                      />
                     </div>
                   );
                   const hh = String(Math.floor(timeLeft / 3600)).padStart(2, "0");
@@ -573,7 +581,14 @@ export default function AccountProfileForm({
                   return (
                     <div style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 24px 60px rgba(7,63,67,0.3)", position: "relative" }}>
                       <div style={{ position: "relative" }}>
-                        <img src="/tarjeta-bono.jpg" alt="" style={{ width: "100%", display: "block" }} />
+                        <Image
+                          src="/tarjeta-bono.jpg"
+                          alt=""
+                          width={1536}
+                          height={1024}
+                          sizes="(min-width: 1024px) 38vw, 100vw"
+                          style={{ width: "100%", height: "auto", display: "block" }}
+                        />
                         <div style={{ position: "absolute", left: "6%", bottom: "4%", background: "rgba(7,63,67,0.82)", borderRadius: 18, padding: "10px 20px", backdropFilter: "blur(6px)", textAlign: "center", minWidth: 90 }}>
                           <p style={{ fontSize: isShipping ? 28 : 44, fontWeight: 900, color: "#fff", lineHeight: 1, margin: 0 }}>{isShipping ? "🚚" : prize.label}</p>
                           <p style={{ fontSize: 12, fontWeight: 700, color: "#BFEFF0", margin: "3px 0 0" }}>{isShipping ? "envío gratis" : prize.detail}</p>

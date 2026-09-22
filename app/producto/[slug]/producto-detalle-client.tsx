@@ -621,8 +621,13 @@ export default function ProductoDetalleClient() {
           >
             {/* Foca */}
             <div className="flex justify-center bg-[#f0fafa] pt-6 pb-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/foca-arma-tu-combo.png" alt="Foca Kliniu" className="h-36 w-auto object-contain" />
+              <Image
+                src="/foca-arma-tu-combo.png"
+                alt="Foca Kliniu"
+                width={216}
+                height={144}
+                className="h-36 w-auto object-contain"
+              />
             </div>
 
             {/* Contenido */}
