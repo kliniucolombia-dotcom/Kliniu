@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import SiteHeader from "./site-header";
 import SupportChat from "./support-chat";
+import WhatsAppFloat from "./whatsapp-float";
 import type { UserRole } from "@/generated/prisma/client";
 
 type Props = {
@@ -24,6 +25,7 @@ export default function ConditionalShell({ currentUser, children }: Props) {
         {children}
       </div>
       {!isPanelRoute && !isAuthRoute && <SupportChat />}
+      {!isPanelRoute && !isAuthRoute && <WhatsAppFloat />}
     </>
   );
 }

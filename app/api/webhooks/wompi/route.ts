@@ -3,6 +3,8 @@ import { markOrderPaidByWompiReference } from "@/lib/orders";
 import { verifyWompiEventSignature, type WompiEventPayload } from "@/lib/wompi";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { createNotification } from "@/lib/notifications";
+import { sendOrderPaidEmail } from "@/lib/notifications/order-email";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
   const payload = (await request.json()) as WompiEventPayload;
@@ -28,6 +30,11 @@ export async function POST(request: Request) {
           href: "/panel/pedidos",
           metadata: { reference, transactionId: id },
         }).catch(() => {});
+
+        prisma
+          ?.order.findUnique({ where: { wompiReference: reference }, include: { items: true } })
+          .then((order) => order && sendOrderPaidEmail(order))
+          .catch(() => {});
       }
     } catch {
       // Referencia no encontrada u otro error: Wompi reintenta, respondemos 200 igual.
