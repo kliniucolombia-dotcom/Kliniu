@@ -11,7 +11,8 @@ import {
   MdInventory, MdExtension, MdConfirmationNumber, MdChat, MdVideocam, MdFolder,
   MdLocalShipping, MdBuild,
 } from "react-icons/md";
-import { ConfirmProvider } from "@/app/components/confirm-dialog";
+import { ConfirmProvider, useConfirm } from "@/app/components/confirm-dialog";
+import AccountEntryLoading from "@/app/components/account-entry-loading";
 import { NotificationBell } from "@/app/panel/_components/notification-bell";
 import { NotificationToast } from "@/app/panel/_components/notification-toast";
 import { NotificationDetailProvider } from "@/app/panel/_components/notification-detail-modal";
@@ -214,11 +215,25 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   }, [pathname]);
 
   const [loggingOut, setLoggingOut] = useState(false);
+  const confirm = useConfirm();
   const logout = async () => {
     if (loggingOut) return;
+    const ok = await confirm({
+      title: "Cerrar sesión",
+      message: "¿Seguro que quieres cerrar tu sesión?",
+      confirmLabel: "Cerrar sesión",
+      danger: false,
+    });
+    if (!ok) return;
     setLoggingOut(true);
-    await fetch("/api/auth/logout", { method: "POST" });
-    window.location.replace("/login");
+    try {
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      if (!res.ok) throw new Error("logout falló");
+    } catch {
+      setLoggingOut(false);
+      return;
+    }
+    window.location.replace("/login?logout=1");
   };
 
   const openProfileModal = async () => {
@@ -631,6 +646,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         </div>
       )}
       <NotificationToast />
+      {loggingOut && <AccountEntryLoading message="Cerrando sesión" detail="Nos vemos pronto." />}
     </div>
     </NotificationDetailProvider>
   );

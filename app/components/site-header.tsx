@@ -11,6 +11,9 @@ import { useProducts } from "./products-provider";
 import { categoriasData, slugCategoria } from "../data/catalog";
 import AdvisorCtaCard from "./advisor-cta-card";
 import type { UserRole } from "@/generated/prisma/client";
+import { MdDashboard, MdLogout } from "react-icons/md";
+import { useConfirm } from "./confirm-dialog";
+import AccountEntryLoading from "./account-entry-loading";
 
 type SiteHeaderProps = {
   currentUser: {
@@ -33,6 +36,31 @@ function getUserHref(role: UserRole): string {
 export default function SiteHeader({ currentUser }: SiteHeaderProps) {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [masAbierto, setMasAbierto] = useState(false);
+  const [cuentaAbierta, setCuentaAbierta] = useState(false);
+  const cuentaRef = useRef<HTMLDivElement | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const confirm = useConfirm();
+
+  const handleLogout = async () => {
+    const ok = await confirm({
+      title: "Cerrar sesión",
+      message: "¿Seguro que quieres cerrar tu sesión?",
+      confirmLabel: "Cerrar sesión",
+      danger: false,
+    });
+    if (!ok) return;
+    setCuentaAbierta(false);
+    setMasAbierto(false);
+    setLoggingOut(true);
+    try {
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      if (!res.ok) throw new Error("logout falló");
+    } catch {
+      setLoggingOut(false);
+      return;
+    }
+    window.location.replace("/login?logout=1");
+  };
   const [hidden, setHidden] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
@@ -71,6 +99,17 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
       : "/categorias";
     router.push(url);
   };
+
+  useEffect(() => {
+    const handleClickOutsideCuenta = (event: MouseEvent) => {
+      if (!cuentaRef.current) return;
+      if (!cuentaRef.current.contains(event.target as Node)) {
+        setCuentaAbierta(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutsideCuenta);
+    return () => document.removeEventListener("mousedown", handleClickOutsideCuenta);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -408,25 +447,78 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
             {/* Account + Cart */}
             <div className="flex shrink-0 items-center gap-3 sm:gap-4">
               {currentUser ? (
-                <Link
-                  href={getUserHref(currentUser.role)}
-                  className="flex flex-col items-center gap-0.5 text-[#0C535B] transition-colors hover:text-[#27B1B8]"
-                >
-                  {currentUser.avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={currentUser.avatarUrl}
-                      alt={currentUser.fullName}
-                      className="h-7 w-7 rounded-full object-cover"
-                    />
-                  ) : (
-                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                      <path d="M20 21a8 8 0 0 0-16 0" />
-                      <circle cx="12" cy="8" r="4" />
-                    </svg>
-                  )}
-                  <span className="hidden text-[10px] font-semibold sm:block">{currentUser.fullName.split(" ")[0]}</span>
-                </Link>
+                currentUser.role === "CUSTOMER" ? (
+                  <Link
+                    href={getUserHref(currentUser.role)}
+                    className="flex flex-col items-center gap-0.5 text-[#0C535B] transition-colors hover:text-[#27B1B8]"
+                  >
+                    {currentUser.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={currentUser.avatarUrl}
+                        alt={currentUser.fullName}
+                        className="h-7 w-7 rounded-full object-cover"
+                      />
+                    ) : (
+                      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <path d="M20 21a8 8 0 0 0-16 0" />
+                        <circle cx="12" cy="8" r="4" />
+                      </svg>
+                    )}
+                    <span className="hidden text-[10px] font-semibold sm:block">{currentUser.fullName.split(" ")[0]}</span>
+                  </Link>
+                ) : (
+                  <div className="relative" ref={cuentaRef}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.innerWidth < 640) {
+                          router.push(getUserHref(currentUser.role));
+                          return;
+                        }
+                        setCuentaAbierta((v) => !v);
+                      }}
+                      className="flex flex-col items-center gap-0.5 text-[#0C535B] transition-colors hover:text-[#27B1B8]"
+                    >
+                      {currentUser.avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={currentUser.avatarUrl}
+                          alt={currentUser.fullName}
+                          className="h-7 w-7 rounded-full object-cover"
+                        />
+                      ) : (
+                        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                          <path d="M20 21a8 8 0 0 0-16 0" />
+                          <circle cx="12" cy="8" r="4" />
+                        </svg>
+                      )}
+                      <span className="hidden text-[10px] font-semibold sm:block">{currentUser.fullName.split(" ")[0]}</span>
+                    </button>
+
+                    {cuentaAbierta && (
+                      <div className="absolute right-0 top-full z-50 mt-2 hidden w-44 overflow-hidden rounded-xl border border-black/8 bg-white py-1 shadow-[0_12px_32px_rgba(15,23,42,0.14)] sm:block">
+                        <Link
+                          href={getUserHref(currentUser.role)}
+                          onClick={() => setCuentaAbierta(false)}
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-[#0C535B] hover:bg-[#f0fafa] hover:text-[#27B1B8]"
+                        >
+                          <MdDashboard size={16} />
+                          Entrar al panel
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          disabled={loggingOut}
+                          className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm font-semibold text-red-500 hover:bg-red-50 disabled:opacity-60"
+                        >
+                          <MdLogout size={16} />
+                          {loggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )
               ) : (
                 <Link
                   href="/login"
@@ -588,17 +680,14 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
                   <div className="my-2 h-px bg-black/6" />
                   <button
                     type="button"
-                    onClick={async () => {
-                      setMasAbierto(false);
-                      await fetch("/api/auth/logout", { method: "POST" });
-                      window.location.replace("/login");
-                    }}
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-red-500 transition-colors hover:bg-red-50"
+                    onClick={handleLogout}
+                    disabled={loggingOut}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-60"
                   >
                     <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
                     </svg>
-                    Cerrar sesión
+                    {loggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
                   </button>
                 </>
               )}
@@ -640,6 +729,8 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
           </button>
         </div>
       </nav>
+
+      {loggingOut && <AccountEntryLoading message="Cerrando sesión" detail="Nos vemos pronto." />}
     </>
   );
 }

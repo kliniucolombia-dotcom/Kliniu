@@ -8,6 +8,7 @@ import { ProductsProvider } from "./components/products-provider";
 import { SaleModeProvider } from "./components/sale-mode-provider";
 import AuthHistoryGuard from "./components/auth-history-guard";
 import ConditionalShell from "./components/conditional-shell";
+import { ConfirmProvider } from "./components/confirm-dialog";
 import CookieConsent from "./components/cookie-consent";
 import MetaPixel from "./components/meta-pixel";
 import { getProducts } from "@/lib/products";
@@ -39,16 +40,20 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [initialProducts, session, nonce, initialSaleMode] = await Promise.all([
-    getProducts(),
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get("x-nonce") ?? undefined;
+  const pathname = requestHeaders.get("x-pathname") ?? "";
+  const isAuthOnlyRoute = pathname.startsWith("/login") || pathname.startsWith("/registro");
+
+  const [initialProducts, session, initialSaleMode] = await Promise.all([
+    isAuthOnlyRoute ? Promise.resolve([]) : getProducts(),
     getSessionFromCookies(),
-    headers().then((h) => h.get("x-nonce") ?? undefined),
-    getSaleMode(),
+    isAuthOnlyRoute ? Promise.resolve("cart" as const) : getSaleMode(),
   ]);
   const [currentUser, initialCartItems] = session
     ? await Promise.all([
         getUserById(session.userId).catch(() => null),
-        getCartItemsForUser(session.userId).catch(() => []),
+        isAuthOnlyRoute ? Promise.resolve([]) : getCartItemsForUser(session.userId).catch(() => []),
       ])
     : [null, []];
   const cartProviderKey = `${currentUser?.id ?? "guest"}:${initialCartItems
@@ -83,25 +88,27 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           />
         </noscript>
         <AuthHistoryGuard />
-        <SaleModeProvider initialMode={initialSaleMode}>
-          <ProductsProvider initialProducts={initialProducts}>
-            <CartProvider
-              key={cartProviderKey}
-              initialItems={initialCartItems}
-              currentUserId={currentUser?.id ?? null}
-            >
-              <ConditionalShell
-                currentUser={
-                  currentUser
-                    ? { fullName: currentUser.fullName, role: currentUser.role, avatarUrl: currentUser.avatarUrl }
-                    : null
-                }
+        <ConfirmProvider>
+          <SaleModeProvider initialMode={initialSaleMode}>
+            <ProductsProvider initialProducts={initialProducts}>
+              <CartProvider
+                key={cartProviderKey}
+                initialItems={initialCartItems}
+                currentUserId={currentUser?.id ?? null}
               >
-                {children}
-              </ConditionalShell>
-            </CartProvider>
-          </ProductsProvider>
-        </SaleModeProvider>
+                <ConditionalShell
+                  currentUser={
+                    currentUser
+                      ? { fullName: currentUser.fullName, role: currentUser.role, avatarUrl: currentUser.avatarUrl }
+                      : null
+                  }
+                >
+                  {children}
+                </ConditionalShell>
+              </CartProvider>
+            </ProductsProvider>
+          </SaleModeProvider>
+        </ConfirmProvider>
         <SpeedInsights />
         <MetaPixel nonce={nonce} />
         <CookieConsent nonce={nonce} />

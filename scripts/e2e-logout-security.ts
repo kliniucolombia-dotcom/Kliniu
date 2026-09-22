@@ -56,24 +56,33 @@ async function main() {
       if (response.url().endsWith("/api/auth/logout")) logoutResponse = response;
     });
     await page.goto(BASE_URL, { waitUntil: "domcontentloaded" });
-    await page.goto(`${BASE_URL}/panel`, { waitUntil: "domcontentloaded" });
+    const panelResponse = await page.goto(`${BASE_URL}/panel`, { waitUntil: "domcontentloaded" });
     const stalePanel = await context.newPage();
     await stalePanel.goto(`${BASE_URL}/panel`, { waitUntil: "domcontentloaded" });
 
     const logoutButton = page.getByTitle("Cerrar sesión");
     await logoutButton.click({ timeout: 10_000 });
-    await page.waitForURL(`${BASE_URL}/login`);
+    // El logout pide confirmación en un popup propio antes de cerrar la sesión.
+    const confirmDialog = page.getByRole("dialog");
+    await confirmDialog.waitFor({ state: "visible", timeout: 10_000 });
+    await confirmDialog.getByRole("button", { name: "Cerrar sesión" }).click();
+    await page.waitForURL((url) => new URL(url).pathname === "/login", { timeout: 15_000 });
 
     const failures: string[] = [];
     if (!logoutResponse) {
       failures.push("El botón de logout no llamó al endpoint de cierre de sesión.");
     } else {
       const logoutHeaders = await logoutResponse.allHeaders();
-      if (!logoutHeaders["clear-site-data"]?.includes('"cache"')) {
-        failures.push("El logout no limpia la caché del navegador.");
-      } else if (!logoutHeaders["cache-control"]?.includes("no-store")) {
+      if (!logoutHeaders["cache-control"]?.includes("no-store")) {
         failures.push("La respuesta de logout permite almacenar datos de sesión en caché.");
       }
+    }
+    // La defensa real contra vistas sensibles restaurables: el documento protegido
+    // nunca entra a la caché HTTP. (Antes esto se delegaba a Clear-Site-Data, que
+    // bloqueaba el logout varios segundos purgando assets estáticos no sensibles.)
+    const panelCacheControl = (await panelResponse?.allHeaders())?.["cache-control"] ?? "";
+    if (!panelCacheControl.includes("no-store")) {
+      failures.push(`/panel no se sirve con no-store (Cache-Control: ${panelCacheControl || "ausente"}).`);
     }
     if ((await context.cookies(BASE_URL)).some((cookie) => cookie.name === "kliniu_session")) {
       failures.push("La cookie de sesión sigue presente después del logout.");

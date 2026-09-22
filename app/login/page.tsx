@@ -81,7 +81,27 @@ export default function LoginPage() {
   const [forgotMessage, setForgotMessage] = useState("");
   const [forgotError, setForgotError] = useState("");
 
+  // Se lee de window y no de useSearchParams porque este último llega vacío en el
+  // primer render del cliente, y para entonces el efecto de abajo ya habría disparado
+  // el fetch a /api/account que justamente queremos evitar al venir de cerrar sesión.
+  const [vieneDeLogout] = useState(
+    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("logout") === "1",
+  );
+
   useEffect(() => {
+    if (!vieneDeLogout) return;
+    setToast({ tone: "success", message: "Sesión cerrada correctamente." });
+    // replaceState y no router.replace: limpia el parámetro sin encadenar otra
+    // navegación de Next encima de la recarga completa que ya acaba de ocurrir.
+    const params = new URLSearchParams(window.location.search);
+    params.delete("logout");
+    const qs = params.toString();
+    window.history.replaceState(null, "", qs ? `/login?${qs}` : "/login");
+  }, [vieneDeLogout]);
+
+  useEffect(() => {
+    // Venimos de cerrar sesión: no hay sesión que comprobar, nos ahorramos el round-trip.
+    if (vieneDeLogout) return;
     fetch("/api/account")
       .then((r) => r.ok ? r.json() : null)
       .then(async (data) => {
@@ -99,7 +119,7 @@ export default function LoginPage() {
         router.replace(landing?.path ?? "/panel/sin-acceso");
       })
       .catch(() => {});
-  }, [router]);
+  }, [router, vieneDeLogout]);
 
   useEffect(() => {
     if (!toast) return;
