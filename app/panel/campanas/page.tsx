@@ -18,6 +18,7 @@ type Campaign = {
   endDate?: string; notes?: string;
   trm: number; // COP por USD de la fecha de inicio
   daily: { sales: number; investmentUsd: number; mensajes: number; transacciones: number; days: number; firstDate: string | null; lastDate: string | null };
+  dailyRows: { fecha: string; ventaDelDia: number; presupuestoPublicidad: number; mensajes: number; transacciones: number }[];
   seller: { id: string; fullName: string; email: string };
   combo?: { id: string; name: string; image: string | null };
 };
@@ -104,6 +105,25 @@ const campaignInPeriod = (c: Campaign, from: Date | null, to: Date | null) => {
     return true;
   }
   return false;
+};
+
+// Recalcula los totales de matriz de una campaña usando solo los días dentro
+// del rango filtrado, para que tarjetas/tabla reflejen el filtro seleccionado.
+const rangedDaily = (c: Campaign, from: Date | null, to: Date | null): Campaign["daily"] => {
+  if (c.daily.days === 0) return c.daily;
+  const rows = c.dailyRows.filter((r) => inRange(r.fecha, from, to));
+  return rows.reduce(
+    (acc, r) => ({
+      sales: acc.sales + r.ventaDelDia,
+      investmentUsd: acc.investmentUsd + r.presupuestoPublicidad,
+      mensajes: acc.mensajes + r.mensajes,
+      transacciones: acc.transacciones + r.transacciones,
+      days: acc.days + 1,
+      firstDate: acc.firstDate && acc.firstDate < r.fecha ? acc.firstDate : r.fecha,
+      lastDate: acc.lastDate && acc.lastDate > r.fecha ? acc.lastDate : r.fecha,
+    }),
+    { sales: 0, investmentUsd: 0, mensajes: 0, transacciones: 0, days: 0, firstDate: null as string | null, lastDate: null as string | null },
+  );
 };
 
 const fmtUSD = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
@@ -291,10 +311,14 @@ export default function CampanasPanel() {
   );
 
   // Filtro por fecha (base) y luego filtros de columna. Compara inicio de campaña.
+  const activeRange = useMemo(() => dateFilterRange(dateFilter, customFrom, customTo), [dateFilter, customFrom, customTo]);
+
   const dateCampaigns = useMemo(() => {
-    const [from, to] = dateFilterRange(dateFilter, customFrom, customTo);
-    return campaigns.filter((c) => campaignInPeriod(c, from, to));
-  }, [campaigns, dateFilter, customFrom, customTo]);
+    const [from, to] = activeRange;
+    return campaigns
+      .filter((c) => campaignInPeriod(c, from, to))
+      .map((c) => ({ ...c, daily: rangedDaily(c, from, to) }));
+  }, [campaigns, activeRange]);
 
   const matchesFilters = useCallback((c: Campaign) => {
     if (sellerFilter !== "all" && c.seller.id !== sellerFilter) return false;
@@ -963,6 +987,8 @@ export default function CampanasPanel() {
           campaignId={dailyCampaign.id}
           campaignName={dailyCampaign.name}
           onClose={() => setDailyCampaign(null)}
+          dateFrom={activeRange[0] ? activeRange[0].toISOString().slice(0, 10) : undefined}
+          dateTo={activeRange[1] ? activeRange[1].toISOString().slice(0, 10) : undefined}
         />
       )}
     </div>

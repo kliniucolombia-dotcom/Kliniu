@@ -82,7 +82,7 @@ const HEADERS: { label: string; hint: string; right?: boolean }[] = [
   { label: "Acciones", hint: "Eliminar el día", right: true },
 ];
 
-export default function DailyMatrix({ campaignId, campaignName, onClose }: { campaignId: string; campaignName: string; onClose: () => void }) {
+export default function DailyMatrix({ campaignId, campaignName, onClose, dateFrom, dateTo }: { campaignId: string; campaignName: string; onClose: () => void; dateFrom?: string; dateTo?: string }) {
   const confirm = useConfirm();
   const [entries, setEntries] = useState<CampaignDailyInput[]>([]);
   const [loading, setLoading] = useState(true);
@@ -122,8 +122,18 @@ export default function DailyMatrix({ campaignId, campaignName, onClose }: { cam
     [entries, draft, deletedIds],
   );
 
-  const rows = useMemo(() => buildCampaignDailyRows(viewEntries), [viewEntries]);
-  const totals = useMemo(() => calcCampaignDailyTotals(viewEntries), [viewEntries]);
+  const filteredEntries = useMemo(
+    () => viewEntries.filter((e) => {
+      const fecha = e.fecha.slice(0, 10);
+      if (dateFrom && fecha < dateFrom) return false;
+      if (dateTo && fecha > dateTo) return false;
+      return true;
+    }),
+    [viewEntries, dateFrom, dateTo],
+  );
+
+  const rows = useMemo(() => buildCampaignDailyRows(filteredEntries), [filteredEntries]);
+  const totals = useMemo(() => calcCampaignDailyTotals(filteredEntries), [filteredEntries]);
 
   const hasPendingEdits = Object.keys(draft).length > 0 || deletedIds.size > 0 || addedIds.size > 0;
 

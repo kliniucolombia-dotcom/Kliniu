@@ -357,6 +357,18 @@ export async function getCampaignsForPanel(sellerId?: string) {
     ]),
   );
 
+  // Filas diarias crudas, para que el panel pueda recalcular los totales
+  // según el rango de fechas filtrado sin abrir la matriz de cada campaña.
+  const dailyRows = await prisma.campaignDaily.findMany({
+    select: { campaignId: true, fecha: true, ventaDelDia: true, presupuestoPublicidad: true, mensajes: true, transacciones: true },
+  });
+  const dailyRowsByCampaign = new Map<string, typeof dailyRows>();
+  for (const row of dailyRows) {
+    const list = dailyRowsByCampaign.get(row.campaignId) ?? [];
+    list.push(row);
+    dailyRowsByCampaign.set(row.campaignId, list);
+  }
+
   // La inversión se captura en USD y las ventas en COP: adjuntamos la TRM de la fecha
   // de inicio para poder comparar ambas en pesos al calcular el KPI.
   return Promise.all(
@@ -364,6 +376,13 @@ export async function getCampaignsForPanel(sellerId?: string) {
       ...c,
       trm: await getTrmForDate(c.startDate),
       daily: dailyByCampaign.get(c.id) ?? { sales: 0, investmentUsd: 0, mensajes: 0, transacciones: 0, days: 0, firstDate: null, lastDate: null },
+      dailyRows: (dailyRowsByCampaign.get(c.id) ?? []).map((r) => ({
+        fecha: r.fecha.toISOString(),
+        ventaDelDia: r.ventaDelDia,
+        presupuestoPublicidad: r.presupuestoPublicidad,
+        mensajes: r.mensajes,
+        transacciones: r.transacciones,
+      })),
     })),
   );
 }
