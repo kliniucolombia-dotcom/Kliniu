@@ -370,6 +370,13 @@ export async function getCampaignsForPanel(sellerId?: string) {
 
 // ─── Matriz diaria de campaña ───────────────────────────────────
 
+// "YYYY-MM-DD" es la fecha en calendario de Bogotá (UTC-5); la guardamos
+// como las 05:00 UTC de ese día para que sea medianoche de Bogotá al leerla,
+// sin depender de la zona horaria del proceso del servidor (Vercel usa UTC).
+function parseCalendarDate(value: string): Date {
+  return new Date(/^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T05:00:00Z` : value);
+}
+
 function sanitizeNumber(value: unknown): number {
   const n = typeof value === "number" ? value : parseFloat(String(value));
   if (!Number.isFinite(n) || n < 0) return 0;
@@ -400,7 +407,7 @@ export async function createCampaignDailyEntry(
   data: { fecha: string; mensajes?: number; transacciones?: number; presupuestoPublicidad?: number; ventaDelDia?: number },
 ) {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
-  const fecha = new Date(data.fecha);
+  const fecha = parseCalendarDate(data.fecha);
   if (Number.isNaN(fecha.getTime())) throw new Error("FECHA_INVALIDA");
 
   const row = await prisma.campaignDaily.create({
@@ -427,7 +434,7 @@ export async function updateCampaignDailyEntry(
 
   let fecha = existing.fecha;
   if (data.fecha !== undefined) {
-    const parsed = new Date(data.fecha);
+    const parsed = parseCalendarDate(data.fecha);
     if (Number.isNaN(parsed.getTime())) throw new Error("FECHA_INVALIDA");
     fecha = parsed;
   }
