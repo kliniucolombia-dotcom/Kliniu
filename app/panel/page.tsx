@@ -94,18 +94,18 @@ export default async function PanelDashboard() {
           const Icon = kpi.icon;
           return (
             <div key={kpi.label} className="flex items-center justify-between gap-3 rounded-2xl border border-[#E2E8F0] bg-white p-5">
-              <div className="flex items-start gap-3 min-w-0">
+              <div className="flex shrink-0 items-start gap-3">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: kpi.color + "1A", color: kpi.color }}>
                   <Icon size={19} />
                 </span>
                 <div className="min-w-0">
                   <p className="text-xs font-semibold text-[#64748B]">{kpi.label}</p>
-                  <p className="text-xl font-black" style={{ color: kpi.color }}>{kpi.value}</p>
+                  <p className="whitespace-nowrap text-xl font-black" style={{ color: kpi.color }}>{kpi.value}</p>
                   <p className="mt-0.5 text-xs text-[#94A3B8]">{kpi.sub}</p>
                 </div>
               </div>
               {kpi.trend && kpi.trend.length > 1 && (
-                <Sparkline values={kpi.trend} color={kpi.color} />
+                <div className="min-w-0 overflow-hidden"><Sparkline values={kpi.trend} color={kpi.color} /></div>
               )}
             </div>
           );

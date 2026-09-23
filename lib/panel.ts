@@ -56,12 +56,12 @@ export async function getDashboardStats() {
   const dayOfWeek    = now.getDay() === 0 ? 6 : now.getDay() - 1; // Monday = 0
   const startOfWeek  = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
 
-  const [todayOrders, weekOrders, monthOrders, prevMonthOrders, campaigns, products, newCustomers, recentOrders, newCustomerRows, pendingOrders, quotationsSent, lowStockProducts] = await Promise.all([
+  const [todayOrders, weekOrders, monthOrders, prevMonthOrders, campaignRows, products, newCustomers, recentOrders, newCustomerRows, pendingOrders, quotationsSent, lowStockProducts] = await Promise.all([
     prisma.order.findMany({ where: { createdAt: { gte: startOfDay }, status: "PAID" }, select: { subtotal: true } }),
     prisma.order.findMany({ where: { createdAt: { gte: startOfWeek }, status: "PAID" }, select: { subtotal: true } }),
     prisma.order.findMany({ where: { createdAt: { gte: startOfMonth }, status: "PAID" }, select: { subtotal: true, userId: true, createdAt: true, channel: true } }),
     prisma.order.findMany({ where: { createdAt: { gte: startOfPrevMonth, lt: startOfMonth }, status: "PAID" }, select: { subtotal: true } }),
-    prisma.campaign.findMany({ include: { seller: { select: { id: true, fullName: true } }, product: { select: { name: true, image: true } } }, orderBy: { createdAt: "asc" } }),
+    prisma.campaign.findMany({ include: { seller: { select: { id: true, fullName: true } }, product: { select: { name: true, image: true } }, dailyEntries: { select: { fecha: true, presupuestoPublicidad: true, ventaDelDia: true } } }, orderBy: { createdAt: "asc" } }),
     prisma.product.count({ where: { active: true } }),
     prisma.user.count({ where: { role: "CUSTOMER", createdAt: { gte: startOfMonth } } }),
     prisma.order.findMany({
@@ -110,9 +110,24 @@ export async function getDashboardStats() {
   }
 
   // La inversión se guarda en USD y las ventas en COP: unificamos a COP con la TRM de cada campaña.
-  const campaignTrm = new Map<string, number>();
-  await Promise.all(campaigns.map(async (c) => { campaignTrm.set(c.id, await getTrmForDate(c.startDate)); }));
-  const investmentCop = (c: { id: string; investment: number }) => c.investment * (campaignTrm.get(c.id) ?? 0);
+  // Las cifras reales viven en la matriz diaria (CampaignDaily); Campaign.investment/sales quedan en 0
+  // cuando la campaña se alimenta día a día. Si hay matriz, manda ella (TRM del día de cada entrada).
+  const campaignCop = new Map<string, number>();
+  const campaigns = await Promise.all(campaignRows.map(async (c) => {
+    if (c.dailyEntries.length === 0) {
+      campaignCop.set(c.id, c.investment * (await getTrmForDate(c.startDate)));
+      return c;
+    }
+    let investment = 0, sales = 0, cop = 0;
+    for (const e of c.dailyEntries) {
+      investment += e.presupuestoPublicidad;
+      sales += e.ventaDelDia;
+      cop += e.presupuestoPublicidad * (await getTrmForDate(e.fecha));
+    }
+    campaignCop.set(c.id, cop);
+    return { ...c, investment, sales };
+  }));
+  const investmentCop = (c: { id: string }) => campaignCop.get(c.id) ?? 0;
 
   // Serie acumulada de campañas (en orden de creación) para inversión/retorno/ROAS/riesgo
   let cumInvestment = 0;
