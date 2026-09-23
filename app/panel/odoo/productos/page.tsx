@@ -168,21 +168,21 @@ export default function OdooProductsPage() {
         <>
           {/* KPIs */}
           <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="rounded-2xl border border-[#E2E8F0] bg-white p-5">
+            <div className="min-w-0 rounded-2xl border border-[#E2E8F0] bg-white p-4 sm:p-5">
               <p className="text-xs font-semibold text-[#94A3B8]">Total productos</p>
               <p className="mt-1 text-2xl font-black text-[#27B1B8]">{kpis.total.toLocaleString("es-CO")}</p>
             </div>
-            <div className="rounded-2xl border border-[#E2E8F0] bg-white p-5">
+            <div className="min-w-0 rounded-2xl border border-[#E2E8F0] bg-white p-4 sm:p-5">
               <p className="text-xs font-semibold text-[#94A3B8]">Sin stock</p>
               <p className="mt-1 text-2xl font-black text-[#DC2626]">{kpis.noStock.toLocaleString("es-CO")}</p>
             </div>
-            <div className="rounded-2xl border border-[#E2E8F0] bg-white p-5">
+            <div className="min-w-0 rounded-2xl border border-[#E2E8F0] bg-white p-4 sm:p-5">
               <p className="text-xs font-semibold text-[#94A3B8]">Stock bajo</p>
               <p className="mt-1 text-2xl font-black text-[#D97706]">{kpis.lowStock.toLocaleString("es-CO")}</p>
             </div>
-            <div className="rounded-2xl border border-[#E2E8F0] bg-white p-5">
+            <div className="min-w-0 rounded-2xl border border-[#E2E8F0] bg-white p-4 sm:p-5">
               <p className="text-xs font-semibold text-[#94A3B8]">Valor inventario</p>
-              <p className="mt-1 text-2xl font-black text-[#1A1A1A]">{fmt(kpis.inventoryValue)}</p>
+              <p className="mt-1 text-lg sm:text-2xl font-black break-words text-[#1A1A1A]">{fmt(kpis.inventoryValue)}</p>
             </div>
           </div>
 

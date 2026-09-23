@@ -152,34 +152,34 @@ export default function CotizacionesListPage() {
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <div className="flex items-center gap-3 rounded-2xl border border-[#E2E8F0] bg-white p-4">
+        <div className="flex items-center gap-3 min-w-0 rounded-2xl border border-[#E2E8F0] bg-white p-3 sm:p-4">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#EAF8F6] text-xl text-[#27B1B8]"><MdDescription /></span>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">Total cotizaciones</p>
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wider break-words text-[#94A3B8]">Total cotizaciones</p>
             <p className="text-xl font-black text-[#1A1A1A]">{kpis.total}</p>
             <p className="text-[11px] text-[#94A3B8]">Este mes</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 rounded-2xl border border-[#E2E8F0] bg-white p-4">
+        <div className="flex items-center gap-3 min-w-0 rounded-2xl border border-[#E2E8F0] bg-white p-3 sm:p-4">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#EFF6FF] text-xl text-[#2563EB]"><MdAttachMoney /></span>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">Valor total</p>
-            <p className="text-xl font-black text-[#1A1A1A]">{fmt(kpis.valorTotal)}</p>
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wider break-words text-[#94A3B8]">Valor total</p>
+            <p className="text-lg sm:text-xl font-black break-words text-[#1A1A1A]">{fmt(kpis.valorTotal)}</p>
             <p className="text-[11px] text-[#94A3B8]">Este mes</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 rounded-2xl border border-[#E2E8F0] bg-white p-4">
+        <div className="flex items-center gap-3 min-w-0 rounded-2xl border border-[#E2E8F0] bg-white p-3 sm:p-4">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#F5F3FF] text-xl text-[#7C3AED]"><MdCalendarToday /></span>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">Cotizaciones borrador</p>
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wider break-words text-[#94A3B8]">Cotizaciones borrador</p>
             <p className="text-xl font-black text-[#1A1A1A]">{kpis.borrador}</p>
             <p className="text-[11px] text-[#94A3B8]">En progreso</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 rounded-2xl border border-[#E2E8F0] bg-white p-4">
+        <div className="flex items-center gap-3 min-w-0 rounded-2xl border border-[#E2E8F0] bg-white p-3 sm:p-4">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#FFF7ED] text-xl text-[#EA580C]"><MdPeople /></span>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">Clientes únicos</p>
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wider break-words text-[#94A3B8]">Clientes únicos</p>
             <p className="text-xl font-black text-[#1A1A1A]">{kpis.clientesUnicos}</p>
             <p className="text-[11px] text-[#94A3B8]">Este mes</p>
           </div>
@@ -193,19 +193,19 @@ export default function CotizacionesListPage() {
       <div className="rounded-2xl border border-[#E2E8F0] bg-white">
         <div className="flex flex-col gap-3 border-b border-[#E2E8F0] p-4 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-sm font-black text-[#1A1A1A]">Listado de cotizaciones</h2>
-          <div className="flex items-center gap-2">
-            <div className="relative">
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <div className="relative min-w-0 flex-1 sm:flex-none">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]"><MdSearch /></span>
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar cotización o cliente"
-                className="w-64 rounded-xl border border-[#E2E8F0] py-2 pl-9 pr-3 text-sm outline-none focus:border-[#27B1B8]"
+                className="w-full sm:w-64 rounded-xl border border-[#E2E8F0] py-2 pl-9 pr-3 text-sm outline-none focus:border-[#27B1B8]"
               />
             </div>
             <button
               onClick={() => setShowFilters((v) => !v)}
-              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-bold ${showFilters ? "border-[#27B1B8] text-[#27B1B8]" : "border-[#E2E8F0] text-[#64748B]"} hover:bg-[#F8FAFC]`}
+              className={`flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-bold ${showFilters ? "border-[#27B1B8] text-[#27B1B8]" : "border-[#E2E8F0] text-[#64748B]"} hover:bg-[#F8FAFC]`}
             >
               <MdFilterList /> Filtros
             </button>

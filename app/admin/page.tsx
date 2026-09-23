@@ -2483,7 +2483,7 @@ export default function AdminPage() {
                   </div>
 
                   <div className="mt-6 rounded-2xl border border-black/10 bg-[#fafaf9] p-5">
-                    <div className="mb-3 flex items-center justify-between gap-3">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-[#0C535B]">Precios por presentación (x12, x48, x100…)</p>
                         <p className="text-xs text-[#6e7379]">Paquetes con precio total propio, independientes del precio unitario.</p>
@@ -2501,24 +2501,24 @@ export default function AdminPage() {
                     ) : (
                       <div className="space-y-2">
                         {packs.map((p, i) => (
-                          <div key={i} className="grid grid-cols-[1fr_90px_1fr_auto] items-center gap-2">
+                          <div key={i} className="grid grid-cols-[90px_minmax(0,1fr)_auto] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_90px_minmax(0,1fr)_auto]">
                             <input
                               value={p.label}
                               onChange={(e) => updatePack(i, "label", e.target.value)}
                               placeholder="Ej. x12 und"
-                              className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-[#27B1B8]"
+                              className="col-span-3 w-full min-w-0 sm:col-span-1 rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-[#27B1B8]"
                             />
                             <input
                               value={p.qty || ""}
                               onChange={(e) => updatePack(i, "qty", e.target.value)}
                               placeholder="Cant."
-                              className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-[#27B1B8]"
+                              className="w-full min-w-0 rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-[#27B1B8]"
                             />
                             <input
                               value={p.totalPrice || ""}
                               onChange={(e) => updatePack(i, "totalPrice", e.target.value)}
                               placeholder="Precio total"
-                              className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-[#27B1B8]"
+                              className="w-full min-w-0 rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-[#27B1B8]"
                             />
                             <button
                               type="button"

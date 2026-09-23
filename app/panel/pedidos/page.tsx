@@ -621,13 +621,13 @@ export default function PedidosPage() {
 
       {/* KPIs comerciales */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <div className="rounded-[1.2rem] border border-black/8 bg-[#EAF8F6] px-5 py-4">
+        <div className="rounded-[1.2rem] border border-black/8 bg-[#EAF8F6] px-4 py-4 sm:px-5 min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#27B1B8]">Ventas totales</p>
-          <p className="mt-1 text-2xl font-bold text-[#0C535B]">{formatCurrency(kpis.ventasTotales)}</p>
+          <p className="mt-1 text-xl sm:text-2xl font-bold break-words text-[#0C535B]">{formatCurrency(kpis.ventasTotales)}</p>
         </div>
-        <div className="rounded-[1.2rem] border border-black/8 bg-[#FFF7ED] px-5 py-4">
+        <div className="rounded-[1.2rem] border border-black/8 bg-[#FFF7ED] px-4 py-4 sm:px-5 min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#C2410C]">Por cobrar</p>
-          <p className="mt-1 text-2xl font-bold text-[#C2410C]">{formatCurrency(kpis.porCobrar)}</p>
+          <p className="mt-1 text-xl sm:text-2xl font-bold break-words text-[#C2410C]">{formatCurrency(kpis.porCobrar)}</p>
         </div>
         <div className="rounded-[1.2rem] border border-black/8 bg-[#EFF6FF] px-5 py-4">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#1D4ED8]">Pedidos</p>
