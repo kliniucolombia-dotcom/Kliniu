@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import PurchaseTracker from "./purchase-tracker";
+import PaymentStatusPoller from "./payment-status-poller";
 
 export default async function CheckoutSuccessPage({
   searchParams,
@@ -23,6 +24,9 @@ export default async function CheckoutSuccessPage({
     <main className="flex min-h-[calc(100vh-88px)] items-center justify-center bg-[#f5f5f5] px-6 py-16">
       {paymentConfirmed && params.pedido && (
         <PurchaseTracker orderId={params.pedido} value={order.subtotal} />
+      )}
+      {!paymentConfirmed && !paymentFailed && params.pedido && (
+        <PaymentStatusPoller orderId={params.pedido} />
       )}
       <section className="w-full max-w-2xl rounded-[2rem] bg-white p-8 text-center shadow-lg shadow-black/10 md:p-10">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#27B1B8]">

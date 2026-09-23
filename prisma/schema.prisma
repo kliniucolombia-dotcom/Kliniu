@@ -19,6 +19,7 @@ model Product {
   price                 Int
   previousPrice         Int
   stock                 Int                     @default(12)
+  reservedStock         Int                     @default(0)
   minimumStock          Int                     @default(3)
   image                 String
   galleryImages         String[]                @default([])
@@ -189,6 +190,7 @@ model Order {
   odooSyncedAt       DateTime?
   wompiReference     String?        @unique
   wompiTransactionId String?
+  paymentExpiresAt   DateTime?
   deliveryRouteId    String?
   deliveryRoute      DeliveryRoute? @relation(fields: [deliveryRouteId], references: [id])
   assignedSeller     User?          @relation("AssignedOrders", fields: [assignedSellerId], references: [id])
@@ -679,6 +681,7 @@ enum PaymentStatus {
   PENDING
   PAID
   FAILED
+  EXPIRED
 }
 
 enum ShippingStatus {
@@ -693,6 +696,8 @@ enum InventoryMovementType {
   CREATED
   ADJUSTMENT
   ORDER_DEDUCTION
+  RESERVED
+  RELEASED
 }
 
 enum CustomerLevel {

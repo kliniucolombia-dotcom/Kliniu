@@ -23,6 +23,7 @@ export async function POST(
       amountInCents: (order.subtotal + order.shippingCost) * 100,
       redirectUrl: `${origin}/checkout/exito?pedido=${order.id}`,
       customerEmail: order.customerEmail,
+      expirationTime: order.paymentExpiresAt ?? undefined,
     });
 
     return Response.json({ checkoutUrl });

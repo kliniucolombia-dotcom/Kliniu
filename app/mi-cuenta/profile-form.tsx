@@ -25,7 +25,7 @@ type AccountUser = {
 type AccountOrder = {
   id: string;
   status: "PENDING" | "PAID" | "CANCELLED";
-  paymentStatus: "PENDING" | "PAID" | "FAILED";
+  paymentStatus: "PENDING" | "PAID" | "FAILED" | "EXPIRED";
   shippingStatus: "PENDING" | "PREPARING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
   department: string;
   city: string;
@@ -92,6 +92,7 @@ function getOrderStatusLabel(status: AccountOrder["status"]) {
 function getPaymentStatusLabel(status: AccountOrder["paymentStatus"]) {
   if (status === "PAID") return "Pago confirmado";
   if (status === "FAILED") return "Pago fallido";
+  if (status === "EXPIRED") return "Pago expirado";
   return "Pago pendiente";
 }
 

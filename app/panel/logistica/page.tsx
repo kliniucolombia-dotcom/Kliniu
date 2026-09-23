@@ -713,7 +713,7 @@ function RouteCalendar({
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center gap-2 sm:w-auto">
           <button
             onClick={() => onMonth(shiftMonth(month, -1))}
             aria-label="Mes anterior"
@@ -721,7 +721,7 @@ function RouteCalendar({
           >
             <MdChevronLeft size={18} />
           </button>
-          <p className="min-w-[150px] text-base font-black text-[#1A1A1A] first-letter:uppercase">{monthLabel(month)}</p>
+          <p className="min-w-[150px] flex-1 text-center text-base font-black sm:flex-none sm:text-left text-[#1A1A1A] first-letter:uppercase">{monthLabel(month)}</p>
           <button
             onClick={() => onMonth(shiftMonth(month, 1))}
             aria-label="Mes siguiente"
@@ -731,7 +731,7 @@ function RouteCalendar({
           </button>
           <button
             onClick={() => { onMonth(today.slice(0, 7)); onSelectDay(today); }}
-            className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-1.5 text-xs font-bold text-[#27B1B8] hover:bg-[#F8FAFC]"
+            className="rounded-lgborder border-[#E2E8F0] bg-white px-3 py-1.5 text-xs font-bold text-[#27B1B8] hover:bg-[#F8FAFC]"
           >
             Hoy
           </button>
@@ -751,10 +751,10 @@ function RouteCalendar({
         <div className="min-w-0 flex-1 rounded-2xl border border-[#E2E8F0] bg-white p-3">
           <div className="mb-1.5 grid grid-cols-7">
             {DOW_LABELS.map((d) => (
-              <p key={d} className="px-1 py-1.5 text-[10px] font-black uppercase tracking-wide text-[#94A3B8]">{d}</p>
+              <p key={d} className="px-1 py-1.5 text-center text-[10px] font-black uppercase sm:text-left tracking-wide text-[#94A3B8]">{d}</p>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-1.5">
+          <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
             {cells.map((cell) => {
               const list = byDay.get(cell.iso) ?? [];
               const isSelected = cell.iso === selectedDay;
@@ -765,7 +765,7 @@ function RouteCalendar({
                   type="button"
                   onClick={() => onSelectDay(isSelected ? null : cell.iso)}
                   aria-pressed={isSelected}
-                  className={`flex h-20 flex-col rounded-xl border p-1.5 text-left transition sm:h-24 ${
+                  className={`flex h-14 flex-col items-center justify-center rounded-xl border p-1 text-center transition sm:h-24 sm:items-stretch sm:justify-start sm:p-1.5 sm:text-left ${
                     isSelected
                       ? "border-2 border-[#27B1B8] bg-[#E8FAFB] shadow-[0_0_0_3px_rgba(39,177,184,0.12)]"
                       : cell.inMonth
@@ -773,14 +773,14 @@ function RouteCalendar({
                         : "border-[#F1F5F9] bg-[#FAFBFC] opacity-50"
                   }`}
                 >
-                  <span className={`text-xs font-bold ${
+                  <span className={`text-sm font-bold sm:text-xs ${
                     isSelected ? "text-[#0C535B]" : isToday ? "text-[#27B1B8]" : cell.inMonth ? "text-[#1A1A1A]" : "text-[#CBD5E1]"
                   }`}>
                     {cell.day}
                   </span>
                   {list.length > 0 && (
                     <>
-                      <span className="mt-1 inline-flex w-fit rounded-md bg-[#EFF6FF] px-1.5 py-0.5 text-[10px] font-bold text-[#1D4ED8] sm:hidden">
+                      <span className="mt-0.5 inline-flex min-w-[18px] justify-center rounded-full bg-[#EFF6FF] px-1.5 text-[10px] leading-4 font-bold text-[#1D4ED8] sm:hidden">
                         {list.length}
                       </span>
                       <span className="mt-1 hidden min-h-0 flex-col gap-0.5 overflow-hidden sm:flex">

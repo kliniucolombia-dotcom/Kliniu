@@ -237,7 +237,7 @@ export async function getMonthlySpendForUser(
   const start = new Date(y, m, 1);
   const end = new Date(y, m + 1, 0, 23, 59, 59, 999);
   const orders = await prisma.order.findMany({
-    where: { userId, createdAt: { gte: start, lte: end }, status: { not: "CANCELLED" } },
+    where: { userId, createdAt: { gte: start, lte: end }, paymentStatus: "PAID" },
     select: { subtotal: true },
   });
   return orders.reduce((sum, o) => sum + o.subtotal, 0);

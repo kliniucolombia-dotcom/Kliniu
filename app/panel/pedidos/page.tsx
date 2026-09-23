@@ -64,6 +64,7 @@ function getShippingStatusLabel(status: string) {
 function getPaymentStatusLabel(status: string) {
   if (status === "PAID") return "Pago confirmado";
   if (status === "FAILED") return "Pago fallido";
+  if (status === "EXPIRED") return "Pago expirado";
   return "Pago pendiente";
 }
 
@@ -121,7 +122,7 @@ function OrderProgress({ order }: { order: Order }) {
   ];
 
   return (
-    <div className="rounded-[1.4rem] border border-black/8 bg-[#fafaf9] px-5 py-5">
+    <div className="min-w-0 rounded-[1.4rem] border border-black/8 bg-[#fafaf9] px-5 py-5">
       <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8d91]">Flujo del pedido</p>
@@ -204,6 +205,13 @@ const STATUS_CARD_STYLES: Record<string, { bg: string; text: string }> = {
   CANCELLED: { bg: "bg-[#FEF2F2]", text: "text-[#DC2626]" },
 };
 
+const PAYMENT_STATUS_STYLES: Record<string, string> = {
+  PENDING: "bg-[#FFF7ED] text-[#C2410C]",
+  PAID: "bg-[#F0FDF4] text-[#15803D]",
+  FAILED: "bg-[#FEF2F2] text-[#DC2626]",
+  EXPIRED: "bg-[#F3F4F6] text-[#4B5563]",
+};
+
 export default function PedidosPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -211,19 +219,25 @@ export default function PedidosPage() {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
   const [shippingFilter, setShippingFilter] = useState<"all" | string>("all");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<"all" | string>("all");
   const [datePreset, setDatePreset] = useState<string>("all");
   const [customerFilter, setCustomerFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [form, setForm] = useState<OrderForm>({ shippingStatus: "", carrier: "", trackingNumber: "", adminNotes: "" });
   const [isRetryingOdoo, setIsRetryingOdoo] = useState(false);
+  // "confirmed": pedidos reales (pago aprobado, o WhatsApp/cotización que no
+  // pasan por Wompi). "pending": intentos de checkout ONLINE sin pago
+  // confirmado, para que ventas haga seguimiento sin que contaminen la vista
+  // principal (ver app/api/panel/orders/route.ts).
+  const [paymentView, setPaymentView] = useState<"confirmed" | "pending">("confirmed");
 
   const loadOrders = useCallback(() => {
-    fetch("/api/panel/orders")
+    fetch(`/api/panel/orders?view=${paymentView}`)
       .then((r) => r.json())
       .then((d) => setOrders(Array.isArray(d) ? d : []))
       .finally(() => setLoading(false));
-  }, []);
+  }, [paymentView]);
 
   useEffect(() => { loadOrders(); }, [loadOrders]);
   useRealtimeRefresh(["orders"], loadOrders);
@@ -265,11 +279,26 @@ export default function PedidosPage() {
       const matchesFilter = shippingFilter === "all" || o.shippingStatus === shippingFilter;
       const matchesDate = matchesDatePreset(o.createdAt, datePreset);
       const matchesCustomer = customerFilter === "all" || o.customerName === customerFilter;
-      return matchesSearch && matchesFilter && matchesDate && matchesCustomer;
+      const matchesPayment = paymentStatusFilter === "all" || (o.paymentStatus ?? o.status) === paymentStatusFilter;
+      return matchesSearch && matchesFilter && matchesDate && matchesCustomer && matchesPayment;
     });
-  }, [orders, search, shippingFilter, datePreset, customerFilter]);
+  }, [orders, search, shippingFilter, datePreset, customerFilter, paymentStatusFilter]);
 
-  useEffect(() => { setPage(1); }, [search, shippingFilter, datePreset, customerFilter, perPage]);
+  useEffect(() => { setPage(1); }, [search, shippingFilter, datePreset, customerFilter, paymentStatusFilter, perPage]);
+
+  const orderCodes = useMemo(() => {
+    const sorted = [...orders].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    const map = new Map<string, string>();
+    sorted.forEach((o, i) => map.set(o.id, `KLI-${String(i + 1).padStart(5, "0")}`));
+    return map;
+  }, [orders]);
+
+  const kpis = useMemo(() => {
+    const ventasTotales = orders.filter((o) => (o.paymentStatus ?? o.status) === "PAID").reduce((s, o) => s + o.subtotal + o.shippingCost, 0);
+    const porCobrar = orders.filter((o) => (o.paymentStatus ?? o.status) === "PENDING").reduce((s, o) => s + o.subtotal + o.shippingCost, 0);
+    const entregados = orders.filter((o) => o.shippingStatus === "DELIVERED").length;
+    return { ventasTotales, porCobrar, pedidos: orders.length, entregados };
+  }, [orders]);
 
   const pageCount = Math.max(1, Math.ceil(filteredOrders.length / perPage));
   const pagedOrders = filteredOrders.slice((page - 1) * perPage, page * perPage);
@@ -359,7 +388,7 @@ export default function PedidosPage() {
   /* ── Detail view ── */
   if (selectedId && selectedOrder) {
     return (
-      <div className="min-h-full bg-[#f5f5f5] p-6 space-y-6">
+      <div className="min-h-full bg-[#f5f5f5] p-4 space-y-6 sm:p-6">
         <button
           type="button"
           onClick={() => setSelectedId(null)}
@@ -372,12 +401,13 @@ export default function PedidosPage() {
         </button>
 
         {/* Order header */}
-        <div className="rounded-[1.75rem] border border-black/8 bg-white p-6 shadow-[0_14px_28px_rgba(15,23,42,0.05)]">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
+        <div className="rounded-[1.75rem] border border-black/8 bg-white p-4 shadow-[0_14px_28px_rgba(15,23,42,0.05)] sm:p-6">
+          <div className="flex min-w-0 flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8b8d91]">Pedido seleccionado</p>
-              <h3 className="mt-2 break-all text-2xl font-semibold tracking-[-0.04em] text-[#0C535B]">{selectedOrder.id}</h3>
-              <p className="mt-3 text-sm leading-7 text-[#6e7379]">
+              <h3 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[#0C535B]">{orderCodes.get(selectedOrder.id) ?? selectedOrder.id}</h3>
+              <p className="mt-0.5 break-all text-xs text-[#8b8d91]">{selectedOrder.id}</p>
+              <p className="mt-3 break-words text-sm leading-7 text-[#6e7379]">
                 {selectedOrder.customerName} · {selectedOrder.customerEmail} · {selectedOrder.customerPhone}
               </p>
               {selectedOrder.assignedSeller && (
@@ -425,8 +455,8 @@ export default function PedidosPage() {
           </div>
 
           {/* Items + totals */}
-          <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_320px]">
-            <div className="rounded-[1.4rem] border border-black/8 bg-[#fafaf9] p-5">
+          <div className="mt-6 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_320px]">
+            <div className="min-w-0 rounded-[1.4rem] border border-black/8 bg-[#fafaf9] p-4 sm:p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8b8d91]">Resumen del pedido</p>
@@ -438,21 +468,34 @@ export default function PedidosPage() {
               </div>
               <div className="mt-5 space-y-3">
                 {selectedOrder.items.map((item) => (
-                  <div key={item.id} className="rounded-[1rem] border border-black/8 bg-white px-4 py-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-[#1f2328]">{item.name}</p>
+                  <div key={item.id} className="min-w-0 rounded-[1rem] border border-black/8 bg-white px-4 py-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex min-w-0 flex-1 items-start gap-3">
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-black/8 bg-[#fafaf9]">
+                          {item.image ? (
+                            <Image src={item.image} alt="" width={56} height={56} className="h-full w-full object-cover" />
+                          ) : (
+                            <span className="text-[10px] font-semibold uppercase text-[#8b8d91]">{item.name.slice(0, 2)}</span>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                        <p className="break-words text-sm font-semibold text-[#1f2328]">{item.name}</p>
                         {item.sku && (
-                          <p className="mt-0.5 text-xs text-[#8b8d91]">Código: <span className="font-medium text-[#5d6167]">{item.sku}</span></p>
+                          <p className="mt-0.5 break-all text-xs text-[#8b8d91]">Código: <span className="font-medium text-[#5d6167]">{item.sku}</span></p>
                         )}
-                        <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[#8b8d91]">Cantidad</p>
+                        <p className="mt-2 text-xs uppercase tracking-[0.12em] text-[#8b8d91] sm:tracking-[0.18em]">Cantidad</p>
                         <p className="mt-1 text-sm font-medium text-[#5d6167]">{item.quantity}</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs uppercase tracking-[0.18em] text-[#8b8d91]">Precio unidad</p>
-                        <p className="mt-1 text-sm font-semibold text-[#0C535B]">{formatCurrency(item.unitPrice)}</p>
-                        <p className="mt-3 text-xs uppercase tracking-[0.18em] text-[#8b8d91]">Subtotal</p>
-                        <p className="mt-1 text-sm font-semibold text-[#27B1B8]">{formatCurrency(item.lineTotal)}</p>
+                      <div className="flex shrink-0 items-start justify-between gap-6 text-left sm:block sm:text-right">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.12em] text-[#8b8d91] sm:tracking-[0.18em]">Precio unidad</p>
+                          <p className="mt-1 text-sm font-semibold text-[#0C535B]">{formatCurrency(item.unitPrice)}</p>
+                        </div>
+                        <div className="sm:mt-3">
+                          <p className="text-xs uppercase tracking-[0.12em] text-[#8b8d91] sm:tracking-[0.18em]">Subtotal</p>
+                          <p className="mt-1 text-sm font-semibold text-[#27B1B8]">{formatCurrency(item.lineTotal)}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -460,30 +503,30 @@ export default function PedidosPage() {
               </div>
             </div>
 
-            <div className="grid gap-3 content-start">
-              <div className="rounded-[1.4rem] border border-black/8 bg-[#fafaf9] px-5 py-4">
+            <div className="grid min-w-0 grid-cols-1 content-start gap-3">
+              <div className="min-w-0 rounded-[1.4rem] border border-black/8 bg-[#fafaf9] px-5 py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8d91]">Total del pedido</p>
-                <p className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-[#27B1B8]">
+                <p className="mt-2 break-words text-3xl font-semibold tracking-[-0.03em] text-[#27B1B8]">
                   {formatCurrency(selectedOrder.subtotal + selectedOrder.shippingCost)}
                 </p>
                 {selectedOrder.shippingCost > 0 && (
                   <p className="mt-1 text-xs text-[#8b8d91]">Incluye envío: {formatCurrency(selectedOrder.shippingCost)}</p>
                 )}
               </div>
-              <div className="rounded-[1.4rem] border border-black/8 bg-[#fafaf9] px-5 py-4">
+              <div className="min-w-0 rounded-[1.4rem] border border-black/8 bg-[#fafaf9] px-5 py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8d91]">Transportadora actual</p>
-                <p className="mt-2 text-sm font-semibold text-[#0C535B]">{selectedOrder.carrier || "Por definir"}</p>
+                <p className="mt-2 text-sm font-semibold text-[#0C535B] [overflow-wrap:anywhere]">{selectedOrder.carrier || "Por definir"}</p>
               </div>
-              <div className="rounded-[1.4rem] border border-black/8 bg-[#fafaf9] px-5 py-4">
+              <div className="min-w-0 rounded-[1.4rem] border border-black/8 bg-[#fafaf9] px-5 py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8d91]">Guía actual</p>
-                <p className="mt-2 text-sm font-semibold text-[#0C535B]">{selectedOrder.trackingNumber || "Aún no asignada"}</p>
+                <p className="mt-2 text-sm font-semibold text-[#0C535B] [overflow-wrap:anywhere]">{selectedOrder.trackingNumber || "Aún no asignada"}</p>
               </div>
               {/* WhatsApp — seller exclusive */}
               <a
                 href={waLink(selectedOrder.customerPhone, selectedOrder.customerName.split(" ")[0], selectedOrder.id)}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center justify-center gap-2 rounded-[1.4rem] bg-[#25D366] px-5 py-4 text-sm font-bold text-white transition-opacity hover:opacity-90"
+                className="flex min-w-0 items-center justify-center gap-2 rounded-[1.4rem] bg-[#25D366] px-5 py-4 text-sm font-bold text-white transition-opacity hover:opacity-90"
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="currentColor">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
@@ -576,6 +619,49 @@ export default function PedidosPage() {
         </div>
       </div>
 
+      {/* KPIs comerciales */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="rounded-[1.2rem] border border-black/8 bg-[#EAF8F6] px-5 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#27B1B8]">Ventas totales</p>
+          <p className="mt-1 text-2xl font-bold text-[#0C535B]">{formatCurrency(kpis.ventasTotales)}</p>
+        </div>
+        <div className="rounded-[1.2rem] border border-black/8 bg-[#FFF7ED] px-5 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#C2410C]">Por cobrar</p>
+          <p className="mt-1 text-2xl font-bold text-[#C2410C]">{formatCurrency(kpis.porCobrar)}</p>
+        </div>
+        <div className="rounded-[1.2rem] border border-black/8 bg-[#EFF6FF] px-5 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#1D4ED8]">Pedidos</p>
+          <p className="mt-1 text-2xl font-bold text-[#1D4ED8]">{kpis.pedidos}</p>
+        </div>
+        <div className="rounded-[1.2rem] border border-black/8 bg-[#F0FDF4] px-5 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#15803D]">Entregados</p>
+          <p className="mt-1 text-2xl font-bold text-[#15803D]">{kpis.entregados}</p>
+        </div>
+      </div>
+
+      {/* Vista: pedidos confirmados vs. pagos pendientes de Wompi */}
+      <div className="inline-flex w-fit rounded-full border border-black/10 bg-white p-1 shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
+        <button
+          type="button"
+          onClick={() => setPaymentView("confirmed")}
+          className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200 ${paymentView === "confirmed" ? "bg-[#0C535B] text-white" : "text-[#5d6167] hover:text-[#0C535B]"}`}
+        >
+          Pedidos
+        </button>
+        <button
+          type="button"
+          onClick={() => setPaymentView("pending")}
+          className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200 ${paymentView === "pending" ? "bg-[#0C535B] text-white" : "text-[#5d6167] hover:text-[#0C535B]"}`}
+        >
+          Pagos pendientes
+        </button>
+      </div>
+      {paymentView === "pending" && (
+        <p className="text-xs text-[#8b8d91]">
+          Checkouts de Wompi que aún no confirman el pago (pendientes, rechazados o expirados). No son pedidos reales todavía — úsalo para contactar al cliente y recuperar la venta.
+        </p>
+      )}
+
       {/* Search + filters */}
       <div className="rounded-[1.75rem] border border-black/8 bg-white p-6 shadow-[0_14px_28px_rgba(15,23,42,0.05)]">
         <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
@@ -594,11 +680,11 @@ export default function PedidosPage() {
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-medium text-[#4f545a]">Estado</span>
+            <span className="text-sm font-medium text-[#4f545a]">Estado del pago</span>
             <SimpleSelect
-              value={shippingFilter}
-              options={[{ value: "all", label: "Todos" }, ...SHIPPING_STATUSES.map((s) => ({ value: s, label: getShippingStatusLabel(s) }))]}
-              onChange={(v) => setShippingFilter(v)}
+              value={paymentStatusFilter}
+              options={[{ value: "all", label: "Todos" }, { value: "PENDING", label: "Pendiente" }, { value: "PAID", label: "Pagado" }, { value: "FAILED", label: "Fallido" }, { value: "EXPIRED", label: "Expirado" }]}
+              onChange={(v) => setPaymentStatusFilter(v)}
             />
           </label>
 
@@ -622,8 +708,7 @@ export default function PedidosPage() {
         </div>
 
         {/* Quick filters */}
-        <div className="mt-5 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Filtros rápidos</span>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           {DATE_PRESETS.filter((d) => d.value !== "all").map((d) => (
             <button
               key={d.value}
@@ -634,36 +719,37 @@ export default function PedidosPage() {
               {d.label}
             </button>
           ))}
-          {(search || shippingFilter !== "all" || datePreset !== "all" || customerFilter !== "all") && (
+          {(search || shippingFilter !== "all" || datePreset !== "all" || customerFilter !== "all" || paymentStatusFilter !== "all") && (
             <button
               type="button"
-              onClick={() => { setSearch(""); setShippingFilter("all"); setDatePreset("all"); setCustomerFilter("all"); }}
+              onClick={() => { setSearch(""); setShippingFilter("all"); setDatePreset("all"); setCustomerFilter("all"); setPaymentStatusFilter("all"); }}
               className="ml-auto text-xs font-semibold text-[#27B1B8] hover:underline"
             >
               Limpiar filtros
             </button>
           )}
         </div>
-      </div>
 
-      {/* Status cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {[{ value: "all", label: "Todos" }, ...SHIPPING_STATUSES.map((s) => ({ value: s, label: getShippingStatusLabel(s) }))].map((s) => {
-          const style = STATUS_CARD_STYLES[s.value] ?? STATUS_CARD_STYLES.all;
-          const active = shippingFilter === s.value;
-          return (
-            <button
-              key={s.value}
-              type="button"
-              onClick={() => setShippingFilter(s.value)}
-              className={`rounded-[1.2rem] border px-4 py-4 text-left transition-all duration-200 ${style.bg} ${active ? "border-[#27B1B8] shadow-[0_10px_22px_rgba(39,177,184,0.18)]" : "border-black/8 hover:-translate-y-0.5"}`}
-            >
-              <p className={`text-2xl font-bold ${style.text}`}>{statusCounts[s.value] ?? 0}</p>
-              <p className="mt-1 text-xs font-semibold text-[#5d6167]">{s.label}</p>
-              <p className="text-[11px] text-[#8b8d91]">Pedidos</p>
-            </button>
-          );
-        })}
+        <hr className="my-4 border-black/8" />
+
+        {/* Estado del pedido — el chip es a la vez el conteo y el filtro */}
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {[{ value: "all", label: "Todos" }, ...SHIPPING_STATUSES.map((s) => ({ value: s, label: getShippingStatusLabel(s) }))].map((s) => {
+            const style = STATUS_CARD_STYLES[s.value] ?? STATUS_CARD_STYLES.all;
+            const active = shippingFilter === s.value;
+            return (
+              <button
+                key={s.value}
+                type="button"
+                onClick={() => setShippingFilter(active ? "all" : s.value)}
+                className={`flex shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2 transition-colors duration-200 ${active ? `border-[#27B1B8] ${style.bg}` : "border-black/8 bg-[#fafaf9] hover:bg-[#f0f0ee]"}`}
+              >
+                <span className={`text-sm font-bold ${active ? style.text : "text-[#1f2328]"}`}>{statusCounts[s.value] ?? 0}</span>
+                <span className={`text-xs font-semibold ${active ? style.text : "text-[#6e7379]"}`}>{s.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Table */}
@@ -676,6 +762,7 @@ export default function PedidosPage() {
                 <th className="p-4">Cliente</th>
                 <th className="p-4">Fecha</th>
                 <th className="p-4">Total</th>
+                <th className="p-4">Pago</th>
                 <th className="p-4">Estado</th>
                 <th className="p-4">Guía / seguimiento</th>
                 <th className="p-4 text-right">Acciones</th>
@@ -684,7 +771,7 @@ export default function PedidosPage() {
             <tbody>
               {pagedOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-10 text-center text-sm text-[#6e7379]">
+                  <td colSpan={8} className="p-10 text-center text-sm text-[#6e7379]">
                     {orders.length === 0 ? "Aún no tienes pedidos asignados." : "Ningún pedido coincide con los filtros."}
                   </td>
                 </tr>
@@ -692,7 +779,7 @@ export default function PedidosPage() {
                 pagedOrders.map((order) => {
                   const previewImage = order.items.find((it) => it.image)?.image;
                   return (
-                    <tr key={order.id} className="border-b border-black/6 last:border-0 hover:bg-[#fafaf9]">
+                    <tr key={order.id} onClick={() => openOrder(order)} className="cursor-pointer border-b border-black/6 last:border-0 hover:bg-[#fafaf9]">
                       <td className="p-4">
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-black/8 bg-[#fafaf9]">
@@ -703,7 +790,7 @@ export default function PedidosPage() {
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="max-w-[160px] truncate text-sm font-semibold text-[#1f2328]">{order.id}</p>
+                            <p className="max-w-[160px] truncate text-sm font-semibold text-[#1f2328]">{orderCodes.get(order.id) ?? order.id}</p>
                             <p className="text-xs text-[#8b8d91]">{order.totalItems} producto{order.totalItems === 1 ? "" : "s"} · SKU {order.items[0]?.sku ?? "—"}</p>
                             {order.assignedSeller && <p className="text-xs font-medium text-[#0C535B]">👤 {order.assignedSeller.fullName}</p>}
                           </div>
@@ -719,10 +806,14 @@ export default function PedidosPage() {
                       </td>
                       <td className="p-4 font-semibold text-[#0C535B]">{formatCurrency(order.subtotal)}</td>
                       <td className="p-4">
-                        <div className="flex flex-col gap-1">
-                          <span className="w-fit rounded-full bg-[#EAF8F6] px-2.5 py-0.5 text-xs font-semibold text-[#0C535B]">{getPaymentStatusLabel(order.paymentStatus ?? order.status)}</span>
-                          <span className="w-fit rounded-full bg-[#effaf2] px-2.5 py-0.5 text-xs font-semibold text-[#1f6b39]">{getShippingStatusLabel(order.shippingStatus)}</span>
-                        </div>
+                        <span className={`w-fit rounded-full px-2.5 py-0.5 text-xs font-semibold ${PAYMENT_STATUS_STYLES[order.paymentStatus ?? order.status] ?? PAYMENT_STATUS_STYLES.PENDING}`}>
+                          {getPaymentStatusLabel(order.paymentStatus ?? order.status)}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <span className={`w-fit rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_CARD_STYLES[order.shippingStatus]?.bg ?? STATUS_CARD_STYLES.all.bg} ${STATUS_CARD_STYLES[order.shippingStatus]?.text ?? STATUS_CARD_STYLES.all.text}`}>
+                          {getShippingStatusLabel(order.shippingStatus)}
+                        </span>
                       </td>
                       <td className="p-4 text-[#5d6167]">
                         {order.trackingNumber ? (
@@ -732,15 +823,29 @@ export default function PedidosPage() {
                         )}
                         {order.carrier && <p className="text-xs text-[#8b8d91]">{order.carrier}</p>}
                       </td>
-                      <td className="p-4 text-right">
-                        <button
-                          type="button"
-                          onClick={() => openOrder(order)}
-                          title="Ver pedido"
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 text-[#5d6167] transition-colors duration-200 hover:border-[#0C535B] hover:text-[#0C535B]"
-                        >
-                          <IconEye />
-                        </button>
+                      <td className="p-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); openOrder(order); }}
+                            title="Ver pedido"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 text-[#5d6167] transition-colors duration-200 hover:border-[#0C535B] hover:text-[#0C535B]"
+                          >
+                            <IconEye />
+                          </button>
+                          <a
+                            href={waLink(order.customerPhone, order.customerName.split(" ")[0], order.id)}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            title="Contactar por WhatsApp"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 text-[#5d6167] transition-colors duration-200 hover:border-[#25D366] hover:text-[#25D366]"
+                          >
+                            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+                              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                            </svg>
+                          </a>
+                        </div>
                       </td>
                     </tr>
                   );

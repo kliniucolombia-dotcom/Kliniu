@@ -1,6 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import { pushOrderToOdoo } from "@/lib/odoo";
 import { getShippingForLocation, getShippingOverride } from "@/lib/shipping-rates";
+import { earnPointsForOrder } from "@/lib/points";
+import type { Prisma } from "@/generated/prisma/client";
+
+// Ventana de pago del Web Checkout de Wompi: pasado este tiempo sin pago
+// aprobado, el cron de expiración libera la reserva de stock. 60 min iguala
+// el vencimiento por defecto del token de Wompi (confirmado en su doc de
+// soporte) para no liberar la reserva mientras el link todavía es válido;
+// además se sincroniza como "expiration-time" en el Web Checkout (lib/wompi.ts)
+// para que el countdown visible en Wompi cierre exactamente al mismo tiempo.
+const PAYMENT_WINDOW_MINUTES = 60;
 
 export type CheckoutInput = {
   customerName: string;
@@ -30,6 +40,139 @@ function parsePriceValue(price: string) {
 // CartItem.productId; el producto real solo existe con el slug base.
 function baseProductSlug(productId: string) {
   return productId.split("--")[0];
+}
+
+function computeAvailability(stock: number, reservedStock: number, minimumStock: number) {
+  return stock - reservedStock <= minimumStock ? "Disponible por pedido" : "Entrega inmediata";
+}
+
+type OrderStockItem = {
+  productId: string | null;
+  comboId: string | null;
+  comboSnapshot: unknown;
+  quantity: number;
+};
+
+type OrderStockNeed = {
+  id: string;
+  needed: number;
+  stock: number;
+  reservedStock: number;
+  minimumStock: number;
+};
+
+// Expande los OrderItem (incluidos los combos, vía su comboSnapshot) a la
+// cantidad real necesaria por producto base. Se usa tanto al confirmar el
+// pago como al liberar una reserva, para no depender del carrito (que puede
+// haber cambiado entre la creación del pedido y la confirmación del pago).
+async function computeOrderStockNeeds(
+  tx: Prisma.TransactionClient,
+  items: OrderStockItem[],
+): Promise<OrderStockNeed[]> {
+  const directItems = items.filter((item) => item.productId && !item.comboId);
+  const comboItems = items.filter((item) => item.comboId);
+
+  const needed = new Map<string, number>();
+
+  if (directItems.length > 0) {
+    const slugs = directItems.map((item) => baseProductSlug(item.productId as string));
+    const productsBySlug = await tx.product.findMany({
+      where: { slug: { in: slugs } },
+      select: { id: true, slug: true },
+    });
+
+    for (const item of directItems) {
+      const product = productsBySlug.find((p) => p.slug === baseProductSlug(item.productId as string));
+      if (!product) continue;
+      needed.set(product.id, (needed.get(product.id) ?? 0) + item.quantity);
+    }
+  }
+
+  for (const item of comboItems) {
+    const snapshot = item.comboSnapshot as { items?: { productId: string; quantity: number }[] } | null;
+    for (const line of snapshot?.items ?? []) {
+      needed.set(line.productId, (needed.get(line.productId) ?? 0) + line.quantity * item.quantity);
+    }
+  }
+
+  if (needed.size === 0) return [];
+
+  const products = await tx.product.findMany({
+    where: { id: { in: [...needed.keys()] } },
+    select: { id: true, stock: true, reservedStock: true, minimumStock: true },
+  });
+
+  return products.map((product) => ({
+    id: product.id,
+    needed: needed.get(product.id) as number,
+    stock: product.stock,
+    reservedStock: product.reservedStock,
+    minimumStock: product.minimumStock,
+  }));
+}
+
+// Convierte la reserva en descuento definitivo de stock cuando el pago
+// queda aprobado.
+async function confirmOrderStock(tx: Prisma.TransactionClient, orderId: string, items: OrderStockItem[]) {
+  const needs = await computeOrderStockNeeds(tx, items);
+
+  for (const need of needs) {
+    const deductedQuantity = Math.min(need.stock, need.needed);
+    const nextStock = Math.max(need.stock - need.needed, 0);
+    const nextReservedStock = Math.max(need.reservedStock - need.needed, 0);
+
+    await tx.product.update({
+      where: { id: need.id },
+      data: {
+        stock: nextStock,
+        reservedStock: nextReservedStock,
+        availability: computeAvailability(nextStock, nextReservedStock, need.minimumStock),
+        ...(deductedQuantity > 0
+          ? {
+              inventoryMovements: {
+                create: {
+                  type: "ORDER_DEDUCTION",
+                  quantity: -deductedQuantity,
+                  stockAfter: nextStock,
+                  note: `Descuento automático por pedido ${orderId} (pago confirmado)`,
+                },
+              },
+            }
+          : {}),
+      },
+    });
+  }
+}
+
+// Libera una reserva de stock sin tocar el stock real: pago rechazado o
+// pedido expirado sin completar el pago.
+async function releaseOrderStock(
+  tx: Prisma.TransactionClient,
+  orderId: string,
+  items: OrderStockItem[],
+  reason: string,
+) {
+  const needs = await computeOrderStockNeeds(tx, items);
+
+  for (const need of needs) {
+    const nextReservedStock = Math.max(need.reservedStock - need.needed, 0);
+
+    await tx.product.update({
+      where: { id: need.id },
+      data: {
+        reservedStock: nextReservedStock,
+        availability: computeAvailability(need.stock, nextReservedStock, need.minimumStock),
+        inventoryMovements: {
+          create: {
+            type: "RELEASED",
+            quantity: need.needed,
+            stockAfter: need.stock,
+            note: `Reserva liberada (${reason}) para pedido ${orderId}`,
+          },
+        },
+      },
+    });
+  }
 }
 
 export async function createOrderFromCart(userId: string, input: CheckoutInput) {
@@ -92,6 +235,7 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
         id: true,
         slug: true,
         stock: true,
+        reservedStock: true,
         minimumStock: true,
       },
     });
@@ -112,22 +256,23 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
       include: { items: { include: { product: true } } },
     });
 
-    const stockDeductions = new Map<
+    const stockReservations = new Map<
       string,
-      { id: string; stock: number; minimumStock: number; needed: number }
+      { id: string; stock: number; reservedStock: number; minimumStock: number; needed: number }
     >();
 
     for (const item of productCartItems) {
       const product = products.find((entry) => entry.slug === baseProductSlug(item.productId as string));
       if (!product) continue;
-      const tracked = stockDeductions.get(product.id) ?? {
+      const tracked = stockReservations.get(product.id) ?? {
         id: product.id,
         stock: product.stock,
+        reservedStock: product.reservedStock,
         minimumStock: product.minimumStock,
         needed: 0,
       };
       tracked.needed += item.quantity;
-      stockDeductions.set(product.id, tracked);
+      stockReservations.set(product.id, tracked);
     }
 
     for (const cartCombo of comboCartItems) {
@@ -138,14 +283,15 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
 
       for (const comboItem of combo.items) {
         const neededQuantity = comboItem.quantity * cartCombo.quantity;
-        const tracked = stockDeductions.get(comboItem.productId) ?? {
+        const tracked = stockReservations.get(comboItem.productId) ?? {
           id: comboItem.productId,
           stock: comboItem.product.stock,
+          reservedStock: comboItem.product.reservedStock,
           minimumStock: comboItem.product.minimumStock,
           needed: 0,
         };
         tracked.needed += neededQuantity;
-        stockDeductions.set(comboItem.productId, tracked);
+        stockReservations.set(comboItem.productId, tracked);
       }
     }
 
@@ -175,6 +321,7 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
         shippingCost,
         totalItems,
         assignedSellerId,
+        paymentExpiresAt: new Date(Date.now() + PAYMENT_WINDOW_MINUTES * 60 * 1000),
         items: {
           create: cartItems.map((item) => {
             const unitPrice = parsePriceValue(item.price);
@@ -212,30 +359,26 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
       },
     });
 
-    for (const tracked of stockDeductions.values()) {
-      const deductedQuantity = Math.min(tracked.stock, tracked.needed);
-      const nextStock = Math.max(tracked.stock - tracked.needed, 0);
+    // El stock no se descuenta al crear el pedido: solo se reserva
+    // (Product.reservedStock) hasta que el pago quede aprobado. Si el pago
+    // falla o expira, markOrderPaidByWompiReference/expireStaleOrders liberan
+    // la reserva sin haber tocado nunca el stock real.
+    for (const tracked of stockReservations.values()) {
+      const nextReservedStock = tracked.reservedStock + tracked.needed;
 
       await tx.product.update({
         where: { id: tracked.id },
         data: {
-          stock: nextStock,
-          availability:
-            nextStock <= tracked.minimumStock
-                ? "Disponible por pedido"
-                : "Entrega inmediata",
-          ...(deductedQuantity > 0
-            ? {
-                inventoryMovements: {
-                  create: {
-                    type: "ORDER_DEDUCTION",
-                    quantity: -deductedQuantity,
-                    stockAfter: nextStock,
-                    note: `Descuento automático por pedido ${createdOrder.id}`,
-                  },
-                },
-              }
-            : {}),
+          reservedStock: nextReservedStock,
+          availability: computeAvailability(tracked.stock, nextReservedStock, tracked.minimumStock),
+          inventoryMovements: {
+            create: {
+              type: "RESERVED",
+              quantity: tracked.needed,
+              stockAfter: tracked.stock,
+              note: `Reserva por pedido ${createdOrder.id} (pendiente de pago)`,
+            },
+          },
         },
       });
     }
@@ -447,7 +590,14 @@ export async function setOrderWompiReference(orderId: string, userId: string) {
 
   const order = await prisma.order.findFirst({
     where: { id: orderId, userId },
-    select: { id: true, subtotal: true, shippingCost: true, customerEmail: true, wompiReference: true },
+    select: {
+      id: true,
+      subtotal: true,
+      shippingCost: true,
+      customerEmail: true,
+      wompiReference: true,
+      paymentExpiresAt: true,
+    },
   });
 
   if (!order) {
@@ -474,35 +624,89 @@ export async function markOrderPaidByWompiReference(
     throw new Error("DATABASE_NOT_CONFIGURED");
   }
 
-  const order = await prisma.order.findUnique({ where: { wompiReference: reference } });
+  const order = await prisma.order.findUnique({
+    where: { wompiReference: reference },
+    include: { items: true },
+  });
 
   if (!order) {
     throw new Error("ORDER_NOT_FOUND");
-  }
-
-  if (status !== "APPROVED") {
-    await prisma.order.update({
-      where: { id: order.id },
-      data: { wompiTransactionId: transactionId, paymentStatus: "FAILED" },
-    });
-    return order;
   }
 
   if (order.paymentStatus === "PAID") {
     return order;
   }
 
-  await prisma.order.update({
-    where: { id: order.id },
-    data: {
-      wompiTransactionId: transactionId,
-      paymentStatus: "PAID",
-      status: "PAID",
-      shippingStatus: order.shippingStatus === "PENDING" ? "PREPARING" : order.shippingStatus,
-    },
+  if (status !== "APPROVED") {
+    // Pago ya marcado FAILED/EXPIRED antes (reintento del webhook): la
+    // reserva ya fue liberada, no liberar dos veces.
+    if (order.paymentStatus !== "PENDING") {
+      return order;
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await releaseOrderStock(tx, order.id, order.items, "pago rechazado");
+      await tx.order.update({
+        where: { id: order.id },
+        data: { wompiTransactionId: transactionId, paymentStatus: "FAILED" },
+      });
+    });
+    return order;
+  }
+
+  if (order.paymentStatus !== "PENDING") {
+    // Pago aprobado tarde: la reserva ya se había liberado (expiró o fue
+    // rechazada antes). Se honra igual el pago y se descuenta stock fresco
+    // -- nunca se le niega el pedido a alguien que sí pagó -- pero queda
+    // este log porque es un caso raro que vale la pena que ops revise.
+    console.warn("WOMPI_LATE_APPROVAL_AFTER", order.paymentStatus, order.id);
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await confirmOrderStock(tx, order.id, order.items);
+    await tx.order.update({
+      where: { id: order.id },
+      data: {
+        wompiTransactionId: transactionId,
+        paymentStatus: "PAID",
+        status: "PAID",
+        shippingStatus: order.shippingStatus === "PENDING" ? "PREPARING" : order.shippingStatus,
+      },
+    });
   });
 
   await prisma.cartItem.deleteMany({ where: { userId: order.userId } });
 
+  await earnPointsForOrder(order.userId, order.subtotal, order.id).catch(() => {});
+
   return await syncOrderToOdoo(order.id);
+}
+
+// Cron: libera la reserva de stock de los pedidos ONLINE que nunca
+// completaron el pago dentro de la ventana (paymentExpiresAt vencido).
+export async function expireStaleOrders() {
+  if (!prisma) {
+    throw new Error("DATABASE_NOT_CONFIGURED");
+  }
+
+  const staleOrders = await prisma.order.findMany({
+    where: {
+      channel: "ONLINE",
+      paymentStatus: "PENDING",
+      paymentExpiresAt: { lt: new Date() },
+    },
+    include: { items: true },
+  });
+
+  for (const order of staleOrders) {
+    await prisma.$transaction(async (tx) => {
+      await releaseOrderStock(tx, order.id, order.items, "pago expirado");
+      await tx.order.update({
+        where: { id: order.id },
+        data: { paymentStatus: "EXPIRED", status: "CANCELLED" },
+      });
+    });
+  }
+
+  return { expiredCount: staleOrders.length, orderIds: staleOrders.map((order) => order.id) };
 }

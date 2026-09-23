@@ -1,7 +1,6 @@
 import { getSessionFromCookies } from "@/lib/auth";
 import { requireAdminUser } from "@/lib/admin";
 import { createOrderFromCart, getAllOrders } from "@/lib/orders";
-import { earnPointsForOrder } from "@/lib/points";
 
 export async function GET() {
   try {
@@ -60,8 +59,8 @@ export async function POST(request: Request) {
       notes: body.notes,
     });
 
-    // Acumular puntos: 1 punto por cada $1.000 COP del subtotal
-    await earnPointsForOrder(session.userId, order.subtotal, order.id).catch(() => {});
+    // Los puntos se otorgan solo cuando el pago queda aprobado (ver
+    // markOrderPaidByWompiReference en lib/orders.ts), no al crear el pedido.
 
     return Response.json({
       order: {

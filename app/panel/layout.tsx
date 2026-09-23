@@ -293,7 +293,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
   return (
     <NotificationDetailProvider>
-    <div className="flex min-h-screen bg-[#F4F6F8] font-sans">
+    <div className="flex h-screen bg-[#F4F6F8] font-sans">
       {/* ── Topbar móvil ── */}
       <div className="fixed inset-x-0 top-0 z-[60] flex items-center justify-between border-b border-[#E2E8F0] bg-white px-4 py-3 md:hidden">
         <Link href="/" className="flex items-center gap-2">
@@ -575,7 +575,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* ── Content ── */}
-      <div className="flex-1 overflow-x-hidden overflow-y-auto pt-14 md:pt-0">
+      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-14 md:pt-0">
         <ConfirmProvider>{children}</ConfirmProvider>
       </div>
 
