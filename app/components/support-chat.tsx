@@ -3,6 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode, Fragment } from "react";
+import { FaWhatsapp } from "react-icons/fa";
+import { MdChatBubbleOutline, MdChevronRight, MdClose } from "react-icons/md";
+import { fbContact } from "@/lib/fbpixel";
+import { pickAdvisor } from "@/lib/advisors";
 
 function renderMarkdown(text: string): ReactNode {
   return text.split("\n").map((line, li) => {
@@ -61,6 +65,7 @@ const initialMessage: ChatMessage = {
 };
 
 const CHAT_STORAGE_KEY = "kliniu:chat-history";
+const WHATSAPP_TEXT = encodeURIComponent("Hola, tengo una consulta sobre un producto de Kliniu");
 
 function loadStoredMessages(): ChatMessage[] {
   if (typeof window === "undefined") return [initialMessage];
@@ -76,6 +81,8 @@ function loadStoredMessages(): ChatMessage[] {
 
 export default function SupportChat() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showHint, setShowHint] = useState(true);
   const [isVisualSearchOpen, setIsVisualSearchOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([initialMessage]);
   const [input, setInput] = useState("");
@@ -83,10 +90,52 @@ export default function SupportChat() {
   const [requestError, setRequestError] = useState("");
   const [sellerContact, setSellerContact] = useState<{ phone: string; name: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const firstOptionRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     setMessages(loadStoredMessages());
   }, []);
+
+  // La burbuja de bienvenida se oculta sola a los 5 segundos.
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShowHint(false), 5000);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  // Cierra al hacer clic fuera del widget.
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setIsMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [isMenuOpen]);
+
+  // Escape cierra el menú (o el chat si está abierto).
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (isMenuOpen) {
+        setIsMenuOpen(false);
+      } else if (isOpen) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isMenuOpen, isOpen]);
+
+  // Al abrir el menú, lleva el foco a la primera opción; al cerrar, de vuelta al botón.
+  useEffect(() => {
+    if (isMenuOpen) {
+      firstOptionRef.current?.focus();
+    } else if (rootRef.current?.contains(document.activeElement)) {
+      triggerRef.current?.focus();
+    }
+  }, [isMenuOpen]);
 
   useEffect(() => {
     try {
@@ -176,11 +225,35 @@ export default function SupportChat() {
     await sendMessage(input);
   };
 
+  const handleWhatsApp = () => {
+    setIsMenuOpen(false);
+    fbContact();
+    const { phone } = pickAdvisor();
+    window.open(`https://wa.me/${phone}?text=${WHATSAPP_TEXT}`, "_blank", "noopener,noreferrer");
+  };
+
+  const handleOpenChat = () => {
+    setIsMenuOpen(false);
+    setIsOpen(true);
+  };
+
+  const handleTrigger = () => {
+    if (isOpen) {
+      setIsOpen(false);
+      setIsMenuOpen(false);
+      return;
+    }
+    setShowHint(false);
+    setIsMenuOpen((current) => !current);
+  };
+
   useEffect(() => {
     const handleOpenAdvisor = () => {
       setMessages([initialMessage]);
       setInput("");
       setRequestError("");
+      setIsMenuOpen(false);
+      setShowHint(false);
       setIsOpen(true);
     };
 
@@ -195,6 +268,7 @@ export default function SupportChat() {
       setIsVisualSearchOpen(nextState);
 
       if (nextState) {
+        setIsMenuOpen(false);
         setIsOpen(false);
       }
     };
@@ -212,7 +286,8 @@ export default function SupportChat() {
 
   return (
     <div
-      className="fixed right-6 bottom-20 sm:bottom-6 z-[100] flex flex-col items-end gap-3"
+      ref={rootRef}
+      className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] sm:right-6 sm:bottom-6 z-[100] flex flex-col items-end gap-3"
     >
       {isOpen && (
         <div className="w-[min(92vw,380px)] overflow-hidden rounded-[1.6rem] border border-black/10 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
@@ -377,22 +452,74 @@ export default function SupportChat() {
         </div>
       )}
 
+      {isMenuOpen && (
+        <div
+          id="kliniu-support-menu"
+          role="menu"
+          aria-label="Opciones de atención al cliente"
+          className="flex w-[min(78vw,15rem)] flex-col gap-3 animate-[kliniuMenuIn_220ms_ease-out] motion-reduce:animate-none"
+        >
+          <button
+            ref={firstOptionRef}
+            type="button"
+            role="menuitem"
+            onClick={handleOpenChat}
+            className="flex min-h-12 w-full items-center gap-3 rounded-full border border-black/5 bg-white py-2 pl-2 pr-4 text-left shadow-[0_14px_34px_rgba(15,23,42,0.16)] transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#27B1B8] focus-visible:ring-offset-2 motion-reduce:transition-none"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0C535B] text-white">
+              <MdChatBubbleOutline size={18} />
+            </span>
+            <span className="text-sm font-semibold text-[#0C535B]">Chat KLINIU</span>
+            <MdChevronRight className="ml-auto h-4 w-4 shrink-0 text-[#0C535B]/40" />
+          </button>
+
+          <button
+            type="button"
+            role="menuitem"
+            onClick={handleWhatsApp}
+            className="flex min-h-12 w-full items-center gap-3 rounded-full border border-black/5 bg-white py-2 pl-2 pr-4 text-left shadow-[0_14px_34px_rgba(15,23,42,0.16)] transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366] focus-visible:ring-offset-2 motion-reduce:transition-none"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white">
+              <FaWhatsapp size={18} />
+            </span>
+            <span className="text-sm font-semibold text-[#0C535B]">WhatsApp</span>
+            <MdChevronRight className="ml-auto h-4 w-4 shrink-0 text-[#0C535B]/40" />
+          </button>
+        </div>
+      )}
+
+      {showHint && !isMenuOpen && !isOpen && (
+        <div className="animate-[kliniuMenuIn_220ms_ease-out] motion-reduce:animate-none rounded-2xl rounded-br-md border border-black/5 bg-white px-4 py-2.5 text-sm font-semibold text-[#0C535B] shadow-[0_14px_34px_rgba(15,23,42,0.16)]">
+          ¿Necesitas ayuda?
+        </div>
+      )}
+
       <button
+        ref={triggerRef}
         type="button"
-        onClick={() => setIsOpen((current) => !current)}
-        className={`group relative flex items-center rounded-full border border-white/12 bg-[#0C535B] p-3 text-white shadow-[0_22px_50px_rgba(22,56,79,0.38)] ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#073D43] ${isOpen ? "hidden sm:flex" : ""}`}
+        onClick={handleTrigger}
+        aria-label={isMenuOpen || isOpen ? "Cerrar atención al cliente" : "Abrir atención al cliente"}
+        aria-haspopup="menu"
+        aria-expanded={isMenuOpen}
+        aria-controls="kliniu-support-menu"
+        className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[#0C535B] text-white shadow-[0_18px_40px_rgba(12,83,91,0.38)] ring-1 ring-black/5 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#073D43] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#27B1B8] focus-visible:ring-offset-2 motion-reduce:transition-none"
       >
-        <span className="absolute -left-1 -top-1 h-3 w-3 rounded-full bg-[#43c172] shadow-[0_0_0_6px_rgba(67,193,114,0.18)]" />
-        <span className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-white">
-          <Image
-            src="/foca-saludando.webp"
-            alt="Kliniu"
-            fill
-            sizes="44px"
-            className="object-cover p-1"
-          />
-        </span>
-        <span className="absolute -inset-1 -z-10 rounded-full bg-[radial-gradient(circle,rgba(237,132,53,0.16),transparent_70%)] opacity-90 blur-md" />
+        {!(isMenuOpen || isOpen) && (
+          <span className="absolute right-0.5 top-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-[#43c172]" />
+        )}
+        {isMenuOpen || isOpen ? (
+          <MdClose size={24} />
+        ) : (
+          <span className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-white">
+            <Image
+              src="/foca-saludando.webp"
+              alt=""
+              fill
+              sizes="44px"
+              className="object-cover p-1"
+            />
+          </span>
+        )}
       </button>
     </div>
   );
