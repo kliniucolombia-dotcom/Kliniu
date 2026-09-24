@@ -706,7 +706,7 @@ export default function WhatsappPanelPage() {
     void refreshPanel();
   });
 
-  // Realtime broadcasts are primary; this short poll recovers quickly if a
+  // Realtime broadcasts are primary; this slow poll is just a safety net if a
   // browser sleeps or temporarily loses its Supabase subscription.
   useEffect(() => {
     const refresh = () => {
@@ -715,7 +715,7 @@ export default function WhatsappPanelPage() {
     const refreshWhenVisible = () => {
       if (document.visibilityState === "visible") refresh();
     };
-    const interval = window.setInterval(refresh, 2_000);
+    const interval = window.setInterval(refresh, 15_000);
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", refreshWhenVisible);
     return () => {

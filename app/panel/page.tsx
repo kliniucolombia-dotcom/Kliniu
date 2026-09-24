@@ -317,7 +317,12 @@ export default async function PanelDashboard() {
             )}
             {stats?.topSeller && (
               <div className="flex items-center gap-3 rounded-xl bg-[#FFF7ED] p-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FF6B00]/15 text-lg">🏆</div>
+                {stats.topSeller.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={stats.topSeller.avatarUrl} alt="" className="h-10 w-10 shrink-0 rounded-xl object-cover bg-white" />
+                ) : (
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FF6B00]/15 text-lg">🏆</div>
+                )}
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#C2410C]">Mejor vendedor</p>
                   <p className="text-sm font-black text-[#1A1A1A]">{stats.topSeller.name}</p>

@@ -61,7 +61,7 @@ export async function getDashboardStats() {
     prisma.order.findMany({ where: { createdAt: { gte: startOfWeek }, status: "PAID" }, select: { subtotal: true } }),
     prisma.order.findMany({ where: { createdAt: { gte: startOfMonth }, status: "PAID" }, select: { subtotal: true, userId: true, createdAt: true, channel: true } }),
     prisma.order.findMany({ where: { createdAt: { gte: startOfPrevMonth, lt: startOfMonth }, status: "PAID" }, select: { subtotal: true } }),
-    prisma.campaign.findMany({ include: { seller: { select: { id: true, fullName: true } }, product: { select: { name: true, image: true } }, dailyEntries: { select: { fecha: true, presupuestoPublicidad: true, ventaDelDia: true } } }, orderBy: { createdAt: "asc" } }),
+    prisma.campaign.findMany({ include: { seller: { select: { id: true, fullName: true, avatarUrl: true } }, product: { select: { name: true, image: true } }, dailyEntries: { select: { fecha: true, presupuestoPublicidad: true, ventaDelDia: true } } }, orderBy: { createdAt: "asc" } }),
     prisma.product.count({ where: { active: true } }),
     prisma.user.count({ where: { role: "CUSTOMER", createdAt: { gte: startOfMonth } } }),
     prisma.order.findMany({
@@ -112,17 +112,29 @@ export async function getDashboardStats() {
   // La inversión se guarda en USD y las ventas en COP: unificamos a COP con la TRM de cada campaña.
   // Las cifras reales viven en la matriz diaria (CampaignDaily); Campaign.investment/sales quedan en 0
   // cuando la campaña se alimenta día a día. Si hay matriz, manda ella (TRM del día de cada entrada).
+  // Resolvemos la TRM una sola vez por fecha única (en paralelo) para no encadenar awaits.
+  const trmDates = new Set<string>();
+  for (const c of campaignRows) {
+    if (c.dailyEntries.length === 0) trmDates.add(c.startDate.toISOString().slice(0, 10));
+    else for (const e of c.dailyEntries) trmDates.add(e.fecha.toISOString().slice(0, 10));
+  }
+  const trmByDate = new Map<string, number>();
+  await Promise.all([...trmDates].map(async (key) => {
+    trmByDate.set(key, await getTrmForDate(key));
+  }));
+  const trmFor = (d: Date) => trmByDate.get(d.toISOString().slice(0, 10)) ?? 0;
+
   const campaignCop = new Map<string, number>();
   const campaigns = await Promise.all(campaignRows.map(async (c) => {
     if (c.dailyEntries.length === 0) {
-      campaignCop.set(c.id, c.investment * (await getTrmForDate(c.startDate)));
+      campaignCop.set(c.id, c.investment * trmFor(c.startDate));
       return c;
     }
     let investment = 0, sales = 0, cop = 0;
     for (const e of c.dailyEntries) {
       investment += e.presupuestoPublicidad;
       sales += e.ventaDelDia;
-      cop += e.presupuestoPublicidad * (await getTrmForDate(e.fecha));
+      cop += e.presupuestoPublicidad * trmFor(e.fecha);
     }
     campaignCop.set(c.id, cop);
     return { ...c, investment, sales };
@@ -188,10 +200,10 @@ export async function getDashboardStats() {
   const topProduct = Object.values(itemCounts).sort((a, b) => b.qty - a.qty)[0] ?? null;
 
   // Top seller by campaign sales
-  const sellerSales: Record<string, { name: string; total: number }> = {};
+  const sellerSales: Record<string, { name: string; total: number; avatarUrl: string | null }> = {};
   for (const c of campaigns) {
     const sid = c.seller.id;
-    if (!sellerSales[sid]) sellerSales[sid] = { name: c.seller.fullName, total: 0 };
+    if (!sellerSales[sid]) sellerSales[sid] = { name: c.seller.fullName, total: 0, avatarUrl: c.seller.avatarUrl };
     sellerSales[sid].total += c.sales;
   }
   const topSeller = Object.values(sellerSales).sort((a, b) => b.total - a.total)[0] ?? null;
