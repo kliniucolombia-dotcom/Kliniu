@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // La generación de PDF usa Chromium. En Vercel no se puede empaquetar el
+  // navegador de Playwright, así que se usa el binario de @sparticuz/chromium:
+  // hay que incluirlo en el trace de las funciones y no dejar que Next lo
+  // intente bundlear.
+  serverExternalPackages: ["@sparticuz/chromium", "playwright-core"],
+  outputFileTracingIncludes: {
+    "/api/**/*": ["./node_modules/@sparticuz/chromium/bin/**/*"],
+  },
   images: {
     remotePatterns: [
       {

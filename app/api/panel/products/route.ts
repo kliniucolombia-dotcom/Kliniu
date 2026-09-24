@@ -4,11 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET(request: Request) {
-  // El panel de Outlet se alimenta de esta misma lista, así que basta con
-  // poder ver cualquiera de los dos módulos.
+  // El panel de Outlet y el formulario de Producción se alimentan de esta misma
+  // lista, así que basta con poder ver cualquiera de esos módulos.
   const access = await requireAnyPermission([
     { module: "MODULE_PRODUCTOS", action: "view" },
     { module: "MODULE_OUTLET", action: "view" },
+    { module: "MODULE_PRODUCCION", action: "view" },
   ]);
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { searchParams } = new URL(request.url);

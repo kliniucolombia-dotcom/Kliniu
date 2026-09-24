@@ -1,9 +1,10 @@
 import { cookies } from "next/headers";
-import { chromium } from "playwright";
+import { launchPdfBrowser } from "@/lib/pdf-browser";
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const SESSION_COOKIE_NAME = "kliniu_session";
 
@@ -31,7 +32,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   let browser;
   try {
-    browser = await chromium.launch({ headless: true });
+    browser = await launchPdfBrowser();
     const context = await browser.newContext();
     await context.addCookies([{
       name: SESSION_COOKIE_NAME,

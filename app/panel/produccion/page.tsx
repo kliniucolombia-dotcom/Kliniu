@@ -26,6 +26,7 @@ import {
   MdSettings,
   MdVerifiedUser,
   MdChatBubbleOutline,
+  MdDownload,
 } from "react-icons/md";
 import { buildProductionSummary, calcProductionEfficiency, type ProductionRunInput } from "@/lib/production-calculator";
 import {
@@ -34,6 +35,7 @@ import {
   type ProductionRunFilters,
 } from "@/lib/production-filters";
 import { fmtDateOnly, fmtTimeOnly } from "@/lib/date";
+import { efficiencyTone } from "@/lib/production-tone";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { SimpleSelect } from "../_components/simple-select";
 
@@ -162,53 +164,6 @@ function zoneTemp(value: string): number {
 
 const fmtPct = (n: number) => `${(n || 0).toFixed(2)}%`;
 
-// Clasificación de eficiencia (producidas vs. esperadas por ciclo).
-// Verde = meta alcanzada; ámbar = cerca de la meta; naranja = por debajo.
-const efficiencyTone = (pct: number | null) => {
-  if (pct === null) {
-    return {
-      label: "Sin ciclo",
-      cardBg: "bg-white",
-      border: "border-l-[#CBD5E1]",
-      iconBg: "bg-[#F1F5F9]",
-      iconFg: "text-[#64748B]",
-      chip: "bg-[#F1F5F9] text-[#64748B]",
-      bar: "bg-[#CBD5E1]",
-    };
-  }
-  if (pct >= 100) {
-    return {
-      label: "Óptima",
-      cardBg: "bg-[#F5FCF7]",
-      border: "border-l-[#16A34A]",
-      iconBg: "bg-[#DCFCE7]",
-      iconFg: "text-[#15803D]",
-      chip: "bg-[#DCFCE7] text-[#15803D]",
-      bar: "bg-[#16A34A]",
-    };
-  }
-  if (pct >= 90) {
-    return {
-      label: "Aceptable",
-      cardBg: "bg-[#FFFBF2]",
-      border: "border-l-[#F0A73C]",
-      iconBg: "bg-[#FDEBCD]",
-      iconFg: "text-[#B45309]",
-      chip: "bg-[#FEF3C7] text-[#B45309]",
-      bar: "bg-[#F0A73C]",
-    };
-  }
-  return {
-    label: "Baja",
-    cardBg: "bg-[#FFF7F1]",
-    border: "border-l-[#EA580C]",
-    iconBg: "bg-[#FFEDD5]",
-    iconFg: "text-[#C2410C]",
-    chip: "bg-[#FFEDD5] text-[#C2410C]",
-    bar: "bg-[#EA580C]",
-  };
-};
-
 const cycleUnitLabel = (unit: string) => (unit === "minutes" ? "minutos" : "segundos");
 
 const productLabel = (run: RunListItem) =>
@@ -261,6 +216,9 @@ export default function ProduccionPage() {
   const [role, setRole] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [detailPdfLoading, setDetailPdfLoading] = useState(false);
+  const [runPdfLoadingId, setRunPdfLoadingId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [now, setNow] = useState<Date | null>(null);
 
   const loadRuns = useCallback(async () => {
@@ -454,6 +412,22 @@ export default function ProduccionPage() {
   const totalPages = Math.max(1, Math.ceil(filteredRuns.length / PAGE_SIZE));
   const pageRuns = filteredRuns.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  const allFilteredSelected = filteredRuns.length > 0 && filteredRuns.every((r) => selectedIds.has(r.id));
+  const toggleSelectAllFiltered = () =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allFilteredSelected) filteredRuns.forEach((r) => next.delete(r.id));
+      else filteredRuns.forEach((r) => next.add(r.id));
+      return next;
+    });
+  const toggleRunSelection = (id: string) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
   // El jefe de operaciones supervisa la planta: solo necesita consultar el
   // historial de recorridas y exportarlo, no registrar corridas.
   const isOpsJefe = role === "JEFE_OPERACIONES";
@@ -504,6 +478,7 @@ export default function ProduccionPage() {
     const empty = createEmptyProductionRunFilters();
     setDraft(empty);
     setFilters(empty);
+    setSelectedIds(new Set());
     setPage(1);
   };
 
@@ -531,6 +506,59 @@ export default function ProduccionPage() {
       setAlert({ type: "err", msg: "No se pudo generar el PDF del historial." });
     } finally {
       setPdfLoading(false);
+    }
+  };
+
+  const downloadRunPdf = async (run: RunListItem) => {
+    if (runPdfLoadingId) return;
+    setRunPdfLoadingId(run.id);
+    try {
+      const r = await fetch(`/api/panel/production-runs/${run.id}/pdf`);
+      if (!r.ok) {
+        setAlert({ type: "err", msg: "No se pudo generar el PDF de la corrida." });
+        return;
+      }
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `corrida-${run.orderNumber || run.id}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setAlert({ type: "err", msg: "No se pudo generar el PDF de la corrida." });
+    } finally {
+      setRunPdfLoadingId(null);
+    }
+  };
+
+  const downloadDetailedPdf = async () => {
+    if (detailPdfLoading) return;
+    setDetailPdfLoading(true);
+    setAlert(null);
+    try {
+      const ids = [...selectedIds];
+      const r = await fetch("/api/panel/production-runs/detailed-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(ids.length ? { ids } : { filters }),
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => null);
+        setAlert({ type: "err", msg: d?.error ?? "No se pudo generar el reporte detallado." });
+        return;
+      }
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `recorridas-detalladas-${todayBogota()}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setAlert({ type: "err", msg: "No se pudo generar el reporte detallado." });
+    } finally {
+      setDetailPdfLoading(false);
     }
   };
 
@@ -868,7 +896,7 @@ export default function ProduccionPage() {
                 {show(damagedExceeds) && <p className={errorClass}>La cantidad dañada no puede superar la cantidad producida.</p>}
               </div>
               <div>
-                <label className={labelClass}>No conformes <Req /></label>
+                <label className={labelClass}>No conformes <span className="font-normal text-[#94A3B8]">(opcional)</span></label>
                 <input
                   type="number"
                   min={0}
@@ -1177,9 +1205,23 @@ export default function ProduccionPage() {
               type="button"
               onClick={downloadPdf}
               disabled={pdfLoading}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#27B1B8] bg-[#F0FAFA] px-3.5 py-2 text-sm font-bold text-[#0C6060] transition-colors hover:bg-[#E0F7F7] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#E2E8F0] bg-white px-3.5 py-2 text-sm font-bold text-[#475569] transition-colors hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <MdPictureAsPdf size={16} /> {pdfLoading ? "Generando…" : "Descargar PDF"}
+              <MdPictureAsPdf size={16} /> {pdfLoading ? "Generando…" : "Resumen PDF"}
+            </button>
+            <button
+              type="button"
+              onClick={downloadDetailedPdf}
+              disabled={detailPdfLoading}
+              title="PDF con el detalle completo de cada corrida (seleccionadas o todo el filtrado)"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#0F9AA1] px-3.5 py-2 text-sm font-bold text-white transition-colors hover:bg-[#0C7F86] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <MdPictureAsPdf size={16} />
+              {detailPdfLoading
+                ? "Generando…"
+                : selectedIds.size > 0
+                  ? `Reporte detallado (${selectedIds.size})`
+                  : "Reporte detallado (filtrado)"}
             </button>
           </div>
         </div>
@@ -1207,6 +1249,16 @@ export default function ProduccionPage() {
           <table className="w-full min-w-[980px] border-collapse text-sm">
             <thead className="bg-[#F8FAFC]">
               <tr>
+                <th className="w-8 border border-[#E2E8F0] px-2 py-2">
+                  <input
+                    type="checkbox"
+                    aria-label="Seleccionar todas las recorridas filtradas"
+                    title="Seleccionar todo el filtrado"
+                    checked={allFilteredSelected}
+                    onChange={toggleSelectAllFiltered}
+                    className="h-4 w-4 cursor-pointer accent-[#27B1B8]"
+                  />
+                </th>
                 {(canViewActions ? [...historyColumns, "Acciones"] : historyColumns).map((h) => (
                   <th key={h} className="border border-[#E2E8F0] px-2 py-2 text-left text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">
                     {h}
@@ -1216,7 +1268,16 @@ export default function ProduccionPage() {
             </thead>
             <tbody>
               {pageRuns.map((run) => (
-                <tr key={run.id} className="hover:bg-[#F8FAFC]">
+                <tr key={run.id} className={`hover:bg-[#F8FAFC] ${selectedIds.has(run.id) ? "bg-[#F0FAFA]" : ""}`}>
+                  <td className="border border-[#E2E8F0] px-2 py-1.5 text-center">
+                    <input
+                      type="checkbox"
+                      aria-label={`Seleccionar corrida ${run.orderNumber}`}
+                      checked={selectedIds.has(run.id)}
+                      onChange={() => toggleRunSelection(run.id)}
+                      className="h-4 w-4 cursor-pointer accent-[#27B1B8]"
+                    />
+                  </td>
                   <td className="border border-[#E2E8F0] px-2 py-1.5">{fmtDateOnly(run.productionDate)}</td>
                   <td className="border border-[#E2E8F0] px-2 py-1.5 font-semibold">{run.orderNumber}</td>
                   <td className="border border-[#E2E8F0] px-2 py-1.5">{run.machine.code} · {run.machine.name}</td>
@@ -1230,19 +1291,30 @@ export default function ProduccionPage() {
                   <td className="border border-[#E2E8F0] px-2 py-1.5 text-right font-bold text-[#27B1B8]">{fmtPct(run.summary.qualityPercentage)}</td>
                   {canViewActions && (
                     <td className="border border-[#E2E8F0] px-2 py-1.5">
-                      <button
-                        onClick={() => setDetail(run)}
-                        className="rounded-lg border border-[#E2E8F0] px-2.5 py-1 text-xs font-bold text-[#475569] hover:bg-[#F1F5F9]"
-                      >
-                        Ver detalle
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setDetail(run)}
+                          className="rounded-lg border border-[#E2E8F0] px-2.5 py-1 text-xs font-bold text-[#475569] hover:bg-[#F1F5F9]"
+                        >
+                          Ver detalle
+                        </button>
+                        <button
+                          onClick={() => downloadRunPdf(run)}
+                          disabled={runPdfLoadingId === run.id}
+                          title="Descargar PDF de la corrida"
+                          aria-label="Descargar PDF de la corrida"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[#27B1B8] bg-[#F0FAFA] text-[#0C6060] transition-colors hover:bg-[#E0F7F7] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <MdDownload size={15} />
+                        </button>
+                      </div>
                     </td>
                   )}
                 </tr>
               ))}
               {filteredRuns.length === 0 && (
                 <tr>
-                  <td colSpan={canViewActions ? 12 : 11} className="border border-[#E2E8F0] px-2 py-6 text-center text-sm text-[#94A3B8]">
+                  <td colSpan={canViewActions ? 13 : 12} className="border border-[#E2E8F0] px-2 py-6 text-center text-sm text-[#94A3B8]">
                     Sin recorridas registradas todavía
                   </td>
                 </tr>
