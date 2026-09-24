@@ -14,7 +14,8 @@ import {
   type VariacionColor,
 } from "@/app/data/catalog";
 import { supabaseDb } from "@/lib/supabase-db";
-import { setWarehouseStockAbsolute, WAREHOUSE_KEYS } from "@/lib/warehouses";
+import { prisma } from "@/lib/prisma";
+import { getWarehouseByKey, setWarehouseStockAbsolute, WAREHOUSE_KEYS } from "@/lib/warehouses";
 
 type ProductRecord = {
   id: string;
@@ -889,9 +890,26 @@ export async function syncStockFromOdoo(): Promise<StockSyncResult> {
     throw new Error(error.message);
   }
 
-  const result: StockSyncResult = { updated: 0, unchanged: 0, unmatched: [], total: (products ?? []).length };
+  const list = (products ?? []) as { id: string; slug: string; sku: string | null; stock: number; minimumStock: number }[];
+  const result: StockSyncResult = { updated: 0, unchanged: 0, unmatched: [], total: list.length };
 
-  for (const product of (products ?? []) as { id: string; slug: string; sku: string | null; stock: number; minimumStock: number }[]) {
+  // Lectura puntual del stock actual de la bodega "Producto terminado" para
+  // todos los productos en UNA sola query. Sin esto, un producto ya sincronizado
+  // igual abría una transacción (upsert + recálculo) y la sync tardaba ~1s por
+  // producto incluso cuando no había nada que cambiar.
+  const currentByProduct = new Map<string, number>();
+  if (prisma && list.length > 0) {
+    const warehouse = await getWarehouseByKey(WAREHOUSE_KEYS.PRODUCTO_TERMINADO).catch(() => null);
+    if (warehouse) {
+      const rows = await prisma.productWarehouseStock.findMany({
+        where: { warehouseId: warehouse.id, productId: { in: list.map((p) => p.id) } },
+        select: { productId: true, quantity: true },
+      });
+      for (const row of rows) currentByProduct.set(row.productId, row.quantity);
+    }
+  }
+
+  for (const product of list) {
     if (!product.sku) continue;
 
     const odooQty = stockBySku.get(normalizeCode(product.sku));
@@ -901,6 +919,13 @@ export async function syncStockFromOdoo(): Promise<StockSyncResult> {
     }
 
     const nextStock = Math.max(Math.trunc(odooQty), 0);
+
+    // Si la bodega "Producto terminado" ya está en el valor de Odoo, no hay
+    // nada que escribir: evitamos la transacción por completo.
+    if ((currentByProduct.get(product.id) ?? 0) === nextStock) {
+      result.unchanged++;
+      continue;
+    }
 
     // No comparamos contra `product.stock` (suma de las 3 bodegas) — solo
     // nos interesa si cambió la bodega "Producto terminado" puntual, y
