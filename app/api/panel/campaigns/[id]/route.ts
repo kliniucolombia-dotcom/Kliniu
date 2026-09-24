@@ -1,6 +1,8 @@
 import { requirePermission, requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
+import { revalidateTag } from "next/cache";
+import { DASHBOARD_STATS_TAG } from "@/lib/cache-tags";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_CAMPANAS", "edit");
@@ -37,6 +39,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   broadcastPanelUpdate("campaigns").catch(() => {});
 
+  revalidateTag(DASHBOARD_STATS_TAG, "max");
+
   return Response.json(updated);
 }
 
@@ -47,5 +51,6 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   await prisma.campaign.delete({ where: { id } });
   broadcastPanelUpdate("campaigns").catch(() => {});
+  revalidateTag(DASHBOARD_STATS_TAG, "max");
   return Response.json({ ok: true });
 }

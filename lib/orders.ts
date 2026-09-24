@@ -1,7 +1,9 @@
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { pushOrderToOdoo } from "@/lib/odoo";
 import { getShippingForLocation, getShippingOverride } from "@/lib/shipping-rates";
 import { earnPointsForOrder } from "@/lib/points";
+import { DASHBOARD_STATS_TAG } from "@/lib/cache-tags";
 import type { Prisma } from "@/generated/prisma/client";
 
 // Ventana de pago del Web Checkout de Wompi: pasado este tiempo sin pago
@@ -678,6 +680,8 @@ export async function markOrderPaidByWompiReference(
   await prisma.cartItem.deleteMany({ where: { userId: order.userId } });
 
   await earnPointsForOrder(order.userId, order.subtotal, order.id).catch(() => {});
+
+  revalidateTag(DASHBOARD_STATS_TAG, "max");
 
   return await syncOrderToOdoo(order.id);
 }

@@ -1,4 +1,6 @@
+import { unstable_cache, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { DASHBOARD_STATS_TAG } from "@/lib/cache-tags";
 import { getTrmForDate } from "@/lib/trm";
 import { buildSaleCalculatorSummary, sanitizeSaleCalcNumber, sanitizePct } from "@/lib/sale-calculator";
 import { buildQuotationSummary, calcLineTotal, type QuotationTaxConfigInput } from "@/lib/quotation-calculator";
@@ -46,7 +48,7 @@ export const STATUS_META: Record<CampaignStatus, { label: string; color: string;
 
 // ─── DB helpers ─────────────────────────────────────────────────
 
-export async function getDashboardStats() {
+async function computeDashboardStats() {
   if (!prisma) return null;
 
   const now = new Date();
@@ -247,6 +249,14 @@ export async function getDashboardStats() {
     })),
   };
 }
+
+// El dashboard recorre órdenes, campañas y matriz diaria del mes: cacheamos el
+// resultado 60s para no recalcularlo en cada visita ni en cada router.refresh().
+export const getDashboardStats = unstable_cache(
+  computeDashboardStats,
+  ["dashboard-stats"],
+  { revalidate: 60, tags: [DASHBOARD_STATS_TAG] },
+);
 
 export async function getSellerStats() {
   if (!prisma) return [];
@@ -467,6 +477,7 @@ export async function createCampaignDailyEntry(
     },
   });
 
+  revalidateTag(DASHBOARD_STATS_TAG, "max");
   return { ...row, trm: await getTrmForDate(fecha) };
 }
 
@@ -496,6 +507,7 @@ export async function updateCampaignDailyEntry(
         ventaDelDia: data.ventaDelDia !== undefined ? sanitizeNumber(data.ventaDelDia) : existing.ventaDelDia,
       },
     });
+    revalidateTag(DASHBOARD_STATS_TAG, "max");
     return { ...row, trm: await getTrmForDate(fecha) };
   } catch (err) {
     if (err instanceof Error && err.message.includes("Unique constraint")) throw new Error("FECHA_DUPLICADA");
@@ -506,6 +518,7 @@ export async function updateCampaignDailyEntry(
 export async function deleteCampaignDailyEntry(id: string) {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
   await prisma.campaignDaily.delete({ where: { id } });
+  revalidateTag(DASHBOARD_STATS_TAG, "max");
 }
 
 export async function getMetrics(sellerId?: string) {
@@ -936,7 +949,9 @@ export async function sendQuotation(id: string) {
   if (!q) throw new Error("NOT_FOUND");
   if (q.status !== "DRAFT") throw new Error("INVALID_TRANSITION");
   if (q.items.length === 0) throw new Error("NO_ITEMS");
-  return prisma.quotation.update({ where: { id }, data: { status: "SENT", sentAt: new Date() } });
+  const updated = await prisma.quotation.update({ where: { id }, data: { status: "SENT", sentAt: new Date() } });
+  revalidateTag(DASHBOARD_STATS_TAG, "max");
+  return updated;
 }
 
 export async function approveQuotation(id: string) {

@@ -3,6 +3,8 @@ import { getCampaignsForPanel } from "@/lib/panel";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { broadcastPanelUpdate } from "@/lib/realtime";
+import { revalidateTag } from "next/cache";
+import { DASHBOARD_STATS_TAG } from "@/lib/cache-tags";
 
 export async function GET() {
   const access = await requirePermission("MODULE_CAMPANAS", "view");
@@ -61,6 +63,8 @@ export async function POST(request: Request) {
   }).catch(() => {});
 
   broadcastPanelUpdate("campaigns").catch(() => {});
+
+  revalidateTag(DASHBOARD_STATS_TAG, "max");
 
   return Response.json(campaign);
 }
