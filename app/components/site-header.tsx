@@ -92,6 +92,10 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("kliniu:more-menu-toggle", { detail: { isOpen: masAbierto } }));
+  }, [masAbierto]);
+
   const irACategoria = (categoria?: string) => {
     setMenuAbierto(false);
     const url = categoria

@@ -84,6 +84,7 @@ export default function SupportChat() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showHint, setShowHint] = useState(true);
   const [isVisualSearchOpen, setIsVisualSearchOpen] = useState(false);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([initialMessage]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -280,7 +281,26 @@ export default function SupportChat() {
     };
   }, []);
 
-  if (isVisualSearchOpen) {
+  useEffect(() => {
+    const handleMoreMenuToggle = (event: Event) => {
+      const customEvent = event as CustomEvent<{ isOpen: boolean }>;
+      const nextState = Boolean(customEvent.detail?.isOpen);
+      setIsMoreMenuOpen(nextState);
+
+      if (nextState) {
+        setIsMenuOpen(false);
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener("kliniu:more-menu-toggle", handleMoreMenuToggle);
+
+    return () => {
+      window.removeEventListener("kliniu:more-menu-toggle", handleMoreMenuToggle);
+    };
+  }, []);
+
+  if (isVisualSearchOpen || isMoreMenuOpen) {
     return null;
   }
 
