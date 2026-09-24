@@ -1,0 +1,36 @@
+name: Crons
+
+on:
+  schedule:
+    # Cada 5 minutos (mínimo permitido por GitHub Actions).
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: kliniu-crons
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync Odoo stock
+        if: always()
+        run: |
+          curl -fsS --max-time 120 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://kliniucolombia.com/api/cron/sync-odoo-stock"
+
+      - name: Expire stale orders
+        if: always()
+        run: |
+          curl -fsS --max-time 60 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://kliniucolombia.com/api/cron/expire-orders"
+
+      - name: WATI follow-ups
+        if: always()
+        run: |
+          curl -fsS --max-time 60 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://kliniucolombia.com/api/cron/wati-followup"
