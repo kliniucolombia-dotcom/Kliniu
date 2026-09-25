@@ -4,10 +4,11 @@ import {
   MdCalendarToday, MdPersonOutline, MdCheckCircleOutline, MdPublic,
   MdSearch, MdAdd, MdTrendingUp, MdPeople, MdPayments, MdAttachMoney,
   MdMoreVert, MdFileDownload, MdViewColumn, MdClose, MdInfoOutline,
-  MdChevronLeft, MdChevronRight, MdFilterList,
+  MdChevronLeft, MdChevronRight, MdFilterList, MdDeleteOutline,
 } from "react-icons/md";
 import { calcROAS, calcKpiMensajes } from "@/lib/panel-utils";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import { useConfirm } from "@/app/components/confirm-dialog";
 import { SimpleSelect } from "../_components/simple-select";
 import { SkeletonTable } from "../../components/skeleton";
 import { Sparkline } from "../_components/mini-charts";
@@ -15,7 +16,7 @@ import DailyMatrix, { kpiMensajesColor } from "./DailyMatrix";
 
 type Campaign = {
   id: string; name: string; platform: string; investment: number; sales: number;
-  leads: number; canEdit?: boolean; targetMultiple: number; status: string; startDate: string;
+  leads: number; canEdit?: boolean; canDelete?: boolean; targetMultiple: number; status: string; startDate: string;
   endDate?: string; notes?: string;
   trm: number; // COP por USD de la fecha de inicio
   daily: { sales: number; investmentUsd: number; mensajes: number; transacciones: number; days: number; firstDate: string | null; lastDate: string | null };
@@ -228,6 +229,7 @@ export default function CampanasPanel() {
   const [formTrm, setFormTrm] = useState<number | null>(null);
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [showRule, setShowRule] = useState(true);
+  const confirm = useConfirm();
 
   // Filtros
   const [dateFilter, setDateFilter] = useState("all");
@@ -387,6 +389,19 @@ export default function CampanasPanel() {
     setSaving(false);
     if (r.ok) { setAlert({ type: "ok", msg: editing ? "Campaña actualizada" : "Campaña creada" }); markLocalWrite(); load(); setTimeout(() => setShowForm(false), 1000); }
     else { const d = await r.json(); setAlert({ type: "err", msg: d.error ?? "Error" }); }
+  };
+
+  const removeCampaign = async (c: Campaign) => {
+    const ok = await confirm({
+      title: "Eliminar campaña",
+      message: `¿Eliminar la campaña "${c.name}"? Se borrará también su matriz diaria. Esta acción no se puede deshacer.`,
+      confirmLabel: "Eliminar",
+      danger: true,
+    });
+    if (!ok) return;
+    const r = await fetch(`/api/panel/campaigns/${c.id}`, { method: "DELETE" });
+    if (r.ok) { markLocalWrite(); load(); }
+    else { const d = await r.json().catch(() => ({})); setAlert({ type: "err", msg: d.error ?? "No se pudo eliminar" }); }
   };
 
   const exportCSV = () => {
@@ -800,6 +815,11 @@ export default function CampanasPanel() {
                                 <div className="py-1">
                                   {c.canEdit !== false && <button onClick={() => { close(); openEdit(c); }} className="block w-full px-3 py-2 text-left text-sm text-[#1A1A1A] hover:bg-[#F8FAFC]">Editar campaña</button>}
                                   <button onClick={() => { close(); setDailyCampaign(c); }} className="block w-full px-3 py-2 text-left text-sm text-[#1A1A1A] hover:bg-[#F8FAFC]">Matriz diaria</button>
+                                  {c.canDelete !== false && (
+                                    <button onClick={() => { close(); removeCampaign(c); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[#DC2626] hover:bg-red-50">
+                                      <MdDeleteOutline size={16} /> Eliminar campaña
+                                    </button>
+                                  )}
                                 </div>
                               )}
                             </Popover>

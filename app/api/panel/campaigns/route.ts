@@ -13,8 +13,11 @@ export async function GET() {
   try {
     const campaigns = await getCampaignsForPanel();
     const { session } = access;
-    // Un SELLER solo puede editar sus campañas (el PATCH lo exige); la UI usa canEdit
-    return Response.json(campaigns.map((c) => ({ ...c, canEdit: !sellerBlockedFromCampaign(session, c.seller.id) })));
+    // Un SELLER solo puede editar/eliminar sus campañas (el PATCH/DELETE lo exigen); la UI usa canEdit/canDelete
+    return Response.json(campaigns.map((c) => {
+      const canManage = !sellerBlockedFromCampaign(session, c.seller.id);
+      return { ...c, canEdit: canManage, canDelete: canManage };
+    }));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error al cargar campañas";
     return Response.json({ error: message }, { status: 500 });

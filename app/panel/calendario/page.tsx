@@ -81,7 +81,8 @@ function aggregate(cells: Cell[]): DayStatus {
   return "YELLOW";
 }
 
-const pctColor = (p: number | null) => (p === null ? "#CBD5E1" : p >= 90 ? "#16A34A" : p >= 70 ? "#EAB308" : "#EF4444");
+// Escala de cumplimiento: verde alto, ámbar medio, rojo bajo.
+const pctColor = (p: number | null) => (p === null ? "#CBD5E1" : p >= 80 ? "#16A34A" : p >= 50 ? "#F59E0B" : "#EF4444");
 
 function Delta({ cur, prev, unit = "", inverse, label }: { cur: number | null; prev: number | null; unit?: string; inverse?: boolean; label: string }) {
   if (cur === null || prev === null) return <span className="text-[11px] text-[#94A3B8]">{label}: sin datos</span>;

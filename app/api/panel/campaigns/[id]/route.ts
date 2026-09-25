@@ -1,5 +1,5 @@
 import { sellerBlockedFromCampaign } from "@/lib/campaign-access";
-import { requirePermission, requireAdmin } from "@/lib/permissions";
+import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { revalidateTag } from "next/cache";
@@ -46,10 +46,18 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const access = await requireAdmin();
-  if (!access.ok) return Response.json({ error: "Solo ADMIN puede eliminar" }, { status: access.status });
+  const access = await requirePermission("MODULE_CAMPANAS", "delete");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
+  const { session } = access;
   if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
   const { id } = await params;
+
+  const existing = await prisma.campaign.findUnique({ where: { id } });
+  if (!existing) return Response.json({ error: "Campaña no encontrada" }, { status: 404 });
+  if (sellerBlockedFromCampaign(session, existing.sellerId)) {
+    return Response.json({ error: "Sin permiso" }, { status: 403 });
+  }
+
   await prisma.campaign.delete({ where: { id } });
   broadcastPanelUpdate("campaigns").catch(() => {});
   revalidateTag(DASHBOARD_STATS_TAG, "max");
