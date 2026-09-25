@@ -4,6 +4,7 @@ import { MdAttachFile, MdDownload, MdDescription, MdGroup, MdCalendarMonth, MdSh
 import { SimpleSelect } from "../../_components/simple-select";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import { SkeletonPanelPage } from "../../../components/skeleton";
 
 type EmployeeOption = { id: string; userId: string; employeeCode: string; user: { fullName: string } };
 type DocumentRow = {
@@ -152,7 +153,7 @@ export default function DocumentosRRHHPage() {
     return { total: documents.length, employeesWithDocs, thisMonth: thisMonth.length, gb };
   }, [documents]);
 
-  if (loading) return <div className="p-6">Cargando…</div>;
+  if (loading) return <SkeletonPanelPage />;
 
   return (
     <div className="min-h-full bg-[#f5f5f5] p-6 space-y-5">

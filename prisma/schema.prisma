@@ -326,6 +326,52 @@ model CampaignDaily {
   @@index([campaignId])
 }
 
+// Calendario de actividad comercial: cierre diario, log de reportes, config y festivos.
+model SellerDailyClose {
+  id         String   @id @default(cuid())
+  sellerId   String
+  date       DateTime
+  noSales    Boolean  @default(false)
+  totalSold  Float    @default(0)
+  closedAt   DateTime @default(now())
+  closedById String
+
+  @@unique([sellerId, date])
+}
+
+model SellerReportEvent {
+  id         String   @id @default(cuid())
+  sellerId   String
+  date       DateTime
+  campaignId String?
+  kind       String
+  value      Float    @default(0)
+  actorId    String
+  createdAt  DateTime @default(now())
+
+  @@index([sellerId, date])
+}
+
+model CalendarConfig {
+  id                String   @id @default("default")
+  deadlineMinutes   Int      @default(1200)
+  trackingStartDate DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model SellerCalendarSetting {
+  id       String  @id @default(cuid())
+  userId   String  @unique
+  workDays Int[]   @default([1, 2, 3, 4, 5, 6])
+  active   Boolean @default(true)
+}
+
+model CalendarHoliday {
+  id    String   @id @default(cuid())
+  date  DateTime @unique
+  label String
+}
+
 model SellerCostConfig {
   id              String   @id @default(cuid())
   userId          String   @unique

@@ -23,6 +23,7 @@ import {
 import { ROLE_LABELS } from "@/lib/roles";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { SimpleSelect } from "../../_components/simple-select";
+import { SkeletonTable } from "../../../components/skeleton";
 
 type MemberAccount = {
   id: string;
@@ -506,9 +507,7 @@ export default function DepartamentosProduccionPage() {
       )}
 
       {loading ? (
-        <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#27B1B8] border-t-transparent" />
-        </div>
+        <SkeletonTable />
       ) : (
         <>
           <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">

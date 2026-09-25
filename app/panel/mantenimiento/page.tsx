@@ -12,6 +12,7 @@ import {
   type Permission, type ModalProps, post, patchReq,
   Kpi, Section, Empty, Table, Modal, Footer, Stat, Badge, Tabs, DateRange,
 } from "../_components/ops-ui";
+import { SkeletonTable } from "../../components/skeleton";
 
 type EquipmentType = "MACHINE" | "MOLD" | "TOOL" | "INFRA";
 type EquipmentStatus = "OPERATIVE" | "DOWN" | "MAINTENANCE";
@@ -179,7 +180,7 @@ export default function MantenimientoPanel() {
       <Tabs tabs={TABS} value={tab} onChange={setTab} />
 
       {loading || !data ? (
-        <div className="flex h-40 items-center justify-center text-sm text-[#94A3B8]">Cargando…</div>
+        <SkeletonTable />
       ) : (
         <>
           {tab === "ordenes" && (

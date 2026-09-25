@@ -8,6 +8,7 @@ import {
   MdHandshake,
 } from "react-icons/md";
 import { COP, fmtDate, todayBogota, Kpi, Section, Empty, Stat, Table, DateRange } from "../_components/ops-ui";
+import { SkeletonTable } from "../../components/skeleton";
 
 type Visible = { logistica: boolean; mantenimiento: boolean; produccion: boolean; bodegas: boolean; ensamble: boolean };
 type AssemblyKpis = { runs: number; assembled: number; goodUnits: number; defective: number; qualityPercentage: number; unitsPerLaborHour: number };
@@ -111,7 +112,7 @@ export default function OperacionesDashboard() {
       {error && <div className="mb-4 rounded-xl bg-[#FEE2E2] px-3 py-2 text-xs font-semibold text-[#DC2626]">{error}</div>}
 
       {loading || !data ? (
-        <div className="flex h-40 items-center justify-center text-sm text-[#94A3B8]">Cargando…</div>
+        <SkeletonTable />
       ) : (
         <div className="space-y-8">
           {data.logistica && (

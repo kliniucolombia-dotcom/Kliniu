@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { SimpleSelect } from "../_components/simple-select";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import { SkeletonTable } from "../../components/skeleton";
 
 type Warehouse = { id: string; key: string; name: string; order: number };
 type Product = {
@@ -106,7 +107,7 @@ export default function BodegasPanel() {
       </div>
 
       {loading ? (
-        <div className="flex h-40 items-center justify-center text-sm text-[#94A3B8]">Cargando…</div>
+        <SkeletonTable />
       ) : (
         <>
           {/* Módulos de bodega */}

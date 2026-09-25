@@ -6,6 +6,7 @@ import {
   MdSettings, MdGroups, MdChevronRight, MdLocalShipping, MdPrecisionManufacturing,
   MdBuild, MdSupervisorAccount, MdManageAccounts,
 } from "react-icons/md";
+import { SkeletonPanelPage } from "../../../components/skeleton";
 
 type RoleRow = {
   role: string;
@@ -49,7 +50,7 @@ export default function RolesPage() {
     })();
   }, []);
 
-  if (loading) return <div className="p-6">Cargando…</div>;
+  if (loading) return <SkeletonPanelPage />;
 
   return (
     <div className="p-6 space-y-6">

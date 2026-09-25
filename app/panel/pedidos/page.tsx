@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { SimpleSelect } from "../_components/simple-select";
+import { SkeletonHeader, SkeletonTable } from "../../components/skeleton";
 import Image from "next/image";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
@@ -379,8 +380,9 @@ export default function PedidosPage() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center p-12">
-        <p className="text-sm text-[#94A3B8]">Cargando pedidos…</p>
+      <div className="min-w-0 p-4 sm:p-6 lg:p-8" role="status" aria-label="Cargando">
+        <SkeletonHeader />
+        <SkeletonTable rows={8} cols={6} />
       </div>
     );
   }

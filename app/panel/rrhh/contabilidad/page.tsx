@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MdHealthAndSafety, MdShield, MdSavings, MdFileDownload, MdInfoOutline } from "react-icons/md";
+import { SkeletonPanelPage } from "../../../components/skeleton";
 
 type PeriodRow = { period: string; eps: number; arl: number; pension: number; deducciones: number };
 
@@ -57,7 +58,7 @@ export default function ContabilidadPanelPage() {
     URL.revokeObjectURL(url);
   };
 
-  if (loading) return <div className="p-6 text-sm text-[#64748B]">Cargando…</div>;
+  if (loading) return <SkeletonPanelPage />;
 
   return (
     <div className="space-y-6 p-6">

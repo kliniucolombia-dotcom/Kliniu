@@ -6,6 +6,7 @@ import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { getComboItemNormalPrice, getProductPacks, getProductUnitPrice } from "@/lib/volume-discounts";
 import { MdCheckCircle, MdRadioButtonUnchecked } from "react-icons/md";
 import { useConfirm } from "@/app/components/confirm-dialog";
+import { SkeletonTable } from "../../components/skeleton";
 
 type PackPrice = { label: string; qty: number; totalPrice: number };
 
@@ -398,7 +399,7 @@ export default function CombosPanel() {
       )}
 
       {loading ? (
-        <div className="flex h-40 items-center justify-center text-sm text-[#94A3B8]">Cargando combos…</div>
+        <SkeletonTable />
       ) : (
         <>
           {/* KPI cards */}

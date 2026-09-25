@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MdAdd, MdArrowBack, MdClose, MdCheck, MdDeleteOutline } from "react-icons/md";
 import { SimpleSelect } from "@/app/panel/_components/simple-select";
+import { SkeletonPanelPage } from "../../../../components/skeleton";
 
 type StaffUser = { id: string; fullName: string };
 type Department = { id: string; name: string; code: string };
@@ -41,7 +42,7 @@ export default function CategoriasPage() {
     void (async () => { await load(); })();
   }, []);
 
-  if (loading) return <div className="p-6 text-sm text-[#64748B]">Cargando…</div>;
+  if (loading) return <SkeletonPanelPage />;
 
   return (
     <div className="space-y-6 p-6">

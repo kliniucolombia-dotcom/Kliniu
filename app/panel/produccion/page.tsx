@@ -38,6 +38,7 @@ import { fmtDateOnly, fmtTimeOnly } from "@/lib/date";
 import { efficiencyTone } from "@/lib/production-tone";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { SimpleSelect } from "../_components/simple-select";
+import { SkeletonPanelPage } from "../../components/skeleton";
 
 const MAX_NUM = 999_999_999;
 const MANUAL_PRODUCT = "__manual__";
@@ -564,9 +565,7 @@ export default function ProduccionPage() {
 
   if (loading || role === null) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#27B1B8] border-t-transparent" />
-      </div>
+      <SkeletonPanelPage />
     );
   }
 

@@ -4,6 +4,7 @@ import { SimpleSelect } from "../../_components/simple-select";
 import { fmtDateOnly } from "@/lib/date";
 import { MdSearch, MdBusiness, MdAttachMoney, MdCalendarToday, MdClose, MdFileDownload, MdRefresh, MdMoreVert, MdGroup } from "react-icons/md";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import { SkeletonPanelPage } from "../../../components/skeleton";
 
 type EmployeeRow = {
   id: string;
@@ -276,7 +277,7 @@ export default function EmpleadosPage() {
   const filterCount = [search, statusFilter !== "all", deptFilter !== "all"].filter(Boolean).length;
   const clearFilters = () => { setSearch(""); setStatusFilter("all"); setDeptFilter("all"); };
 
-  if (loading) return <div className="p-6">Cargando…</div>;
+  if (loading) return <SkeletonPanelPage />;
 
   return (
     <div className="min-h-full bg-[#f5f5f5] p-6 space-y-5">

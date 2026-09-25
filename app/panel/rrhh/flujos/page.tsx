@@ -7,6 +7,7 @@ import {
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { fmtDateOnly } from "@/lib/date";
 import { SimpleSelect } from "@/app/panel/_components/simple-select";
+import { SkeletonPanelPage } from "../../../components/skeleton";
 
 type EmployeeRef = { employee: { user: { fullName: string } } };
 
@@ -142,7 +143,7 @@ export default function FlujosPanelPage() {
     setSaving(null);
   };
 
-  if (loading) return <div className="p-6 text-sm text-[#64748B]">Cargando…</div>;
+  if (loading) return <SkeletonPanelPage />;
 
   return (
     <div className="space-y-6 p-6">

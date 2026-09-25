@@ -8,6 +8,7 @@ import {
 } from "react-icons/md";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import { SkeletonPanelPage } from "../../../components/skeleton";
 
 type Benefit = {
   id: string;
@@ -239,7 +240,7 @@ export default function BeneficiosRRHHPage() {
     return { activeCount: active.length, participation, birthdayActive: birthday?.isActive ?? false, birthday, expiringCount };
   }, [benefits, employeeCount]);
 
-  if (loading) return <div className="p-6">Cargando…</div>;
+  if (loading) return <SkeletonPanelPage />;
 
   return (
     <div className="min-h-full bg-[#f5f5f5] p-6 space-y-5">

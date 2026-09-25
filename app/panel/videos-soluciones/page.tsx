@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MdEdit, MdDelete, MdArrowUpward, MdArrowDownward, MdPlayCircle, MdVideocam } from "react-icons/md";
+import { SkeletonTable } from "../../components/skeleton";
 
 type SolutionVideo = {
   id: string;
@@ -182,9 +183,7 @@ export default function VideosSolucionesPage() {
       )}
 
       {loading ? (
-        <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#27B1B8] border-t-transparent" />
-        </div>
+        <SkeletonTable />
       ) : sorted.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[#E2E8F0] bg-white p-10 text-center text-sm text-[#94A3B8]">
           <MdVideocam size={28} className="mx-auto mb-2 text-[#CBD5E1]" />

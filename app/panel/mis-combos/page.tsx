@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { SkeletonTable } from "../../components/skeleton";
 
 type Combo = {
   id: string;
@@ -78,7 +79,7 @@ export default function MisCombosPage() {
       </div>
 
       {loading ? (
-        <div className="flex h-40 items-center justify-center text-sm text-[#94A3B8]">Cargando combos…</div>
+        <SkeletonTable />
       ) : combos.length === 0 ? (
         <div className="flex items-center justify-center py-16">
           <div className="flex max-w-sm flex-col items-center gap-3.5 rounded-[1.75rem] border border-black/8 bg-white px-12 py-14 text-center shadow-[0_10px_20px_rgba(15,23,42,0.04)]">

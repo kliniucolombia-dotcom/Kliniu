@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { SkeletonTable } from "../../../components/skeleton";
 
 type Vendedor = {
   id: string;
@@ -30,7 +31,7 @@ export default function VendedoresPage() {
       </p>
 
       {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
-      {!vendedores && !error && <p className="mt-4 text-sm text-[#64748B]">Cargando…</p>}
+      {!vendedores && !error && <SkeletonTable />}
 
       {vendedores && vendedores.length === 0 && (
         <p className="mt-4 text-sm text-[#64748B]">Aún no hay vendedores registrados.</p>

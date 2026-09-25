@@ -1,4 +1,4 @@
-import { getSessionFromCookies } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 import {
   getChurnedCustomers,
   getCustomerPurchaseHistory,
@@ -257,9 +257,9 @@ Formatea las listas de clientes o productos de forma legible.`;
 
 export async function POST(request: Request) {
   try {
-    const session = await getSessionFromCookies();
-    if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
-      return Response.json({ error: "No autorizado." }, { status: 401 });
+    const access = await requirePermission("MODULE_ODOO", "view");
+    if (!access.ok) {
+      return Response.json({ error: "No autorizado." }, { status: access.status });
     }
 
     const body = (await request.json()) as { message?: string; history?: { role: string; content: string }[] };

@@ -1,3 +1,4 @@
+import { sellerBlockedFromCampaign } from "@/lib/campaign-access";
 import { requirePermission } from "@/lib/permissions";
 import { getCampaignsForPanel } from "@/lib/panel";
 import { prisma } from "@/lib/prisma";
@@ -11,7 +12,9 @@ export async function GET() {
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   try {
     const campaigns = await getCampaignsForPanel();
-    return Response.json(campaigns);
+    const { session } = access;
+    // Un SELLER solo puede editar sus campañas (el PATCH lo exige); la UI usa canEdit
+    return Response.json(campaigns.map((c) => ({ ...c, canEdit: !sellerBlockedFromCampaign(session, c.seller.id) })));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error al cargar campañas";
     return Response.json({ error: message }, { status: 500 });

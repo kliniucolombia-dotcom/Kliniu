@@ -4,6 +4,7 @@ import { MdAttachFile, MdDownload, MdPictureAsPdf, MdTableChart, MdAttachMoney, 
 import { SimpleSelect } from "../../_components/simple-select";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import { SkeletonPanelPage } from "../../../components/skeleton";
 
 type EmployeeRow = {
   id: string;
@@ -231,7 +232,7 @@ export default function NominaPage() {
 
   const employeePayslips = payslipsOpenFor ? payslips.filter((p) => p.employeeId === payslipsOpenFor.id) : [];
 
-  if (loading) return <div className="p-6">Cargando…</div>;
+  if (loading) return <SkeletonPanelPage />;
 
   return (
     <div className="min-h-full bg-[#f5f5f5] p-6 space-y-5">

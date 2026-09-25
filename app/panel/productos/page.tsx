@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { SimpleSelect } from "../_components/simple-select";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { useConfirm } from "@/app/components/confirm-dialog";
+import { SkeletonTable } from "../../components/skeleton";
 
 type PackPrice = { id?: string; label: string; qty: number; totalPrice: number };
 
@@ -261,7 +262,7 @@ export default function ProductosPanel() {
       </div>
 
       {loading ? (
-        <div className="flex h-40 items-center justify-center text-sm text-[#94A3B8]">Cargando productos…</div>
+        <SkeletonTable />
       ) : (
         <>
           {/* Search + filters */}

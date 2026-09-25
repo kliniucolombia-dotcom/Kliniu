@@ -9,7 +9,7 @@ import {
   MdApartment, MdAccessTime, MdBeachAccess, MdRemoveCircleOutline, MdSwapHoriz, MdHandshake,
   MdCreditCard, MdHelpOutline, MdGroup, MdWarehouse, MdArticle, MdSmartToy, MdShoppingCart,
   MdInventory, MdExtension, MdConfirmationNumber, MdChat, MdVideocam, MdFolder,
-  MdLocalShipping, MdBuild,
+  MdLocalShipping, MdBuild, MdCalendarMonth,
 } from "react-icons/md";
 import { ConfirmProvider, useConfirm } from "@/app/components/confirm-dialog";
 import AccountEntryLoading from "@/app/components/account-entry-loading";
@@ -50,6 +50,7 @@ const NAV: NavItem[] = [
       { href: "/panel/whatsapp", label: "WhatsApp", module: "MODULE_WHATSAPP", icon: <MdChat size={17} /> },
       { href: "/panel/cotizaciones", label: "Cotizaciones", module: "MODULE_COTIZACIONES", icon: <MdDescription size={17} /> },
       { href: "/panel/campanas", label: "Campañas", module: "MODULE_CAMPANAS", group: "Marketing", groupIcon: <MdCampaign size={14} />, icon: <MdCampaign size={17} /> },
+      { href: "/panel/calendario", label: "Calendario", module: "MODULE_CAMPANAS", icon: <MdCalendarMonth size={17} /> },
       { href: "/panel/metricas", label: "Métricas", module: "MODULE_METRICAS", icon: <MdBarChart size={17} /> },
     ],
   },

@@ -5,6 +5,7 @@ import {
 } from "react-icons/md";
 import { AreaChart, DonutChart } from "@/app/panel/_components/mini-charts";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import { SkeletonPanelPage } from "../../../components/skeleton";
 
 type Bucket = { label: string; total: number };
 
@@ -107,7 +108,7 @@ export default function ReportesPanelPage() {
     URL.revokeObjectURL(url);
   };
 
-  if (loading) return <div className="p-6 text-sm text-[#64748B]">Cargando…</div>;
+  if (loading) return <SkeletonPanelPage />;
 
   return (
     <div className="space-y-6 p-6">

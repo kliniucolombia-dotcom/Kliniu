@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { MdVerified, MdCheckCircle, MdCancel, MdHourglassEmpty } from "react-icons/md";
 import { fmtDateOnly } from "@/lib/date";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import { SkeletonTable } from "../../../components/skeleton";
 
 type CertificateRequestRow = {
   id: string;
@@ -89,7 +90,7 @@ export default function CertificadosPage() {
       {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
 
       {loading ? (
-        <p className="text-sm text-[#64748B]">Cargando...</p>
+        <SkeletonTable rows={4} cols={4} />
       ) : requests.length === 0 ? (
         <p className="text-sm text-[#64748B]">Aún no hay solicitudes de certificado.</p>
       ) : (

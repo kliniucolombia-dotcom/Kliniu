@@ -5,6 +5,7 @@ import {
   MdPerson, MdWork, MdSearch, MdFileDownload, MdMoreVert, MdClose,
 } from "react-icons/md";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import { SkeletonPanelPage } from "../../../components/skeleton";
 
 type DepartmentRow = {
   id: string;
@@ -116,7 +117,7 @@ export default function DepartamentosPage() {
     return { total: departments.length, active: active.length, totalColab, avg };
   }, [departments, employees]);
 
-  if (loading) return <div className="p-6">Cargando…</div>;
+  if (loading) return <SkeletonPanelPage />;
 
   return (
     <div className="min-h-full bg-[#f5f5f5] p-6 space-y-5">

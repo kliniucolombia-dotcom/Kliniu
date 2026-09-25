@@ -6,6 +6,7 @@ import {
 } from "react-icons/md";
 import { fmtDateOnly } from "@/lib/date";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import { SkeletonPanelPage } from "../../../components/skeleton";
 
 type Payslip = {
   id: string;
@@ -99,7 +100,7 @@ export default function TesoreriaPanelPage() {
     setSavingId(null);
   };
 
-  if (loading) return <div className="p-6 text-sm text-[#64748B]">Cargando…</div>;
+  if (loading) return <SkeletonPanelPage />;
 
   return (
     <div className="space-y-6 p-6">

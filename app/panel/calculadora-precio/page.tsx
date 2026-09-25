@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { SimpleSelect } from "../_components/simple-select";
 import { useCurrencyDisplay } from "@/lib/useCurrencyDisplay";
 import { LATAM_CURRENCIES } from "@/lib/currencies";
+import { SkeletonTable } from "../../components/skeleton";
 
 type CalculatorListItem = {
   id: string;
@@ -90,9 +91,7 @@ export default function CalculadoraPrecioListPage() {
       )}
 
       {loading ? (
-        <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#27B1B8] border-t-transparent" />
-        </div>
+        <SkeletonTable />
       ) : calculators.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[#E2E8F0] bg-white p-10 text-center text-sm text-[#94A3B8]">
           Sin calculadoras todavía. Crea la primera para armar un combo.

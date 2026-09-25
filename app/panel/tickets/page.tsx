@@ -14,6 +14,7 @@ import { useConfirm } from "@/app/components/confirm-dialog";
 import { TICKET_SLA_LABELS, responsiblesForCategory, isTicketOverdue, TICKET_LOCATIONS } from "@/lib/tickets";
 import type { TicketFieldDef } from "@/lib/tickets";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import { SkeletonTable } from "../../components/skeleton";
 
 type Ticket = {
   id: string;
@@ -446,7 +447,7 @@ export default function TicketsPanelPage() {
       )}
 
       {loading ? (
-        <div className="flex h-40 items-center justify-center text-sm text-[#94A3B8]">Cargando…</div>
+        <SkeletonTable />
       ) : (
         <>
           <div className="mb-5 rounded-2xl border border-[#E2E8F0] bg-white">

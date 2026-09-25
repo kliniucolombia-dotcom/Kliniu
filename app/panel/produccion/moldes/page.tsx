@@ -9,6 +9,7 @@ import {
   type Permission, type ModalProps, post, patchReq,
   Kpi, Section, Empty, Table, Modal, Footer, Badge, Tabs, DateRange,
 } from "../../_components/ops-ui";
+import { SkeletonTable } from "../../../components/skeleton";
 
 type MoldStatus = "AVAILABLE" | "IN_USE" | "MAINTENANCE";
 type Mold = { id: string; code: string; name: string; status: MoldStatus; _count: { changes: number } };
@@ -121,7 +122,7 @@ export default function MoldesPanel() {
       <Tabs tabs={TABS} value={tab} onChange={setTab} />
 
       {loading || !data ? (
-        <div className="flex h-40 items-center justify-center text-sm text-[#94A3B8]">Cargando…</div>
+        <SkeletonTable />
       ) : tab === "cambios" ? (
         <div className="space-y-8">
           <Section

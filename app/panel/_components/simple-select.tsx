@@ -14,6 +14,7 @@ export function SimpleSelect({
   openUp,
   disabled,
   portal,
+  multiple,
 }: {
   value: string;
   options: { value: string; label: ReactNode }[];
@@ -26,6 +27,8 @@ export function SimpleSelect({
   disabled?: boolean;
   /** Renderiza el menú en <body> (fixed) para que no lo corte un contenedor con overflow. */
   portal?: boolean;
+  /** Selección múltiple: `value` es una lista separada por comas; "all" (si existe) limpia. */
+  multiple?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number } | null>(null);
@@ -92,7 +95,17 @@ export function SimpleSelect({
     };
   }, [open, portal, openUp]);
 
-  const selected = options.find((o) => o.value === value);
+  const sel = multiple ? value.split(",").filter((v) => v && v !== "all") : [];
+  const isOn = (v: string) => (multiple ? (v === "all" ? sel.length === 0 : sel.includes(v)) : v === value);
+  const pick = (v: string) => {
+    if (!multiple) { onChange(v); setOpen(false); return; }
+    if (v === "all") { onChange("all"); return; }
+    const next = sel.includes(v) ? sel.filter((x) => x !== v) : [...sel, v];
+    onChange(next.length ? next.join(",") : "all");
+  };
+  const selected = multiple
+    ? options.find((o) => o.value === (sel[0] ?? "all"))
+    : options.find((o) => o.value === value);
 
   return (
     <div ref={ref} className={`relative ${className ?? ""}`}>
@@ -106,7 +119,10 @@ export function SimpleSelect({
           "flex w-full items-center justify-between rounded-xl border border-[#E2E8F0] px-3 py-2 text-left text-sm text-[#1A1A1A]"
         } disabled:opacity-50`}
       >
-        <span>{selected?.label ?? placeholder ?? ""}</span>
+        <span className="flex items-center gap-1.5">
+          {selected?.label ?? placeholder ?? ""}
+          {sel.length > 1 && <span className="rounded-full bg-[#E2E8F0] px-1.5 text-[10px] font-bold text-[#475569]">+{sel.length - 1}</span>}
+        </span>
         {!hideChevron && <span className="text-[#94A3B8]">▾</span>}
       </button>
       {open && (() => {
@@ -122,12 +138,9 @@ export function SimpleSelect({
               <button
                 key={o.value}
                 type="button"
-                onClick={() => {
-                  onChange(o.value);
-                  setOpen(false);
-                }}
+                onClick={() => pick(o.value)}
                 className={`block w-full px-3 py-2 text-left text-sm hover:bg-[#F1F5F9] ${
-                  o.value === value ? "bg-[#EFFCF7] font-bold text-[#0F9D6A]" : "text-[#1A1A1A]"
+                  isOn(o.value) ? "bg-[#EFFCF7] font-bold text-[#0F9D6A]" : "text-[#1A1A1A]"
                 }`}
               >
                 {o.label}

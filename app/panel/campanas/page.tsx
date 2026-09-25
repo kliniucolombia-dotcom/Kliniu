@@ -9,12 +9,13 @@ import {
 import { calcROAS, calcKpiMensajes } from "@/lib/panel-utils";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { SimpleSelect } from "../_components/simple-select";
+import { SkeletonTable } from "../../components/skeleton";
 import { Sparkline } from "../_components/mini-charts";
 import DailyMatrix, { kpiMensajesColor } from "./DailyMatrix";
 
 type Campaign = {
   id: string; name: string; platform: string; investment: number; sales: number;
-  leads: number; targetMultiple: number; status: string; startDate: string;
+  leads: number; canEdit?: boolean; targetMultiple: number; status: string; startDate: string;
   endDate?: string; notes?: string;
   trm: number; // COP por USD de la fecha de inicio
   daily: { sales: number; investmentUsd: number; mensajes: number; transacciones: number; days: number; firstDate: string | null; lastDate: string | null };
@@ -322,7 +323,7 @@ export default function CampanasPanel() {
 
   const matchesFilters = useCallback((c: Campaign) => {
     if (sellerFilter !== "all" && c.seller.id !== sellerFilter) return false;
-    if (statusFilter !== "all" && displayStatusOf(c, roasOf(c)) !== statusFilter) return false;
+    if (statusFilter !== "all" && !statusFilter.split(",").includes(displayStatusOf(c, roasOf(c)))) return false;
     if (platformFilter !== "all" && c.platform !== platformFilter) return false;
     const q = search.trim().toLowerCase();
     if (q && !(`${c.name} ${c.seller.fullName} ${c.platform}`.toLowerCase().includes(q))) return false;
@@ -559,7 +560,7 @@ export default function CampanasPanel() {
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
             <span className="inline-flex items-center gap-1.5 px-1 text-xs font-bold text-[#64748B]">Estado</span>
             <div className="w-full sm:w-40">
-              <SimpleSelect value={statusFilter} options={statusOpts} onChange={setStatusFilter} triggerClassName={filterTrigger} />
+              <SimpleSelect multiple value={statusFilter} options={statusOpts} onChange={setStatusFilter} triggerClassName={filterTrigger} />
             </div>
           </div>
 
@@ -655,7 +656,7 @@ export default function CampanasPanel() {
         </div>
 
         {loading ? (
-          <div className="flex h-40 items-center justify-center text-sm text-[#94A3B8]">Cargando campañas…</div>
+          <SkeletonTable rows={5} cols={6} />
         ) : filteredCampaigns.length === 0 ? (
           <div className="flex h-48 flex-col items-center justify-center gap-3">
             <p className="text-3xl">📢</p>
@@ -797,7 +798,7 @@ export default function CampanasPanel() {
                             >
                               {(close) => (
                                 <div className="py-1">
-                                  <button onClick={() => { close(); openEdit(c); }} className="block w-full px-3 py-2 text-left text-sm text-[#1A1A1A] hover:bg-[#F8FAFC]">Editar campaña</button>
+                                  {c.canEdit !== false && <button onClick={() => { close(); openEdit(c); }} className="block w-full px-3 py-2 text-left text-sm text-[#1A1A1A] hover:bg-[#F8FAFC]">Editar campaña</button>}
                                   <button onClick={() => { close(); setDailyCampaign(c); }} className="block w-full px-3 py-2 text-left text-sm text-[#1A1A1A] hover:bg-[#F8FAFC]">Matriz diaria</button>
                                 </div>
                               )}

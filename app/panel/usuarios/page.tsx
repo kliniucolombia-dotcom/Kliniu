@@ -10,6 +10,7 @@ import {
   MdChat, MdFolder, MdLocalShipping, MdBuild, MdConfirmationNumber,
 } from "react-icons/md";
 import type { IconType } from "react-icons";
+import { SkeletonPanelPage } from "../../components/skeleton";
 
 type Role = "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "BODEGA" | "DISENO" | "MARKETING" | "JEFE_VENTAS" | "TESORERIA" | "INGENIERIA" | "LOGISTICA" | "LIDER_ENSAMBLE" | "LIDER_INYECCION" | "MANTENIMIENTO" | "JEFE_OPERACIONES" | "DIRECTOR_OPERACIONES";
 type Status = "ACTIVE" | "INACTIVE" | "SUSPENDED";
@@ -628,7 +629,7 @@ export default function UsuariosPage() {
     return { allowed, denied };
   }, [perms]);
 
-  if (loading) return <div className="p-6">Cargando…</div>;
+  if (loading) return <SkeletonPanelPage />;
 
   return (
     <div className="space-y-6 p-6">

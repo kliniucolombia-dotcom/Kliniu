@@ -1,3 +1,4 @@
+import { sellerBlockedFromCampaign } from "@/lib/campaign-access";
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { createCampaignDailyEntry, getCampaignDailyEntries } from "@/lib/panel";
@@ -8,7 +9,7 @@ async function assertAccess(campaignId: string, session: { role: string; userId:
   if (!prisma) return null;
   const campaign = await prisma.campaign.findUnique({ where: { id: campaignId } });
   if (!campaign) return { error: "Campaña no encontrada", status: 404 as const };
-  if (requireOwner && session.role === "SELLER" && campaign.sellerId !== session.userId) {
+  if (requireOwner && sellerBlockedFromCampaign(session, campaign.sellerId)) {
     return { error: "Sin permiso", status: 403 as const };
   }
   return null;
@@ -48,7 +49,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!body.fecha) return Response.json({ error: "Fecha requerida" }, { status: 400 });
 
   try {
-    const created = await createCampaignDailyEntry(id, body);
+    const created = await createCampaignDailyEntry(id, body, session.userId);
     broadcastPanelUpdate("campaigns").catch(() => {});
     return Response.json(created);
   } catch (err) {

@@ -1,12 +1,11 @@
-import { getSessionFromCookies } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 import { getOdooSalesReport } from "@/lib/odoo";
 
 export async function GET(request: Request) {
   try {
-    const session = await getSessionFromCookies();
-
-    if (!session || (session.role !== "ADMIN" && session.role !== "SELLER")) {
-      return Response.json({ error: "No autorizado." }, { status: 401 });
+    const access = await requirePermission("MODULE_ODOO", "view");
+    if (!access.ok) {
+      return Response.json({ error: "No autorizado." }, { status: access.status });
     }
 
     const { searchParams } = new URL(request.url);

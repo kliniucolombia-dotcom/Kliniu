@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { categorias } from "../../data/catalog";
 import { SimpleSelect } from "../_components/simple-select";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import { SkeletonTable } from "../../components/skeleton";
 
 type PanelProduct = {
   id: string; slug: string; sku: string | null; oemReference: string | null;
@@ -394,7 +395,7 @@ export default function OutletPanel() {
       )}
 
       {loading ? (
-        <div className="flex h-40 items-center justify-center text-sm text-[#94A3B8]">Cargando…</div>
+        <SkeletonTable />
       ) : (
         <>
           {/* KPI cards */}

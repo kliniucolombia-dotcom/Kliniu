@@ -1,3 +1,4 @@
+import { sellerBlockedFromCampaign } from "@/lib/campaign-access";
 import { requirePermission, requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
@@ -15,7 +16,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const existing = await prisma.campaign.findUnique({ where: { id } });
   if (!existing) return Response.json({ error: "Campaña no encontrada" }, { status: 404 });
-  if (session.role === "SELLER" && existing.sellerId !== session.userId) {
+  if (sellerBlockedFromCampaign(session, existing.sellerId)) {
     return Response.json({ error: "Sin permiso" }, { status: 403 });
   }
 

@@ -439,6 +439,20 @@ function sanitizeNumber(value: unknown): number {
   return n;
 }
 
+// Log append-only del calendario comercial: cuándo se registró cada venta y quién lo hizo.
+async function logSalesEvent(campaignId: string, fecha: Date, value: number, actorId?: string) {
+  if (!prisma || !actorId) return;
+  try {
+    const campaign = await prisma.campaign.findUnique({ where: { id: campaignId }, select: { sellerId: true } });
+    if (!campaign) return;
+    await prisma.sellerReportEvent.create({
+      data: { sellerId: campaign.sellerId, date: fecha, campaignId, kind: "SALES", value, actorId },
+    });
+  } catch {
+    // el log no debe romper el guardado de la matriz
+  }
+}
+
 export async function getCampaignDailyEntries(campaignId: string) {
   if (!prisma) return [];
   const rows = await prisma.campaignDaily.findMany({
@@ -461,6 +475,7 @@ export async function getCampaignDailyEntries(campaignId: string) {
 export async function createCampaignDailyEntry(
   campaignId: string,
   data: { fecha: string; mensajes?: number; transacciones?: number; presupuestoPublicidad?: number; ventaDelDia?: number },
+  actorId?: string,
 ) {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
   const fecha = parseCalendarDate(data.fecha);
@@ -477,6 +492,7 @@ export async function createCampaignDailyEntry(
     },
   });
 
+  if (row.ventaDelDia > 0) await logSalesEvent(row.campaignId, fecha, row.ventaDelDia, actorId);
   revalidateTag(DASHBOARD_STATS_TAG, "max");
   return { ...row, trm: await getTrmForDate(fecha) };
 }
@@ -484,6 +500,7 @@ export async function createCampaignDailyEntry(
 export async function updateCampaignDailyEntry(
   id: string,
   data: { fecha?: string; mensajes?: number; transacciones?: number; presupuestoPublicidad?: number; ventaDelDia?: number },
+  actorId?: string,
 ) {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
   const existing = await prisma.campaignDaily.findUnique({ where: { id } });
@@ -507,6 +524,9 @@ export async function updateCampaignDailyEntry(
         ventaDelDia: data.ventaDelDia !== undefined ? sanitizeNumber(data.ventaDelDia) : existing.ventaDelDia,
       },
     });
+    if (row.ventaDelDia !== existing.ventaDelDia || row.fecha.getTime() !== existing.fecha.getTime()) {
+      await logSalesEvent(row.campaignId, row.fecha, row.ventaDelDia, actorId);
+    }
     revalidateTag(DASHBOARD_STATS_TAG, "max");
     return { ...row, trm: await getTrmForDate(fecha) };
   } catch (err) {

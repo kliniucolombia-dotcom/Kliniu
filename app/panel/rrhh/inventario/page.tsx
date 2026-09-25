@@ -8,6 +8,7 @@ import {
 import { fmtDateOnly } from "@/lib/date";
 import { SimpleSelect } from "@/app/panel/_components/simple-select";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import { SkeletonPanelPage } from "../../../components/skeleton";
 
 type Asset = {
   id: string;
@@ -223,7 +224,7 @@ export default function InventarioPanelPage() {
     URL.revokeObjectURL(url);
   };
 
-  if (loading) return <div className="p-6 text-sm text-[#64748B]">Cargando…</div>;
+  if (loading) return <SkeletonPanelPage />;
 
   const activeEmployees = employees.filter((e) => e.status === "ACTIVE");
 

@@ -7,6 +7,7 @@ import {
 import { fmtDateOnly } from "@/lib/date";
 import { SimpleSelect } from "@/app/panel/_components/simple-select";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import { SkeletonPanelPage } from "../../../components/skeleton";
 
 type Candidate = {
   id: string;
@@ -180,7 +181,7 @@ function Reclutamiento() {
     setSaving(false);
   };
 
-  if (loading) return <div className="p-6 text-sm text-[#64748B]">Cargando…</div>;
+  if (loading) return <SkeletonPanelPage />;
 
   return (
     <div className="space-y-4">
@@ -353,7 +354,7 @@ function Bitacora() {
     setSaving(false);
   };
 
-  if (loading) return <div className="p-6 text-sm text-[#64748B]">Cargando…</div>;
+  if (loading) return <SkeletonPanelPage />;
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">

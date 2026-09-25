@@ -10,6 +10,7 @@ import {
 } from "@/lib/panel-utils";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { useConfirm } from "@/app/components/confirm-dialog";
+import { SkeletonTable } from "../../components/skeleton";
 
 const fmtUSD = (n: number) => `$${(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtCOP = (n: number) => `$${Math.round(n || 0).toLocaleString("es-CO")}`;
@@ -242,7 +243,7 @@ export default function DailyMatrix({ campaignId, campaignName, onClose, dateFro
         )}
 
         {loading ? (
-          <div className="flex h-40 items-center justify-center text-sm text-[#94A3B8]">Cargando…</div>
+          <SkeletonTable />
         ) : (
           <>
             <div className="flex-1 overflow-y-auto px-6 sm:px-8">

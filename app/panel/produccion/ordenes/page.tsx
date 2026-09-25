@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { fmtDateOnly } from "@/lib/date";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { SimpleSelect } from "../../_components/simple-select";
+import { SkeletonTable } from "../../../components/skeleton";
 
 type ProductionOrderStatus = "DRAFT" | "APPROVED" | "IN_PRODUCTION" | "COMPLETED" | "CANCELLED";
 type ProductionArea = "INYECCION" | "ENSAMBLE";
@@ -97,9 +98,7 @@ export default function ProductionOrdersListPage() {
       )}
 
       {loading ? (
-        <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#27B1B8] border-t-transparent" />
-        </div>
+        <SkeletonTable />
       ) : orders.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[#E2E8F0] bg-white p-10 text-center text-sm text-[#94A3B8]">
           Sin órdenes de producción todavía. Crea la primera.

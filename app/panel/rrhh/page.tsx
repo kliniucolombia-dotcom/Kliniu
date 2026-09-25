@@ -11,6 +11,7 @@ import {
   MdWarningAmber,
   MdArrowForward,
 } from "react-icons/md";
+import { SkeletonTable } from "../../components/skeleton";
 
 type TimeOffRequestView = { type: string; status: string };
 type AttendanceView = { status: string };
@@ -137,7 +138,7 @@ export default function RrhhResumenPage() {
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
-      {!summary && !error && <div className="text-sm text-[#64748B]">Cargando…</div>}
+      {!summary && !error && <SkeletonTable />}
 
       {summary && (
         <>

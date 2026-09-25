@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { requirePermissionWithFallback } from "@/lib/permissions";
 import { getDashboardStats, getSellerStats, calcROAS, getCampaignStatus, STATUS_META } from "@/lib/panel";
 import { fmtDateOnly } from "@/lib/date";
-import { Sparkline, AreaChart, DonutChart } from "./_components/mini-charts";
-import { DashboardLiveRefresher } from "./_components/dashboard-live-refresher";
+import { Sparkline, AreaChart, DonutChart } from "../_components/mini-charts";
+import { DashboardLiveRefresher } from "../_components/dashboard-live-refresher";
 import {
   MdAccountBalanceWallet, MdShoppingCart, MdTrendingUp, MdCampaign,
   MdGpsFixed, MdWarningAmber, MdPeopleOutline, MdReceiptLong, MdRefresh,

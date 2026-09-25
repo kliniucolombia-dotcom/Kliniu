@@ -4,6 +4,7 @@ import { SimpleSelect } from "../../_components/simple-select";
 import { fmtDateOnly } from "@/lib/date";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { MdBeachAccess, MdWbSunny, MdCalendarMonth, MdSearch, MdFileDownload, MdMoreVert, MdClose } from "react-icons/md";
+import { SkeletonPanelPage } from "../../../components/skeleton";
 
 type TimeOffRequestRow = {
   id: string;
@@ -166,7 +167,7 @@ export default function VacacionesPage() {
   const pageCount = Math.max(1, Math.ceil(filtered.length / perPage));
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
-  if (loading) return <div className="p-6">Cargando…</div>;
+  if (loading) return <SkeletonPanelPage />;
 
   const now = new Date();
   const pending = requests.filter((r) => r.status === "PENDING");

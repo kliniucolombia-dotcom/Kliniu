@@ -1,3 +1,4 @@
+import { sellerBlockedFromCampaign } from "@/lib/campaign-access";
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { deleteCampaignDailyEntry, updateCampaignDailyEntry } from "@/lib/panel";
@@ -7,7 +8,7 @@ async function loadWithAccess(id: string, session: { role: string; userId: strin
   if (!prisma) return { error: "DB no disponible", status: 500 as const };
   const entry = await prisma.campaignDaily.findUnique({ where: { id }, include: { campaign: true } });
   if (!entry) return { error: "Registro no encontrado", status: 404 as const };
-  if (session.role === "SELLER" && entry.campaign.sellerId !== session.userId) {
+  if (sellerBlockedFromCampaign(session, entry.campaign.sellerId)) {
     return { error: "Sin permiso", status: 403 as const };
   }
   return { entry };
@@ -27,7 +28,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   };
 
   try {
-    const updated = await updateCampaignDailyEntry(id, body);
+    const updated = await updateCampaignDailyEntry(id, body, session.userId);
     broadcastPanelUpdate("campaigns").catch(() => {});
     return Response.json(updated);
   } catch (err) {

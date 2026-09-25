@@ -7,6 +7,7 @@ import {
 } from "react-icons/md";
 import { SimpleSelect } from "../_components/simple-select";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import { SkeletonTable } from "../../components/skeleton";
 
 const fmt = (n: number) =>
   n.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -233,9 +234,7 @@ export default function CotizacionesListPage() {
         )}
 
         {loading ? (
-          <div className="flex h-64 items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#27B1B8] border-t-transparent" />
-          </div>
+          <SkeletonTable />
         ) : filtered.length === 0 ? (
           <div className="p-10 text-center text-sm text-[#94A3B8]">
             Sin cotizaciones que coincidan.

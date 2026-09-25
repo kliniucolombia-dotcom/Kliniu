@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { categoriasData } from "../../data/catalog";
+import { SkeletonTable } from "../../components/skeleton";
 
 type Banner = {
   id: string;
@@ -212,7 +213,7 @@ export default function BannersPanel() {
       )}
 
       {loading ? (
-        <div className="flex h-40 items-center justify-center text-sm text-[#94A3B8]">Cargando…</div>
+        <SkeletonTable />
       ) : (
         groups.map((group) => (
           <div key={group} className="mb-8">

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { SimpleSelect } from "../../_components/simple-select";
 import SyncStockButton from "../sync-stock-button";
 import { getOdooErrorMessage, OdooErrorPanel } from "../odoo-error-panel";
+import { SkeletonTable } from "../../../components/skeleton";
 
 type OdooProduct = {
   id: number;
@@ -161,7 +162,7 @@ export default function OdooProductsPage() {
       </div>
 
       {loading ? (
-        <div className="flex h-40 items-center justify-center text-sm text-[#94A3B8]">Cargando productos…</div>
+        <SkeletonTable />
       ) : error ? (
         <OdooErrorPanel message={error} />
       ) : (

@@ -16,6 +16,7 @@ import {
   type Permission, type ModalProps, post, patchReq,
   Kpi, Section, Empty, Table, Modal, Footer, Stat, Tabs, DateRange,
 } from "../_components/ops-ui";
+import { SkeletonTable } from "../../components/skeleton";
 
 type Driver = { id: string; fullName: string; phone: string | null; active: boolean };
 type VehicleType = "CAMIONETA" | "MOTO" | "FURGON" | "CAMION";
@@ -413,7 +414,7 @@ export default function LogisticaPanel() {
       <Tabs tabs={TABS} value={tab} onChange={setTab} />
 
       {loading || !data ? (
-        <div className="flex h-40 items-center justify-center text-sm text-[#94A3B8]">Cargando…</div>
+        <SkeletonTable />
       ) : (
         <>
           {tab === "rutas" && (

@@ -4,6 +4,7 @@ import { SimpleSelect } from "../../_components/simple-select";
 import { fmtDateOnly, isSameMonthDateOnly } from "@/lib/date";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { MdTimer, MdSchedule, MdCheckCircle, MdHourglassEmpty, MdCalendarMonth, MdSearch, MdFileDownload, MdMoreVert, MdClose, MdInfo } from "react-icons/md";
+import { SkeletonPanelPage } from "../../../components/skeleton";
 
 type EmployeeOption = { id: string; employeeCode: string; jobTitle: string; user: { fullName: string } };
 
@@ -193,7 +194,7 @@ export default function HorasExtrasRRHHPage() {
 
   const detail = requests.find((r) => r.id === detailId) ?? null;
 
-  if (loading) return <div className="p-6">Cargando…</div>;
+  if (loading) return <SkeletonPanelPage />;
 
   return (
     <div className="min-h-full bg-[#f5f5f5] p-6 space-y-5">
