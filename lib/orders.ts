@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { pushOrderToOdoo } from "@/lib/odoo";
 import { getShippingForLocation, getShippingOverride } from "@/lib/shipping-rates";
 import { earnPointsForOrder } from "@/lib/points";
+import { createNotification } from "@/lib/notifications";
 import { DASHBOARD_STATS_TAG } from "@/lib/cache-tags";
 import type { Prisma } from "@/generated/prisma/client";
 
@@ -391,6 +392,22 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
 
     return createdOrder;
   });
+
+  // Avisa a ventas de que hay un checkout iniciado (aún sin pago confirmado),
+  // para que puedan hacer seguimiento mientras la referencia de Wompi sigue
+  // vigente. No debe tumbar la creación del pedido si falla.
+  try {
+    await createNotification({
+      eventKey: "order.new",
+      title: "Nuevo pedido pendiente de pago",
+      detail: `${customerName} · $${(order.subtotal + order.shippingCost).toLocaleString("es-CO")} · ${totalItems} ítem(s)`,
+      href: "/panel/pedidos",
+      metadata: { orderId: order.id, channel: "ONLINE", paymentStatus: "PENDING" },
+      targetUserId: order.assignedSellerId ?? undefined,
+    });
+  } catch {
+    // Notificación no bloqueante.
+  }
 
   return order;
 }
