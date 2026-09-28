@@ -1,7 +1,9 @@
+import { SITE_URL } from "@/lib/site";
 import { prisma } from "@/lib/prisma";
 import { runWatiAssistant } from "@/lib/wati-ai";
 import { pickSellerForNewConversation } from "@/lib/wati-conversations";
-import { sendWatiMessage } from "@/lib/wati";
+import { sendWatiFileFromUrl, sendWatiMessage } from "@/lib/wati";
+import { getCatalogSnapshot } from "@/lib/chatbot";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { syncOrderToOdoo } from "@/lib/orders";
 
@@ -39,6 +41,51 @@ function isFarewellMessage(message: string) {
   return /\b(gracias|muchas gracias|perfecto|listo|chao|adios|hasta luego|eso es todo)\b/.test(
     normalized,
   );
+}
+
+type ConversationHistory = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+type ProductMedia = {
+  url: string;
+  fileName: string;
+  caption: string;
+  marker: string;
+};
+
+const PHOTO_REQUEST = /\b(foto|fotos|imagen|imagenes|fotografia|fotografias)\b/;
+
+/** Fotos del producto por el que pregunta el cliente. Una si solo consulta, la
+ * galería si pide fotos explícitamente. Devuelve [] si no hay producto claro o
+ * si ya se enviaron antes en la conversación. */
+async function getProductMediaToSend(
+  history: ConversationHistory[],
+  message: string,
+): Promise<ProductMedia[]> {
+  const wantsPhotos = PHOTO_REQUEST.test(normalizeForIntent(message));
+
+  const lastUserMessage = [...history].reverse().find(({ role }) => role === "user")?.content;
+  const query = [lastUserMessage, message].filter(Boolean).join(" ") || message;
+  const snapshot = await getCatalogSnapshot(query);
+  const product = snapshot.matchedProducts[0];
+  if (!product) return [];
+
+  const marker = `📸 Foto de ${product.nombre} enviada.`;
+  if (history.some(({ content }) => content.includes(marker))) return [];
+
+  const paths = [product.imagen, ...(product.imagenesExtra ?? [])].filter(Boolean);
+  if (paths.length === 0) return [];
+
+  const chosen = wantsPhotos ? paths.slice(0, 4) : paths.slice(0, 1);
+
+  return chosen.map((path, index) => ({
+    url: path.startsWith("http") ? path : `${SITE_URL}${path}`,
+    fileName: path.split("/").pop() || `${product.slug}-${index + 1}.jpg`,
+    caption: index === 0 ? `📷 ${product.nombre} · ${product.precio}` : "",
+    marker,
+  }));
 }
 
 /**
@@ -237,6 +284,30 @@ export async function POST(request: Request) {
   // Make the reply visible in the panel before attempting the delivery to WATI.
   await broadcastPanelUpdate("wati");
   await sendWatiMessage(phone, reply);
+
+  // Envía las fotos del producto consultado (no bloquea la respuesta ya enviada).
+  try {
+    const productMedia = orderCreated || isPostSaleReply ? [] : await getProductMediaToSend(history, text);
+    for (const media of productMedia) {
+      try {
+        await sendWatiFileFromUrl(phone, media);
+      } catch (error) {
+        console.error("WATI_PRODUCT_IMAGE_SEND_FAILED", conversation.id, error);
+      }
+    }
+    if (productMedia.length > 0) {
+      await prisma.watiMessage.create({
+        data: {
+          conversationId: conversation.id,
+          role: "ASSISTANT",
+          content: productMedia[0].marker,
+        },
+      });
+      await broadcastPanelUpdate("wati");
+    }
+  } catch (error) {
+    console.error("WATI_PRODUCT_MEDIA_LOOKUP_FAILED", conversation.id, error);
+  }
 
   if (isPostSaleReply) {
     await prisma.watiConversation.update({
