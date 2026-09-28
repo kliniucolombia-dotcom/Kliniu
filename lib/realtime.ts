@@ -18,6 +18,7 @@ export type RealtimeResource =
   | "logistics"
   | "maintenance"
   | "assembly"
+  | "production-control"
   | "rrhh";
 
 /** Notifica a los clientes suscritos al canal "panel-updates" que un recurso cambió. */

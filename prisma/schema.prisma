@@ -134,6 +134,9 @@ model User {
   notificationReads        NotificationRead[]
   notificationDismissals   NotificationDismissal[]
   departmentMembers        DepartmentMember[]
+  productionTimeEntries        ProductionTimeEntry[] @relation("TimeEntryOperator")
+  productionTimeEntriesCreated ProductionTimeEntry[] @relation("TimeEntryCreatedBy")
+  workOrdersCreated            WorkOrder[]           @relation("WorkOrderCreatedBy")
 }
 
 model CartItem {
@@ -559,6 +562,7 @@ enum UserRole {
   MANTENIMIENTO
   JEFE_OPERACIONES
   DIRECTOR_OPERACIONES
+  OPERARIO
 }
 
 enum UserStatus {
@@ -591,6 +595,7 @@ enum PanelModule {
   MODULE_MANTENIMIENTO
   MODULE_ENSAMBLE
   MODULE_TICKETS
+  MODULE_CONTROL_PRODUCCION
 }
 
 enum BannerType {
@@ -2006,4 +2011,90 @@ model NotificationDismissal {
 
   @@unique([notificationId, userId])
   @@index([userId, dismissedAt])
+}
+
+// ─── Control de Producción (planta ensamble/empaque) ─────────────
+
+enum PlantSection {
+  ENSAMBLE
+  EMPAQUE
+}
+
+enum WorkOrderStatus {
+  OPEN
+  CLOSED
+}
+
+/// ODT de planta (Control de Producción). Correlativo propio que continúa el del Excel de planta.
+model WorkOrder {
+  id               String                @id @default(cuid())
+  number           Int                   @unique
+  /// Fecha civil guardada como `${d}T12:00:00.000Z` (convención de ensamble).
+  date             DateTime
+  reference        String
+  productName      String
+  client           String                @default("KLINIU")
+  lot              Int?
+  /// UNI LOTE
+  quantity         Int
+  /// UNI PROD; obligatoria al cerrar.
+  producedQuantity Int?
+  status           WorkOrderStatus       @default(OPEN)
+  notes            String?
+  closedAt         DateTime?
+  createdById      String?
+  createdBy        User?                 @relation("WorkOrderCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  entries          ProductionTimeEntry[]
+
+  @@index([status])
+  @@index([date])
+}
+
+/// Operación estándar de la hoja TIEMPOS. standardSeconds = 0 → indirecta (no cuenta para eficiencia).
+model StandardOperation {
+  id              String                @id @default(cuid())
+  code            String                @unique
+  name            String
+  family          String
+  standardSeconds Float
+  isActive        Boolean               @default(true)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  entries         ProductionTimeEntry[]
+
+  @@index([family])
+}
+
+/// Bloque de trabajo de un operario. Varios registros con el mismo inicio–fin forman un solo bloque.
+model ProductionTimeEntry {
+  id              String            @id @default(cuid())
+  operatorId      String
+  operator        User              @relation("TimeEntryOperator", fields: [operatorId], references: [id], onDelete: Restrict)
+  createdById     String?
+  createdBy       User?             @relation("TimeEntryCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  /// Fecha civil `${d}T12:00:00.000Z`.
+  workDate        DateTime
+  /// Hora de reloj guardada como UTC: `${d}T${HH:mm}:00.000Z`.
+  startTime       DateTime
+  endTime         DateTime
+  section         PlantSection
+  workOrderId     String?
+  workOrder       WorkOrder?        @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  operationId     String
+  operation       StandardOperation @relation(fields: [operationId], references: [id], onDelete: Restrict)
+  /// Snapshot del estándar al registrar: editar el catálogo no reescribe eficiencias viejas.
+  standardSeconds Float
+  quantity        Int
+  /// Personas que comparten la tarea ("DIVIDIR ENTRE DOS" → 2).
+  sharedBy        Int               @default(1)
+  observations    String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([operatorId, workDate])
+  @@index([workDate])
+  @@index([workOrderId])
+  @@index([operationId])
 }

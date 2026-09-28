@@ -4,7 +4,7 @@ import {
   MdWorkspacePremium, MdShoppingBag, MdPeople, MdVerifiedUser, MdBadge,
   MdWarehouse, MdPalette, MdCampaign, MdTrendingUp, MdAccountBalance,
   MdSettings, MdGroups, MdChevronRight, MdLocalShipping, MdPrecisionManufacturing,
-  MdBuild, MdSupervisorAccount, MdManageAccounts,
+  MdBuild, MdSupervisorAccount, MdManageAccounts, MdEngineering,
 } from "react-icons/md";
 import { SkeletonPanelPage } from "../../../components/skeleton";
 
@@ -34,6 +34,7 @@ const ROLE_ICONS: Record<string, React.ReactNode> = {
   MANTENIMIENTO: <MdBuild />,
   JEFE_OPERACIONES: <MdSupervisorAccount />,
   DIRECTOR_OPERACIONES: <MdManageAccounts />,
+  OPERARIO: <MdEngineering />,
 };
 
 export default function RolesPage() {

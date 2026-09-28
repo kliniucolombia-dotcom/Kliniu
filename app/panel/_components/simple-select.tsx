@@ -15,9 +15,11 @@ export function SimpleSelect({
   disabled,
   portal,
   multiple,
+  searchable,
 }: {
   value: string;
-  options: { value: string; label: ReactNode }[];
+  /** `search`: texto para filtrar cuando `label` no es un string. */
+  options: { value: string; label: ReactNode; search?: string }[];
   onChange: (value: string) => void;
   className?: string;
   triggerClassName?: string;
@@ -29,8 +31,12 @@ export function SimpleSelect({
   portal?: boolean;
   /** Selección múltiple: `value` es una lista separada por comas; "all" (si existe) limpia. */
   multiple?: boolean;
+  /** Agrega un buscador arriba del menú (listas largas). */
+  searchable?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -80,7 +86,9 @@ export function SimpleSelect({
       setMenuPos({ top: openUp ? rect.top : rect.bottom + 4, left, width: rect.width });
     };
     raf = requestAnimationFrame(place);
-    const close = () => setOpen(false);
+    // Con el buscador enfocado, el teclado del celular hace scroll/resize: no cerrar, reubicar.
+    const typing = () => searchRef.current !== null && document.activeElement === searchRef.current;
+    const close = () => (typing() ? place() : setOpen(false));
     const onScroll = (e: Event) => {
       // Ignora el scroll dentro del propio menú (rueda del ratón / barra)
       if (menuRef.current && e.target instanceof Node && menuRef.current.contains(e.target)) return;
@@ -107,6 +115,18 @@ export function SimpleSelect({
     ? options.find((o) => o.value === (sel[0] ?? "all"))
     : options.find((o) => o.value === value);
 
+  useEffect(() => {
+    if (!open) setQuery("");
+  }, [open]);
+
+  const words = searchable ? normalize(query).split(/\s+/).filter(Boolean) : [];
+  const visible = words.length
+    ? options.filter((o) => {
+        const text = normalize(o.search ?? (typeof o.label === "string" ? o.label : o.value));
+        return words.every((w) => text.includes(w));
+      })
+    : options;
+
   return (
     <div ref={ref} className={`relative ${className ?? ""}`}>
       <button
@@ -129,12 +149,30 @@ export function SimpleSelect({
         const menu = (
           <div
             ref={menuRef}
-            className={`${portal ? "fixed" : "absolute left-0"} z-50 max-h-48 w-max min-w-full max-w-[280px] overflow-y-auto rounded-xl border border-[#E2E8F0] bg-white py-1 shadow-lg ${
+            className={`${portal ? "fixed" : "absolute left-0"} z-50 ${searchable ? "max-h-72 max-w-[min(360px,calc(100vw-16px))] pt-0" : "max-h-48 max-w-[280px]"} w-max min-w-full overflow-y-auto rounded-xl border border-[#E2E8F0] bg-white py-1 shadow-lg ${
               portal ? "" : openUp ? "bottom-full mb-1" : "top-full mt-1"
             }`}
             style={portal && menuPos ? { top: menuPos.top, left: menuPos.left, minWidth: menuPos.width, transform: openUp ? "translateY(-100%)" : undefined } : undefined}
           >
-            {options.map((o) => (
+            {searchable && (
+              <div className="sticky top-0 border-b border-[#F1F5F9] bg-white p-2">
+                <input
+                  ref={searchRef}
+                  autoFocus
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") { setOpen(false); triggerRef.current?.focus(); }
+                    if (e.key === "Enter" && visible[0]) { e.preventDefault(); pick(visible[0].value); triggerRef.current?.focus(); }
+                  }}
+                  placeholder="Buscar…"
+                  aria-label="Buscar opción"
+                  className="w-full rounded-lg border border-[#E2E8F0] px-2.5 py-1.5 text-sm outline-none focus:border-[#27B1B8]"
+                />
+              </div>
+            )}
+            {searchable && visible.length === 0 && <p className="px-3 py-2 text-sm text-[#94A3B8]">Sin resultados</p>}
+            {visible.map((o) => (
               <button
                 key={o.value}
                 type="button"
@@ -153,4 +191,8 @@ export function SimpleSelect({
       })()}
     </div>
   );
+}
+
+function normalize(text: string) {
+  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }

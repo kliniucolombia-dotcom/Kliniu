@@ -1,6 +1,7 @@
 import { requireSuperAdmin } from "@/lib/permissions";
 import { deleteUserByAdmin, getUserDeletionImpact, hasDeletionImpact, updateUserByAdmin } from "@/lib/users";
 import { broadcastPanelUpdate } from "@/lib/realtime";
+import { prisma } from "@/lib/prisma";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requireSuperAdmin();
@@ -9,7 +10,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const body = await request.json().catch(() => ({})) as {
     fullName?: string; email?: string; whatsappPhone?: string | null;
-    role?: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "BODEGA" | "DISENO" | "MARKETING" | "JEFE_VENTAS" | "TESORERIA" | "INGENIERIA" | "LOGISTICA" | "LIDER_ENSAMBLE" | "LIDER_INYECCION" | "MANTENIMIENTO" | "JEFE_OPERACIONES" | "DIRECTOR_OPERACIONES";
+    role?: "CUSTOMER" | "ADMIN" | "SELLER" | "PACKING" | "SUPERADMIN" | "RRHH" | "BODEGA" | "DISENO" | "MARKETING" | "JEFE_VENTAS" | "TESORERIA" | "INGENIERIA" | "LOGISTICA" | "LIDER_ENSAMBLE" | "LIDER_INYECCION" | "MANTENIMIENTO" | "JEFE_OPERACIONES" | "DIRECTOR_OPERACIONES" | "OPERARIO";
     status?: "ACTIVE" | "INACTIVE" | "SUSPENDED";
     newPassword?: string;
     backupUserId?: string | null;
@@ -39,6 +40,15 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
   const { searchParams } = new URL(request.url);
   const force = searchParams.get("force") === "true";
+
+  // El historial de Control de Producción no se borra ni con force: se desactiva al usuario.
+  const timeEntries = await prisma!.productionTimeEntry.count({ where: { operatorId: id } });
+  if (timeEntries > 0) {
+    return Response.json(
+      { error: `Tiene ${timeEntries} registros de producción: desactívalo en vez de eliminarlo` },
+      { status: 409 },
+    );
+  }
 
   if (!force) {
     const impact = await getUserDeletionImpact(id);

@@ -20,6 +20,7 @@ const ROLE_LABELS: Record<string, string> = {
   MANTENIMIENTO: "Mantenimiento",
   JEFE_OPERACIONES: "Jefe de Operaciones",
   DIRECTOR_OPERACIONES: "Director de Operaciones",
+  OPERARIO: "Operario de Planta",
 };
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {
@@ -41,6 +42,7 @@ const ROLE_DESCRIPTIONS: Record<string, string> = {
   MANTENIMIENTO: "Mantenimiento preventivo y correctivo de equipos, moldes e infraestructura.",
   JEFE_OPERACIONES: "Supervisión y gestión de toda el área de operaciones.",
   DIRECTOR_OPERACIONES: "Dirección y visibilidad completa del área de operaciones.",
+  OPERARIO: "Registro de sus bloques de producción (hora, ODT, operación y cantidad) en planta.",
 };
 
 export async function GET() {

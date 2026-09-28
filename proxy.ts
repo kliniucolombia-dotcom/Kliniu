@@ -38,7 +38,7 @@ const JSON_METHODS = new Set(["POST", "PUT", "PATCH"]);
 const OPERATIONS_API_PREFIXES = [
   "/api/panel/operaciones", "/api/panel/logistica", "/api/panel/mantenimiento",
   "/api/panel/bodegas", "/api/panel/production-orders", "/api/panel/production-runs",
-  "/api/panel/produccion/moldes",
+  "/api/panel/produccion/moldes", "/api/panel/control-produccion",
 ];
 const WEBHOOK_PREFIXES = ["/api/webhooks/", "/api/kommo/webhook", "/api/kommo/assistant", "/api/wati/webhook"];
 const PROTECTED_PREFIXES = [

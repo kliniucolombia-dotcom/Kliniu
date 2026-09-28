@@ -115,6 +115,7 @@ const PANEL_LANDING_ROUTES: Array<{ module: PanelModule; path: string }> = [
   { module: "MODULE_COTIZACIONES", path: "/panel/cotizaciones" },
   { module: "MODULE_PRODUCCION", path: "/panel/produccion" },
   { module: "MODULE_ENSAMBLE", path: "/panel/ensamble" },
+  { module: "MODULE_CONTROL_PRODUCCION", path: "/panel/control-produccion" },
   { module: "MODULE_ODOO", path: "/panel/odoo" },
   { module: "MODULE_USUARIOS", path: "/panel/usuarios" },
   { module: "MODULE_MATERIAL", path: "/panel/material-comercial" },
@@ -132,6 +133,7 @@ export async function getPanelLandingPath(user: PublicUser): Promise<string> {
   if (user.role === "LOGISTICA") return "/panel/logistica";
   if (user.role === "LIDER_ENSAMBLE" || user.role === "LIDER_INYECCION") return "/panel/produccion";
   if (user.role === "BODEGA") return "/panel/bodegas";
+  if (user.role === "OPERARIO") return "/panel/control-produccion";
 
   const perms = await getEffectivePermissions(user);
   for (const { module, path } of PANEL_LANDING_ROUTES) {

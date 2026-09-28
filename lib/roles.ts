@@ -22,6 +22,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   MANTENIMIENTO: "Mantenimiento",
   JEFE_OPERACIONES: "Jefe de Operaciones",
   DIRECTOR_OPERACIONES: "Director de Operaciones",
+  OPERARIO: "Operario de Planta",
 };
 
 export function isSuperAdmin(user: RoleHolder): boolean {
