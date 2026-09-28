@@ -2,7 +2,7 @@ import { SITE_URL } from "@/lib/site";
 import { prisma } from "@/lib/prisma";
 import { runWatiAssistant } from "@/lib/wati-ai";
 import { pickSellerForNewConversation } from "@/lib/wati-conversations";
-import { sendWatiFileFromUrl, sendWatiMessage } from "@/lib/wati";
+import { sendWatiFileFromUrl, sendWatiMessage, toWatiImageUrl } from "@/lib/wati";
 import { getCatalogSnapshot } from "@/lib/chatbot";
 import { getProducts, type StoreProduct } from "@/lib/products";
 import { broadcastPanelUpdate } from "@/lib/realtime";
@@ -58,11 +58,6 @@ type ProductMedia = {
 
 const PHOTO_REQUEST = /\b(foto|fotos|imagen|imagenes|fotografia|fotografias)\b/;
 
-const NAME_STOPWORDS = new Set([
-  "dispensador", "dispensadores", "de", "del", "para", "en", "con", "el", "la",
-  "los", "las", "y", "o", "un", "una", "ml", "litros",
-]);
-
 function normalizeForMatch(value: string) {
   return value
     .normalize("NFD")
@@ -70,58 +65,61 @@ function normalizeForMatch(value: string) {
     .toLowerCase();
 }
 
-/** Palabras distintivas del nombre de un producto (sin genéricos como "dispensador"). */
-function distinctiveWords(product: StoreProduct) {
-  return normalizeForMatch(product.nombre)
-    .split(/[^a-z0-9]+/)
-    .filter((word) => word.length > 3 && !NAME_STOPWORDS.has(word));
+/** Slugs de producto presentes en enlaces tipo /producto/<slug>, en orden. */
+function productsLinkedIn(products: StoreProduct[], text: string): StoreProduct[] {
+  const slugs = [...text.matchAll(/\/producto\/([a-z0-9-]+)/gi)].map((match) => match[1].toLowerCase());
+  if (slugs.length === 0) return [];
+  const bySlug = new Map(products.map((product) => [product.slug, product]));
+  return slugs
+    .map((slug) => bySlug.get(slug))
+    .filter((product): product is StoreProduct => Boolean(product));
 }
 
-/**
- * Productos que probablemente se mencionan en `text`: cuentan las palabras
- * distintivas presentes y se ordenan por coincidencia y por aparición (el
- * primero que el bot listó gana en empates). Exige al menos 2 coincidencias
- * para descartar falsos positivos de una sola palabra genérica.
- */
-function productsMentionedIn(products: StoreProduct[], text: string): StoreProduct[] {
+/** Productos cuyo nombre completo aparece en el texto, en orden de aparición. */
+function productsNamedIn(products: StoreProduct[], text: string): StoreProduct[] {
   const normalized = normalizeForMatch(text);
   return products
-    .map((product) => {
-      let overlap = 0;
-      let firstPos = Number.POSITIVE_INFINITY;
-      for (const word of distinctiveWords(product)) {
-        const index = normalized.indexOf(word);
-        if (index >= 0) {
-          overlap += 1;
-          firstPos = Math.min(firstPos, index);
-        }
-      }
-      return { product, overlap, firstPos };
-    })
-    .filter((entry) => entry.overlap >= 2)
-    .sort((a, b) => b.overlap - a.overlap || a.firstPos - b.firstPos)
+    .map((product) => ({ product, pos: normalized.indexOf(normalizeForMatch(product.nombre)) }))
+    .filter((entry) => entry.pos >= 0)
+    .sort((a, b) => a.pos - b.pos)
     .map((entry) => entry.product);
 }
 
 /**
- * Resuelve el producto del que habla el cliente usando el contexto completo:
- * primero lo que escribió el cliente, luego lo que el bot acaba de listar (evita
- * que un "dame imágenes" suelto caiga en otro producto).
+ * Resuelve el producto del que habla el cliente. Primero mira los productos que
+ * el bot acaba de ofrecer en su respuesta (enlace o nombre completo); el
+ * mensaje del cliente desempata si nombra uno explícitamente. Si la respuesta no
+ * trae productos, cae al mensaje/historial del cliente.
  */
 async function resolveContextProduct(
   history: ConversationHistory[],
   message: string,
+  currentReply: string,
 ): Promise<StoreProduct | null> {
   const products = await getProducts();
-  const lastAssistant = [...history].reverse().find(({ role }) => role === "assistant")?.content ?? "";
+  const reply =
+    currentReply.trim() ||
+    [...history].reverse().find(({ role }) => role === "assistant")?.content ||
+    "";
   const lastUser = [...history].reverse().find(({ role }) => role === "user")?.content ?? "";
   const userContext = `${lastUser} ${message}`.trim();
 
-  const fromUser = productsMentionedIn(products, userContext);
-  if (fromUser.length > 0) return fromUser[0];
+  const linkedReply = productsLinkedIn(products, reply);
+  const replyCandidates = linkedReply.length > 0 ? linkedReply : productsNamedIn(products, reply);
 
-  const fromAssistant = productsMentionedIn(products, lastAssistant);
-  return fromAssistant[0] ?? null;
+  if (replyCandidates.length > 0) {
+    const namedByUser = productsNamedIn(products, userContext);
+    const chosen = replyCandidates.find((candidate) =>
+      namedByUser.some((userProduct) => userProduct.slug === candidate.slug),
+    );
+    return chosen ?? replyCandidates[0];
+  }
+
+  const linkedUser = productsLinkedIn(products, userContext);
+  if (linkedUser.length > 0) return linkedUser[0];
+
+  const namedUser = productsNamedIn(products, userContext);
+  return namedUser[0] ?? null;
 }
 
 /** Fotos del producto por el que pregunta el cliente. Una si solo consulta, la
@@ -130,10 +128,11 @@ async function resolveContextProduct(
 async function getProductMediaToSend(
   history: ConversationHistory[],
   message: string,
+  currentReply: string,
 ): Promise<ProductMedia[]> {
   const wantsPhotos = PHOTO_REQUEST.test(normalizeForIntent(message));
 
-  let product = await resolveContextProduct(history, message);
+  let product = await resolveContextProduct(history, message, currentReply);
   if (!product) {
     const lastUserMessage = [...history].reverse().find(({ role }) => role === "user")?.content;
     const query = [lastUserMessage, message].filter(Boolean).join(" ") || message;
@@ -142,8 +141,10 @@ async function getProductMediaToSend(
   }
   if (!product) return [];
 
+  // Si el cliente pide la imagen explícitamente, no saltamos por haberla enviado
+  // antes; el anti-duplicado aplica solo a los envíos proactivos.
   const marker = `📸 Foto de ${product.nombre} enviada.`;
-  if (history.some(({ content }) => content.includes(marker))) return [];
+  if (!wantsPhotos && history.some(({ content }) => content.includes(marker))) return [];
 
   const paths = [product.imagen, ...(product.imagenesExtra ?? [])].filter(Boolean);
   if (paths.length === 0) return [];
@@ -151,7 +152,7 @@ async function getProductMediaToSend(
   const chosen = wantsPhotos ? paths.slice(0, 4) : paths.slice(0, 1);
 
   return chosen.map((path, index) => ({
-    url: path.startsWith("http") ? path : `${SITE_URL}${path}`,
+    url: toWatiImageUrl(path.startsWith("http") ? path : `${SITE_URL}${path}`),
     fileName: path.split("/").pop() || `${product.slug}-${index + 1}.jpg`,
     caption: index === 0 ? `📷 ${product.nombre} · ${product.precio}` : "",
     marker,
@@ -357,7 +358,7 @@ export async function POST(request: Request) {
 
   // Envía las fotos del producto consultado (no bloquea la respuesta ya enviada).
   try {
-    const productMedia = orderCreated || isPostSaleReply ? [] : await getProductMediaToSend(history, text);
+    const productMedia = orderCreated || isPostSaleReply ? [] : await getProductMediaToSend(history, text, reply);
     for (const media of productMedia) {
       try {
         await sendWatiFileFromUrl(phone, media);

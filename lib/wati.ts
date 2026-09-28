@@ -1,3 +1,5 @@
+import { SITE_URL } from "@/lib/site";
+
 type WatiV3Error = {
   ok?: boolean;
   success?: boolean;
@@ -118,6 +120,17 @@ export async function sendWatiMessage(phone: string, message: string) {
   });
 
   await parseWatiResponse(response);
+}
+
+const WATI_UNSUPPORTED_IMAGE_EXT = /\.(webp|avif)(\?.*)?$/i;
+
+/**
+ * WATI rechaza imágenes .webp/.avif (responde code 5003 "Message Sent Failed").
+ * Esas URLs se enrutan por nuestro conversor a PNG antes de mandarlas.
+ */
+export function toWatiImageUrl(url: string) {
+  if (!WATI_UNSUPPORTED_IMAGE_EXT.test(url)) return url;
+  return `${SITE_URL}/api/wati/image?url=${encodeURIComponent(url)}`;
 }
 
 export async function sendWatiFileFromUrl(
