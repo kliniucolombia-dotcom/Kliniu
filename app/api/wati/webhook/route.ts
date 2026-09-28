@@ -1,9 +1,7 @@
-import { SITE_URL } from "@/lib/site";
 import { prisma } from "@/lib/prisma";
 import { runWatiAssistant } from "@/lib/wati-ai";
 import { pickSellerForNewConversation } from "@/lib/wati-conversations";
-import { sendWatiFileFromUrl, sendWatiMessage } from "@/lib/wati";
-import { getCatalogSnapshot } from "@/lib/chatbot";
+import { sendWatiMessage } from "@/lib/wati";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { syncOrderToOdoo } from "@/lib/orders";
 
@@ -20,26 +18,6 @@ type WatiWebhookPayload = {
   id?: unknown;
   messageId?: unknown;
 };
-
-type ConversationHistory = {
-  role: "user" | "assistant";
-  content: string;
-};
-
-const COMBO_MEDIA = {
-  image: {
-    url: `${SITE_URL}/whatsapp/combo-premium-kliniu.jpg`,
-    fileName: "combo-premium-kliniu.jpg",
-    caption: "📷 Combo Premium Kliniu · $309.900 COP",
-    panelMessage: "📷 Imagen del Combo Premium enviada.",
-  },
-  video: {
-    url: `${SITE_URL}/whatsapp/combo-premium-kliniu.mp4`,
-    fileName: "combo-premium-kliniu.mp4",
-    caption: "🎥 Mira el Combo Premium Kliniu en detalle.",
-    panelMessage: "🎥 Video del Combo Premium enviado.",
-  },
-} as const;
 
 const HUMAN_FAREWELL =
   "¡Con mucho gusto! Gracias por confiar en Kliniu 😊 Que tengas un excelente día. Si más adelante necesitas algo, aquí estaremos para ayudarte.";
@@ -61,51 +39,6 @@ function isFarewellMessage(message: string) {
   return /\b(gracias|muchas gracias|perfecto|listo|chao|adios|hasta luego|eso es todo)\b/.test(
     normalized,
   );
-}
-
-function getRequestedComboMedia(history: ConversationHistory[], message: string): Array<"image" | "video"> {
-  const normalized = normalizeForIntent(message);
-  const asksForImage = /\b(foto|fotos|imagen|imagenes|fotografia|fotografias)\b/.test(normalized);
-  const asksForVideo = /\b(video|videos|grabacion|grabaciones)\b/.test(normalized);
-
-  if (asksForImage || asksForVideo) {
-    return [
-      ...(asksForImage ? (["image"] as const) : []),
-      ...(asksForVideo ? (["video"] as const) : []),
-    ];
-  }
-
-  const asksAboutCombo =
-    /\b(combo|dispensador|dispensadores|acero inoxidable|anuncio)\b/.test(normalized);
-  const mediaWasAlreadySent = history.some(
-    ({ content }) =>
-      content.includes(COMBO_MEDIA.image.panelMessage) ||
-      content.includes(COMBO_MEDIA.video.panelMessage),
-  );
-
-  return asksAboutCombo && !mediaWasAlreadySent ? ["image"] : [];
-}
-
-async function getRequestedProductMedia(history: ConversationHistory[], message: string) {
-  const normalized = normalizeForIntent(message);
-  const asksForImage = /\b(foto|fotos|imagen|imagenes|fotografia|fotografias)\b/.test(normalized);
-  if (!asksForImage) return null;
-
-  const lastUserMessage = [...history].reverse().find(({ role }) => role === "user")?.content;
-  const query = [lastUserMessage, message].filter(Boolean).join(" ") || message;
-  const snapshot = await getCatalogSnapshot(query);
-  const product = snapshot.matchedProducts[0];
-  if (!product) return null;
-
-  const panelMessage = `📷 Imagen de ${product.nombre} enviada.`;
-  if (history.some(({ content }) => content.includes(panelMessage))) return null;
-
-  return {
-    url: `${SITE_URL}${product.imagen}`,
-    fileName: product.imagen.split("/").pop() || `${product.slug}.jpg`,
-    caption: `📷 ${product.nombre} · ${product.precio}`,
-    panelMessage,
-  };
 }
 
 /**
@@ -268,16 +201,6 @@ export async function POST(request: Request) {
     .slice(0, -1)
     .map((m) => ({ role: m.role === "USER" ? ("user" as const) : ("assistant" as const), content: m.content }));
 
-  const requestedMedia = getRequestedComboMedia(history, text);
-  let productMedia: Awaited<ReturnType<typeof getRequestedProductMedia>> = null;
-  if (!requestedMedia.includes("image")) {
-    try {
-      productMedia = await getRequestedProductMedia(history, text);
-    } catch (error) {
-      console.error("WATI_PRODUCT_MEDIA_LOOKUP_FAILED", conversation.id, error);
-    }
-  }
-
   let reply: string;
   let orderCreated: { orderId: string } | null = null;
   try {
@@ -314,53 +237,6 @@ export async function POST(request: Request) {
   // Make the reply visible in the panel before attempting the delivery to WATI.
   await broadcastPanelUpdate("wati");
   await sendWatiMessage(phone, reply);
-
-  for (const mediaType of requestedMedia) {
-    const media = COMBO_MEDIA[mediaType];
-    const mediaClaim = mediaType === "image"
-      ? await prisma.watiConversation.updateMany({
-          where: { id: conversation.id, comboImageSentAt: null },
-          data: { comboImageSentAt: new Date() },
-        })
-      : await prisma.watiConversation.updateMany({
-          where: { id: conversation.id, comboVideoSentAt: null },
-          data: { comboVideoSentAt: new Date() },
-        });
-    if (mediaClaim.count === 0) continue;
-    try {
-      await sendWatiFileFromUrl(phone, media);
-      await prisma.watiMessage.create({
-        data: {
-          conversationId: conversation.id,
-          role: "ASSISTANT",
-          content: media.panelMessage,
-        },
-      });
-      await broadcastPanelUpdate("wati");
-    } catch (error) {
-      await prisma.watiConversation.update({
-        where: { id: conversation.id },
-        data: mediaType === "image" ? { comboImageSentAt: null } : { comboVideoSentAt: null },
-      });
-      console.error(`WATI_${mediaType.toUpperCase()}_SEND_FAILED`, error);
-    }
-  }
-
-  if (productMedia) {
-    try {
-      await sendWatiFileFromUrl(phone, productMedia);
-      await prisma.watiMessage.create({
-        data: {
-          conversationId: conversation.id,
-          role: "ASSISTANT",
-          content: productMedia.panelMessage,
-        },
-      });
-      await broadcastPanelUpdate("wati");
-    } catch (error) {
-      console.error("WATI_PRODUCT_IMAGE_SEND_FAILED", error);
-    }
-  }
 
   if (isPostSaleReply) {
     await prisma.watiConversation.update({
