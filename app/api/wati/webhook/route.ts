@@ -4,6 +4,7 @@ import { runWatiAssistant } from "@/lib/wati-ai";
 import { pickSellerForNewConversation } from "@/lib/wati-conversations";
 import { sendWatiFileFromUrl, sendWatiMessage } from "@/lib/wati";
 import { getCatalogSnapshot } from "@/lib/chatbot";
+import { getProducts, type StoreProduct } from "@/lib/products";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { syncOrderToOdoo } from "@/lib/orders";
 
@@ -57,6 +58,72 @@ type ProductMedia = {
 
 const PHOTO_REQUEST = /\b(foto|fotos|imagen|imagenes|fotografia|fotografias)\b/;
 
+const NAME_STOPWORDS = new Set([
+  "dispensador", "dispensadores", "de", "del", "para", "en", "con", "el", "la",
+  "los", "las", "y", "o", "un", "una", "ml", "litros",
+]);
+
+function normalizeForMatch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+/** Palabras distintivas del nombre de un producto (sin genéricos como "dispensador"). */
+function distinctiveWords(product: StoreProduct) {
+  return normalizeForMatch(product.nombre)
+    .split(/[^a-z0-9]+/)
+    .filter((word) => word.length > 3 && !NAME_STOPWORDS.has(word));
+}
+
+/**
+ * Productos que probablemente se mencionan en `text`: cuentan las palabras
+ * distintivas presentes y se ordenan por coincidencia y por aparición (el
+ * primero que el bot listó gana en empates). Exige al menos 2 coincidencias
+ * para descartar falsos positivos de una sola palabra genérica.
+ */
+function productsMentionedIn(products: StoreProduct[], text: string): StoreProduct[] {
+  const normalized = normalizeForMatch(text);
+  return products
+    .map((product) => {
+      let overlap = 0;
+      let firstPos = Number.POSITIVE_INFINITY;
+      for (const word of distinctiveWords(product)) {
+        const index = normalized.indexOf(word);
+        if (index >= 0) {
+          overlap += 1;
+          firstPos = Math.min(firstPos, index);
+        }
+      }
+      return { product, overlap, firstPos };
+    })
+    .filter((entry) => entry.overlap >= 2)
+    .sort((a, b) => b.overlap - a.overlap || a.firstPos - b.firstPos)
+    .map((entry) => entry.product);
+}
+
+/**
+ * Resuelve el producto del que habla el cliente usando el contexto completo:
+ * primero lo que escribió el cliente, luego lo que el bot acaba de listar (evita
+ * que un "dame imágenes" suelto caiga en otro producto).
+ */
+async function resolveContextProduct(
+  history: ConversationHistory[],
+  message: string,
+): Promise<StoreProduct | null> {
+  const products = await getProducts();
+  const lastAssistant = [...history].reverse().find(({ role }) => role === "assistant")?.content ?? "";
+  const lastUser = [...history].reverse().find(({ role }) => role === "user")?.content ?? "";
+  const userContext = `${lastUser} ${message}`.trim();
+
+  const fromUser = productsMentionedIn(products, userContext);
+  if (fromUser.length > 0) return fromUser[0];
+
+  const fromAssistant = productsMentionedIn(products, lastAssistant);
+  return fromAssistant[0] ?? null;
+}
+
 /** Fotos del producto por el que pregunta el cliente. Una si solo consulta, la
  * galería si pide fotos explícitamente. Devuelve [] si no hay producto claro o
  * si ya se enviaron antes en la conversación. */
@@ -66,10 +133,13 @@ async function getProductMediaToSend(
 ): Promise<ProductMedia[]> {
   const wantsPhotos = PHOTO_REQUEST.test(normalizeForIntent(message));
 
-  const lastUserMessage = [...history].reverse().find(({ role }) => role === "user")?.content;
-  const query = [lastUserMessage, message].filter(Boolean).join(" ") || message;
-  const snapshot = await getCatalogSnapshot(query);
-  const product = snapshot.matchedProducts[0];
+  let product = await resolveContextProduct(history, message);
+  if (!product) {
+    const lastUserMessage = [...history].reverse().find(({ role }) => role === "user")?.content;
+    const query = [lastUserMessage, message].filter(Boolean).join(" ") || message;
+    const snapshot = await getCatalogSnapshot(query);
+    product = snapshot.matchedProducts[0];
+  }
   if (!product) return [];
 
   const marker = `📸 Foto de ${product.nombre} enviada.`;

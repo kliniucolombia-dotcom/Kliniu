@@ -133,7 +133,8 @@ export async function sendWatiFileFromUrl(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      target: channelTarget(phone, channel),
+      // La API V3 de fileViaUrl exige "Target" (capital) pero "file_url" en minúscula.
+      Target: channelTarget(phone, channel),
       file_url: input.url,
       caption: input.caption,
     }),
