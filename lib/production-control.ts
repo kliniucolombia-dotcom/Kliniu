@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import type { Permission } from "@/lib/permission-defaults";
 import { isRecord, parseBogotaCivilDate, parseDateRange, parseEnum, parseRequiredString } from "@/lib/operations-validation";
 import { addDays, bogotaNow } from "@/lib/commercial-calendar";
-import { OWN_WINDOW_DAYS, overlapsPartially, withinOwnWindow } from "@/lib/production-control-calculator";
+import { OWN_WINDOW_DAYS, buildIndicators, overlapsPartially, withinOwnWindow } from "@/lib/production-control-calculator";
 
 function requirePrisma() {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
@@ -521,4 +521,33 @@ export async function getControlOptions(scope: ControlScope, actorId: string) {
     recentOperationIds: [...new Set(recent.map((r) => r.operationId))].slice(0, 15),
     lastSection: recent[0]?.section ?? null,
   };
+}
+
+// ─── Indicadores ─────────────────────────────────────────────────
+
+/** Indicadores del rango. Quien solo registra lo suyo recibe únicamente sus propios números. */
+export async function getIndicators(filters: { from: string; to: string; section?: string }, actor: EntryActor, scope: ControlScope) {
+  const db = requirePrisma();
+  const { from, to } = parseDateRange(filters.from, filters.to);
+  if (addDays(from, MAX_RANGE_DAYS) < to) throw new Error("RANGE_TOO_LONG");
+  // ponytail: agrega en memoria todo el rango (≤ 1 año, ~miles de filas); pasar a SQL si la planta crece mucho.
+  const rows = await db.productionTimeEntry.findMany({
+    where: {
+      workDate: { gte: civilDate(from), lte: civilDate(to) },
+      ...(scope === "own" ? { operatorId: actor.id } : {}),
+      ...(filters.section ? { section: parseEnum(filters.section, SECTIONS) } : {}),
+    },
+    select: {
+      id: true, operatorId: true, workDate: true, startTime: true, endTime: true,
+      standardSeconds: true, quantity: true, sharedBy: true,
+      operator: { select: { fullName: true } },
+      operation: { select: { id: true, code: true, name: true, family: true } },
+      workOrder: { select: { id: true, number: true, reference: true, productName: true, quantity: true, producedQuantity: true, status: true } },
+    },
+  });
+  return buildIndicators(rows.map((r) => ({
+    ...r,
+    operatorName: r.operator.fullName,
+    workDate: r.workDate.toISOString(),
+  })));
 }

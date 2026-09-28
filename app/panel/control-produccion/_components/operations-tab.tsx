@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { MdAdd, MdDelete, MdEdit, MdSearch } from "react-icons/md";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import { addDays } from "@/lib/commercial-calendar";
 import { SimpleSelect } from "../../_components/simple-select";
 import { Empty, Footer, Modal, Section, Table, btnGhost, btnPrimary, inputCls, labelCls, patchReq, post } from "../../_components/ops-ui";
 import { SkeletonTable } from "../../../components/skeleton";
@@ -23,6 +24,8 @@ export function OperationsTab({ options, notify, onChanged }: { options: Options
   const [form, setForm] = useState<Form | null>(null);
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
+  // Tiempo real promedio de los últimos 30 días por operación (de los indicadores), para recalibrar.
+  const [real, setReal] = useState<Map<string, number | null>>(new Map());
 
   const load = useCallback(async () => {
     try {
@@ -34,6 +37,17 @@ export function OperationsTab({ options, notify, onChanged }: { options: Options
     }
     setFailed(true);
   }, [notify]);
+
+  const loadReal = useCallback(async () => {
+    const r = await fetch(`/api/panel/control-produccion/indicators?from=${addDays(options.today, -29)}&to=${options.today}`).catch(() => null);
+    if (!r?.ok) return;
+    const body: { byOperation: { id: string; realSecondsPerUnit: number | null }[] } = await r.json();
+    setReal(new Map(body.byOperation.map((o) => [o.id, o.realSecondsPerUnit])));
+  }, [options.today]);
+  useEffect(() => {
+    const task = window.setTimeout(() => void loadReal(), 0);
+    return () => window.clearTimeout(task);
+  }, [loadReal]);
 
   const { markLocalWrite } = useRealtimeRefresh(["production-control"], load);
   useEffect(() => {
@@ -114,7 +128,7 @@ export function OperationsTab({ options, notify, onChanged }: { options: Options
         </div>
       ) : <SkeletonTable />) : (
         <Table
-          head={["Código", "Operación", "Familia", "Estándar", "Registros", "Estado", canManage ? "" : null]}
+          head={["Código", "Operación", "Familia", "Estándar", "Real (30 días)", "Registros", "Estado", canManage ? "" : null]}
           rows={visible.map((o) => [
             <b key="c">{o.code}</b>,
             o.name,
@@ -122,6 +136,9 @@ export function OperationsTab({ options, notify, onChanged }: { options: Options
             o.standardSeconds === 0
               ? <span key="t" className="text-[#94A3B8]">Indirecta</span>
               : <span key="t">{fmtStdMinutes(o.standardSeconds)}<span className="block text-[11px] text-[#94A3B8]">{o.standardSeconds} seg/und</span></span>,
+            real.get(o.id) != null
+              ? <span key="r">{fmtStdMinutes(real.get(o.id)!)}<span className="block text-[11px] text-[#94A3B8]">{Math.round(real.get(o.id)!)} seg/und</span></span>
+              : <span key="r" className="text-[#94A3B8]">—</span>,
             String(o._count.entries),
             canManage
               ? <button key="s" onClick={() => toggle(o)} className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${o.isActive ? "bg-[#DCFCE7] text-[#15803D]" : "bg-[#F1F5F9] text-[#64748B]"}`}>{o.isActive ? "Activa" : "Inactiva"}</button>

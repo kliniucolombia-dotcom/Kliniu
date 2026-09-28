@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  attributeMinutes,
   blockEfficiencies,
+  buildIndicators,
   blockKey,
   overlapsPartially,
   standardMinutesOf,
@@ -70,4 +72,50 @@ test("ventana del operario: hoy y 3 días atrás, nunca futuro", () => {
   assert.equal(withinOwnWindow("2026-09-24", "2026-09-28"), false);
   assert.equal(withinOwnWindow("2026-09-29", "2026-09-28"), false);
   assert.equal(withinOwnWindow("2026-02-27", "2026-03-02"), true);
+});
+
+const ind = (id: string, start: string, end: string, standardSeconds: number, quantity: number, opts: { sharedBy?: number; op?: string; wo?: string | null; operatorId?: string; day?: string } = {}) => ({
+  id, operatorId: opts.operatorId ?? "op", operatorName: opts.operatorId ?? "op", workDate: `${opts.day ?? "2026-05-15"}T12:00:00.000Z`,
+  startTime: at(start, opts.day), endTime: at(end, opts.day), standardSeconds, quantity, sharedBy: opts.sharedBy ?? 1,
+  operation: { id: opts.op ?? "A", code: opts.op ?? "A", name: opts.op ?? "A", family: "F" },
+  workOrder: opts.wo === null ? null : { id: opts.wo ?? "W1", number: 1, reference: "R", productName: "P", quantity: 100, producedQuantity: null, status: "OPEN" },
+});
+
+test("atribución: un bloque con dos ODTs reparte sus minutos según el estándar ganado", () => {
+  const entries = [ind("1", "08:00", "09:00", 60, 30, { wo: "W1" }), ind("2", "08:00", "09:00", 60, 10, { wo: "W2" })];
+  const [a, b] = attributeMinutes(entries);
+  assert.equal(a, 45);
+  assert.equal(b, 15);
+  const r = buildIndicators(entries);
+  assert.equal(r.byWorkOrder.reduce((s, o) => s + o.laborMinutes, 0), 60);
+  assert.ok(r.byWorkOrder.every((o) => Math.abs((o.efficiency ?? 0) - 40 / 60) < 1e-9));
+});
+
+test("indirectas reparten el bloque en partes iguales y no generan fila por operación", () => {
+  const entries = [ind("1", "07:00", "07:30", 0, 0, { wo: null, op: "FB" }), ind("2", "07:00", "07:30", 0, 0, { wo: null, op: "FB2" })];
+  assert.deepEqual(attributeMinutes(entries), [15, 15]);
+  const r = buildIndicators(entries);
+  assert.equal(r.byOperation.length, 0);
+  assert.equal(r.byWorkOrder.length, 0);
+  assert.equal(r.totals.registeredMinutes, 30);
+});
+
+test("real por unidad vs estándar por operación, con tarea compartida", () => {
+  // 90 und entre 2 personas en 30 min: 45 und propias → 40 s/und reales contra 30 s de estándar.
+  const r = buildIndicators([ind("1", "14:00", "14:30", 30, 90, { sharedBy: 2 })]);
+  const op = r.byOperation[0];
+  assert.equal(op.units, 45);
+  assert.equal(op.standardSecondsPerUnit, 30);
+  assert.equal(op.realSecondsPerUnit, 40);
+  assert.ok(Math.abs(op.deviation! - 1 / 3) < 1e-9);
+});
+
+test("por operario y por día separan personas y fechas", () => {
+  const r = buildIndicators([
+    ind("1", "08:00", "09:00", 60, 60, { operatorId: "ana" }),
+    ind("2", "08:00", "09:00", 60, 30, { operatorId: "beto" }),
+    ind("3", "08:00", "09:00", 60, 60, { operatorId: "ana", day: "2026-05-16" }),
+  ]);
+  assert.deepEqual(r.byOperator.map((o) => [o.operatorName, o.days, o.efficiency]), [["ana", 2, 1], ["beto", 1, 0.5]]);
+  assert.deepEqual(r.byDay.map((d) => [d.date.slice(0, 10), d.operators]), [["2026-05-16", 1], ["2026-05-15", 2]]);
 });

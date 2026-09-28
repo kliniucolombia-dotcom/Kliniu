@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MdAssignment, MdEditNote, MdTimer, MdViewList } from "react-icons/md";
+import { MdAssignment, MdEditNote, MdInsights, MdTimer, MdViewList } from "react-icons/md";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { Empty, Tabs } from "../_components/ops-ui";
 import { SkeletonTable } from "../../components/skeleton";
@@ -8,13 +8,15 @@ import { WorkOrdersTab } from "./_components/work-orders-tab";
 import { OperationsTab } from "./_components/operations-tab";
 import { RegisterTab } from "./_components/register-tab";
 import { EntriesTab } from "./_components/entries-tab";
+import { IndicatorsTab } from "./_components/indicators-tab";
 import { jsonError, type Notify, type Options, type Scope } from "./_components/shared";
 
-type Tab = "registrar" | "registros" | "odts" | "tiempos";
+type Tab = "registrar" | "registros" | "indicadores" | "odts" | "tiempos";
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode; scopes: Scope[] }[] = [
   { key: "registrar", label: "Registrar", icon: <MdEditNote size={16} />, scopes: ["manage", "own"] },
   { key: "registros", label: "Registros", icon: <MdViewList size={16} />, scopes: ["manage", "own", "read"] },
+  { key: "indicadores", label: "Indicadores", icon: <MdInsights size={16} />, scopes: ["manage", "own", "read"] },
   { key: "odts", label: "ODTs", icon: <MdAssignment size={16} />, scopes: ["manage", "read"] },
   { key: "tiempos", label: "Tiempos estándar", icon: <MdTimer size={16} />, scopes: ["manage", "read"] },
 ];
@@ -51,7 +53,7 @@ export default function ControlProduccionPage() {
 
   const notify: Notify = useCallback((type, msg) => setAlert({ type, msg }), []);
   const tabs = options
-    ? TABS.filter((t) => t.scopes.includes(options.scope)).map((t) => (t.key === "registros" && options.scope === "own" ? { ...t, label: "Mis registros" } : t))
+    ? TABS.filter((t) => t.scopes.includes(options.scope)).map((t) => (options.scope !== "own" ? t : t.key === "registros" ? { ...t, label: "Mis registros" } : t.key === "indicadores" ? { ...t, label: "Mi eficiencia" } : t))
     : [];
   const current = tabs.find((t) => t.key === tab)?.key ?? tabs[0]?.key;
 
@@ -74,6 +76,7 @@ export default function ControlProduccionPage() {
           <Tabs tabs={tabs} value={current!} onChange={setTab} />
           {current === "registrar" && <RegisterTab options={options} notify={notify} onChanged={load} />}
           {current === "registros" && <EntriesTab options={options} notify={notify} />}
+          {current === "indicadores" && <IndicatorsTab options={options} notify={notify} />}
           {current === "odts" && <WorkOrdersTab options={options} notify={notify} onChanged={load} />}
           {current === "tiempos" && <OperationsTab options={options} notify={notify} onChanged={load} />}
         </>
