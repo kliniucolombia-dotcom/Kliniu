@@ -336,6 +336,11 @@ const clock = (date: string, hhmm: string) => new Date(`${date}T${hhmm}:00.000Z`
 const dateKeyOf = (d: Date) => d.toISOString().slice(0, 10);
 const timeKeyOf = (d: Date) => d.toISOString().slice(11, 16);
 
+async function assertOrderOpen(db: Pick<ReturnType<typeof requirePrisma>, "workOrder">, id: string) {
+  const order = await db.workOrder.findUnique({ where: { id }, select: { status: true } });
+  if (order?.status === "CLOSED") throw new Error("WORK_ORDER_CLOSED");
+}
+
 type ExistingEntry = NonNullable<Awaited<ReturnType<typeof findEntry>>>;
 
 function findEntry(id: string) {
@@ -383,6 +388,8 @@ async function writeEntry(actor: EntryActor, existing: ExistingEntry | null, inp
     if (operationChanged && !operation.isActive) throw new Error("OPERATION_INACTIVE");
     const standardSeconds = operationChanged ? operation.standardSeconds : existing.standardSeconds;
 
+    // Quien solo registra lo suyo no toca bloques de una ODT ya cerrada (su UNI PROD quedó fija).
+    if (!actor.permission.canEdit && existing?.workOrderId) await assertOrderOpen(tx, existing.workOrderId);
     if (standardSeconds > 0 && !m.workOrderId) throw new Error("WORK_ORDER_REQUIRED");
     if (standardSeconds > 0 && m.quantity <= 0) throw new Error("INVALID_ENTRY_QUANTITY");
     if (m.workOrderId && (!existing || existing.workOrderId !== m.workOrderId)) {
@@ -435,6 +442,7 @@ export async function deleteEntry(id: string, actor: EntryActor) {
     if (!actor.permission.canEdit && !withinOwnWindow(dateKeyOf(existing.workDate), bogotaNow().key)) {
       throw new Error("OUTSIDE_EDIT_WINDOW");
     }
+    if (!actor.permission.canEdit && existing.workOrderId) await assertOrderOpen(db, existing.workOrderId);
   }
   await db.productionTimeEntry.delete({ where: { id } });
 }

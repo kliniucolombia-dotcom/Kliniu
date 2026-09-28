@@ -149,14 +149,15 @@ export function buildIndicators(entries: IndicatorEntry[]) {
     .map(([date, list]) => ({ date, operators: new Set(list.map((e) => e.operatorId)).size, ...summarize(list) }))
     .sort((a, b) => b.date.localeCompare(a.date));
 
-  type Agg = { units: number; minutes: number; standard: number; entries: number };
+  type Agg = { units: number; minutes: number; directMinutes: number; standard: number; entries: number };
   const add = (a: Agg, e: IndicatorEntry, i: number) => {
     a.units += e.quantity / Math.max(1, e.sharedBy);
     a.minutes += minutes[i];
+    if (e.standardSeconds > 0) a.directMinutes += minutes[i];
     a.standard += standardMinutesOf(e);
     a.entries += 1;
   };
-  const empty = (): Agg => ({ units: 0, minutes: 0, standard: 0, entries: 0 });
+  const empty = (): Agg => ({ units: 0, minutes: 0, directMinutes: 0, standard: 0, entries: 0 });
 
   const orders = new Map<string, { order: NonNullable<IndicatorEntry["workOrder"]>; total: Agg; ops: Map<string, Agg & { code: string; name: string }> }>();
   const operations = new Map<string, Agg & { operation: IndicatorEntry["operation"]; stdSecondsWeighted: number }>();
@@ -182,7 +183,8 @@ export function buildIndicators(entries: IndicatorEntry[]) {
       ...order,
       laborMinutes: total.minutes,
       standardMinutes: total.standard,
-      efficiency: ratio(total.standard, total.minutes),
+      // Las indirectas cargadas a la ODT suman horas-hombre pero no bajan la eficiencia.
+      efficiency: ratio(total.standard, total.directMinutes),
       entries: total.entries,
       operations: [...ops.values()].map((o) => ({ code: o.code, name: o.name, units: o.units })).sort((a, b) => a.code.localeCompare(b.code)),
     }))

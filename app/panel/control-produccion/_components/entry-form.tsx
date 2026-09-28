@@ -52,7 +52,8 @@ export function canModifyEntry(e: Entry, options: Options, action: "edit" | "del
   const p = options.permission;
   if (action === "edit" ? p.canEdit : p.canDelete) return true;
   const own = e.operatorId === options.me.id && p.canCreate;
-  return own && (p.canEdit || withinOwnWindow(e.workDate.slice(0, 10), options.today));
+  if (own && p.canEdit) return true;
+  return own && withinOwnWindow(e.workDate.slice(0, 10), options.today) && e.workOrder?.status !== "CLOSED";
 }
 
 export function EntryFields({

@@ -119,3 +119,13 @@ test("por operario y por día separan personas y fechas", () => {
   assert.deepEqual(r.byOperator.map((o) => [o.operatorName, o.days, o.efficiency]), [["ana", 2, 1], ["beto", 1, 0.5]]);
   assert.deepEqual(r.byDay.map((d) => [d.date.slice(0, 10), d.operators]), [["2026-05-16", 1], ["2026-05-15", 2]]);
 });
+
+test("una indirecta cargada a la ODT suma horas-hombre pero no baja su eficiencia", () => {
+  const r = buildIndicators([
+    ind("1", "08:00", "09:00", 60, 30),
+    ind("2", "09:00", "09:30", 0, 0, { op: "FB" }),
+  ]);
+  const [o] = r.byWorkOrder;
+  assert.equal(o.laborMinutes, 90);
+  assert.equal(o.efficiency, 0.5);
+});
