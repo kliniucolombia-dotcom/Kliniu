@@ -1,5 +1,9 @@
 import { requirePermission } from "@/lib/permissions";
-import { getAllWatiConversations, startWatiConversation } from "@/lib/wati-conversations";
+import {
+  deleteAllWatiConversations,
+  getAllWatiConversations,
+  startWatiConversation,
+} from "@/lib/wati-conversations";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET() {
@@ -8,6 +12,20 @@ export async function GET() {
 
   const conversations = await getAllWatiConversations();
   return Response.json(conversations);
+}
+
+export async function DELETE() {
+  const access = await requirePermission("MODULE_WHATSAPP", "delete");
+  if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
+
+  try {
+    const result = await deleteAllWatiConversations();
+    await broadcastPanelUpdate("wati");
+    return Response.json(result);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "No fue posible vaciar las conversaciones";
+    return Response.json({ error: detail }, { status: 400 });
+  }
 }
 
 export async function POST(request: Request) {

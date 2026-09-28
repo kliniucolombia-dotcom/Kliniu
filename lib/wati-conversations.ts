@@ -152,8 +152,20 @@ export async function updateWatiConversationBotPaused(conversationId: string, bo
   });
 }
 
-export async function getWatiConversationMessages(conversationId: string) {
+export async function deleteAllWatiConversations() {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
+
+  return prisma.$transaction(async (tx) => {
+    const deletedMessages = await tx.watiMessage.deleteMany({});
+    const deletedConversations = await tx.watiConversation.deleteMany({});
+    return {
+      messages: deletedMessages.count,
+      conversations: deletedConversations.count,
+    };
+  });
+}
+
+export async function getWatiConversationMessages(conversationId: string) {  if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
 
   const conversation = await prisma.watiConversation.findUnique({
     where: { id: conversationId },

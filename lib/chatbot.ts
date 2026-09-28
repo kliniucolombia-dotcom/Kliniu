@@ -298,6 +298,27 @@ export function buildCatalogContext(snapshot: CatalogSnapshot) {
   ].join("\n");
 }
 
+/**
+ * Catálogo completo (todos los productos activos) para asistentes que necesitan
+ * conocer toda la oferta, no solo las coincidencias de una consulta. Se usa en el
+ * bot de WhatsApp para responder por cualquier producto de la página.
+ */
+export async function buildFullCatalogContext() {
+  const products = await getProducts();
+  const lines = products.map((product) => {
+    const description = product.descripcion
+      ? product.descripcion.replace(/\s+/g, " ").trim().slice(0, 120)
+      : null;
+    return `- ${product.nombre} | categoría: ${product.categoria} | marca: ${product.marca} | precio: ${formatearMoneda(product.precioValor)} | disponibilidad: ${product.disponibilidad} | stock: ${product.stock ?? 0} | slug: ${product.slug}${description ? ` | descripción: ${description}` : ""}`;
+  });
+
+  return [
+    `CATÁLOGO COMPLETO DE KLINIU (${products.length} productos activos):`,
+    `Categorías: ${categorias.join(", ")}.`,
+    ...lines,
+  ].join("\n");
+}
+
 function buildProductSuggestions(products: StoreProduct[]): ChatSuggestion[] {
   return products.slice(0, 4).map((product) => ({
     label: product.nombre,

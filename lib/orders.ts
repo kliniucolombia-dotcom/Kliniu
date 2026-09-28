@@ -431,6 +431,7 @@ export async function syncOrderToOdoo(orderId: string) {
         quantity: item.quantity,
         unitPrice: item.unitPrice,
       })),
+      confirm: order.channel === "WHATSAPP",
     });
 
     return await prisma.order.update({

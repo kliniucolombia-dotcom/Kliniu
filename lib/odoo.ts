@@ -758,6 +758,9 @@ export type OdooOrderPushInput = {
   department: string;
   notes?: string | null;
   items: OdooOrderPushItem[];
+  // Si es true, confirma la orden en Odoo (action_confirm) para que genere el
+  // albarán/entrega. Se usa en pedidos de WhatsApp.
+  confirm?: boolean;
 };
 
 export type OdooOrderPushResult = {
@@ -914,6 +917,10 @@ export async function pushOrderToOdoo(input: OdooOrderPushInput): Promise<OdooOr
       order_line: orderLines,
     },
   ]);
+
+  if (input.confirm) {
+    await executeOdooKw<boolean>("sale.order", "action_confirm", [[odooOrderId]]);
+  }
 
   const [created] = await executeOdooKw<{ id: number; name: string }[]>("sale.order", "read", [
     [odooOrderId],

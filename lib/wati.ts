@@ -1,22 +1,24 @@
-type WatiApiResult = {
-  result?: boolean | string;
+type WatiV3Error = {
   ok?: boolean;
+  success?: boolean;
+  error?: { code?: number; message?: string } | string | null;
+  code?: number;
+  message?: string;
   info?: string;
-  error?: string | null;
-  receivers?: Array<{
-    isValidWhatsAppNumber?: boolean;
-    errors?: Array<string | { message?: string }>;
+  recipients?: Array<{
+    phone_number?: string;
+    errors?: Array<string | { message?: string }> | null;
   }>;
 };
 
-type WatiTemplateApiItem = {
-  elementName?: string;
+type WatiV3TemplateItem = {
+  name?: string;
   status?: string;
   body?: string;
-  bodyOriginal?: string;
+  body_original?: string;
   footer?: string | null;
-  language?: { key?: string; value?: string; text?: string } | string;
-  customParams?: Array<{ paramName?: string; paramValue?: string }>;
+  language_option?: { key?: string; value?: string; text?: string } | string;
+  custom_params?: Array<{ name?: string; value?: string }>;
 };
 
 export type WatiTemplate = {
@@ -30,41 +32,73 @@ export type WatiTemplate = {
 };
 
 function getWatiConfig() {
-  const baseUrl = process.env.WATI_BASE_URL?.replace(/\/+$/, "");
+  const rawBaseUrl = process.env.WATI_BASE_URL?.trim();
   const token = process.env.WATI_API_TOKEN?.trim();
-  if (!token || !baseUrl) throw new Error("WATI_NOT_CONFIGURED");
+  if (!token || !rawBaseUrl) throw new Error("WATI_NOT_CONFIGURED");
+
+  // La API V3 cuelga directo del host (sin tenantId en la ruta). Si WATI_BASE_URL
+  // todavía trae un path de tenant legacy, nos quedamos solo con el origin.
+  let host: string;
+  try {
+    host = new URL(rawBaseUrl).origin;
+  } catch {
+    host = rawBaseUrl.replace(/\/+$/, "");
+  }
 
   return {
-    baseUrl,
+    host,
     authorization: token.toLowerCase().startsWith("bearer ") ? token : `Bearer ${token}`,
+    channel: process.env.WATI_CHANNEL_PHONE_NUMBER?.trim() || null,
   };
+}
+
+function normalizePhone(phone: string) {
+  return phone.replace(/\D/g, "");
+}
+
+// V3 acepta target como "PhoneNumber" o "Channel:PhoneNumber"; fijar el canal
+// evita que el mensaje salga por otra línea conectada a la misma cuenta.
+function channelTarget(phone: string, channel: string | null) {
+  const digits = normalizePhone(phone);
+  return channel ? `${channel}:${digits}` : digits;
 }
 
 async function parseWatiResponse(response: Response) {
   const raw = await response.text();
-  let data: WatiApiResult = {};
+  let data: WatiV3Error = {};
 
   if (raw) {
     try {
-      data = JSON.parse(raw) as WatiApiResult;
+      data = JSON.parse(raw) as WatiV3Error;
     } catch {
       if (!response.ok) throw new Error(`WATI_SEND_FAILED: ${response.status}`);
     }
   }
 
+  const errorMessage =
+    (typeof data.error === "object" && data.error ? data.error.message : null) ??
+    (typeof data.error === "string" ? data.error : null) ??
+    data.message ??
+    data.info ??
+    null;
+
   if (!response.ok) {
-    throw new Error(`WATI_SEND_FAILED: ${response.status} ${data.info ?? data.error ?? "Error de WATI"}`);
+    throw new Error(`WATI_SEND_FAILED: ${response.status} ${errorMessage ?? "Error de WATI"}`);
   }
 
-  const receiverError = data.receivers?.find(
-    (receiver) => receiver.isValidWhatsAppNumber === false || (receiver.errors?.length ?? 0) > 0,
+  if (data.ok === false || data.success === false) {
+    throw new Error(`WATI_SEND_FAILED: ${errorMessage ?? "WATI rechazó el mensaje"}`);
+  }
+
+  const receiverError = data.recipients?.find(
+    (receiver) => Array.isArray(receiver.errors) && receiver.errors.length > 0,
   );
-  if (data.result === false || data.ok === false || receiverError) {
-    const firstError = receiverError?.errors?.[0];
+  if (receiverError) {
+    const firstError = receiverError.errors?.[0];
     const detail =
       typeof firstError === "string"
         ? firstError
-        : firstError?.message ?? data.info ?? data.error ?? "WATI rechazó el mensaje";
+        : firstError?.message ?? errorMessage ?? "WATI rechazó el mensaje";
     throw new Error(`WATI_SEND_FAILED: ${detail}`);
   }
 
@@ -72,15 +106,15 @@ async function parseWatiResponse(response: Response) {
 }
 
 export async function sendWatiMessage(phone: string, message: string) {
-  const { baseUrl, authorization } = getWatiConfig();
-  const url = `${baseUrl}/api/v1/sendSessionMessage/${phone}?messageText=${encodeURIComponent(message)}`;
+  const { host, authorization, channel } = getWatiConfig();
 
-  const response = await fetch(url, {
+  const response = await fetch(`${host}/api/ext/v3/conversations/messages/text`, {
     method: "POST",
     headers: {
       Authorization: authorization,
       "Content-Type": "application/json",
     },
+    body: JSON.stringify({ target: channelTarget(phone, channel), text: message }),
   });
 
   await parseWatiResponse(response);
@@ -90,31 +124,32 @@ export async function sendWatiFileFromUrl(
   phone: string,
   input: { url: string; fileName: string; caption: string },
 ) {
-  const { baseUrl, authorization } = getWatiConfig();
-  const mediaResponse = await fetch(input.url, { cache: "force-cache" });
-  if (!mediaResponse.ok) {
-    throw new Error(`WATI_MEDIA_FETCH_FAILED: ${mediaResponse.status}`);
-  }
+  const { host, authorization, channel } = getWatiConfig();
 
-  const formData = new FormData();
-  formData.append("file", await mediaResponse.blob(), input.fileName);
-
-  const query = new URLSearchParams({ caption: input.caption });
-  const response = await fetch(
-    `${baseUrl}/api/v1/sendSessionFile/${phone}?${query.toString()}`,
-    {
-      method: "POST",
-      headers: { Authorization: authorization },
-      body: formData,
+  const response = await fetch(`${host}/api/ext/v3/conversations/messages/fileViaUrl`, {
+    method: "POST",
+    headers: {
+      Authorization: authorization,
+      "Content-Type": "application/json",
     },
-  );
+    body: JSON.stringify({
+      target: channelTarget(phone, channel),
+      file_url: input.url,
+      caption: input.caption,
+    }),
+  });
 
   await parseWatiResponse(response);
 }
 
 export async function getWatiTemplates(): Promise<WatiTemplate[]> {
-  const { baseUrl, authorization } = getWatiConfig();
-  const response = await fetch(`${baseUrl}/api/v1/getMessageTemplates?pageSize=100&pageNumber=1`, {
+  const { host, authorization, channel } = getWatiConfig();
+  const url = new URL(`${host}/api/ext/v3/messageTemplates`);
+  url.searchParams.set("page_number", "1");
+  url.searchParams.set("page_size", "100");
+  if (channel) url.searchParams.set("channel", channel);
+
+  const response = await fetch(url, {
     headers: {
       Authorization: authorization,
       "Content-Type": "application/json",
@@ -126,16 +161,16 @@ export async function getWatiTemplates(): Promise<WatiTemplate[]> {
     throw new Error(`WATI_TEMPLATES_FAILED: ${response.status}`);
   }
 
-  const data = (await response.json()) as { messageTemplates?: WatiTemplateApiItem[] };
+  const data = (await response.json()) as { templates?: WatiV3TemplateItem[] };
 
-  return (data.messageTemplates ?? [])
-    .filter((template) => template.elementName && template.status === "APPROVED")
+  return (data.templates ?? [])
+    .filter((template) => template.name && template.status?.toUpperCase() === "APPROVED")
     .map((template) => {
-      const bodyOriginal = template.bodyOriginal ?? template.body ?? "";
+      const bodyOriginal = template.body_original ?? template.body ?? "";
       const configuredParameters = new Map(
-        (template.customParams ?? [])
-          .filter((parameter) => parameter.paramName)
-          .map((parameter) => [parameter.paramName!, parameter.paramValue ?? ""]),
+        (template.custom_params ?? [])
+          .filter((parameter) => parameter.name)
+          .map((parameter) => [parameter.name!, parameter.value ?? ""]),
       );
 
       for (const match of bodyOriginal.matchAll(/\{\{([^}]+)\}\}/g)) {
@@ -143,13 +178,15 @@ export async function getWatiTemplates(): Promise<WatiTemplate[]> {
         if (!configuredParameters.has(name)) configuredParameters.set(name, "");
       }
 
+      const languageOption = template.language_option;
+
       return {
-        name: template.elementName!,
+        name: template.name!,
         status: template.status!,
         language:
-          typeof template.language === "string"
-            ? template.language
-            : template.language?.text ?? template.language?.key ?? template.language?.value ?? "",
+          typeof languageOption === "string"
+            ? languageOption
+            : languageOption?.text ?? languageOption?.key ?? languageOption?.value ?? "",
         body: template.body ?? "",
         bodyOriginal,
         footer: template.footer ?? null,
@@ -175,21 +212,24 @@ export async function sendWatiTemplateMessage(
   templateName: string,
   parameters: Array<{ name: string; value: string }>,
 ) {
-  const { baseUrl, authorization } = getWatiConfig();
-  const query = new URLSearchParams({ whatsappNumber: phone });
-  const response = await fetch(`${baseUrl}/api/v2/sendTemplateMessage?${query}`, {
+  const { host, authorization, channel } = getWatiConfig();
+
+  const response = await fetch(`${host}/api/ext/v3/messageTemplates/send`, {
     method: "POST",
     headers: {
       Authorization: authorization,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
+      ...(channel ? { channel } : {}),
       template_name: templateName,
       broadcast_name: `kliniu_${templateName}_${Date.now()}`,
-      parameters,
-      ...(process.env.WATI_CHANNEL_PHONE_NUMBER
-        ? { channel_number: process.env.WATI_CHANNEL_PHONE_NUMBER }
-        : {}),
+      recipients: [
+        {
+          phone_number: normalizePhone(phone),
+          custom_params: parameters,
+        },
+      ],
     }),
   });
 

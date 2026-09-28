@@ -1,145 +1,40 @@
 import OpenAI from "openai";
-import { createWatiOrder } from "@/lib/wati-order";
 import { prisma } from "@/lib/prisma";
+import { createWatiOrder } from "@/lib/wati-order";
+import { syncOrderToOdoo } from "@/lib/orders";
+import { buildFullCatalogContext } from "@/lib/chatbot";
+import { formatearMoneda } from "@/app/data/catalog";
+import { buildKliniuKnowledge } from "@/lib/kliniu-knowledge";
 
 const INITIAL_MESSAGE = `👋 ¡Hola! Bienvenido a Kliniu.
 
-Gracias por escribirnos.
+Gracias por escribirnos. Somos especialistas en dispensadores institucionales y soluciones de higiene para empresas, hoteles, restaurantes, clínicas, oficinas y hogares.
 
-Tenemos disponible nuestro Combo Premium en Acero Inoxidable por solo $309.900 COP.
+Cuéntame, ¿qué producto o tipo de espacio necesitas?`;
 
-Incluye los tres dispensadores, todos los insumos iniciales, señal de piso mojado, envío gratis a ciudades principales y pago contra entrega.
+const COMBO_PREMIUM_CATALOG_LINE =
+  "- Combo Premium (slug: combo-premium) | categoría: Promociones | precio: $309.900 COP | dispensadores de acero inoxidable + insumos iniciales, envío gratis a ciudades principales y pago contra entrega.";
 
-¿Es para una empresa, un negocio o para uso personal?`;
+const WATI_CHANNEL_PROMPT = `CANAL WHATSAPP (instrucciones específicas de este canal, tienen prioridad sobre el formato web):
+- El cliente ya está escribiendo por WhatsApp. NO incluyas enlaces wa.me de asesores ni pidas correo electrónico (los enlaces de producto del sitio sí están permitidos, ver abajo).
+- Cuando tengas que escalar algo, indica que un asesor continuará la atención por este mismo chat; no des links.
+- Aquí no hay tarjetas ni botones: escribe siempre nombre y precio en el texto. Menciona entre 1 y 3 productos por mensaje, sin muros de texto.
+- Ignora la instrucción web de "no repetir precios ni URLs": en WhatsApp SÍ debes escribir el precio y puedes incluir el enlace directo del producto https://kliniucolombia.com/producto/<slug> usando el slug exacto del catálogo. El Combo Premium no tiene enlace: descríbelo.
+- Puedes compartir fotos de productos: si el cliente pide una foto o imagen de un producto, confirma brevemente que se la compartes; el sistema la adjunta automáticamente.
 
-const SYSTEM_PROMPT = `Eres el asistente virtual oficial de Kliniu para personas que llegan desde anuncios de Meta (Facebook e Instagram) y por WhatsApp. Tu objetivo es resolver dudas, generar confianza y convertir la conversación en una compra.
-
-PERSONALIDAD
-- Habla de forma cercana, profesional, tranquila y amable, como una persona real.
-- Responde en UN solo mensaje corto. Normalmente máximo 2 frases y 55 palabras.
-- Solo si preguntan por precio o qué incluye, puedes usar hasta 4 viñetas y 90 palabras.
-- Responde únicamente lo que el cliente preguntó. No repitas precios, beneficios, saludos ni información ya dicha.
-- Haz máximo una pregunta por turno y espera la respuesta antes de avanzar.
-- No presiones la compra, no aceleres la conversación y no pidas datos personales hasta que el cliente diga claramente que quiere comprar.
-- Usa emojis únicamente cuando ayuden, máximo uno por mensaje.
-
-COMBO PREMIUM
-Combo Premium en Acero Inoxidable por $309.900 COP.
-- Dispensador de papel higiénico en acero inoxidable, para rollos de hasta 250 metros.
-- Dispensador de toallas en acero inoxidable, capacidad aproximada de 300 toallas.
-- Dispensador de jabón en acero inoxidable, capacidad de 1 litro.
-- GRATIS: 1 litro de jabón, 1 rollo de papel higiénico de 250 metros, 1 paquete de toallas y 1 señal de piso mojado.
-- Envío gratis a ciudades principales de Colombia, pago contra entrega y garantía por defectos de fabricación.
-
-MENSAJE INICIAL
-Cuando sea el primer mensaje del cliente, responde:
-"${INITIAL_MESSAGE}"
-
-CATÁLOGO
-- Además del Combo Premium, puedes asesorar sobre todos los productos activos que aparecen en el catálogo vigente entregado por el sistema.
-- Para cualquier producto usa únicamente el nombre, precio, disponibilidad, descripción, garantía, aplicación y compatibilidad presentes en ese catálogo.
-- Si el producto no aparece en el catálogo o el dato no está disponible, no lo inventes: responde exactamente: "Permíteme verificar esa información con uno de nuestros asesores para darte una respuesta completamente correcta."
-- Si preguntan por el Combo Premium, enumera todos sus elementos sin omitir ninguno.
-- Si preguntan por productos individuales, informa el dato solicitado y pregúntales si desean comprarlo o ver alternativas.
-- La función crear_pedido se usa únicamente para el Combo Premium. Para los demás productos, recoge el interés y ofrece que un asesor complete el pedido.
-
-RESPUESTAS CLAVE
-- Si preguntan por envío: "El envío es completamente GRATIS para ciudades principales de Colombia." Solo aplica al Combo Premium salvo que el catálogo confirme otra condición.
-- Si preguntan por pago del Combo Premium: "Puedes pagar contra entrega, para que tengas mayor tranquilidad al momento de recibir tu pedido."
-- Si preguntan si se vende por separado: confirma que sí y usa el catálogo vigente para dar la información del producto.
-- Si dicen "está caro", resalta calidad, durabilidad, insumos incluidos, envío gratis y pago contra entrega. Nunca inventes ni ofrezcas descuentos.
-- Sí contamos con una foto y un video reales del Combo Premium. Si el cliente pide ver el combo, una foto, una imagen o un video, confirma brevemente que se los compartirás; el sistema adjuntará los archivos automáticamente.
-
-CIERRE
-Cuando el cliente demuestre intención de comprar el Combo Premium, solicita únicamente: nombre completo, ciudad, dirección principal, complemento de dirección, teléfono y cantidad de combos.
-- El complemento puede ser apartamento, torre, bloque, oficina, local, barrio o indicaciones para la entrega. Pregúntalo una sola vez después de la dirección. Si el cliente responde que no aplica, usa null.
-- Acepta a la primera cualquier dato válido: un nombre de dos o más palabras es suficiente y una ciudad como "Bogotá" es suficiente. No vuelvas a pedir ni confirmar un dato que ya aparece claramente en el historial.
-- Pide solo el siguiente dato que realmente falte, máximo uno por turno. Cuando tengas todos los datos, llama la función crear_pedido. Después responde que la solicitud quedó registrada y que un asesor verificará los datos y programará el despacho.
-
-REGLAS
-- Nunca inventes precios, promociones, productos ni condiciones.
-- Nunca cambies el contenido del Combo Premium.
-- No pidas correo electrónico ni datos de tarjeta.
-- No envíes enlaces de pago: el pago del Combo Premium es contra entrega.
-- No inventes datos para llamar la función crear_pedido.`;
-
-function cleanCatalogText(value: string | null | undefined, limit: number) {
-  return (value ?? "").replace(/\s+/g, " ").trim().slice(0, limit);
-}
-
-async function getLiveCatalogContext(query: string) {
-  if (!prisma) return "El catálogo no está disponible temporalmente.";
-
-  const normalizedQuery = query.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  if (/\b(combo|premium|dispensadores de acero)\b/.test(normalizedQuery)) {
-    return "La consulta actual corresponde al Combo Premium descrito en las instrucciones principales.";
-  }
-
-  const ignoredWords = new Set(["quiero", "tienen", "tiene", "para", "como", "cuanto", "precio", "producto", "productos", "kliniu", "necesito", "informacion"]);
-  const terms = [...new Set(normalizedQuery.match(/[a-z0-9]{4,}/g) ?? [])]
-    .filter((term) => !ignoredWords.has(term))
-    .slice(0, 6);
-
-  const products = await prisma.product.findMany({
-    where: {
-      active: true,
-      ...(terms.length > 0
-        ? {
-            OR: terms.flatMap((term) => [
-              { name: { contains: term, mode: "insensitive" as const } },
-              { category: { contains: term, mode: "insensitive" as const } },
-              { description: { contains: term, mode: "insensitive" as const } },
-            ]),
-          }
-        : {}),
-    },
-    orderBy: [{ featured: "desc" }, { name: "asc" }],
-    take: 30,
-    select: {
-      name: true,
-      category: true,
-      brand: true,
-      price: true,
-      availability: true,
-      stock: true,
-      description: true,
-      application: true,
-      compatibility: true,
-      warranty: true,
-      isOutlet: true,
-    },
-  });
-
-  if (products.length === 0) return "No hay productos adicionales disponibles en el catálogo.";
-
-  return products
-    .map((product) => {
-      const details = [
-        `Producto: ${product.name}`,
-        `categoría: ${product.category}`,
-        `marca: ${product.brand}`,
-        `precio: $${product.price.toLocaleString("es-CO")} COP`,
-        `disponibilidad: ${product.availability}`,
-        product.stock > 0 ? "inventario: disponible" : "inventario: sobre pedido",
-        product.isOutlet ? "outlet: sí" : null,
-        product.description ? `descripción: ${cleanCatalogText(product.description, 180)}` : null,
-        product.application ? `aplicación: ${cleanCatalogText(product.application, 180)}` : null,
-        product.compatibility.length > 0
-          ? `compatibilidad: ${product.compatibility.slice(0, 6).join(", ")}`
-          : null,
-        product.warranty ? `garantía: ${cleanCatalogText(product.warranty, 120)}` : null,
-      ].filter(Boolean);
-
-      return `- ${details.join(" | ")}`;
-    })
-    .join("\n");
-}
+CIERRE DE PEDIDO POR WHATSAPP:
+- Solo cuando el cliente confirme que quiere comprar, pide progresivamente y sin repetir datos: (1) productos y cantidades, (2) nombre completo, (3) ciudad, (4) dirección principal, (5) complemento (apto, torre, oficina, barrio o "no aplica"), (6) teléfono de contacto.
+- Usa SIEMPRE el slug exacto que aparece en el catálogo vigente para cada producto. Para el Combo Premium usa el slug "combo-premium".
+- Llama la función crear_pedido únicamente cuando tengas items + nombre + ciudad + dirección + teléfono. Nunca inventes datos para llamarla.
+- El pago es contra entrega. El envío es gratis en Bogotá D.C. y de $12.000 COP al resto del país (el sistema lo calcula; puedes informarlo).
+- Después de crear el pedido, responde que quedó registrado y que un asesor verificará los datos y programará el despacho.`;
 
 const tools = [
   {
     type: "function" as const,
     name: "crear_pedido",
-    description: "Crea el pedido del Combo Premium cuando ya se tienen todos los datos del cliente.",
+    description:
+      "Crea el pedido cuando ya se tienen los items y todos los datos de entrega del cliente.",
     strict: true,
     parameters: {
       type: "object",
@@ -147,28 +42,91 @@ const tools = [
         customerName: { type: "string" },
         customerPhone: { type: "string" },
         city: { type: "string" },
+        department: { type: ["string", "null"] },
         addressLine1: { type: "string" },
         addressLine2: { type: ["string", "null"] },
-        quantity: { type: "number" },
+        items: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              slug: { type: "string" },
+              quantity: { type: "number" },
+            },
+            required: ["slug", "quantity"],
+            additionalProperties: false,
+          },
+        },
       },
-      required: ["customerName", "customerPhone", "city", "addressLine1", "addressLine2", "quantity"],
+      required: [
+        "customerName",
+        "customerPhone",
+        "city",
+        "department",
+        "addressLine1",
+        "addressLine2",
+        "items",
+      ],
       additionalProperties: false,
     },
   },
 ];
 
-async function getSellerStyleExamples(sellerId: string | null | undefined) {
-  if (!sellerId || !prisma) return null;
+type WatiOrderArgs = {
+  customerName: string;
+  customerPhone: string;
+  city: string;
+  department: string | null;
+  addressLine1: string;
+  addressLine2: string | null;
+  items: Array<{ slug: string; quantity: number }>;
+};
 
-  const messages = await prisma.watiMessage.findMany({
-    where: { role: "AGENT", senderId: sellerId },
-    orderBy: { createdAt: "desc" },
-    take: 15,
-    select: { content: true },
-  });
-  if (messages.length === 0) return null;
+async function getSellerContext(sellerId: string | null | undefined) {
+  if (!sellerId || !prisma) return { styleExamples: null as string | null, whatsappPhone: null as string | null };
 
-  return messages.map((m) => `- "${m.content.replace(/\s+/g, " ").trim().slice(0, 200)}"`).join("\n");
+  const [seller, messages] = await Promise.all([
+    prisma.user.findUnique({ where: { id: sellerId }, select: { whatsappPhone: true } }),
+    prisma.watiMessage.findMany({
+      where: { role: "AGENT", senderId: sellerId },
+      orderBy: { createdAt: "desc" },
+      take: 15,
+      select: { content: true },
+    }),
+  ]);
+
+  const styleExamples =
+    messages.length > 0
+      ? messages.map((m) => `- "${m.content.replace(/\s+/g, " ").trim().slice(0, 200)}"`).join("\n")
+      : null;
+
+  return { styleExamples, whatsappPhone: seller?.whatsappPhone ?? null };
+}
+
+async function getCatalogContext() {
+  const [fullCatalog, combos] = await Promise.all([
+    buildFullCatalogContext(),
+    prisma
+      ? prisma.combo.findMany({
+          where: { active: true },
+          select: { name: true, slug: true, price: true, description: true },
+          orderBy: { name: "asc" },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const comboLines = combos.map(
+    (combo) =>
+      `- ${combo.name} | slug: ${combo.slug} | precio: ${formatearMoneda(combo.price)}${combo.description ? ` | descripción: ${combo.description.replace(/\s+/g, " ").trim().slice(0, 140)}` : ""}`,
+  );
+
+  return [COMBO_PREMIUM_CATALOG_LINE, "COMBOS ACTIVOS:", ...comboLines, "", fullCatalog].join("\n");
+}
+
+function summarizeItems(items: Array<{ name: string; quantity: number }>) {
+  return items
+    .map((item) => (item.quantity === 1 ? `1 ${item.name}` : `${item.quantity} × ${item.name}`))
+    .join(", ");
 }
 
 export async function runWatiAssistant(
@@ -186,13 +144,16 @@ export async function runWatiAssistant(
   if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_NOT_CONFIGURED");
 
   const allowOrderCreation = options.allowOrderCreation !== false;
-  const [catalog, styleExamples] = await Promise.all([
-    getLiveCatalogContext(newUserMessage),
-    getSellerStyleExamples(options.sellerId),
+  const [{ styleExamples, whatsappPhone }, catalog] = await Promise.all([
+    getSellerContext(options.sellerId),
+    getCatalogContext(),
   ]);
+
+  const sellerLink = whatsappPhone ? `https://wa.me/${whatsappPhone}` : "";
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const input = [
-    { role: "system" as const, content: SYSTEM_PROMPT },
+    { role: "system" as const, content: buildKliniuKnowledge(sellerLink) },
+    { role: "system" as const, content: WATI_CHANNEL_PROMPT },
     {
       role: "system" as const,
       content: `CATÁLOGO VIGENTE DE KLINIU (fuente de verdad):\n${catalog}`,
@@ -214,27 +175,37 @@ export async function runWatiAssistant(
     model: process.env.OPENAI_WATI_MODEL ?? "gpt-4.1-mini",
     input,
     ...(allowOrderCreation ? { tools } : {}),
-    max_output_tokens: 140,
+    max_output_tokens: 350,
   });
 
   const toolCall = response.output.find((item) => item.type === "function_call");
   if (toolCall && toolCall.type === "function_call" && toolCall.name === "crear_pedido") {
-    const args = JSON.parse(toolCall.arguments) as {
-      customerName: string;
-      customerPhone: string;
-      city: string;
-      addressLine1: string;
-      addressLine2: string | null;
-      quantity: number;
-    };
-    const { orderId } = await createWatiOrder(args);
-    const comboLabel =
-      args.quantity === 1
-        ? "1 Combo Premium"
-        : `${args.quantity} Combos Premium`;
+    const args = JSON.parse(toolCall.arguments) as WatiOrderArgs;
+    const { orderId, items, subtotal, shippingCost } = await createWatiOrder({
+      customerName: args.customerName,
+      customerPhone: args.customerPhone,
+      city: args.city,
+      department: args.department,
+      addressLine1: args.addressLine1,
+      addressLine2: args.addressLine2,
+      items: args.items,
+    });
+
+    let orderNumber = "";
+    try {
+      const synced = await syncOrderToOdoo(orderId);
+      orderNumber = synced.odooOrderName ?? "";
+    } catch {
+      // Si Odoo falla, igual confirmamos localmente; un asesor lo sincroniza.
+    }
+
+    const total = subtotal + shippingCost;
+    const shippingText =
+      shippingCost === 0 ? "envío gratis" : `envío $${shippingCost.toLocaleString("es-CO")}`;
+    const numberText = orderNumber ? ` Número de pedido: ${orderNumber}.` : "";
 
     return {
-      reply: `¡Perfecto, ${args.customerName}! 🎉 Tu pedido de ${comboLabel} quedó registrado. Gracias por elegir Kliniu. Uno de nuestros asesores verificará los datos y programará el despacho lo antes posible. El pago será contra entrega.`,
+      reply: `¡Listo, ${args.customerName}! 🎉 Registramos tu pedido de ${summarizeItems(items)}. Total: $${total.toLocaleString("es-CO")} (${shippingText}).${numberText} El pago es contra entrega y un asesor confirmará el despacho. Gracias por elegir Kliniu.`,
       orderCreated: { orderId },
     };
   }

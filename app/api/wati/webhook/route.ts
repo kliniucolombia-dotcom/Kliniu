@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { runWatiAssistant } from "@/lib/wati-ai";
 import { pickSellerForNewConversation } from "@/lib/wati-conversations";
 import { sendWatiFileFromUrl, sendWatiMessage } from "@/lib/wati";
+import { getCatalogSnapshot } from "@/lib/chatbot";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { syncOrderToOdoo } from "@/lib/orders";
 
@@ -62,7 +63,7 @@ function isFarewellMessage(message: string) {
   );
 }
 
-function getRequestedComboMedia(history: ConversationHistory[], message: string) {
+function getRequestedComboMedia(history: ConversationHistory[], message: string): Array<"image" | "video"> {
   const normalized = normalizeForIntent(message);
   const asksForImage = /\b(foto|fotos|imagen|imagenes|fotografia|fotografias)\b/.test(normalized);
   const asksForVideo = /\b(video|videos|grabacion|grabaciones)\b/.test(normalized);
@@ -82,9 +83,29 @@ function getRequestedComboMedia(history: ConversationHistory[], message: string)
       content.includes(COMBO_MEDIA.video.panelMessage),
   );
 
-  return asksAboutCombo && !mediaWasAlreadySent
-    ? (["image"] as const)
-    : ([] as const);
+  return asksAboutCombo && !mediaWasAlreadySent ? ["image"] : [];
+}
+
+async function getRequestedProductMedia(history: ConversationHistory[], message: string) {
+  const normalized = normalizeForIntent(message);
+  const asksForImage = /\b(foto|fotos|imagen|imagenes|fotografia|fotografias)\b/.test(normalized);
+  if (!asksForImage) return null;
+
+  const lastUserMessage = [...history].reverse().find(({ role }) => role === "user")?.content;
+  const query = [lastUserMessage, message].filter(Boolean).join(" ") || message;
+  const snapshot = await getCatalogSnapshot(query);
+  const product = snapshot.matchedProducts[0];
+  if (!product) return null;
+
+  const panelMessage = `📷 Imagen de ${product.nombre} enviada.`;
+  if (history.some(({ content }) => content.includes(panelMessage))) return null;
+
+  return {
+    url: `${SITE_URL}${product.imagen}`,
+    fileName: product.imagen.split("/").pop() || `${product.slug}.jpg`,
+    caption: `📷 ${product.nombre} · ${product.precio}`,
+    panelMessage,
+  };
 }
 
 /**
@@ -248,10 +269,30 @@ export async function POST(request: Request) {
     .map((m) => ({ role: m.role === "USER" ? ("user" as const) : ("assistant" as const), content: m.content }));
 
   const requestedMedia = getRequestedComboMedia(history, text);
-  const { reply, orderCreated } = await runWatiAssistant(history, text, {
-    allowOrderCreation: !conversation.orderId,
-    sellerId: conversation.assignedSellerId,
-  });
+  let productMedia: Awaited<ReturnType<typeof getRequestedProductMedia>> = null;
+  if (!requestedMedia.includes("image")) {
+    try {
+      productMedia = await getRequestedProductMedia(history, text);
+    } catch (error) {
+      console.error("WATI_PRODUCT_MEDIA_LOOKUP_FAILED", conversation.id, error);
+    }
+  }
+
+  let reply: string;
+  let orderCreated: { orderId: string } | null = null;
+  try {
+    const result = await runWatiAssistant(history, text, {
+      allowOrderCreation: !conversation.orderId,
+      sellerId: conversation.assignedSellerId,
+    });
+    reply = result.reply;
+    orderCreated = result.orderCreated;
+  } catch (error) {
+    // Nunca dejamos al cliente sin respuesta: si el asistente o Odoo fallan,
+    // avisamos que un asesor continúa y registramos el error.
+    console.error("WATI_ASSISTANT_FAILED", conversation.id, error);
+    reply = "Recibí tu mensaje, pero tuve un problema técnico al procesarlo. Un asesor continuará con tu pedido por este mismo chat en un momento.";
+  }
 
   await prisma.watiMessage.create({
     data: { conversationId: conversation.id, role: "ASSISTANT", content: reply },
@@ -302,6 +343,22 @@ export async function POST(request: Request) {
         data: mediaType === "image" ? { comboImageSentAt: null } : { comboVideoSentAt: null },
       });
       console.error(`WATI_${mediaType.toUpperCase()}_SEND_FAILED`, error);
+    }
+  }
+
+  if (productMedia) {
+    try {
+      await sendWatiFileFromUrl(phone, productMedia);
+      await prisma.watiMessage.create({
+        data: {
+          conversationId: conversation.id,
+          role: "ASSISTANT",
+          content: productMedia.panelMessage,
+        },
+      });
+      await broadcastPanelUpdate("wati");
+    } catch (error) {
+      console.error("WATI_PRODUCT_IMAGE_SEND_FAILED", error);
     }
   }
 

@@ -6,6 +6,7 @@ import {
   MdArrowBack,
   MdCheckCircle,
   MdClose,
+  MdDeleteOutline,
   MdErrorOutline,
   MdExpandMore,
   MdFilterList,
@@ -555,6 +556,7 @@ export default function WhatsappPanelPage() {
   const [search, setSearch] = useState("");
   const [conversationFilter, setConversationFilter] = useState<ConversationFilter>("ALL");
   const [showNewChat, setShowNewChat] = useState(false);
+  const [clearingAll, setClearingAll] = useState(false);
   const [templates, setTemplates] = useState<WatiTemplate[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [templatesError, setTemplatesError] = useState("");
@@ -591,8 +593,32 @@ export default function WhatsappPanelPage() {
     }
   }, []);
 
-  const loadMessages = useCallback(async (id: string) => {
-    if (id !== selectedIdRef.current) return;
+  const clearAllConversations = useCallback(async () => {
+    if (clearingAll) return;
+    const confirmed = window.confirm(
+      "¿Vaciar TODAS las conversaciones de WhatsApp? Se eliminarán los chats y mensajes de este número. Esta acción no se puede deshacer.",
+    );
+    if (!confirmed) return;
+
+    setClearingAll(true);
+    try {
+      const response = await fetch("/api/panel/whatsapp/conversations", { method: "DELETE" });
+      if (!response.ok) {
+        const data = (await response.json().catch(() => ({}))) as { error?: string };
+        setSendError(data.error ?? "No fue posible vaciar las conversaciones.");
+        return;
+      }
+      setConversations([]);
+      setSelectedId(null);
+      setMessages([]);
+    } catch {
+      setSendError("No fue posible vaciar las conversaciones.");
+    } finally {
+      setClearingAll(false);
+    }
+  }, [clearingAll]);
+
+  const loadMessages = useCallback(async (id: string) => {    if (id !== selectedIdRef.current) return;
     const requestId = ++messagesRequestIdRef.current;
     const response = await fetch(`/api/panel/whatsapp/conversations/${id}/messages`, {
       cache: "no-store",
@@ -1027,15 +1053,27 @@ export default function WhatsappPanelPage() {
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={openNewChat}
-                className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[#0E7C82] shadow-lg shadow-black/10 transition hover:scale-105"
-                aria-label="Nuevo chat"
-                title="Nuevo chat"
-              >
-                <MdAdd size={22} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={clearAllConversations}
+                  disabled={clearingAll || conversations.length === 0}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-white shadow-lg shadow-black/10 transition hover:scale-105 hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label="Vaciar conversaciones"
+                  title="Vaciar conversaciones"
+                >
+                  <MdDeleteOutline size={20} />
+                </button>
+                <button
+                  type="button"
+                  onClick={openNewChat}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[#0E7C82] shadow-lg shadow-black/10 transition hover:scale-105"
+                  aria-label="Nuevo chat"
+                  title="Nuevo chat"
+                >
+                  <MdAdd size={22} />
+                </button>
+              </div>
             </div>
 
             <div className="mt-4 flex items-center rounded-xl bg-white/15 px-3 ring-1 ring-white/15 focus-within:bg-white/20">
