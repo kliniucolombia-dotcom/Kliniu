@@ -32,6 +32,7 @@ type ConversationSummary = {
   notes: string | null;
   botPaused: boolean;
   orderId: string | null;
+  orderChannel: "ONLINE" | "WHATSAPP" | "MARKETPLACE" | "OTHER" | null;
   assignedSellerId: string | null;
   assignedSellerName: string | null;
   odooOrderId: number | null;
@@ -818,14 +819,19 @@ export default function WhatsappPanelPage() {
   const effectiveSalesStage: SalesStage = selected?.orderId
     ? "SOLD"
     : conversationSalesStage;
+  const selectedIsWhatsappOrder = selected?.orderChannel === "WHATSAPP";
   const selectedOdooStatusText = !selected
     ? ""
     : selected.odooSyncStatus === "SYNCED"
-      ? `Borrador ${selected.odooOrderName ?? ""} creado en Odoo, sin confirmar.`
+      ? selectedIsWhatsappOrder
+        ? `Pedido ${selected.odooOrderName ?? ""} confirmado en Odoo; albarán de entrega generado.`
+        : `Borrador ${selected.odooOrderName ?? ""} creado en Odoo, sin confirmar.`
       : selected.odooSyncStatus === "FAILED"
         ? `Odoo pendiente: ${selected.odooSyncError ?? "no fue posible crear el borrador"}.`
         : selected.orderId
-          ? "El borrador de Odoo se creará automáticamente, sin confirmarse."
+          ? selectedIsWhatsappOrder
+            ? "El pedido se creará y confirmará en Odoo automáticamente (genera albarán)."
+            : "El borrador de Odoo se creará automáticamente, sin confirmarse."
           : selected.followUpSentAt
             ? "Ya se envió un mensaje de seguimiento."
             : "El seguimiento se enviará si el cliente deja de responder.";
@@ -932,7 +938,7 @@ export default function WhatsappPanelPage() {
         return;
       }
       await loadConversations();
-      setOdooNotice(`${data.odooOrderName ?? "Borrador"} creado en Odoo. Sin confirmar.`);
+      setOdooNotice(data.message ?? `${data.odooOrderName ?? "Pedido"} sincronizado con Odoo.`);
     } catch {
       setOdooNotice("No fue posible conectar con Odoo.");
     } finally {
@@ -1377,7 +1383,7 @@ export default function WhatsappPanelPage() {
                         className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs font-semibold text-[#475569] transition-colors hover:bg-[#F1F5F9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#11AEB4]/40 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         <MdOutlineAssignment size={16} className="text-[#0E7C82]" />
-                        {selected.odooOrderId ? "Actualizar estado Odoo" : "Crear borrador en Odoo"}
+                        {selected.odooOrderId ? "Actualizar estado Odoo" : selected.orderChannel === "WHATSAPP" ? "Confirmar en Odoo" : "Crear borrador en Odoo"}
                       </button>
                     </div>
                   ) : null}

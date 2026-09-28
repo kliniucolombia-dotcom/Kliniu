@@ -51,6 +51,7 @@ export async function getAllWatiConversations() {
         where: { id: { in: orderIds } },
         select: {
           id: true,
+          channel: true,
           odooOrderId: true,
           odooOrderName: true,
           odooSyncStatus: true,
@@ -73,6 +74,7 @@ export async function getAllWatiConversations() {
     notes: c.notes,
     botPaused: c.botPaused,
     orderId: c.orderId,
+    orderChannel: order?.channel ?? null,
     assignedSellerId: c.assignedSellerId,
     assignedSellerName: c.assignedSeller?.fullName ?? null,
     odooOrderId: order?.odooOrderId ?? null,
