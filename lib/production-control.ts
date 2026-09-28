@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import type { Permission } from "@/lib/permission-defaults";
-import { isRecord, parseBogotaCivilDate, parseEnum, parseRequiredString } from "@/lib/operations-validation";
+import { isRecord, parseBogotaCivilDate, parseDateRange, parseEnum, parseRequiredString } from "@/lib/operations-validation";
+import { addDays, bogotaNow } from "@/lib/commercial-calendar";
+import { OWN_WINDOW_DAYS, overlapsPartially, withinOwnWindow } from "@/lib/production-control-calculator";
 
 function requirePrisma() {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
@@ -259,11 +261,211 @@ export async function deleteOperation(id: string) {
   await db.standardOperation.delete({ where: { id } });
 }
 
+// ─── Bloques por operario ────────────────────────────────────────
+
+const SECTIONS = ["ENSAMBLE", "EMPAQUE"] as const;
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+const MAX_SHARED_BY = 10;
+const MAX_RANGE_DAYS = 366;
+// ponytail: tope fijo de filas por consulta; paginar si un rango de un año supera esto.
+const MAX_ENTRY_ROWS = 5000;
+
+/** Quién puede aparecer como operario: OPERARIO/LIDER_ENSAMBLE activos (salvo override que lo quite) o con override para registrar. */
+const OPERATOR_WHERE = {
+  status: "ACTIVE" as const,
+  OR: [
+    {
+      role: { in: ["OPERARIO" as const, "LIDER_ENSAMBLE" as const] },
+      permissions: { none: { module: "MODULE_CONTROL_PRODUCCION" as const, canCreate: false } },
+    },
+    { permissions: { some: { module: "MODULE_CONTROL_PRODUCCION" as const, canCreate: true } } },
+  ],
+};
+
+export type EntryInput = {
+  operatorId: string;
+  date: string;
+  start: string;
+  end: string;
+  section: (typeof SECTIONS)[number];
+  workOrderId: string | null;
+  operationId: string;
+  quantity: number;
+  sharedBy: number;
+  observations: string | null;
+};
+
+export type EntryActor = { id: string; permission: Permission };
+
+function parseTime(value: unknown): string {
+  if (typeof value !== "string" || !TIME_RE.test(value)) throw new Error("INVALID_TIME");
+  return value;
+}
+
+/** Valida el cuerpo de un bloque. Con `partial` solo exige los campos presentes. */
+export function parseEntryInput(body: unknown, partial = false): Partial<EntryInput> {
+  if (!isRecord(body)) throw new Error("INVALID_BODY");
+  const has = (k: string) => body[k] !== undefined;
+  const out: Partial<EntryInput> = {};
+  if (has("operatorId")) out.operatorId = parseRequiredString(body.operatorId);
+  if (!partial || has("date")) {
+    parseBogotaCivilDate(body.date);
+    out.date = body.date as string;
+  }
+  if (!partial || has("start")) out.start = parseTime(body.start);
+  if (!partial || has("end")) out.end = parseTime(body.end);
+  if (!partial || has("section")) out.section = parseEnum(body.section, SECTIONS);
+  if (!partial || has("workOrderId")) out.workOrderId = optionalText(body.workOrderId);
+  if (!partial || has("operationId")) out.operationId = parseRequiredString(body.operationId);
+  if (!partial || has("quantity")) out.quantity = intOrThrow(body.quantity, "INVALID_ENTRY_QUANTITY", 0);
+  if (has("sharedBy")) {
+    out.sharedBy = intOrThrow(body.sharedBy, "INVALID_SHARED_BY", 1);
+    if (out.sharedBy > MAX_SHARED_BY) throw new Error("INVALID_SHARED_BY");
+  }
+  if (has("observations")) out.observations = optionalText(body.observations);
+  return out;
+}
+
+const entryInclude = {
+  operator: { select: { id: true, fullName: true } },
+  operation: { select: { id: true, code: true, name: true, family: true } },
+  workOrder: { select: { id: true, number: true, reference: true, productName: true, status: true } },
+} as const;
+
+const clock = (date: string, hhmm: string) => new Date(`${date}T${hhmm}:00.000Z`);
+const dateKeyOf = (d: Date) => d.toISOString().slice(0, 10);
+const timeKeyOf = (d: Date) => d.toISOString().slice(11, 16);
+
+type ExistingEntry = NonNullable<Awaited<ReturnType<typeof findEntry>>>;
+
+function findEntry(id: string) {
+  return requirePrisma().productionTimeEntry.findUnique({ where: { id } });
+}
+
+/** Crea o actualiza un bloque aplicando todas las reglas; `existing` = null para crear. */
+async function writeEntry(actor: EntryActor, existing: ExistingEntry | null, input: Partial<EntryInput>) {
+  const db = requirePrisma();
+  const today = bogotaNow().key;
+
+  let operatorId = existing?.operatorId ?? actor.id;
+  // Solo quien gestiona registra o reasigna a nombre de otro; para los demás el campo se ignora.
+  if (input.operatorId !== undefined && input.operatorId !== operatorId && actor.permission.canEdit) {
+    if (input.operatorId !== actor.id) {
+      const eligible = await db.user.findFirst({ where: { id: input.operatorId, ...OPERATOR_WHERE }, select: { id: true } });
+      if (!eligible) throw new Error("OPERATOR_NOT_ELIGIBLE");
+    }
+    operatorId = input.operatorId;
+  }
+
+  const m = {
+    date: input.date ?? (existing ? dateKeyOf(existing.workDate) : ""),
+    start: input.start ?? (existing ? timeKeyOf(existing.startTime) : ""),
+    end: input.end ?? (existing ? timeKeyOf(existing.endTime) : ""),
+    section: input.section ?? existing?.section ?? "ENSAMBLE",
+    workOrderId: input.workOrderId !== undefined ? input.workOrderId : (existing?.workOrderId ?? null),
+    operationId: input.operationId ?? existing?.operationId ?? "",
+    quantity: input.quantity ?? existing?.quantity ?? 0,
+    sharedBy: input.sharedBy ?? existing?.sharedBy ?? 1,
+    observations: input.observations !== undefined ? input.observations : (existing?.observations ?? null),
+  };
+
+  if (m.date > today) throw new Error("DATE_IN_FUTURE");
+  if (!actor.permission.canEdit && !withinOwnWindow(m.date, today)) throw new Error("OUTSIDE_EDIT_WINDOW");
+  if (m.end <= m.start) throw new Error("INVALID_TIME_RANGE");
+
+  return db.$transaction(async (tx) => {
+    // Dos envíos seguidos del mismo operario/día no deben pasar ambos el chequeo de solapes.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`time-entry:${operatorId}:${m.date}`}))`;
+
+    const operation = await tx.standardOperation.findUnique({ where: { id: m.operationId } });
+    if (!operation) throw new Error("OPERATION_NOT_FOUND");
+    const operationChanged = !existing || existing.operationId !== m.operationId;
+    if (operationChanged && !operation.isActive) throw new Error("OPERATION_INACTIVE");
+    const standardSeconds = operationChanged ? operation.standardSeconds : existing.standardSeconds;
+
+    if (standardSeconds > 0 && !m.workOrderId) throw new Error("WORK_ORDER_REQUIRED");
+    if (standardSeconds > 0 && m.quantity <= 0) throw new Error("INVALID_ENTRY_QUANTITY");
+    if (m.workOrderId && (!existing || existing.workOrderId !== m.workOrderId)) {
+      const order = await tx.workOrder.findUnique({ where: { id: m.workOrderId }, select: { status: true } });
+      if (!order) throw new Error("WORK_ORDER_NOT_FOUND");
+      if (order.status !== "OPEN") throw new Error("WORK_ORDER_CLOSED");
+    }
+
+    const workDate = civilDate(m.date);
+    const startTime = clock(m.date, m.start);
+    const endTime = clock(m.date, m.end);
+    const sameDay = await tx.productionTimeEntry.findMany({
+      where: { operatorId, workDate, ...(existing ? { id: { not: existing.id } } : {}) },
+      select: { startTime: true, endTime: true },
+    });
+    if (overlapsPartially(sameDay, { startTime, endTime })) throw new Error("TIME_OVERLAP");
+
+    const data = {
+      operatorId, workDate, startTime, endTime, section: m.section, workOrderId: m.workOrderId,
+      operationId: m.operationId, standardSeconds, quantity: m.quantity, sharedBy: m.sharedBy, observations: m.observations,
+    };
+    return existing
+      ? tx.productionTimeEntry.update({ where: { id: existing.id }, data, include: entryInclude })
+      : tx.productionTimeEntry.create({ data: { ...data, createdById: actor.id }, include: entryInclude });
+  });
+}
+
+export async function createEntry(input: Partial<EntryInput>, actor: EntryActor) {
+  return writeEntry(actor, null, input);
+}
+
+/** Propio dentro de la ventana, o cualquiera con `edit`. */
+export async function updateEntry(id: string, input: Partial<EntryInput>, actor: EntryActor) {
+  const existing = await findEntry(id);
+  if (!existing) throw new Error("NOT_FOUND");
+  if (!actor.permission.canEdit) {
+    if (existing.operatorId !== actor.id || !actor.permission.canCreate) throw new Error("FORBIDDEN");
+    if (!withinOwnWindow(dateKeyOf(existing.workDate), bogotaNow().key)) throw new Error("OUTSIDE_EDIT_WINDOW");
+  }
+  return writeEntry(actor, existing, input);
+}
+
+/** Propio dentro de la ventana, o cualquiera con `delete`. */
+export async function deleteEntry(id: string, actor: EntryActor) {
+  const db = requirePrisma();
+  const existing = await findEntry(id);
+  if (!existing) throw new Error("NOT_FOUND");
+  if (!actor.permission.canDelete) {
+    if (existing.operatorId !== actor.id || !actor.permission.canCreate) throw new Error("FORBIDDEN");
+    if (!actor.permission.canEdit && !withinOwnWindow(dateKeyOf(existing.workDate), bogotaNow().key)) {
+      throw new Error("OUTSIDE_EDIT_WINDOW");
+    }
+  }
+  await db.productionTimeEntry.delete({ where: { id } });
+}
+
+export type EntryFilters = { from: string; to: string; operatorId?: string; workOrderId?: string; section?: string };
+
+export async function listEntries(filters: EntryFilters, actor: EntryActor, scope: ControlScope) {
+  const db = requirePrisma();
+  const { from, to } = parseDateRange(filters.from, filters.to);
+  if (addDays(from, MAX_RANGE_DAYS) < to) throw new Error("RANGE_TOO_LONG");
+  const rows = await db.productionTimeEntry.findMany({
+    where: {
+      workDate: { gte: civilDate(from), lte: civilDate(to) },
+      // Quien solo registra lo suyo nunca ve bloques de otros, pida lo que pida.
+      ...(scope === "own" ? { operatorId: actor.id } : filters.operatorId ? { operatorId: filters.operatorId } : {}),
+      ...(filters.workOrderId ? { workOrderId: filters.workOrderId } : {}),
+      ...(filters.section ? { section: parseEnum(filters.section, SECTIONS) } : {}),
+    },
+    include: entryInclude,
+    orderBy: [{ workDate: "desc" }, { operator: { fullName: "asc" } }, { startTime: "asc" }],
+    take: MAX_ENTRY_ROWS + 1,
+  });
+  return { entries: rows.slice(0, MAX_ENTRY_ROWS), truncated: rows.length > MAX_ENTRY_ROWS };
+}
+
 // ─── Catálogos del formulario ────────────────────────────────────
 
-export async function getControlOptions(scope: ControlScope) {
+export async function getControlOptions(scope: ControlScope, actorId: string) {
   const db = requirePrisma();
-  const [openOrders, operations, products, pastOrders, pastClients, nextNumber, operators] = await Promise.all([
+  const today = bogotaNow().key;
+  const [openOrders, operations, products, pastOrders, pastClients, nextNumber, operators, recent] = await Promise.all([
     db.workOrder.findMany({
       where: { status: "OPEN" },
       select: { id: true, number: true, reference: true, productName: true, client: true },
@@ -289,23 +491,17 @@ export async function getControlOptions(scope: ControlScope) {
       ? db.workOrder.findMany({ select: { client: true }, distinct: ["client"], orderBy: { client: "asc" } })
       : Promise.resolve([]),
     scope === "manage" ? nextWorkOrderNumber() : Promise.resolve(null),
-    // Selector "registrar por": operarios, líderes de ensamble y quien tenga override para registrar.
-    scope === "manage"
-      ? db.user.findMany({
-          where: {
-            status: "ACTIVE",
-            OR: [
-              {
-                role: { in: ["OPERARIO", "LIDER_ENSAMBLE"] },
-                permissions: { none: { module: "MODULE_CONTROL_PRODUCCION", canCreate: false } },
-              },
-              { permissions: { some: { module: "MODULE_CONTROL_PRODUCCION", canCreate: true } } },
-            ],
-          },
-          select: { id: true, fullName: true },
-          orderBy: { fullName: "asc" },
-        })
-      : Promise.resolve([]),
+    // "Registrar por" (manage) y filtro por operario (manage/read).
+    scope === "own"
+      ? Promise.resolve([])
+      : db.user.findMany({ where: OPERATOR_WHERE, select: { id: true, fullName: true }, orderBy: { fullName: "asc" } }),
+    // Operaciones usadas en el último mes por quien registra: salen primero en el selector.
+    db.productionTimeEntry.findMany({
+      where: { operatorId: actorId, workDate: { gte: civilDate(addDays(today, -30)) } },
+      select: { operationId: true, section: true },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    }),
   ]);
 
   const references = new Map<string, string>();
@@ -320,5 +516,9 @@ export async function getControlOptions(scope: ControlScope) {
     references: [...references.entries()].map(([reference, productName]) => ({ reference, productName })),
     clients,
     nextNumber,
+    today,
+    ownWindowDays: OWN_WINDOW_DAYS,
+    recentOperationIds: [...new Set(recent.map((r) => r.operationId))].slice(0, 15),
+    lastSection: recent[0]?.section ?? null,
   };
 }

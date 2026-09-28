@@ -1,16 +1,20 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MdAssignment, MdTimer } from "react-icons/md";
+import { MdAssignment, MdEditNote, MdTimer, MdViewList } from "react-icons/md";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { Empty, Tabs } from "../_components/ops-ui";
 import { SkeletonTable } from "../../components/skeleton";
 import { WorkOrdersTab } from "./_components/work-orders-tab";
 import { OperationsTab } from "./_components/operations-tab";
+import { RegisterTab } from "./_components/register-tab";
+import { EntriesTab } from "./_components/entries-tab";
 import { jsonError, type Notify, type Options, type Scope } from "./_components/shared";
 
-type Tab = "odts" | "tiempos";
+type Tab = "registrar" | "registros" | "odts" | "tiempos";
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode; scopes: Scope[] }[] = [
+  { key: "registrar", label: "Registrar", icon: <MdEditNote size={16} />, scopes: ["manage", "own"] },
+  { key: "registros", label: "Registros", icon: <MdViewList size={16} />, scopes: ["manage", "own", "read"] },
   { key: "odts", label: "ODTs", icon: <MdAssignment size={16} />, scopes: ["manage", "read"] },
   { key: "tiempos", label: "Tiempos estándar", icon: <MdTimer size={16} />, scopes: ["manage", "read"] },
 ];
@@ -18,7 +22,7 @@ const TABS: { key: Tab; label: string; icon: React.ReactNode; scopes: Scope[] }[
 export default function ControlProduccionPage() {
   const [options, setOptions] = useState<Options | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>("odts");
+  const [tab, setTab] = useState<Tab>("registrar");
   const [alert, setAlert] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
 
   // Solo la primera carga reemplaza la pantalla por el error; en recargas se avisa y se conservan los datos.
@@ -46,7 +50,9 @@ export default function ControlProduccionPage() {
   }, [alert]);
 
   const notify: Notify = useCallback((type, msg) => setAlert({ type, msg }), []);
-  const tabs = options ? TABS.filter((t) => t.scopes.includes(options.scope)) : [];
+  const tabs = options
+    ? TABS.filter((t) => t.scopes.includes(options.scope)).map((t) => (t.key === "registros" && options.scope === "own" ? { ...t, label: "Mis registros" } : t))
+    : [];
   const current = tabs.find((t) => t.key === tab)?.key ?? tabs[0]?.key;
 
   return (
@@ -66,6 +72,8 @@ export default function ControlProduccionPage() {
       ) : (
         <>
           <Tabs tabs={tabs} value={current!} onChange={setTab} />
+          {current === "registrar" && <RegisterTab options={options} notify={notify} onChanged={load} />}
+          {current === "registros" && <EntriesTab options={options} notify={notify} />}
           {current === "odts" && <WorkOrdersTab options={options} notify={notify} onChanged={load} />}
           {current === "tiempos" && <OperationsTab options={options} notify={notify} onChanged={load} />}
         </>

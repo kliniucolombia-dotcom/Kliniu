@@ -9,7 +9,7 @@ export async function GET() {
   try {
     const permission = await getEffectivePermission(access.user, "MODULE_CONTROL_PRODUCCION");
     const scope = controlScope(permission) ?? "read";
-    const options = await getControlOptions(scope);
+    const options = await getControlOptions(scope, access.user.id);
     return Response.json({ ...options, permission, scope, me: { id: access.user.id, fullName: access.user.fullName } });
   } catch (e) {
     return productionControlErrorResponse(e);
