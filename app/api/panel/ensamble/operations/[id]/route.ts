@@ -1,35 +1,32 @@
-import { getEffectivePermission, requirePermission } from "@/lib/permissions";
-import { deleteEntry, parseEntryInput, updateEntry } from "@/lib/production-control";
+import { requirePermission } from "@/lib/permissions";
+import { deleteOperation, parseOperationInput, updateOperation } from "@/lib/production-control";
 import { productionControlErrorResponse } from "@/lib/production-control-errors";
 import { readJsonRecord } from "@/lib/operations-validation";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-// Se exige `create` y el dominio decide: propio dentro de la ventana, o ajeno con edit/delete.
 export async function PATCH(request: Request, { params }: Ctx) {
-  const access = await requirePermission("MODULE_CONTROL_PRODUCCION", "create");
+  const access = await requirePermission("MODULE_ENSAMBLE", "edit");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   try {
     const { id } = await params;
-    const permission = await getEffectivePermission(access.user, "MODULE_CONTROL_PRODUCCION");
-    const entry = await updateEntry(id, parseEntryInput(await readJsonRecord(request), true), { id: access.user.id, permission });
+    const operation = await updateOperation(id, parseOperationInput(await readJsonRecord(request), true));
     broadcastPanelUpdate("production-control").catch(() => {});
-    return Response.json(entry);
+    return Response.json(operation);
   } catch (e) {
     return productionControlErrorResponse(e);
   }
 }
 
 export async function DELETE(_: Request, { params }: Ctx) {
-  const access = await requirePermission("MODULE_CONTROL_PRODUCCION", "create");
+  const access = await requirePermission("MODULE_ENSAMBLE", "delete");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   try {
     const { id } = await params;
-    const permission = await getEffectivePermission(access.user, "MODULE_CONTROL_PRODUCCION");
-    await deleteEntry(id, { id: access.user.id, permission });
+    await deleteOperation(id);
     broadcastPanelUpdate("production-control").catch(() => {});
     return Response.json({ ok: true });
   } catch (e) {

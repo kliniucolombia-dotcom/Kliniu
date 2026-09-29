@@ -43,6 +43,6 @@ export function productionControlErrorResponse(e: unknown): Response {
   if (e && typeof e === "object" && "code" in e && e.code === "P2025") {
     return Response.json({ error: MESSAGES.NOT_FOUND.error }, { status: 404 });
   }
-  console.error("[control-produccion]", e);
+  console.error("[ensamble]", e);
   return Response.json({ error: "Error interno" }, { status: 500 });
 }

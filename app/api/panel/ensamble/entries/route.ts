@@ -5,11 +5,11 @@ import { readJsonRecord } from "@/lib/operations-validation";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET(request: Request) {
-  const access = await requirePermission("MODULE_CONTROL_PRODUCCION", "view");
+  const access = await requirePermission("MODULE_ENSAMBLE", "view");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   try {
-    const permission = await getEffectivePermission(access.user, "MODULE_CONTROL_PRODUCCION");
+    const permission = await getEffectivePermission(access.user, "MODULE_ENSAMBLE");
     const url = new URL(request.url);
     const param = (k: string) => url.searchParams.get(k) || undefined;
     const result = await listEntries(
@@ -24,11 +24,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const access = await requirePermission("MODULE_CONTROL_PRODUCCION", "create");
+  const access = await requirePermission("MODULE_ENSAMBLE", "create");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   try {
-    const permission = await getEffectivePermission(access.user, "MODULE_CONTROL_PRODUCCION");
+    const permission = await getEffectivePermission(access.user, "MODULE_ENSAMBLE");
     const entry = await createEntry(parseEntryInput(await readJsonRecord(request)), { id: access.user.id, permission });
     broadcastPanelUpdate("production-control").catch(() => {});
     return Response.json(entry, { status: 201 });

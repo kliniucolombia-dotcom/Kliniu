@@ -52,7 +52,7 @@ export function WorkOrdersTab({ options, notify, onChanged }: { options: Options
   const load = useCallback(async () => {
     const request = ++lastRequest.current;
     try {
-      const r = await fetch(`/api/panel/control-produccion/work-orders?status=${status}${serverQ ? `&q=${encodeURIComponent(serverQ)}` : ""}`);
+      const r = await fetch(`/api/panel/ensamble/work-orders?status=${status}${serverQ ? `&q=${encodeURIComponent(serverQ)}` : ""}`);
       const data = r.ok ? await r.json() : null;
       const error = r.ok ? null : await jsonError(r, "No fue posible cargar las ODTs");
       if (request !== lastRequest.current) return;
@@ -104,7 +104,7 @@ export function WorkOrdersTab({ options, notify, onChanged }: { options: Options
       client: form.client, lot: int(form.lot), quantity: Number(form.quantity), notes: form.notes,
       ...(form.id ? { producedQuantity: int(form.producedQuantity) } : {}),
     };
-    const res = await (form.id ? patchReq(`/api/panel/control-produccion/work-orders/${form.id}`, body) : post("/api/panel/control-produccion/work-orders", body))
+    const res = await (form.id ? patchReq(`/api/panel/ensamble/work-orders/${form.id}`, body) : post("/api/panel/ensamble/work-orders", body))
       .catch(() => ({ ok: false, error: "Error de conexión" }))
       .finally(() => setSaving(false));
     if (!res.ok) return notify("err", res.error ?? "No fue posible guardar la ODT");
@@ -115,7 +115,7 @@ export function WorkOrdersTab({ options, notify, onChanged }: { options: Options
 
   const loadDetail = async (id: string): Promise<Detail | null> => {
     try {
-      const r = await fetch(`/api/panel/control-produccion/work-orders/${id}`);
+      const r = await fetch(`/api/panel/ensamble/work-orders/${id}`);
       return r.ok ? ((await r.json()) as Detail) : null;
     } catch {
       return null;
@@ -132,7 +132,7 @@ export function WorkOrdersTab({ options, notify, onChanged }: { options: Options
     if (!closing) return;
     setSaving(true);
     markLocalWrite();
-    const res = await patchReq(`/api/panel/control-produccion/work-orders/${closing.order.id}`, { action: "close", producedQuantity: int(closing.produced) })
+    const res = await patchReq(`/api/panel/ensamble/work-orders/${closing.order.id}`, { action: "close", producedQuantity: int(closing.produced) })
       .catch(() => ({ ok: false, error: "Error de conexión" }))
       .finally(() => setSaving(false));
     if (!res.ok) return notify("err", res.error ?? "No fue posible cerrar la ODT");
@@ -144,7 +144,7 @@ export function WorkOrdersTab({ options, notify, onChanged }: { options: Options
   const reopen = async (o: WorkOrder) => {
     if (!(await confirm({ title: "Reabrir ODT", message: `¿Reabrir la ODT ${o.number}? Volverá a aceptar registros.`, confirmLabel: "Reabrir", danger: false }))) return;
     markLocalWrite();
-    const res = await patchReq(`/api/panel/control-produccion/work-orders/${o.id}`, { action: "reopen" }).catch(() => ({ ok: false, error: "Error de conexión" }));
+    const res = await patchReq(`/api/panel/ensamble/work-orders/${o.id}`, { action: "reopen" }).catch(() => ({ ok: false, error: "Error de conexión" }));
     if (!res.ok) return notify("err", res.error ?? "No fue posible reabrir la ODT");
     notify("ok", `ODT ${o.number} reabierta`);
     refresh();
@@ -153,7 +153,7 @@ export function WorkOrdersTab({ options, notify, onChanged }: { options: Options
   const remove = async (o: WorkOrder) => {
     if (!(await confirm({ title: "Eliminar ODT", message: `¿Eliminar la ODT ${o.number}?` }))) return;
     markLocalWrite();
-    const r = await fetch(`/api/panel/control-produccion/work-orders/${o.id}`, { method: "DELETE" }).catch(() => null);
+    const r = await fetch(`/api/panel/ensamble/work-orders/${o.id}`, { method: "DELETE" }).catch(() => null);
     if (!r?.ok) return notify("err", r ? await jsonError(r, "No fue posible eliminar la ODT") : "Error de conexión");
     notify("ok", `ODT ${o.number} eliminada`);
     refresh();

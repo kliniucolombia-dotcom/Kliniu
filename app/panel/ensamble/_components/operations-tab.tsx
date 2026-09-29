@@ -29,7 +29,7 @@ export function OperationsTab({ options, notify, onChanged }: { options: Options
 
   const load = useCallback(async () => {
     try {
-      const r = await fetch("/api/panel/control-produccion/operations");
+      const r = await fetch("/api/panel/ensamble/operations");
       if (r.ok) { setOperations((await r.json()).operations); setFailed(false); return; }
       notify("err", await jsonError(r, "No fue posible cargar las operaciones"));
     } catch {
@@ -39,7 +39,7 @@ export function OperationsTab({ options, notify, onChanged }: { options: Options
   }, [notify]);
 
   const loadReal = useCallback(async () => {
-    const r = await fetch(`/api/panel/control-produccion/indicators?from=${addDays(options.today, -29)}&to=${options.today}`).catch(() => null);
+    const r = await fetch(`/api/panel/ensamble/indicators?from=${addDays(options.today, -29)}&to=${options.today}`).catch(() => null);
     if (!r?.ok) return;
     const body: { byOperation: { id: string; realSecondsPerUnit: number | null }[] } = await r.json();
     setReal(new Map(body.byOperation.map((o) => [o.id, o.realSecondsPerUnit])));
@@ -72,7 +72,7 @@ export function OperationsTab({ options, notify, onChanged }: { options: Options
     setSaving(true);
     markLocalWrite();
     const body = { code: form.code, name: form.name, family: form.family, standardSeconds: Number(form.standardSeconds) };
-    const res = await (form.id ? patchReq(`/api/panel/control-produccion/operations/${form.id}`, body) : post("/api/panel/control-produccion/operations", body))
+    const res = await (form.id ? patchReq(`/api/panel/ensamble/operations/${form.id}`, body) : post("/api/panel/ensamble/operations", body))
       .catch(() => ({ ok: false, error: "Error de conexión" }))
       .finally(() => setSaving(false));
     if (!res.ok) return notify("err", res.error ?? "No fue posible guardar la operación");
@@ -83,7 +83,7 @@ export function OperationsTab({ options, notify, onChanged }: { options: Options
 
   const toggle = async (o: Operation) => {
     markLocalWrite();
-    const res = await patchReq(`/api/panel/control-produccion/operations/${o.id}`, { isActive: !o.isActive }).catch(() => ({ ok: false, error: "Error de conexión" }));
+    const res = await patchReq(`/api/panel/ensamble/operations/${o.id}`, { isActive: !o.isActive }).catch(() => ({ ok: false, error: "Error de conexión" }));
     if (!res.ok) return notify("err", res.error ?? "No fue posible actualizar la operación");
     refresh();
   };
@@ -91,7 +91,7 @@ export function OperationsTab({ options, notify, onChanged }: { options: Options
   const remove = async (o: Operation) => {
     if (!(await confirm({ title: "Eliminar operación", message: `¿Eliminar ${o.code} · ${o.name}?` }))) return;
     markLocalWrite();
-    const r = await fetch(`/api/panel/control-produccion/operations/${o.id}`, { method: "DELETE" }).catch(() => null);
+    const r = await fetch(`/api/panel/ensamble/operations/${o.id}`, { method: "DELETE" }).catch(() => null);
     if (!r?.ok) return notify("err", r ? await jsonError(r, "No fue posible eliminar la operación") : "Error de conexión");
     notify("ok", `Operación ${o.code} eliminada`);
     refresh();

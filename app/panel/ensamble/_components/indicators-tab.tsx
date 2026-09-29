@@ -38,7 +38,7 @@ export function IndicatorsTab({ options, notify }: { options: Options; notify: N
     try {
       const params = new URLSearchParams({ from, to });
       if (section !== "all") params.set("section", section);
-      const r = await fetch(`/api/panel/control-produccion/indicators?${params}`);
+      const r = await fetch(`/api/panel/ensamble/indicators?${params}`);
       const body = r.ok ? await r.json() : null;
       const error = r.ok ? null : await jsonError(r, "No fue posible calcular los indicadores");
       if (request !== lastRequest.current) return;

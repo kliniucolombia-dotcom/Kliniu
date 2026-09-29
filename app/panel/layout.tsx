@@ -9,7 +9,7 @@ import {
   MdApartment, MdAccessTime, MdBeachAccess, MdRemoveCircleOutline, MdSwapHoriz, MdHandshake,
   MdCreditCard, MdHelpOutline, MdGroup, MdWarehouse, MdArticle, MdSmartToy, MdShoppingCart,
   MdInventory, MdExtension, MdConfirmationNumber, MdChat, MdVideocam, MdFolder,
-  MdLocalShipping, MdBuild, MdCalendarMonth, MdTimer,
+  MdLocalShipping, MdBuild, MdCalendarMonth,
 } from "react-icons/md";
 import { ConfirmProvider, useConfirm } from "@/app/components/confirm-dialog";
 import AccountEntryLoading from "@/app/components/account-entry-loading";
@@ -86,7 +86,6 @@ const NAV: NavItem[] = [
       },
       { href: "/panel/produccion", label: "Inyección", module: "MODULE_PRODUCCION", icon: <MdPrecisionManufacturing size={17} /> },
       { href: "/panel/ensamble", label: "Ensamble", module: "MODULE_ENSAMBLE", icon: <MdHandshake size={17} /> },
-      { href: "/panel/control-produccion", label: "Control de Producción", module: "MODULE_CONTROL_PRODUCCION", icon: <MdTimer size={17} /> },
       { href: "/panel/produccion/ordenes", label: "Órdenes de Producción", module: "MODULE_PRODUCCION", icon: <MdAssignment size={17} /> },
       { href: "/panel/produccion/moldes", label: "Moldes", module: "MODULE_PRODUCCION", icon: <MdSwapHoriz size={17} /> },
       { href: "/panel/produccion/departamentos", label: "Departamentos", module: "MODULE_PRODUCCION", icon: <MdApartment size={17} /> },

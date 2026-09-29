@@ -276,9 +276,9 @@ const OPERATOR_WHERE = {
   OR: [
     {
       role: { in: ["OPERARIO" as const, "LIDER_ENSAMBLE" as const] },
-      permissions: { none: { module: "MODULE_CONTROL_PRODUCCION" as const, canCreate: false } },
+      permissions: { none: { module: "MODULE_ENSAMBLE" as const, canCreate: false } },
     },
-    { permissions: { some: { module: "MODULE_CONTROL_PRODUCCION" as const, canCreate: true } } },
+    { permissions: { some: { module: "MODULE_ENSAMBLE" as const, canCreate: true } } },
   ],
 };
 
@@ -558,4 +558,37 @@ export async function getIndicators(filters: { from: string; to: string; section
     operatorName: r.operator.fullName,
     workDate: r.workDate.toISOString(),
   })));
+}
+
+// ─── KPIs para el tablero de Operaciones ─────────────────────────
+// Adaptador con la misma forma que el reporte de ensamble: unidades por bloque,
+// calidad (el módulo no distingue defectuosas) y unidades por hora-hombre.
+export async function getAssemblyKpis(from: Date, to: Date) {
+  const db = requirePrisma();
+  const rows = await db.productionTimeEntry.findMany({
+    where: { workDate: { gte: from, lte: to } },
+    select: { operatorId: true, startTime: true, endTime: true, quantity: true, sharedBy: true, workOrderId: true },
+  });
+
+  let units = 0;
+  const blocks = new Map<string, number>();
+  const orders = new Set<string>();
+  for (const r of rows) {
+    units += r.quantity / Math.max(1, r.sharedBy);
+    blocks.set(
+      `${r.operatorId}|${r.startTime.getTime()}|${r.endTime.getTime()}`,
+      (r.endTime.getTime() - r.startTime.getTime()) / 3_600_000,
+    );
+    if (r.workOrderId) orders.add(r.workOrderId);
+  }
+  const laborHours = [...blocks.values()].reduce((total, hours) => total + hours, 0);
+
+  return {
+    runs: orders.size || rows.length,
+    assembled: units,
+    goodUnits: units,
+    defective: 0,
+    qualityPercentage: units > 0 ? 100 : 0,
+    unitsPerLaborHour: laborHours > 0 ? units / laborHours : 0,
+  };
 }

@@ -7,7 +7,7 @@ import {
   MdDashboard, MdInventory2, MdCategory, MdBarChart, MdCampaign, MdAttachMoney,
   MdCalculate, MdDescription, MdPrecisionManufacturing, MdSync, MdPeople,
   MdViewCarousel, MdGridView, MdLocalOffer, MdBadge, MdSell, MdWarehouse,
-  MdChat, MdFolder, MdLocalShipping, MdBuild, MdConfirmationNumber, MdTimer,
+  MdChat, MdFolder, MdLocalShipping, MdBuild, MdConfirmationNumber,
 } from "react-icons/md";
 import type { IconType } from "react-icons";
 import { SkeletonPanelPage } from "../../components/skeleton";
@@ -72,7 +72,6 @@ const MODULE_LABELS: Record<string, string> = {
   MODULE_MANTENIMIENTO: "Mantenimiento",
   MODULE_ENSAMBLE: "Ensamble",
   MODULE_TICKETS: "Solicitudes (PQRS)",
-  MODULE_CONTROL_PRODUCCION: "Control de Producción",
 };
 
 const ROLES: Role[] = ["CUSTOMER", "ADMIN", "SELLER", "PACKING", "SUPERADMIN", "RRHH", "BODEGA", "DISENO", "MARKETING", "JEFE_VENTAS", "TESORERIA", "INGENIERIA", "LOGISTICA", "LIDER_ENSAMBLE", "LIDER_INYECCION", "MANTENIMIENTO", "JEFE_OPERACIONES", "DIRECTOR_OPERACIONES", "OPERARIO"];
@@ -186,7 +185,6 @@ const MODULE_ICON: Record<string, { Icon: IconType; className: string }> = {
   MODULE_ENSAMBLE: { Icon: MdPrecisionManufacturing, className: "bg-[#EDE9FE] text-[#6D28D9]" },
   MODULE_MANTENIMIENTO: { Icon: MdBuild, className: "bg-[#FFEDD5] text-[#C2410C]" },
   MODULE_TICKETS: { Icon: MdConfirmationNumber, className: "bg-[#D9F2F3] text-[#0E7C82]" },
-  MODULE_CONTROL_PRODUCCION: { Icon: MdTimer, className: "bg-[#DCFCE7] text-[#15803D]" },
 };
 
 function ModuleIcon({ module }: { module: string }) {

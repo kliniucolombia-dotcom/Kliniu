@@ -365,7 +365,6 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
   LIDER_ENSAMBLE: {
     ...ALL_NONE,
     MODULE_ENSAMBLE: FULL,
-    MODULE_CONTROL_PRODUCCION: FULL,
     MODULE_PRODUCCION: FULL,
     MODULE_BODEGAS: VIEW_ONLY,
   },
@@ -381,7 +380,6 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
   JEFE_OPERACIONES: {
     ...ALL_NONE,
     MODULE_ENSAMBLE: FULL,
-    MODULE_CONTROL_PRODUCCION: FULL,
     MODULE_PEDIDOS: VIEW_ONLY,
     MODULE_PRODUCCION: FULL,
     MODULE_BODEGAS: FULL,
@@ -391,17 +389,16 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
   DIRECTOR_OPERACIONES: {
     ...ALL_NONE,
     MODULE_ENSAMBLE: VIEW_ONLY,
-    MODULE_CONTROL_PRODUCCION: VIEW_ONLY,
     MODULE_PEDIDOS: VIEW_ONLY,
     MODULE_PRODUCCION: VIEW_ONLY,
     MODULE_BODEGAS: VIEW_ONLY,
     MODULE_LOGISTICA: VIEW_ONLY,
     MODULE_MANTENIMIENTO: VIEW_ONLY,
   },
-  // Operario de planta: solo registra sus propios bloques en Control de Producción.
+  // Operario de planta: solo registra sus propios bloques en Ensamble.
   OPERARIO: {
     ...ALL_NONE,
-    MODULE_CONTROL_PRODUCCION: VIEW_CREATE,
+    MODULE_ENSAMBLE: VIEW_CREATE,
   },
 };
 
@@ -448,5 +445,4 @@ export const ALL_MODULES: PanelModule[] = [
   "MODULE_MANTENIMIENTO",
   "MODULE_ENSAMBLE",
   "MODULE_TICKETS",
-  "MODULE_CONTROL_PRODUCCION",
 ];

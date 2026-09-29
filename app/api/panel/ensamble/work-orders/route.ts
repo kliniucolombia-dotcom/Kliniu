@@ -11,7 +11,7 @@ import { readJsonRecord } from "@/lib/operations-validation";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET(request: Request) {
-  const access = await requirePermission("MODULE_CONTROL_PRODUCCION", "view");
+  const access = await requirePermission("MODULE_ENSAMBLE", "view");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   try {
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 
 // Crear ODT es gestión: exige `edit` (el operario tiene `create` solo para sus bloques).
 export async function POST(request: Request) {
-  const access = await requirePermission("MODULE_CONTROL_PRODUCCION", "edit");
+  const access = await requirePermission("MODULE_ENSAMBLE", "edit");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   try {

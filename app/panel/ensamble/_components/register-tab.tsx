@@ -23,7 +23,7 @@ export function RegisterTab({ options, notify, onChanged }: { options: Options; 
     const request = ++lastRequest.current;
     try {
       const q = new URLSearchParams({ from: form.date, to: form.date, operatorId: form.operatorId });
-      const r = await fetch(`/api/panel/control-produccion/entries?${q}`);
+      const r = await fetch(`/api/panel/ensamble/entries?${q}`);
       const data = r.ok ? await r.json() : null;
       const error = r.ok ? null : await jsonError(r, "No fue posible cargar los registros del día");
       if (request !== lastRequest.current) return;
@@ -57,7 +57,7 @@ export function RegisterTab({ options, notify, onChanged }: { options: Options; 
   const save = async (sameBlock: boolean) => {
     setSaving(true);
     markLocalWrite();
-    const res = await post("/api/panel/control-produccion/entries", entryPayload(form))
+    const res = await post("/api/panel/ensamble/entries", entryPayload(form))
       .catch(() => ({ ok: false, error: "Error de conexión" }))
       .finally(() => setSaving(false));
     if (!res.ok) return notify("err", res.error ?? "No fue posible guardar el registro");
@@ -75,7 +75,7 @@ export function RegisterTab({ options, notify, onChanged }: { options: Options; 
     if (!editing) return;
     setSaving(true);
     markLocalWrite();
-    const res = await patchReq(`/api/panel/control-produccion/entries/${editing.entry.id}`, entryPayload(editing.form))
+    const res = await patchReq(`/api/panel/ensamble/entries/${editing.entry.id}`, entryPayload(editing.form))
       .catch(() => ({ ok: false, error: "Error de conexión" }))
       .finally(() => setSaving(false));
     if (!res.ok) return notify("err", res.error ?? "No fue posible actualizar el registro");
@@ -87,7 +87,7 @@ export function RegisterTab({ options, notify, onChanged }: { options: Options; 
   const remove = async (e: Entry) => {
     if (!(await confirm({ title: "Eliminar registro", message: `¿Eliminar ${e.operation.code} de ${fmtTimeOnly(e.startTime)} a ${fmtTimeOnly(e.endTime)}?` }))) return;
     markLocalWrite();
-    const r = await fetch(`/api/panel/control-produccion/entries/${e.id}`, { method: "DELETE" }).catch(() => null);
+    const r = await fetch(`/api/panel/ensamble/entries/${e.id}`, { method: "DELETE" }).catch(() => null);
     if (!r?.ok) return notify("err", r ? await jsonError(r, "No fue posible eliminar el registro") : "Error de conexión");
     notify("ok", "Registro eliminado");
     load();

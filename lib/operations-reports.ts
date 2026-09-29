@@ -4,7 +4,7 @@ import { endOfBogotaDay, parseBogotaDate } from "@/lib/logistics";
 import { getLogisticsKpis } from "@/lib/logistics";
 import { getMaintenanceKpis } from "@/lib/maintenance";
 import { getMoldKpis } from "@/lib/molds";
-import { getAssemblyKpis } from "@/lib/assembly";
+import { getAssemblyKpis } from "@/lib/production-control";
 import { getWarehouses, listProductsWithWarehouseStock, summarizeWarehouseStock } from "@/lib/warehouses";
 import { OPERATIONS_REPORT_MODULES, reportKpisForModule } from "@/lib/operations-report-policy";
 

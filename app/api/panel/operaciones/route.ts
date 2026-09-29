@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getLogisticsKpis } from "@/lib/logistics";
 import { getMaintenanceKpis } from "@/lib/maintenance";
 import { getMoldKpis } from "@/lib/molds";
-import { getAssemblyKpis } from "@/lib/assembly";
+import { getAssemblyKpis } from "@/lib/production-control";
 import { listAuthorizedOperationsReports } from "@/lib/operations-reports";
 import { operationsModulesWithView } from "@/lib/operations-report-policy";
 import { listProductsWithWarehouseStock, getWarehouses, summarizeWarehouseStock } from "@/lib/warehouses";

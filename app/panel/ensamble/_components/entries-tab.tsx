@@ -31,7 +31,7 @@ export function EntriesTab({ options, notify }: { options: Options; notify: Noti
       const params = new URLSearchParams({ from, to });
       if (operatorId !== "all") params.set("operatorId", operatorId);
       if (section !== "all") params.set("section", section);
-      const r = await fetch(`/api/panel/control-produccion/entries?${params}`);
+      const r = await fetch(`/api/panel/ensamble/entries?${params}`);
       const body = r.ok ? await r.json() : null;
       const error = r.ok ? null : await jsonError(r, "No fue posible cargar los registros");
       if (request !== lastRequest.current) return;
@@ -62,7 +62,7 @@ export function EntriesTab({ options, notify }: { options: Options; notify: Noti
     if (!editing) return;
     setSaving(true);
     markLocalWrite();
-    const res = await patchReq(`/api/panel/control-produccion/entries/${editing.entry.id}`, entryPayload(editing.form))
+    const res = await patchReq(`/api/panel/ensamble/entries/${editing.entry.id}`, entryPayload(editing.form))
       .catch(() => ({ ok: false, error: "Error de conexión" }))
       .finally(() => setSaving(false));
     if (!res.ok) return notify("err", res.error ?? "No fue posible actualizar el registro");
@@ -74,7 +74,7 @@ export function EntriesTab({ options, notify }: { options: Options; notify: Noti
   const remove = async (e: Entry) => {
     if (!(await confirm({ title: "Eliminar registro", message: `¿Eliminar ${e.operation.code} de ${e.operator.fullName} (${fmtTimeOnly(e.startTime)}–${fmtTimeOnly(e.endTime)})?` }))) return;
     markLocalWrite();
-    const r = await fetch(`/api/panel/control-produccion/entries/${e.id}`, { method: "DELETE" }).catch(() => null);
+    const r = await fetch(`/api/panel/ensamble/entries/${e.id}`, { method: "DELETE" }).catch(() => null);
     if (!r?.ok) return notify("err", r ? await jsonError(r, "No fue posible eliminar el registro") : "Error de conexión");
     notify("ok", "Registro eliminado");
     load();

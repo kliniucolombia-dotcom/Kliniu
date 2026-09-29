@@ -16,9 +16,9 @@ type Ctx = { params: Promise<{ id: string }> };
 
 // El detalle expone lo que registraron otros operarios: no es para quien solo ve lo suyo.
 export async function GET(_: Request, { params }: Ctx) {
-  const access = await requirePermission("MODULE_CONTROL_PRODUCCION", "view");
+  const access = await requirePermission("MODULE_ENSAMBLE", "view");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  const permission = await getEffectivePermission(access.user, "MODULE_CONTROL_PRODUCCION");
+  const permission = await getEffectivePermission(access.user, "MODULE_ENSAMBLE");
   if (controlScope(permission) === "own") return Response.json({ error: "No autorizado" }, { status: 403 });
 
   try {
@@ -31,7 +31,7 @@ export async function GET(_: Request, { params }: Ctx) {
 
 /** Editar campos, o `action: "close" | "reopen"`. */
 export async function PATCH(request: Request, { params }: Ctx) {
-  const access = await requirePermission("MODULE_CONTROL_PRODUCCION", "edit");
+  const access = await requirePermission("MODULE_ENSAMBLE", "edit");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   try {
@@ -52,7 +52,7 @@ export async function PATCH(request: Request, { params }: Ctx) {
 }
 
 export async function DELETE(_: Request, { params }: Ctx) {
-  const access = await requirePermission("MODULE_CONTROL_PRODUCCION", "delete");
+  const access = await requirePermission("MODULE_ENSAMBLE", "delete");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   try {
