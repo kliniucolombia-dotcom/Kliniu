@@ -7,7 +7,8 @@ const nextConfig: NextConfig = {
   // intente bundlear.
   serverExternalPackages: ["@sparticuz/chromium", "playwright-core"],
   outputFileTracingIncludes: {
-    "/api/**/*": ["./node_modules/@sparticuz/chromium/bin/**/*"],
+    // playwright-core lee browsers.json en runtime y el trace no lo detecta: sin él, todo PDF falla en Vercel.
+    "/api/**/*": ["./node_modules/@sparticuz/chromium/bin/**/*", "./node_modules/playwright-core/*.json"],
   },
   images: {
     remotePatterns: [
