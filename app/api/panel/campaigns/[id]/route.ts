@@ -1,4 +1,4 @@
-import { sellerBlockedFromCampaign } from "@/lib/campaign-access";
+import { sellerBlockedFromCampaign, sellerHasFullAccess } from "@/lib/campaign-access";
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
@@ -20,10 +20,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return Response.json({ error: "Sin permiso" }, { status: 403 });
   }
 
+  // Reasignar el vendedor: solo roles no-SELLER o vendedores de acceso ampliado.
+  const canReassign = session.role !== "SELLER" || sellerHasFullAccess(session.userId);
+  const sellerId =
+    canReassign && body.sellerId && body.sellerId !== existing.sellerId ? body.sellerId : existing.sellerId;
+
   const updated = await prisma.campaign.update({
     where: { id },
     data: {
       name: body.name ?? existing.name,
+      sellerId,
       investment: body.investment ?? existing.investment,
       sales: body.sales ?? existing.sales,
       leads: body.leads ?? existing.leads,

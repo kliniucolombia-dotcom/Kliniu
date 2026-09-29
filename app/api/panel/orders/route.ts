@@ -1,3 +1,4 @@
+import { sellerHasFullAccess } from "@/lib/campaign-access";
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import type { ShippingStatus } from "@/generated/prisma/client";
@@ -30,7 +31,9 @@ export async function GET(request: Request) {
 
   const where = {
     ...paymentFilterForView(view),
-    ...(session.role === "SELLER" ? { assignedSellerId: session.userId } : {}),
+    ...(session.role === "SELLER" && !sellerHasFullAccess(session.userId)
+      ? { assignedSellerId: session.userId }
+      : {}),
   };
 
   const orders = await prisma.order.findMany({
@@ -65,7 +68,7 @@ export async function PATCH(request: Request) {
     select: { assignedSellerId: true, shippingStatus: true },
   });
   if (!order) return Response.json({ error: "Pedido no encontrado" }, { status: 404 });
-  if (session.role === "SELLER" && order.assignedSellerId !== session.userId) {
+  if (session.role === "SELLER" && order.assignedSellerId !== session.userId && !sellerHasFullAccess(session.userId)) {
     return Response.json({ error: "Sin permiso" }, { status: 403 });
   }
 

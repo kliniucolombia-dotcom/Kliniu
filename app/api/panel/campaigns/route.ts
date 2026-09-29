@@ -1,4 +1,4 @@
-import { sellerBlockedFromCampaign } from "@/lib/campaign-access";
+import { sellerBlockedFromCampaign, sellerHasFullAccess } from "@/lib/campaign-access";
 import { requirePermission } from "@/lib/permissions";
 import { getCampaignsForPanel } from "@/lib/panel";
 import { prisma } from "@/lib/prisma";
@@ -39,7 +39,10 @@ export async function POST(request: Request) {
 
   if (!body.name) return Response.json({ error: "Nombre requerido" }, { status: 400 });
 
-  const sellerId = session.role === "SELLER" ? session.userId : (body.sellerId || session.userId);
+  // Un SELLER normal crea campañas a su nombre; los de acceso ampliado (y el
+  // resto de roles) pueden asignarlas al vendedor que elijan.
+  const canAssignOthers = session.role !== "SELLER" || sellerHasFullAccess(session.userId);
+  const sellerId = canAssignOthers ? (body.sellerId || session.userId) : session.userId;
 
   const campaign = await prisma.campaign.create({
     data: {
