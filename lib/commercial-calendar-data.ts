@@ -1,6 +1,7 @@
 // Calendario de actividad comercial — carga de datos (servidor). Reutiliza User, Campaign y CampaignDaily.
 import { prisma } from "@/lib/prisma";
 import { getTrmForDate } from "@/lib/trm";
+import { sellerHasFullAccess } from "@/lib/campaign-access";
 import {
   addDays, bogotaNow, compliance, computeDayStatus, dateToKey, DEFAULT_DEADLINE_MINUTES,
   DEFAULT_WORK_DAYS, keyToDate, monthKeys, prevMonth, weekday,
@@ -24,12 +25,14 @@ export async function getCalendarConfig() {
 /** Vendedores que entran al calendario: rol SELLER o dueños de al menos una campaña. */
 export async function listCalendarSellers(session: CalendarSession, onlyId?: string) {
   if (!prisma) return [];
+  // Un SELLER solo ve su calendario, salvo los vendedores con acceso ampliado.
+  const restrictToSelf = session.role === "SELLER" && !sellerHasFullAccess(session.userId);
   const users = await prisma.user.findMany({
     where: {
       status: "ACTIVE",
       OR: [{ role: "SELLER" }, { campaigns: { some: {} } }],
       NOT: { OR: HIDDEN_NAMES.map((n) => ({ fullName: { equals: n, mode: "insensitive" as const } })) },
-      ...(session.role === "SELLER" ? { id: session.userId } : onlyId ? { id: onlyId } : {}),
+      ...(restrictToSelf ? { id: session.userId } : onlyId ? { id: onlyId } : {}),
     },
     select: { id: true, fullName: true, email: true, role: true },
     orderBy: { fullName: "asc" },

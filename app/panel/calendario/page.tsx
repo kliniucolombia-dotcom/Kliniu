@@ -661,7 +661,7 @@ export default function CalendarioPage() {
                 </ul>
               )}
 
-              {!cell.closed && cell.date <= (data?.today ?? "") && cell.status !== "GRAY" && (
+              {!cell.closed && cell.date <= (data?.today ?? "") && cell.status !== "GRAY" && (isAdmin || seller.id === data?.userId) && (
                 <button onClick={closeDay} disabled={closing}
                   className="mt-4 w-full rounded-xl border-2 border-[#27B1B8] px-4 py-2.5 text-sm font-bold text-[#0C535B] transition-colors hover:bg-[#F0F9F8] disabled:opacity-50">
                   {closing ? "Guardando…" : cell.total === 0 ? "Confirmar día sin ventas" : "Finalizar reporte del día"}
