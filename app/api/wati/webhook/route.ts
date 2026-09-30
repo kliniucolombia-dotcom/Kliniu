@@ -2,8 +2,9 @@ import { SITE_URL } from "@/lib/site";
 import { prisma } from "@/lib/prisma";
 import { runWatiAssistant } from "@/lib/wati-ai";
 import { pickSellerForNewConversation } from "@/lib/wati-conversations";
-import { sendWatiFileFromUrl, sendWatiMessage, toWatiImageUrl } from "@/lib/wati";
+import { fetchWatiMedia, sendWatiFileFromUrl, sendWatiMessage, toWatiImageUrl } from "@/lib/wati";
 import { getCatalogSnapshot } from "@/lib/chatbot";
+import { transcribeAudioBuffer, transcribeAudioFromUrl } from "@/lib/transcription";
 import { getProducts, type StoreProduct } from "@/lib/products";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { syncOrderToOdoo } from "@/lib/orders";
@@ -13,6 +14,8 @@ import {
   RESPECT_BOUNDARY_REPLY,
 } from "@/lib/moderation";
 import { createNotification } from "@/lib/notifications";
+import { isAdvisorPhone, notifyAdvisor, replyRequestsAdvisor } from "@/lib/wati-escalation";
+import { summarizeConversation, WATI_MEMORY_KEEP_RECENT } from "@/lib/wati-memory";
 
 export const maxDuration = 60;
 
@@ -29,7 +32,22 @@ type WatiWebhookPayload = {
   message?: unknown;
   id?: unknown;
   messageId?: unknown;
+  whatsappMessageId?: unknown;
+  mediaUrl?: unknown;
+  media_url?: unknown;
+  fileUrl?: unknown;
+  url?: unknown;
+  sourceUrl?: unknown;
+  sourceId?: unknown;
+  senderName?: unknown;
+  data?: unknown;
 };
+
+function getSenderName(payload: WatiWebhookPayload): string | null {
+  return typeof payload.senderName === "string" && payload.senderName.trim()
+    ? payload.senderName.trim().slice(0, 80)
+    : null;
+}
 
 const HUMAN_FAREWELL =
   "¡Con mucho gusto! Gracias por confiar en Kliniu 😊 Que tengas un excelente día. Si más adelante necesitas algo, aquí estaremos para ayudarte.";
@@ -46,9 +64,18 @@ function normalizeForIntent(value: string) {
     .toLowerCase();
 }
 
+/**
+ * Despedida real, no un simple "listo/perfecto/gracias" en medio de una
+ * consulta. Antes esto cerraba el chat y pausaba el bot ante un "perfecto"
+ * cualquiera. Ahora exigimos cierre explícito, sin preguntas ni peticiones
+ * nuevas (evitamos falsos positivos que cortaban la conversación).
+ */
 function isFarewellMessage(message: string) {
-  const normalized = normalizeForIntent(message);
-  return /\b(gracias|muchas gracias|perfecto|listo|chao|adios|hasta luego|eso es todo)\b/.test(
+  const normalized = normalizeForIntent(message).trim();
+  if (!normalized) return false;
+  // Una pregunta o un mensaje largo no son despedida.
+  if (/[?¿]/.test(normalized) || normalized.length > 60) return false;
+  return /\b(chao|adios|hasta luego|hasta pronto|nos vemos|eso es todo|eso seria todo|quedamos asi|buen dia|gracias por todo|muchas gracias por todo|listo,? gracias|perfecto,? gracias)\b/.test(
     normalized,
   );
 }
@@ -207,6 +234,81 @@ function getInboundTextMessage(payload: WatiWebhookPayload) {
   return { phone, text, externalId };
 }
 
+const UNSUPPORTED_MEDIA_REPLY =
+  "Por ahora solo puedo leer mensajes de texto 🙂 ¿Me escribes tu consulta y con gusto te ayudo?";
+
+const AUDIO_INBOUND_TYPES = new Set(["audio", "voice", "ptt"]);
+
+const NON_TEXT_INBOUND_TYPES = new Set([
+  "audio",
+  "voice",
+  "ptt",
+  "image",
+  "video",
+  "document",
+  "sticker",
+  "location",
+  "contacts",
+]);
+
+/**
+ * URL de media del payload, tolerando variantes de nombre. WATI pone la
+ * referencia de la media en `data` (objeto o string) y/o en `sourceUrl`.
+ */
+function extractMediaUrl(payload: WatiWebhookPayload): string | null {
+  const candidates: unknown[] = [
+    payload.mediaUrl,
+    payload.media_url,
+    payload.fileUrl,
+    payload.url,
+    payload.sourceUrl,
+    typeof payload.data === "string" ? payload.data : null,
+  ];
+  if (typeof payload.data === "object" && payload.data !== null) {
+    const nested = payload.data as Record<string, unknown>;
+    candidates.push(
+      nested.mediaUrl,
+      nested.media_url,
+      nested.fileUrl,
+      nested.url,
+      nested.link,
+      nested.sourceUrl,
+      nested.source_url,
+    );
+  }
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && /^https?:\/\//i.test(candidate)) return candidate;
+  }
+  return null;
+}
+
+function getInboundNonTextMessage(payload: WatiWebhookPayload) {
+  // Mensaje del cliente que no es texto (audio/imagen/documento…). Sin esto el
+  // cliente quedaba en silencio absoluto.
+  const isOwner = payload.owner === true || payload.owner === "true" || payload.owner === 1 || payload.owner === "1";
+  if (payload.eventType !== "message" || isOwner) return null;
+
+  const type = typeof payload.type === "string" ? payload.type.toLowerCase() : null;
+  if (!type || type === "text" || !NON_TEXT_INBOUND_TYPES.has(type)) return null;
+
+  const phone = typeof payload.waId === "string" ? payload.waId : typeof payload.phone === "string" ? payload.phone : null;
+  const rawExternalId =
+    typeof payload.id === "string"
+      ? payload.id
+      : typeof payload.messageId === "string"
+        ? payload.messageId
+        : null;
+  const externalId = rawExternalId?.trim() || null;
+  // El endpoint v3 de media acepta "message_id" sin aclarar si es el ID de
+  // registro o el WAMID; probamos ambos candidatos.
+  const messageIds = [payload.id, payload.messageId, payload.whatsappMessageId]
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    .map((value) => value.trim());
+
+  if (!phone) return null;
+  return { phone, type, externalId, mediaUrl: extractMediaUrl(payload), messageIds };
+}
+
 function isUniqueConstraintError(error: unknown) {
   return (
     typeof error === "object" &&
@@ -232,12 +334,107 @@ export async function POST(request: Request) {
     return Response.json({ error: "JSON inválido." }, { status: 400 });
   }
 
-  const incoming = getInboundTextMessage(payload);
+  let incoming = getInboundTextMessage(payload);
+  let audioTranscript = false;
+
   if (!incoming) {
-    return Response.json({ received: true });
+    const media = getInboundNonTextMessage(payload);
+    if (!media) return Response.json({ received: true });
+    if (await isAdvisorPhone(media.phone)) {
+      return Response.json({ received: true, advisor: true });
+    }
+
+    // Nota de voz: intentamos transcribirla para atenderla como texto normal.
+    // 1) URL directa del payload; 2) endpoint binario v3 por ID de mensaje
+    // (probando los candidatos de ID hasta que uno responda).
+    let transcript = "";
+    if (AUDIO_INBOUND_TYPES.has(media.type)) {
+      try {
+        if (media.mediaUrl) {
+          transcript = await transcribeAudioFromUrl(media.mediaUrl);
+        }
+        for (const messageId of media.messageIds) {
+          if (transcript) break;
+          const file = await fetchWatiMedia(messageId);
+          if (file) transcript = await transcribeAudioBuffer(file.buffer, file.contentType);
+        }
+      } catch (error) {
+        console.error("WATI_TRANSCRIBE_FAILED", error);
+      }
+    }
+
+    if (transcript) {
+      incoming = { phone: media.phone, text: transcript, externalId: media.externalId };
+      audioTranscript = true;
+    } else {
+      if (
+        media.externalId &&
+        (await prisma.watiMessage.findUnique({
+          where: { externalId: media.externalId },
+          select: { id: true },
+        }))
+      ) {
+        return Response.json({ received: true, duplicate: true });
+      }
+
+      const mediaConversation = await prisma.watiConversation.upsert({
+        where: { phone: media.phone },
+        update: { updatedAt: new Date() },
+        create: { phone: media.phone, assignedSellerId: await pickSellerForNewConversation() },
+      });
+
+      try {
+        await prisma.watiMessage.create({
+          data: {
+            externalId: media.externalId,
+            conversationId: mediaConversation.id,
+            role: "USER",
+            content: `📎 (${media.type} recibido)`,
+          },
+        });
+      } catch (error) {
+        if (media.externalId && isUniqueConstraintError(error)) {
+          return Response.json({ received: true, duplicate: true });
+        }
+        throw error;
+      }
+      await broadcastPanelUpdate("wati");
+
+      if (mediaConversation.botPaused) {
+        return Response.json({ received: true, botPaused: true });
+      }
+
+      await prisma.watiMessage.create({
+        data: {
+          conversationId: mediaConversation.id,
+          role: "ASSISTANT",
+          content: UNSUPPORTED_MEDIA_REPLY,
+        },
+      });
+      await prisma.watiConversation.update({
+        where: { id: mediaConversation.id },
+        data: { lastAutoReplyAt: new Date() },
+      });
+      await broadcastPanelUpdate("wati");
+      try {
+        await sendWatiMessage(media.phone, UNSUPPORTED_MEDIA_REPLY);
+      } catch (error) {
+        console.error("WATI_MEDIA_REPLY_SEND_FAILED", mediaConversation.id, error);
+      }
+
+      return Response.json({ received: true, nonText: media.type });
+    }
   }
 
   const { phone, text, externalId } = incoming;
+  const customerName = getSenderName(payload);
+
+  // Los asesores reciben los avisos en su WhatsApp personal; si responden, el
+  // mensaje entra como si fuera de un cliente. No dejamos que el bot les
+  // conteste ni que cree pedidos con su número.
+  if (await isAdvisorPhone(phone)) {
+    return Response.json({ received: true, advisor: true });
+  }
 
   if (
     externalId &&
@@ -269,7 +466,7 @@ export async function POST(request: Request) {
         externalId,
         conversationId: conversation.id,
         role: "USER",
-        content: text,
+        content: audioTranscript ? `🎤 ${text}` : text,
       },
     });
   } catch (error) {
@@ -332,6 +529,14 @@ export async function POST(request: Request) {
           strikes,
         },
       });
+      await notifyAdvisor({
+        conversationId: conversation.id,
+        customerPhone: phone,
+        customerName: getSenderName(payload),
+        reason: "moderation",
+        snippet: text,
+        advisorId: conversation.assignedSellerId,
+      });
     }
 
     return Response.json({
@@ -356,43 +561,109 @@ export async function POST(request: Request) {
       data: { botPaused: true, status: "CLOSED" },
     });
     await broadcastPanelUpdate("wati");
-    await sendWatiMessage(phone, HUMAN_FAREWELL);
+    try {
+      await sendWatiMessage(phone, HUMAN_FAREWELL);
+    } catch (error) {
+      console.error("WATI_FAREWELL_SEND_FAILED", conversation.id, error);
+    }
     return Response.json({ received: true, farewell: true });
   }
 
   await prisma.watiConversation.update({
     where: { id: conversation.id },
-    data: { lastAutoReplyAt: new Date() },
+    data: {
+      lastAutoReplyAt: new Date(),
+      // Mensaje limpio: se reinician los avisos de moderación. Solo escalamos
+      // tras 3 mensajes ofensivos consecutivos, no por uno viejo + leves.
+      moderationStrikes: 0,
+    },
   });
 
-  const previousMessages = (await prisma.watiMessage.findMany({
+  // Ventana de contexto: desde el inicio de la venta actual y desde lo último ya
+  // resumido en memoria. Los mensajes viejos se resumen de forma rodante.
+  const contextStart = conversation.aiContextStartedAt;
+  const memoryThrough = conversation.memorySummaryThrough;
+  const since =
+    contextStart && memoryThrough
+      ? contextStart > memoryThrough
+        ? contextStart
+        : memoryThrough
+      : memoryThrough ?? contextStart;
+
+  const recentMessages = (await prisma.watiMessage.findMany({
     where: {
       conversationId: conversation.id,
-      ...(conversation.aiContextStartedAt
-        ? { createdAt: { gte: conversation.aiContextStartedAt } }
-        : {}),
+      ...(since ? { createdAt: { gt: since } } : {}),
     },
     orderBy: { createdAt: "desc" },
-    take: 20,
+    take: 60,
   })).reverse();
 
-  const history = previousMessages
-    .slice(0, -1)
-    .map((m) => ({ role: m.role === "USER" ? ("user" as const) : ("assistant" as const), content: m.content }));
+  // Excluye el mensaje del usuario que se acaba de insertar.
+  const priorMessages = recentMessages.slice(0, -1);
+  let memorySummary = conversation.memorySummary ?? null;
+  let history: Array<{ role: "user" | "assistant"; content: string }>;
+
+  const olderCount = priorMessages.length - WATI_MEMORY_KEEP_RECENT;
+  if (olderCount > 0) {
+    const older = priorMessages.slice(0, olderCount);
+    const recent = priorMessages.slice(olderCount);
+    history = recent.map((m) => ({
+      role: m.role === "USER" ? ("user" as const) : ("assistant" as const),
+      content: m.content,
+    }));
+    try {
+      const summary = await summarizeConversation({
+        previousSummary: memorySummary,
+        messages: older.map((m) => ({
+          role: m.role === "USER" ? ("user" as const) : ("assistant" as const),
+          content: m.content,
+        })),
+      });
+      if (summary) {
+        memorySummary = summary;
+        await prisma.watiConversation.update({
+          where: { id: conversation.id },
+          data: {
+            memorySummary: summary,
+            memorySummaryThrough: older[older.length - 1].createdAt,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("WATI_SUMMARY_FAILED", conversation.id, error);
+    }
+  } else {
+    history = priorMessages.map((m) => ({
+      role: m.role === "USER" ? ("user" as const) : ("assistant" as const),
+      content: m.content,
+    }));
+  }
 
   let reply: string;
   let orderCreated: { orderId: string } | null = null;
+  let assistantFailed = false;
+  let escalateToHuman = false;
+  let escalationSummary: string | null = null;
   try {
     const result = await runWatiAssistant(history, text, {
       allowOrderCreation: !conversation.orderId,
       sellerId: conversation.assignedSellerId,
+      customerPhone: phone,
+      conversationId: conversation.id,
+      customerName,
+      memorySummary,
     });
     reply = result.reply;
     orderCreated = result.orderCreated;
+    escalateToHuman = result.escalateToHuman;
+    escalationSummary = result.escalationSummary;
   } catch (error) {
     // Nunca dejamos al cliente sin respuesta: si el asistente o Odoo fallan,
-    // avisamos que un asesor continúa y registramos el error.
+    // avisamos que un asesor continúa, pausamos el bot y avisamos al asesor
+    // para que la promesa de continuidad no quede sin destinatario.
     console.error("WATI_ASSISTANT_FAILED", conversation.id, error);
+    assistantFailed = true;
     reply = "Recibí tu mensaje, pero tuve un problema técnico al procesarlo. Un asesor continuará con tu pedido por este mismo chat en un momento.";
   }
 
@@ -411,15 +682,111 @@ export async function POST(request: Request) {
       },
     });
     await broadcastPanelUpdate("orders");
+    try {
+      await createNotification({
+        eventKey: "wati.order_created",
+        title: `WhatsApp: nuevo pedido tomado por el asistente (${phone})`,
+        detail: `${conversation.phone} · pedido generado por el asistente. Verifica los datos y programa el despacho.`,
+        href: "/panel/pedidos",
+        targetUserId: conversation.assignedSellerId ?? undefined,
+        metadata: { conversationId: conversation.id, orderId: orderCreated.orderId, phone },
+      });
+    } catch {
+      // Notificación no bloqueante.
+    }
+    const orderInfo = await prisma.order.findUnique({
+      where: { id: orderCreated.orderId },
+      select: {
+        odooOrderName: true,
+        subtotal: true,
+        shippingCost: true,
+        items: { select: { name: true, quantity: true } },
+      },
+    });
+    await notifyAdvisor({
+      conversationId: conversation.id,
+      customerPhone: phone,
+      customerName,
+      reason: "sale",
+      advisorId: conversation.assignedSellerId,
+      orderNumber: orderInfo?.odooOrderName ?? null,
+      orderTotal: orderInfo ? orderInfo.subtotal + orderInfo.shippingCost : null,
+      orderItems: orderInfo?.items.map((item) =>
+        item.quantity > 1 ? `${item.quantity}× ${item.name}` : item.name,
+      ),
+    });
   }
 
   // Make the reply visible in the panel before attempting the delivery to WATI.
   await broadcastPanelUpdate("wati");
-  await sendWatiMessage(phone, reply);
+  try {
+    await sendWatiMessage(phone, reply);
+  } catch (error) {
+    // Si WATI rechaza el envío la respuesta ya quedó guardada en el panel. Un
+    // reintento del webhook no la reenviaría (dedupe por externalId), así que
+    // avisamos al asesor para que la envíe manualmente.
+    console.error("WATI_REPLY_SEND_FAILED", conversation.id, error);
+    try {
+      await createNotification({
+        eventKey: "wati.reply_send_failed",
+        title: `WhatsApp: no se pudo entregar la respuesta (${phone})`,
+        detail:
+          "WATI falló al enviar la respuesta del asistente. Revisa el chat y responde manualmente si el cliente no recibió nada.",
+        href: "/panel/whatsapp",
+        targetUserId: conversation.assignedSellerId ?? undefined,
+        metadata: { conversationId: conversation.id, phone },
+      });
+    } catch {
+      // Notificación no bloqueante.
+    }
+  }
+
+  if (assistantFailed) {
+    // La promesa de "un asesor continuará" solo es real si pausamos el bot y
+    // avisamos a un asesor (WhatsApp + in-app). No enviamos fotos si falló.
+    await prisma.watiConversation.update({
+      where: { id: conversation.id },
+      data: { botPaused: true },
+    });
+    await notifyAdvisor({
+      conversationId: conversation.id,
+      customerPhone: phone,
+      customerName,
+      reason: "assistant_failed",
+      snippet: text,
+      advisorId: conversation.assignedSellerId,
+    });
+    await broadcastPanelUpdate("wati");
+    return Response.json({ received: true, assistantFailed: true });
+  }
+
+  // Escalada a asesor: por tool explícita de la IA o porque su respuesta ofrece
+  // pasar con un asesor. Pausa el bot y avisa (WhatsApp + in-app).
+  const mentionEscalation =
+    !orderCreated && !assistantFailed && !escalateToHuman && replyRequestsAdvisor(reply);
+  if (escalateToHuman || mentionEscalation) {
+    await prisma.watiConversation.update({
+      where: { id: conversation.id },
+      data: { botPaused: true },
+    });
+    await notifyAdvisor({
+      conversationId: conversation.id,
+      customerPhone: phone,
+      customerName,
+      reason: escalateToHuman ? "human_request" : "advisor_mention",
+      snippet: escalationSummary ?? text,
+      advisorId: conversation.assignedSellerId,
+    });
+    await broadcastPanelUpdate("wati");
+  }
+  const handedOff = escalateToHuman || mentionEscalation;
 
   // Envía las fotos del producto consultado (no bloquea la respuesta ya enviada).
   try {
-    const productMedia = orderCreated || isPostSaleReply ? [] : await getProductMediaToSend(history, text, reply);
+    const productMedia =
+      orderCreated || isPostSaleReply || handedOff
+        ? []
+        : await getProductMediaToSend(history, text, reply);
     for (const media of productMedia) {
       try {
         await sendWatiFileFromUrl(phone, media);

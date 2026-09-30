@@ -668,6 +668,8 @@ model WatiConversation {
   comboImageSentAt   DateTime?
   comboVideoSentAt   DateTime?
   aiContextStartedAt DateTime?
+  memorySummary      String?
+  memorySummaryThrough DateTime?
   orderId            String?
   assignedSellerId   String?
   assignedSeller     User?                  @relation("WatiAssignedSeller", fields: [assignedSellerId], references: [id])

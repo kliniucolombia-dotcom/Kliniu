@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma/client";
 import { ciudadesPorDepartamento } from "@/lib/colombia-locations";
 import { getShippingForLocation, getShippingOverride } from "@/lib/shipping-rates";
 
@@ -53,13 +54,11 @@ function resolveDepartment(city: string, explicit?: string | null) {
   return "";
 }
 
-async function getWatiSystemUserId() {
-  if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
-
-  const existing = await prisma.user.findUnique({ where: { email: WATI_SYSTEM_USER_EMAIL } });
+async function getWatiSystemUserId(db: Prisma.TransactionClient) {
+  const existing = await db.user.findUnique({ where: { email: WATI_SYSTEM_USER_EMAIL } });
   if (existing) return existing.id;
 
-  const created = await prisma.user.create({
+  const created = await db.user.create({
     data: {
       fullName: "Vendedor IA WhatsApp",
       email: WATI_SYSTEM_USER_EMAIL,
@@ -71,8 +70,12 @@ async function getWatiSystemUserId() {
   return created.id;
 }
 
-export async function createWatiOrder(input: CreateWatiOrderInput) {
-  if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
+export async function createWatiOrder(
+  input: CreateWatiOrderInput,
+  client?: Prisma.TransactionClient,
+) {
+  const db = client ?? prisma;
+  if (!db) throw new Error("DATABASE_NOT_CONFIGURED");
   if (input.items.length === 0) throw new Error("EMPTY_ORDER");
 
   const customerName = input.customerName.trim();
@@ -91,83 +94,81 @@ export async function createWatiOrder(input: CreateWatiOrderInput) {
     .map((item) => item.slug)
     .filter((slug) => slug !== COMBO_PREMIUM.slug);
 
-  const userId = await getWatiSystemUserId();
+  const userId = await getWatiSystemUserId(db);
 
-  const orderLines = await prisma.$transaction(async (tx) => {
-    const products = await tx.product.findMany({
-      where: { slug: { in: productSlugs }, active: true },
-      select: {
-        id: true,
-        slug: true,
-        sku: true,
-        name: true,
-        image: true,
-        price: true,
-      },
-    });
-    const productsBySlug = new Map(products.map((product) => [product.slug, product]));
+  const products = await db.product.findMany({
+    where: { slug: { in: productSlugs }, active: true },
+    select: {
+      id: true,
+      slug: true,
+      sku: true,
+      name: true,
+      image: true,
+      price: true,
+    },
+  });
+  const productsBySlug = new Map(products.map((product) => [product.slug, product]));
 
-    const combos = productSlugs.length > 0
-      ? await tx.combo.findMany({
-          where: { slug: { in: productSlugs }, active: true },
-          include: { items: { include: { product: { select: { id: true, name: true } } } } },
-        })
-      : [];
-    const combosBySlug = new Map(combos.map((combo) => [combo.slug, combo]));
+  const combos = productSlugs.length > 0
+    ? await db.combo.findMany({
+        where: { slug: { in: productSlugs }, active: true },
+        include: { items: { include: { product: { select: { id: true, name: true } } } } },
+      })
+    : [];
+  const combosBySlug = new Map(combos.map((combo) => [combo.slug, combo]));
 
-    return requested.map((item) => {
-      if (item.slug === COMBO_PREMIUM.slug) {
-        return {
-          productId: null as string | null,
-          comboId: null as string | null,
-          comboSnapshot: undefined,
-          name: COMBO_PREMIUM.name,
-          image: COMBO_PREMIUM.image,
-          unitPrice: COMBO_PREMIUM.price,
-          sku: COMBO_PREMIUM.sku,
-          quantity: item.quantity,
-        };
-      }
+  const orderLines = requested.map((item) => {
+    if (item.slug === COMBO_PREMIUM.slug) {
+      return {
+        productId: null as string | null,
+        comboId: null as string | null,
+        comboSnapshot: undefined,
+        name: COMBO_PREMIUM.name,
+        image: COMBO_PREMIUM.image,
+        unitPrice: COMBO_PREMIUM.price,
+        sku: COMBO_PREMIUM.sku,
+        quantity: item.quantity,
+      };
+    }
 
-      const product = productsBySlug.get(item.slug);
-      if (product) {
-        return {
-          productId: product.id,
-          comboId: null as string | null,
-          comboSnapshot: undefined,
-          name: product.name,
-          image: product.image,
-          unitPrice: product.price,
-          sku: product.sku,
-          quantity: item.quantity,
-        };
-      }
+    const product = productsBySlug.get(item.slug);
+    if (product) {
+      return {
+        productId: product.id,
+        comboId: null as string | null,
+        comboSnapshot: undefined,
+        name: product.name,
+        image: product.image,
+        unitPrice: product.price,
+        sku: product.sku,
+        quantity: item.quantity,
+      };
+    }
 
-      const combo = combosBySlug.get(item.slug);
-      if (combo) {
-        return {
-          productId: null as string | null,
-          comboId: combo.id,
-          comboSnapshot: {
-            name: combo.name,
-            sku: combo.sku,
-            price: combo.price,
-            items: combo.items.map((ci) => ({
-              productId: ci.productId,
-              name: ci.product.name,
-              quantity: ci.quantity,
-            })),
-          },
+    const combo = combosBySlug.get(item.slug);
+    if (combo) {
+      return {
+        productId: null as string | null,
+        comboId: combo.id,
+        comboSnapshot: {
           name: combo.name,
-          image: combo.image ?? "",
-          unitPrice: combo.price,
           sku: combo.sku,
-          quantity: item.quantity,
-        };
-      }
+          price: combo.price,
+          items: combo.items.map((ci) => ({
+            productId: ci.productId,
+            name: ci.product.name,
+            quantity: ci.quantity,
+          })),
+        },
+        name: combo.name,
+        image: combo.image ?? "",
+        unitPrice: combo.price,
+        sku: combo.sku,
+        quantity: item.quantity,
+      };
+    }
 
-      throw new Error(`PRODUCT_NOT_FOUND:${item.slug}`);
-    });
+    throw new Error(`PRODUCT_NOT_FOUND:${item.slug}`);
   });
 
   const subtotal = orderLines.reduce((total, line) => total + line.unitPrice * line.quantity, 0);
@@ -178,7 +179,7 @@ export async function createWatiOrder(input: CreateWatiOrderInput) {
   );
   const shippingCost = shippingOverride ?? getShippingForLocation(department, city).price;
 
-  const order = await prisma.order.create({
+  const order = await db.order.create({
     data: {
       userId,
       channel: "WHATSAPP",

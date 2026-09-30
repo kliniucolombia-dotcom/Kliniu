@@ -19,6 +19,7 @@ export async function sendPendingWatiFollowUps(now = new Date()) {
     where: {
       status: "ACTIVE",
       orderId: null,
+      botPaused: false,
       followUpSentAt: null,
       updatedAt: { lte: cutoff },
     },

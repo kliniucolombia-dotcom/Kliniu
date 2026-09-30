@@ -156,6 +156,27 @@ export async function sendWatiFileFromUrl(
   await parseWatiResponse(response);
 }
 
+/**
+ * Descarga el binario de un mensaje multimedia por su ID (endpoint v3).
+ * Devuelve null si WATI no lo entrega. Usado para transcribir notas de voz.
+ */
+export async function fetchWatiMedia(
+  messageId: string,
+): Promise<{ buffer: Buffer; contentType: string } | null> {
+  const { host, authorization } = getWatiConfig();
+
+  const response = await fetch(
+    `${host}/api/ext/v3/conversations/messages/file/${encodeURIComponent(messageId)}`,
+    { headers: { Authorization: authorization } },
+  );
+  if (!response.ok) return null;
+
+  const buffer = Buffer.from(await response.arrayBuffer());
+  if (buffer.byteLength === 0) return null;
+
+  return { buffer, contentType: response.headers.get("content-type") ?? "audio/ogg" };
+}
+
 export async function getWatiTemplates(): Promise<WatiTemplate[]> {
   const { host, authorization, channel } = getWatiConfig();
   const url = new URL(`${host}/api/ext/v3/messageTemplates`);

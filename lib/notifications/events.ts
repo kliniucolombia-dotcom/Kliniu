@@ -103,6 +103,10 @@ export const NOTIFICATION_EVENTS: Record<string, Omit<NotificationEvent, "title"
 
   // ─── WhatsApp / WATI ──
   "wati.moderation_escalated": { type: "wati", category: "moderation_escalated", targetRoles: SALES, severity: "warning" },
+  "wati.assistant_failed":     { type: "wati", category: "assistant_failed",     targetRoles: SALES, severity: "warning" },
+  "wati.reply_send_failed":    { type: "wati", category: "reply_send_failed",    targetRoles: SALES, severity: "warning" },
+  "wati.order_created":        { type: "wati", category: "order_created",        targetRoles: SALES, severity: "info" },
+  "wati.advisor_request":      { type: "wati", category: "advisor_request",      targetRoles: SALES, severity: "warning" },
 
   // ─── Comunicados ──
   "announcement.new": { type: "announcement", category: "announcement_new", targetRoles: ALL_PANEL, severity: "info" },
