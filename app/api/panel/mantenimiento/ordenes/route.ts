@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { createOrder } from "@/lib/maintenance";
+import { createNotification } from "@/lib/notifications";
 import type { MaintenancePriority, MaintenanceType } from "@/generated/prisma/client";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
@@ -31,5 +32,32 @@ export async function POST(request: Request) {
     reportedById: access.user.id,
   });
   broadcastPanelUpdate("maintenance").catch(() => {});
+
+  const equipmentName = order.equipment?.name ?? "Equipo";
+  const typeLabel = body.type === "PREVENTIVE" ? "Preventivo" : "Correctivo";
+
+  // El equipo de mantenimiento y las jefaturas se enteran de toda orden nueva.
+  createNotification({
+    eventKey: priority === "URGENT" ? "maintenance.urgent" : "maintenance.scheduled",
+    title: `Mantenimiento ${order.number}: ${equipmentName}`,
+    detail: `${typeLabel} · prioridad ${priority} · ${access.user.fullName}`,
+    href: "/panel/mantenimiento",
+    createdById: access.user.id,
+    metadata: { orderId: order.id, number: order.number, priority },
+  }).catch(() => {});
+
+  // Aviso directo al técnico asignado (además de las jefaturas del evento).
+  if (body.assignedToId && body.assignedToId !== access.user.id) {
+    createNotification({
+      eventKey: "maintenance.assigned",
+      title: `Te asignaron la orden ${order.number}`,
+      detail: `${equipmentName}: ${body.description.trim()} · ${access.user.fullName}`,
+      href: "/panel/mantenimiento",
+      targetUserId: body.assignedToId,
+      createdById: access.user.id,
+      metadata: { orderId: order.id, number: order.number, priority },
+    }).catch(() => {});
+  }
+
   return Response.json({ order });
 }

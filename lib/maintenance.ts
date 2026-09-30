@@ -111,7 +111,7 @@ export async function createOrder(input: {
   const db = requirePrisma();
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      return await db.$transaction(async (tx) => tx.maintenanceOrder.create({ data: { number: await generateOrderNumber(tx), equipmentId: input.equipmentId, type: input.type, priority: input.priority, description: input.description.trim(), assignedToId: input.assignedToId || null, reportedById: input.reportedById } }));
+      return await db.$transaction(async (tx) => tx.maintenanceOrder.create({ data: { number: await generateOrderNumber(tx), equipmentId: input.equipmentId, type: input.type, priority: input.priority, description: input.description.trim(), assignedToId: input.assignedToId || null, reportedById: input.reportedById }, include: { equipment: { select: { name: true } } } }));
     } catch (error) {
       const duplicate = typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "P2002";
       if (!duplicate || attempt === 2) throw error;
@@ -180,7 +180,9 @@ export async function cancelOrder(id: string) {
 }
 
 export async function updateOrder(id: string, data: { priority?: MaintenancePriority; assignedToId?: string | null; description?: string }) {
-  return requirePrisma().maintenanceOrder.update({ where: { id }, data });
+  const updated = await requirePrisma().maintenanceOrder.update({ where: { id }, data });
+  const equipment = await requirePrisma().equipment.findUnique({ where: { id: updated.equipmentId }, select: { name: true } });
+  return { ...updated, equipment };
 }
 
 export async function listInventory() {

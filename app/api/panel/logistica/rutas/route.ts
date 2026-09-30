@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { createRoute } from "@/lib/logistics";
+import { createNotification } from "@/lib/notifications";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function POST(request: Request) {
@@ -26,5 +27,15 @@ export async function POST(request: Request) {
     userId: access.user.id,
   });
   broadcastPanelUpdate("logistics").catch(() => {});
+
+  createNotification({
+    eventKey: "logistics.route_assigned",
+    title: `Ruta asignada · ${route.driver?.fullName ?? "conductor"}`,
+    detail: `${route.vehicle?.plate ?? "Vehículo"} · ${body.orderIds?.length ?? 0} pedidos · ${access.user.fullName}`,
+    href: "/panel/logistica",
+    createdById: access.user.id,
+    metadata: { routeId: route.id, driverId: route.driverId },
+  }).catch(() => {});
+
   return Response.json({ route });
 }

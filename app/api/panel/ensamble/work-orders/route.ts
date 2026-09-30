@@ -1,4 +1,5 @@
 import { requirePermission } from "@/lib/permissions";
+import { createNotification } from "@/lib/notifications";
 import {
   createWorkOrder,
   listWorkOrders,
@@ -33,6 +34,16 @@ export async function POST(request: Request) {
     const input = { lot: null, producedQuantity: null, notes: null, ...parseWorkOrderInput(await readJsonRecord(request)) } as WorkOrderInput;
     const order = await createWorkOrder(input, access.user.id);
     broadcastPanelUpdate("production-control").catch(() => {});
+
+    createNotification({
+      eventKey: "ensamble.work_order_created",
+      title: `Nueva ODT ${order.number}`,
+      detail: `${order.productName} · ${order.quantity} und · ${access.user.fullName}`,
+      href: "/panel/ensamble",
+      createdById: access.user.id,
+      metadata: { workOrderId: order.id, number: order.number },
+    }).catch(() => {});
+
     return Response.json(order, { status: 201 });
   } catch (e) {
     return productionControlErrorResponse(e);

@@ -1,5 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { cancelOrder, completeOrder, startOrder, updateOrder } from "@/lib/maintenance";
+import { createNotification } from "@/lib/notifications";
+import { prisma } from "@/lib/prisma";
 import type { MaintenancePriority } from "@/generated/prisma/client";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
@@ -35,8 +37,43 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       broadcastPanelUpdate("maintenance").catch(() => {});
       return Response.json({ order });
     }
+    const previous = body.assignedToId !== undefined
+      ? await prisma?.maintenanceOrder.findUnique({ where: { id }, select: { assignedToId: true } })
+      : null;
     const order = await updateOrder(id, { priority: body.priority, assignedToId: body.assignedToId, description: body.description });
     broadcastPanelUpdate("maintenance").catch(() => {});
+
+    // Reasignación: avisa al nuevo técnico y a las jefaturas si de verdad cambió.
+    if (
+      body.assignedToId &&
+      body.assignedToId !== access.user.id &&
+      body.assignedToId !== previous?.assignedToId
+    ) {
+      const equipmentName = order.equipment?.name ?? "Equipo";
+      const assignee = await prisma?.user.findUnique({ where: { id: body.assignedToId }, select: { fullName: true } });
+
+      // Directo al nuevo técnico.
+      createNotification({
+        eventKey: "maintenance.assigned",
+        title: `Te asignaron la orden ${order.number}`,
+        detail: `${equipmentName}: ${order.description} · ${access.user.fullName}`,
+        href: "/panel/mantenimiento",
+        targetUserId: body.assignedToId,
+        createdById: access.user.id,
+        metadata: { orderId: order.id, number: order.number, priority: order.priority },
+      }).catch(() => {});
+
+      // Al equipo y jefaturas: la orden cambió de responsable.
+      createNotification({
+        eventKey: "maintenance.reassigned",
+        title: `Orden ${order.number} reasignada a ${assignee?.fullName ?? "otro técnico"}`,
+        detail: `${equipmentName} · ${access.user.fullName}`,
+        href: "/panel/mantenimiento",
+        createdById: access.user.id,
+        metadata: { orderId: order.id, number: order.number, assignedToId: body.assignedToId },
+      }).catch(() => {});
+    }
+
     return Response.json({ order });
   } catch (error) {
     if (error instanceof Error && error.message === "INVALID_TRANSITION") return Response.json({ error: "La orden cambió de estado o la transición no es válida" }, { status: 409 });

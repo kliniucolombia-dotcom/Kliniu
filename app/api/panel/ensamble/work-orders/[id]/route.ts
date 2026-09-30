@@ -1,4 +1,5 @@
 import { getEffectivePermission, requirePermission } from "@/lib/permissions";
+import { createNotification } from "@/lib/notifications";
 import {
   closeWorkOrder,
   controlScope,
@@ -45,6 +46,18 @@ export async function PATCH(request: Request, { params }: Ctx) {
           ? await reopenWorkOrder(id)
           : await updateWorkOrder(id, input);
     broadcastPanelUpdate("production-control").catch(() => {});
+
+    if (body.action === "close") {
+      createNotification({
+        eventKey: "ensamble.work_order_closed",
+        title: `ODT ${order.number} cerrada`,
+        detail: `${order.productName} · ${order.producedQuantity ?? 0} und producidas · ${access.user.fullName}`,
+        href: "/panel/ensamble",
+        createdById: access.user.id,
+        metadata: { workOrderId: order.id, number: order.number },
+      }).catch(() => {});
+    }
+
     return Response.json(order);
   } catch (e) {
     return productionControlErrorResponse(e);

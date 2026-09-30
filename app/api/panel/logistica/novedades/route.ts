@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { createIncident } from "@/lib/logistics";
+import { createNotification } from "@/lib/notifications";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function POST(request: Request) {
@@ -20,5 +21,15 @@ export async function POST(request: Request) {
 
   const incident = await createIncident({ ...body, date: body.date, type: body.type, description: body.description, userId: access.user.id });
   broadcastPanelUpdate("logistics").catch(() => {});
+
+  createNotification({
+    eventKey: "logistics.incident",
+    title: `Novedad de ruta: ${incident.type}`,
+    detail: `${incident.driver?.fullName ?? "Sin conductor"} · ${incident.description} · ${access.user.fullName}`,
+    href: "/panel/logistica",
+    createdById: access.user.id,
+    metadata: { incidentId: incident.id, driverId: incident.driverId },
+  }).catch(() => {});
+
   return Response.json({ incident });
 }

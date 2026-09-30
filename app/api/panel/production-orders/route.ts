@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { createProductionOrder, getProductionOrders } from "@/lib/panel";
+import { createNotification } from "@/lib/notifications";
 import { parseBogotaCivilDate } from "@/lib/operations-validation";
 import type { ProductionArea, ProductionOrderStatus } from "@/generated/prisma/client";
 import { broadcastPanelUpdate } from "@/lib/realtime";
@@ -42,6 +43,16 @@ export async function POST(request: Request) {
       notes: body.notes,
     });
     broadcastPanelUpdate("production").catch(() => {});
+
+    createNotification({
+      eventKey: "production.order_created",
+      title: `Nueva orden de producción ${created.number}`,
+      detail: `Área ${created.area === "ENSAMBLE" ? "Ensamble" : "Inyección"} · ${access.user.fullName}`,
+      href: "/panel/produccion/ordenes",
+      createdById: access.user.id,
+      metadata: { orderId: created.id, number: created.number, area: created.area },
+    }).catch(() => {});
+
     return Response.json(created);
   } catch (error) {
     if (error instanceof Error && error.message === "INVALID_DATE") return Response.json({ error: "Fecha de producción inválida" }, { status: 400 });

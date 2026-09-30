@@ -1,6 +1,7 @@
 import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
+import { createNotification } from "@/lib/notifications";
 import { createSupabaseStorageClient } from "@/lib/supabase-storage";
 import { recordTicketEvents } from "@/lib/ticket-events";
 import { computeTicketDueDate, groupResponsiblesByDepartment, isAssigneeAllowed } from "@/lib/tickets";
@@ -64,7 +65,10 @@ export async function POST(request: Request) {
     if (!value || !VALID_STATUS.includes(value)) {
       return Response.json({ error: "Estado inválido" }, { status: 400 });
     }
-    const tickets = await db.ticket.findMany({ where: { id: { in: unique } }, select: { id: true, status: true } });
+    const tickets = await db.ticket.findMany({
+      where: { id: { in: unique } },
+      select: { id: true, code: true, status: true, employee: { select: { userId: true } } },
+    });
     const res = await db.ticket.updateMany({
       where: { id: { in: unique } },
       data: {
@@ -78,6 +82,26 @@ export async function POST(request: Request) {
         .map((t) => ({ ticketId: t.id, actorId: access.user.id, type: "STATUS" as const, field: "status", fromValue: t.status, toValue: value })),
     );
     await broadcastPanelUpdate("tickets");
+
+    // Avisa a cada solicitante (agrupado) cuyo ticket cambió de estado.
+    const changedOwners = new Map<string, number>();
+    for (const t of tickets) {
+      if (t.status === value) continue;
+      const owner = t.employee?.userId;
+      if (owner && owner !== access.user.id) changedOwners.set(owner, (changedOwners.get(owner) ?? 0) + 1);
+    }
+    for (const [owner, count] of changedOwners) {
+      createNotification({
+        eventKey: "ticket.status_changed",
+        title: count === 1 ? "Tu solicitud cambió de estado" : `${count} solicitudes tuyas cambiaron de estado`,
+        detail: `Nuevo estado: ${value}`,
+        href: "/panel/tickets",
+        targetUserId: owner,
+        createdById: access.user.id,
+        metadata: { bulk: true, status: value, count },
+      }).catch(() => {});
+    }
+
     return Response.json({ ok: true, affected: res.count });
   }
 
@@ -153,6 +177,19 @@ export async function POST(request: Request) {
         })),
     );
     await broadcastPanelUpdate("tickets");
+
+    if (responsibleId && responsibleId !== access.user.id) {
+      createNotification({
+        eventKey: "ticket.assigned",
+        title: `Te asignaron ${res.count} solicitud${res.count === 1 ? "" : "es"}`,
+        detail: `Asignación masiva por ${access.user.fullName}`,
+        href: "/panel/tickets",
+        targetUserId: responsibleId,
+        createdById: access.user.id,
+        metadata: { bulk: true, count: res.count },
+      }).catch(() => {});
+    }
+
     return Response.json({ ok: true, affected: res.count });
   }
 

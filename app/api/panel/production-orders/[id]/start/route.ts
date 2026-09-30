@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { startProductionOrder } from "@/lib/panel";
+import { createNotification } from "@/lib/notifications";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -10,6 +11,16 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
   try {
     const updated = await startProductionOrder(id);
     broadcastPanelUpdate("production").catch(() => {});
+
+    createNotification({
+      eventKey: "production.order_started",
+      title: `Producción iniciada ${updated.number}`,
+      detail: `Área ${updated.area === "ENSAMBLE" ? "Ensamble" : "Inyección"} · ${access.user.fullName}`,
+      href: "/panel/produccion/ordenes",
+      createdById: access.user.id,
+      metadata: { orderId: updated.id, number: updated.number, area: updated.area },
+    }).catch(() => {});
+
     return Response.json(updated);
   } catch (e) {
     if (e instanceof Error && e.message === "NOT_FOUND") {

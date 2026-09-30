@@ -250,6 +250,10 @@ export async function createRoute(input: {
         notes: input.notes || null,
         createdById: input.userId,
       },
+      include: {
+        driver: { select: { fullName: true } },
+        vehicle: { select: { plate: true } },
+      },
     });
     if (input.orderIds.length > 0) {
       await tx.order.updateMany({
@@ -351,6 +355,10 @@ export async function createIncident(input: {
       description: input.description.trim(),
       correctiveAction: input.correctiveAction?.trim() || null,
       createdById: input.userId,
+    },
+    include: {
+      driver: { select: { fullName: true } },
+      vehicle: { select: { plate: true } },
     },
   });
 }

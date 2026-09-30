@@ -2,6 +2,7 @@ import { getEffectivePermissions, requireActiveUser, requirePermission } from "@
 import { buildOperationsReportKpis, createOperationsReport, listAuthorizedOperationsReports, OPERATIONS_REPORT_MODULES } from "@/lib/operations-reports";
 import { operationsModulesWithView } from "@/lib/operations-report-policy";
 import { parseBogotaCivilDate } from "@/lib/operations-validation";
+import { createNotification } from "@/lib/notifications";
 import type { PanelModule } from "@/generated/prisma/client";
 
 function isReportModule(value: unknown): value is PanelModule {
@@ -49,5 +50,15 @@ export async function POST(request: Request) {
     notes: body.notes,
     authorId: access.user.id,
   });
+
+  createNotification({
+    eventKey: "operations.report_submitted",
+    title: `Informe de operaciones: ${body.module.replace("MODULE_", "").toLowerCase()}`,
+    detail: `${body.periodStart} — ${body.periodEnd} · ${access.user.fullName}`,
+    href: "/panel/operaciones",
+    createdById: access.user.id,
+    metadata: { reportId: report.id, module: body.module },
+  }).catch(() => {});
+
   return Response.json({ report });
 }

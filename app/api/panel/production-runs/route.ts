@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { createProductionRun, getProductionRuns, normalizeTemperatureZones } from "@/lib/panel";
+import { createNotification } from "@/lib/notifications";
 import { parseIsoDateTime, parseNonNegativeNumber, parseEnum } from "@/lib/operations-validation";
 import { COUPLING_STATUSES, CYCLE_UNITS, TEMPERATURE_TYPES } from "@/lib/production-calculator";
 import { broadcastPanelUpdate } from "@/lib/realtime";
@@ -109,6 +110,16 @@ export async function POST(request: Request) {
       observations: body.observations,
     });
     broadcastPanelUpdate("production").catch(() => {});
+
+    createNotification({
+      eventKey: "production.run_created",
+      title: `Corrida registrada · OP ${created.orderNumber}`,
+      detail: `${created.produced} und producidas · ${access.user.fullName}`,
+      href: "/panel/produccion",
+      createdById: access.user.id,
+      metadata: { runId: created.id, orderNumber: created.orderNumber, produced: created.produced },
+    }).catch(() => {});
+
     return Response.json(created);
   } catch (e) {
     if (e instanceof Error && e.message === "DAMAGED_EXCEEDS_PRODUCED") {

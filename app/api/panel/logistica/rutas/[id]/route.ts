@@ -1,5 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { addOrdersToRoute, deleteRoute, removeOrderFromRoute, updateRoute } from "@/lib/logistics";
+import { createNotification } from "@/lib/notifications";
+import { prisma } from "@/lib/prisma";
 import type { DeliveryRouteStatus } from "@/generated/prisma/client";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
@@ -27,6 +29,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (body.addOrderIds?.length) await addOrdersToRoute(id, body.addOrderIds);
   if (body.removeOrderId) await removeOrderFromRoute(id, body.removeOrderId);
 
+  const previous = body.driverId
+    ? await prisma?.deliveryRoute.findUnique({ where: { id }, select: { driverId: true } })
+    : null;
+
   const route = await updateRoute(id, {
     status: body.status,
     notes: body.notes,
@@ -35,6 +41,19 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     date: body.date,
   });
   broadcastPanelUpdate("logistics").catch(() => {});
+
+  if (body.driverId && body.driverId !== previous?.driverId) {
+    const driver = await prisma?.driver.findUnique({ where: { id: body.driverId }, select: { fullName: true } });
+    createNotification({
+      eventKey: "logistics.route_assigned",
+      title: `Ruta reasignada · ${driver?.fullName ?? "conductor"}`,
+      detail: `Cambio de conductor · ${access.user.fullName}`,
+      href: "/panel/logistica",
+      createdById: access.user.id,
+      metadata: { routeId: route.id, driverId: body.driverId },
+    }).catch(() => {});
+  }
+
   return Response.json({ route });
 }
 
