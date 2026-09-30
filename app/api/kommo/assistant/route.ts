@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { buildCatalogContext, buildLocalAssistantReply, getCatalogSnapshot } from "@/lib/chatbot";
+import { classifyMessage, MODERATION_GUARDRAIL_PROMPT, RESPECT_BOUNDARY_REPLY } from "@/lib/moderation";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,11 @@ export async function POST(request: Request) {
     return Response.json({ reply: "¿En qué puedo ayudarte?" });
   }
 
+  const moderation = await classifyMessage(message);
+  if (moderation.action !== "ALLOW") {
+    return Response.json({ reply: moderation.reply ?? RESPECT_BOUNDARY_REPLY });
+  }
+
   const snapshot = await getCatalogSnapshot(message);
   const fallback = buildLocalAssistantReply(message, snapshot);
 
@@ -63,6 +69,7 @@ export async function POST(request: Request) {
             "PAGO/CIERRE: nunca digas que vas a generar un link de pago o reservar inventario tú mismo — eso lo hace un asesor humano. Si el cliente está listo para pagar, dile que un asesor lo contacta para cerrar la compra.",
             "ENVÍO COSTO: Bogotá D.C. envío gratis. Resto del país $12.000 COP fijo. Da este dato directo si preguntan.",
             "ENVÍO TIEMPO: no hay días exactos definidos, nunca inventes un número, di que lo confirma el equipo comercial.",
+            MODERATION_GUARDRAIL_PROMPT,
           ].join("\n"),
         },
         {

@@ -7,8 +7,17 @@ import { getCatalogSnapshot } from "@/lib/chatbot";
 import { getProducts, type StoreProduct } from "@/lib/products";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { syncOrderToOdoo } from "@/lib/orders";
+import {
+  classifyMessage,
+  ESCALATE_REPLY,
+  RESPECT_BOUNDARY_REPLY,
+} from "@/lib/moderation";
+import { createNotification } from "@/lib/notifications";
 
 export const maxDuration = 60;
+
+/** Cantidad de advertencias antes de pausar el bot y pasar a un asesor. */
+const MAX_MODERATION_STRIKES = 3;
 
 type WatiWebhookPayload = {
   eventType?: unknown;
@@ -122,15 +131,16 @@ async function resolveContextProduct(
   return namedUser[0] ?? null;
 }
 
-/** Fotos del producto por el que pregunta el cliente. Una si solo consulta, la
- * galería si pide fotos explícitamente. Devuelve [] si no hay producto claro o
- * si ya se enviaron antes en la conversación. */
+/** Fotos del producto por el que pregunta el cliente. Solo se envían cuando el
+ * cliente pide fotos explícitamente; nunca de forma proactiva. Devuelve [] si no
+ * pide fotos, no hay producto claro, o el producto no tiene imágenes. */
 async function getProductMediaToSend(
   history: ConversationHistory[],
   message: string,
   currentReply: string,
 ): Promise<ProductMedia[]> {
   const wantsPhotos = PHOTO_REQUEST.test(normalizeForIntent(message));
+  if (!wantsPhotos) return [];
 
   let product = await resolveContextProduct(history, message, currentReply);
   if (!product) {
@@ -141,15 +151,13 @@ async function getProductMediaToSend(
   }
   if (!product) return [];
 
-  // Si el cliente pide la imagen explícitamente, no saltamos por haberla enviado
-  // antes; el anti-duplicado aplica solo a los envíos proactivos.
+  // El cliente pidió fotos explícitamente: se envía la galería (hasta 4).
   const marker = `📸 Foto de ${product.nombre} enviada.`;
-  if (!wantsPhotos && history.some(({ content }) => content.includes(marker))) return [];
 
   const paths = [product.imagen, ...(product.imagenesExtra ?? [])].filter(Boolean);
   if (paths.length === 0) return [];
 
-  const chosen = wantsPhotos ? paths.slice(0, 4) : paths.slice(0, 1);
+  const chosen = paths.slice(0, 4);
 
   return chosen.map((path, index) => ({
     url: toWatiImageUrl(path.startsWith("http") ? path : `${SITE_URL}${path}`),
@@ -278,6 +286,59 @@ export async function POST(request: Request) {
 
   if (conversation.botPaused) {
     return Response.json({ received: true, botPaused: true });
+  }
+
+  // Moderación: groserías, vulgar/sexual, amenazas. Nunca crea pedido ni envía
+  // fotos; a partir de cierto número de avisos pausa el bot y avisa a un asesor.
+  const moderation = await classifyMessage(text);
+  if (moderation.action !== "ALLOW") {
+    const strikes = conversation.moderationStrikes + 1;
+    const shouldEscalate =
+      moderation.action === "ESCALATE" || strikes >= MAX_MODERATION_STRIKES;
+    const moderationReply = shouldEscalate
+      ? ESCALATE_REPLY
+      : moderation.reply ?? RESPECT_BOUNDARY_REPLY;
+
+    await prisma.watiMessage.create({
+      data: { conversationId: conversation.id, role: "ASSISTANT", content: moderationReply },
+    });
+    await prisma.watiConversation.update({
+      where: { id: conversation.id },
+      data: {
+        moderationStrikes: strikes,
+        lastAutoReplyAt: new Date(),
+        ...(shouldEscalate ? { botPaused: true } : {}),
+      },
+    });
+    await broadcastPanelUpdate("wati");
+
+    try {
+      await sendWatiMessage(phone, moderationReply);
+    } catch (error) {
+      console.error("WATI_MODERATION_SEND_FAILED", conversation.id, error);
+    }
+
+    if (shouldEscalate) {
+      await createNotification({
+        eventKey: "wati.moderation_escalated",
+        title: `WhatsApp: conversación escalada por lenguaje ofensivo (${phone})`,
+        detail: `El bot pausó la atención tras detectar ${moderation.category.toLowerCase()} (${strikes} aviso(s)). Un asesor debe continuar por este mismo chat.`,
+        href: "/panel/whatsapp",
+        targetUserId: conversation.assignedSellerId ?? undefined,
+        metadata: {
+          conversationId: conversation.id,
+          phone,
+          category: moderation.category,
+          strikes,
+        },
+      });
+    }
+
+    return Response.json({
+      received: true,
+      moderated: moderation.category,
+      escalated: shouldEscalate,
+    });
   }
 
   const isPostSaleReply =

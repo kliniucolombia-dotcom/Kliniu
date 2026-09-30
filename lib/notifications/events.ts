@@ -77,6 +77,9 @@ export const NOTIFICATION_EVENTS: Record<string, Omit<NotificationEvent, "title"
   // ─── Campañas ──
   "campaign.active": { type: "campaign", category: "campaign_active", targetRoles: ["MARKETING", "SELLER"], severity: "info" },
 
+  // ─── WhatsApp / WATI ──
+  "wati.moderation_escalated": { type: "wati", category: "moderation_escalated", targetRoles: SALES, severity: "warning" },
+
   // ─── Comunicados ──
   "announcement.new": { type: "announcement", category: "announcement_new", targetRoles: ALL_PANEL, severity: "info" },
 };

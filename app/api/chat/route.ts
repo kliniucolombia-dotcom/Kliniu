@@ -3,6 +3,7 @@ import { buildCatalogContext, buildLocalAssistantReply, getCatalogSnapshot, type
 import { buildKliniuKnowledge } from "@/lib/kliniu-knowledge";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { classifyMessage, RESPECT_BOUNDARY_REPLY } from "@/lib/moderation";
 
 const FALLBACK_SELLER_PHONE = "573125860921";
 
@@ -108,6 +109,17 @@ export async function POST(request: Request) {
         { error: "Envía una pregunta para que el asistente pueda ayudarte." },
         { status: 400 },
       );
+    }
+
+    // Moderación: groserías, vulgar/sexual, amenazas. No llegar al modelo ni mostrar productos.
+    const moderation = await classifyMessage(latestUserMessage.content);
+    if (moderation.action !== "ALLOW") {
+      return Response.json({
+        message: moderation.reply ?? RESPECT_BOUNDARY_REPLY,
+        suggestions: [],
+        products: undefined,
+        mode: "local",
+      });
     }
 
     saveLeadIfPresent(latestUserMessage.content);

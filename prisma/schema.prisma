@@ -663,6 +663,7 @@ model WatiConversation {
   salesStage         WatiSalesStage         @default(NEW)
   notes              String?
   botPaused          Boolean                @default(false)
+  moderationStrikes  Int                    @default(0)
   lastAutoReplyAt    DateTime?
   comboImageSentAt   DateTime?
   comboVideoSentAt   DateTime?
