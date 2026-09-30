@@ -3,7 +3,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   MdFolder, MdCreateNewFolder, MdUploadFile, MdDelete, MdEdit, MdDownload,
   MdChevronRight, MdInsertDriveFile, MdImage, MdPictureAsPdf, MdMovie, MdHome, MdLock, MdGroup,
+  MdGridView, MdViewList, MdViewModule, MdTableChart,
 } from "react-icons/md";
+
+// Módulo-level: las miniaturas sobreviven al cambio de vista sin parpadeo.
+const urlCache = new Map<string, { url: string; expiresAt: number }>();
 
 type Crumb = { id: string; name: string };
 type Folder = { id: string; name: string; createdAt: string; canDelete: boolean; isPrivate: boolean };
@@ -26,11 +30,54 @@ function formatSize(bytes: number | null) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function fileIcon(mime: string | null) {
-  if (mime?.startsWith("image/")) return <MdImage size={20} className="text-[#27B1B8]" />;
-  if (mime?.startsWith("video/")) return <MdMovie size={20} className="text-[#8B5CF6]" />;
-  if (mime === "application/pdf") return <MdPictureAsPdf size={20} className="text-[#DC2626]" />;
-  return <MdInsertDriveFile size={20} className="text-[#94A3B8]" />;
+const extOf = (name: string) => (name.includes(".") ? name.split(".").pop()!.slice(0, 4).toUpperCase() : "");
+
+function fileIcon(mime: string | null, size = 20, name = "") {
+  if (/^(xlsx?|csv)$/i.test(extOf(name))) return <MdTableChart size={size} className="text-[#16A34A]" />;
+  if (mime?.startsWith("image/")) return <MdImage size={size} className="text-[#27B1B8]" />;
+  if (mime?.startsWith("video/")) return <MdMovie size={size} className="text-[#8B5CF6]" />;
+  if (mime === "application/pdf") return <MdPictureAsPdf size={size} className="text-[#DC2626]" />;
+  return <MdInsertDriveFile size={size} className="text-[#94A3B8]" />;
+}
+
+type View = "icons" | "list" | "gallery";
+const VIEWS: { id: View; label: string; icon: React.ReactNode }[] = [
+  { id: "icons", label: "Iconos", icon: <MdGridView size={18} /> },
+  { id: "list", label: "Lista", icon: <MdViewList size={18} /> },
+  { id: "gallery", label: "Galería", icon: <MdViewModule size={18} /> },
+];
+
+// Miniatura de imágenes: pide el enlace firmado solo cuando entra en pantalla.
+function Thumb({ file, getUrl, iconSize }: { file: FileItem; getUrl: (f: FileItem) => Promise<string | null>; iconSize: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [url, setUrl] = useState<string | null>(() => {
+    const c = urlCache.get(file.id);
+    return c && c.expiresAt > Date.now() ? c.url : null;
+  });
+  const isImage = !!file.mimeType?.startsWith("image/");
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!isImage || !el || url) return;
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      io.disconnect();
+      void getUrl(file).then(setUrl);
+    }, { rootMargin: "200px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [file, getUrl, isImage, url]);
+
+  return (
+    <div ref={ref} className="flex h-full w-full items-center justify-center">
+      {url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={url} alt={file.name} loading="lazy" className="h-full w-full object-cover" />
+      ) : (
+        fileIcon(file.mimeType, iconSize, file.name)
+      )}
+    </div>
+  );
 }
 
 export default function MaterialComercialPage() {
@@ -41,7 +88,6 @@ export default function MaterialComercialPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadingFile, setUploadingFile] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ url: string | null; name: string; mimeType: string | null } | null>(null);
-  const urlCache = useRef<Map<string, { url: string; expiresAt: number }>>(new Map());
   const [saving, setSaving] = useState(false);
   const [newFolder, setNewFolder] = useState<string | null>(null);
   const [newFolderPrivate, setNewFolderPrivate] = useState(false);
@@ -49,6 +95,22 @@ export default function MaterialComercialPage() {
   const [renameValue, setRenameValue] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<Target | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [view, setView] = useState<View>("icons");
+  const [selected, setSelected] = useState<string | null>(null);
+  // Un clic selecciona, el segundo abre (también sirve en táctil).
+  const pick = (id: string, open: () => void) => (selected === id ? open() : setSelected(id));
+
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("material-view");
+      if (v === "icons" || v === "list" || v === "gallery") setView(v);
+    } catch {}
+  }, []);
+
+  const changeView = (v: View) => {
+    setView(v);
+    try { localStorage.setItem("material-view", v); } catch {}
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -62,7 +124,7 @@ export default function MaterialComercialPage() {
     }
   }, [folderId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { setSelected(null); load(); }, [load]);
 
   const createFolder = async () => {
     if (!newFolder?.trim()) { setError("Ponle un nombre a la carpeta"); return; }
@@ -153,7 +215,7 @@ export default function MaterialComercialPage() {
   // Los enlaces firmados viven 5 min: se cachean y se prefetchean al pasar el
   // ratón para que el clic abra al instante.
   const fetchUrl = useCallback(async (file: FileItem, silent = false): Promise<string | null> => {
-    const cached = urlCache.current.get(file.id);
+    const cached = urlCache.get(file.id);
     if (cached && cached.expiresAt > Date.now() + 10_000) return cached.url;
     const r = await fetch(`/api/panel/material/download?id=${file.id}`);
     const d = await r.json();
@@ -161,12 +223,12 @@ export default function MaterialComercialPage() {
       if (!silent) setError(d.error ?? "No se pudo abrir el archivo");
       return null;
     }
-    urlCache.current.set(file.id, { url: d.url, expiresAt: Date.now() + 290_000 });
+    urlCache.set(file.id, { url: d.url, expiresAt: Date.now() + 290_000 });
     return d.url;
   }, []);
 
   const prefetch = (file: FileItem) => {
-    if (urlCache.current.has(file.id)) return;
+    if (urlCache.has(file.id)) return;
     void fetchUrl(file, true);
   };
 
@@ -177,7 +239,7 @@ export default function MaterialComercialPage() {
 
   const openFile = async (file: FileItem) => {
     if (!isPreviewable(file.mimeType)) { await download(file); return; }
-    const cached = urlCache.current.get(file.id);
+    const cached = urlCache.get(file.id);
     if (cached && cached.expiresAt > Date.now() + 10_000) {
       setPreview({ url: cached.url, name: file.name, mimeType: file.mimeType });
       return;
@@ -188,6 +250,61 @@ export default function MaterialComercialPage() {
     if (url) setPreview((p) => (p && p.name === file.name ? { ...p, url } : p));
     else setPreview(null);
   };
+
+  const thumbUrl = useCallback((f: FileItem) => fetchUrl(f, true), [fetchUrl]);
+
+  const folderActions = (f: Folder) => (
+    <>
+      <button
+        onClick={() => { setRename({ type: "folder", id: f.id, name: f.name }); setRenameValue(f.name); }}
+        className="rounded-lg p-1.5 text-[#64748B] transition hover:bg-[#F1F5F9]"
+        aria-label={`Renombrar ${f.name}`}
+      >
+        <MdEdit size={17} />
+      </button>
+      {f.canDelete && (
+        <button
+          onClick={() => setConfirmDelete({ type: "folder", id: f.id, name: f.name })}
+          className="rounded-lg p-1.5 text-[#DC2626] transition hover:bg-[#FEE2E2]"
+          aria-label={`Eliminar ${f.name}`}
+        >
+          <MdDelete size={17} />
+        </button>
+      )}
+    </>
+  );
+
+  const fileActions = (f: FileItem) => (
+    <>
+      <button
+        onClick={() => download(f)}
+        className="rounded-lg p-1.5 text-[#64748B] transition hover:bg-[#F1F5F9]"
+        aria-label={`Descargar ${f.name}`}
+      >
+        <MdDownload size={17} />
+      </button>
+      <button
+        onClick={() => { setRename({ type: "file", id: f.id, name: f.name }); setRenameValue(f.name); }}
+        className="rounded-lg p-1.5 text-[#64748B] transition hover:bg-[#F1F5F9]"
+        aria-label={`Renombrar ${f.name}`}
+      >
+        <MdEdit size={17} />
+      </button>
+      {f.canDelete && (
+        <button
+          onClick={() => setConfirmDelete({ type: "file", id: f.id, name: f.name })}
+          className="rounded-lg p-1.5 text-[#DC2626] transition hover:bg-[#FEE2E2]"
+          aria-label={`Eliminar ${f.name}`}
+        >
+          <MdDelete size={17} />
+        </button>
+      )}
+    </>
+  );
+
+  const large = view === "gallery";
+  // Acciones flotantes: visibles al pasar el ratón, siempre en táctil.
+  const floating = "absolute right-1.5 top-1.5 flex gap-0.5 rounded-xl bg-white/95 p-0.5 opacity-0 shadow-sm transition group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100";
 
   const empty = !data.folders.length && !data.files.length;
 
@@ -217,7 +334,8 @@ export default function MaterialComercialPage() {
         </div>
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-1 text-sm font-semibold text-[#64748B]">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center gap-1 text-sm font-semibold text-[#64748B]">
         <button onClick={() => setFolderId(null)} className="flex items-center gap-1 rounded-lg px-2 py-1 transition hover:bg-[#F1F5F9] hover:text-[#1A1A1A]">
           <MdHome size={16} /> Inicio
         </button>
@@ -229,6 +347,23 @@ export default function MaterialComercialPage() {
             </button>
           </span>
         ))}
+      </div>
+        <div role="group" aria-label="Vista" className="flex gap-0.5 rounded-xl border border-[#E2E8F0] bg-white p-0.5">
+          {VIEWS.map((v) => (
+            <button
+              key={v.id}
+              onClick={() => changeView(v.id)}
+              aria-pressed={view === v.id}
+              aria-label={`Vista ${v.label}`}
+              title={v.label}
+              className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-black transition ${
+                view === v.id ? "bg-[#27B1B8] text-white" : "text-[#64748B] hover:bg-[#F1F5F9]"
+              }`}
+            >
+              {v.icon} <span className="hidden sm:inline">{v.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {uploading && uploadingFile && (
@@ -250,6 +385,52 @@ export default function MaterialComercialPage() {
         <div className="rounded-2xl border border-dashed border-[#E2E8F0] bg-white p-10 text-center text-sm text-[#94A3B8]">
           <MdFolder size={28} className="mx-auto mb-2 text-[#CBD5E1]" />
           Carpeta vacía. Sube archivos o crea una subcarpeta.
+        </div>
+      ) : view !== "list" ? (
+        <div className={`grid gap-3 ${large ? "grid-cols-[repeat(auto-fill,minmax(210px,1fr))]" : "grid-cols-[repeat(auto-fill,minmax(120px,1fr))]"}`}>
+          {data.folders.map((f) => (
+            <div key={f.id} className={`group relative rounded-2xl border p-2 transition ${selected === f.id ? "border-[#27B1B8] bg-[#F0FDFA]" : "border-transparent hover:border-[#E2E8F0] hover:bg-white"}`}>
+              <button onClick={() => pick(f.id, () => setFolderId(f.id))} className="block w-full text-center">
+                <div className={`relative flex items-center justify-center rounded-xl bg-[#FFFBEB] ${large ? "aspect-[4/3]" : "aspect-square"}`}>
+                  <MdFolder size={large ? 72 : 56} className="text-[#F59E0B]" />
+                  {f.isPrivate && (
+                    <span className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-[#64748B] shadow-sm">
+                      <MdLock size={11} /> Privada
+                    </span>
+                  )}
+                </div>
+                <p className="mt-2 line-clamp-2 break-words text-xs font-bold text-[#1A1A1A]">{f.name}</p>
+                {large && <p className="mt-0.5 text-[11px] text-[#94A3B8]">{new Date(f.createdAt).toLocaleDateString("es-CO")}</p>}
+              </button>
+              <div className={floating}>{folderActions(f)}</div>
+            </div>
+          ))}
+          {data.files.map((f) => (
+            <div key={f.id} className={`group relative rounded-2xl border p-2 transition ${selected === f.id ? "border-[#27B1B8] bg-[#F0FDFA]" : "border-transparent hover:border-[#E2E8F0] hover:bg-white"}`}>
+              <button
+                onClick={() => pick(f.id, () => openFile(f))}
+                onMouseEnter={() => prefetch(f)}
+                onFocus={() => prefetch(f)}
+                className="block w-full text-center"
+              >
+                <div className={`relative overflow-hidden rounded-xl border border-[#F1F5F9] bg-[#F8FAFC] ${large ? "aspect-[4/3]" : "aspect-square"}`}>
+                  <Thumb file={f} getUrl={thumbUrl} iconSize={large ? 56 : 44} />
+                  {extOf(f.name) && (
+                    <span className="absolute bottom-1.5 left-1.5 rounded-md bg-white px-1.5 py-0.5 text-[10px] font-black tracking-widest text-[#475569] shadow-sm">
+                      {extOf(f.name)}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-2 line-clamp-2 break-words text-xs font-semibold text-[#1A1A1A]">{f.name}</p>
+                {large && (
+                  <p className="mt-0.5 text-[11px] text-[#94A3B8]">
+                    {formatSize(f.size)} · {new Date(f.createdAt).toLocaleDateString("es-CO")}
+                  </p>
+                )}
+              </button>
+              <div className={floating}>{fileActions(f)}</div>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-[#E2E8F0] bg-white">
@@ -279,22 +460,7 @@ export default function MaterialComercialPage() {
                   <td className="hidden px-4 py-3 text-[#64748B] sm:table-cell">{new Date(f.createdAt).toLocaleDateString("es-CO")}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      <button
-                        onClick={() => { setRename({ type: "folder", id: f.id, name: f.name }); setRenameValue(f.name); }}
-                        className="rounded-lg p-1.5 text-[#64748B] transition hover:bg-[#F1F5F9]"
-                        aria-label={`Renombrar ${f.name}`}
-                      >
-                        <MdEdit size={17} />
-                      </button>
-                      {f.canDelete && (
-                        <button
-                          onClick={() => setConfirmDelete({ type: "folder", id: f.id, name: f.name })}
-                          className="rounded-lg p-1.5 text-[#DC2626] transition hover:bg-[#FEE2E2]"
-                          aria-label={`Eliminar ${f.name}`}
-                        >
-                          <MdDelete size={17} />
-                        </button>
-                      )}
+                      {folderActions(f)}
                     </div>
                   </td>
                 </tr>
@@ -308,36 +474,17 @@ export default function MaterialComercialPage() {
                       onFocus={() => prefetch(f)}
                       className="flex items-center gap-2 text-left font-semibold text-[#1A1A1A]"
                     >
-                      {fileIcon(f.mimeType)} {f.name}
+                      <span className="flex h-9 w-9 flex-none items-center justify-center overflow-hidden rounded-lg border border-[#F1F5F9] bg-[#F8FAFC]">
+                        <Thumb file={f} getUrl={thumbUrl} iconSize={20} />
+                      </span>
+                      {f.name}
                     </button>
                   </td>
                   <td className="hidden px-4 py-3 text-[#64748B] sm:table-cell">{formatSize(f.size)}</td>
                   <td className="hidden px-4 py-3 text-[#64748B] sm:table-cell">{new Date(f.createdAt).toLocaleDateString("es-CO")}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      <button
-                        onClick={() => download(f)}
-                        className="rounded-lg p-1.5 text-[#64748B] transition hover:bg-[#F1F5F9]"
-                        aria-label={`Descargar ${f.name}`}
-                      >
-                        <MdDownload size={17} />
-                      </button>
-                      <button
-                        onClick={() => { setRename({ type: "file", id: f.id, name: f.name }); setRenameValue(f.name); }}
-                        className="rounded-lg p-1.5 text-[#64748B] transition hover:bg-[#F1F5F9]"
-                        aria-label={`Renombrar ${f.name}`}
-                      >
-                        <MdEdit size={17} />
-                      </button>
-                      {f.canDelete && (
-                        <button
-                          onClick={() => setConfirmDelete({ type: "file", id: f.id, name: f.name })}
-                          className="rounded-lg p-1.5 text-[#DC2626] transition hover:bg-[#FEE2E2]"
-                          aria-label={`Eliminar ${f.name}`}
-                        >
-                          <MdDelete size={17} />
-                        </button>
-                      )}
+                      {fileActions(f)}
                     </div>
                   </td>
                 </tr>
