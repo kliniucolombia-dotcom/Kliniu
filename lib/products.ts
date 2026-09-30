@@ -12,6 +12,7 @@ import {
   type ProductoEspecificacion,
   type ProductoCatalogo,
   type VariacionColor,
+  type VariacionPresentacion,
 } from "@/app/data/catalog";
 import { supabaseDb } from "@/lib/supabase-db";
 import { prisma } from "@/lib/prisma";
@@ -39,6 +40,7 @@ type ProductRecord = {
   warranty?: string | null;
   technicalSpecs?: unknown;
   colorVariants?: unknown;
+  presentationVariants?: unknown;
   videoUrl?: string | null;
   featured: boolean;
   active: boolean;
@@ -87,6 +89,7 @@ export type ProductMutationInput = {
   garantia?: string;
   especificacionesTecnicas?: ProductoEspecificacion[];
   variacionesColor?: VariacionColor[];
+  variacionesPresentacion?: VariacionPresentacion[];
   videoUrl?: string;
   isOutlet?: boolean;
 };
@@ -279,6 +282,9 @@ function toStoreProduct(
         `Aplicación recomendada para la línea ${categoria}.`,
     }),
     variacionesColor: Array.isArray(product.colorVariants) ? (product.colorVariants as VariacionColor[]) : [],
+    variacionesPresentacion: Array.isArray(product.presentationVariants)
+      ? (product.presentationVariants as VariacionPresentacion[])
+      : [],
     videoUrl: product.videoUrl?.trim() || undefined,
     destacado: product.featured,
     esOutlet: product.isOutlet,
@@ -478,6 +484,7 @@ export async function createProduct(input: ProductMutationInput, actorUserId: st
       warranty: input.garantia?.trim() || "1 año de garantía del fabricante",
       technicalSpecs: normalizeTechnicalSpecs(input.especificacionesTecnicas),
       colorVariants: input.variacionesColor ?? [],
+      presentationVariants: input.variacionesPresentacion ?? [],
       videoUrl: input.videoUrl?.trim() || null,
       featured: false,
       active: true,
@@ -610,6 +617,7 @@ export async function updateProduct(slug: string, input: ProductMutationInput, a
       warranty: input.garantia?.trim() || "1 año de garantía del fabricante",
       technicalSpecs: normalizeTechnicalSpecs(input.especificacionesTecnicas),
       colorVariants: input.variacionesColor ?? [],
+      presentationVariants: input.variacionesPresentacion ?? [],
       videoUrl: input.videoUrl?.trim() || null,
       isOutlet: input.isOutlet ?? existingRecord.isOutlet,
       updatedAt: new Date().toISOString(),
@@ -694,6 +702,7 @@ export async function updateOutletProductPricing(
       garantia: record.warranty || undefined,
       especificacionesTecnicas: normalizeTechnicalSpecs(record.technicalSpecs),
       variacionesColor: (record.colorVariants as ProductMutationInput["variacionesColor"]) ?? [],
+      variacionesPresentacion: (record.presentationVariants as ProductMutationInput["variacionesPresentacion"]) ?? [],
       videoUrl: record.videoUrl || undefined,
       isOutlet: record.isOutlet,
       precioValor: input.precioValor,

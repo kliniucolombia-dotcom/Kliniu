@@ -13,7 +13,7 @@ import { useProducts } from "../../components/products-provider";
 import SiteFooter from "../../components/site-footer";
 import QuoteModal from "../../components/quote-modal";
 import ProductosCarousel from "../../components/productos-carousel";
-import { getVolumePricing, TIPO_VARIANTES, INSUMO_PACK_TIERS_BY_SKU, NO_PACK_SKUS, NO_UNIT_SALE_SKUS } from "@/lib/volume-discounts";
+import { getVolumePricing, TIPO_VARIANTES, INSUMO_PACK_TIERS_BY_SKU, NO_PACK_SKUS, NO_UNIT_SALE_SKUS, type TipoVariante } from "@/lib/volume-discounts";
 import type { ProductoEspecificacion } from "../../data/catalog";
 import { formatearMoneda } from "../../data/catalog";
 
@@ -440,6 +440,10 @@ export default function ProductoDetalleClient() {
   const [sinSello, setSinSello] = useState(false);
   const [colorActivo, setColorActivo] = useState(0);
   const [tipoActivo, setTipoActivo] = useState(0);
+  // Controla qué selector manda en la imagen principal: el último que tocó el
+  // usuario. Así cambiar color muestra la foto del color y cambiar presentación
+  // muestra la de la presentación, sin que una tape siempre a la otra.
+  const [variantFocus, setVariantFocus] = useState<"color" | "tipo">("tipo");
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [agregado, setAgregado] = useState(false);
   const agregadoTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -473,9 +477,6 @@ export default function ProductoDetalleClient() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [producto?.sku]);
 
-  const tiposVariantes = producto ? TIPO_VARIANTES[producto.slug] : undefined;
-  const tipoVarianteActiva = tiposVariantes?.[tipoActivo];
-
   const variacionesColor = producto?.variacionesColor ?? [];
 
   // Prepend the base product image as "Blanco" cuando faltan colores y ninguna variante trae SKU propio
@@ -491,6 +492,45 @@ export default function ProductoDetalleClient() {
   }, [producto]);
 
   const colorVarianteActiva = allVariants[colorActivo];
+
+  // Presentaciones: prioridad a las propias del color activo; si ese color no
+  // tiene, se usan las generales del producto y, por último, el mapa legado
+  // TIPO_VARIANTES. Si una presentación coincide por nombre con una del mapa,
+  // hereda su slugSuffix/SKU para no perder precios ya definidos.
+  const tiposVariantes = useMemo<TipoVariante[] | undefined>(() => {
+    if (!producto) return undefined;
+    const hardcoded = TIPO_VARIANTES[producto.slug];
+    const presentacionesColor = colorVarianteActiva?.variacionesPresentacion ?? [];
+    const source =
+      presentacionesColor.length > 0
+        ? presentacionesColor
+        : producto.variacionesPresentacion ?? [];
+    if (source.length === 0) return hardcoded;
+    return source
+      .filter((v) => v.label.trim())
+      .map((v) => {
+        const base = hardcoded?.find(
+          (h) => h.label.trim().toLowerCase() === v.label.trim().toLowerCase(),
+        );
+        const images = (v.images?.length ? v.images : v.image ? [v.image] : []).filter(Boolean);
+        return {
+          label: v.label,
+          slugSuffix: v.slugSuffix ?? base?.slugSuffix ?? "",
+          image: v.image || images[0] || base?.image,
+          images,
+          sku: v.sku ?? base?.sku,
+          skuSello: v.skuSello ?? base?.skuSello,
+        };
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [producto, colorActivo]);
+  const tipoVarianteActiva = tiposVariantes?.[tipoActivo] ?? tiposVariantes?.[0];
+
+  useEffect(() => {
+    if (tiposVariantes && tiposVariantes.length > 0 && tipoActivo >= tiposVariantes.length) {
+      setTipoActivo(0);
+    }
+  }, [tiposVariantes, tipoActivo]);
 
   // Precio por variante de color: si el color activo trae su propio precio, se usa ese
   // en vez del precio base del producto (ej. Antigoteo 800ml Blanco $54.900 / Negro $59.900).
@@ -510,9 +550,9 @@ export default function ProductoDetalleClient() {
   const codigoMostrado = sinSello || !codigoConSello ? codigoSinSello : codigoConSello;
 
   const effectiveSlug = tiposVariantes
-    ? `${slug}${tiposVariantes[tipoActivo].slugSuffix}`
+    ? `${slug}${tipoVarianteActiva?.slugSuffix ?? ""}`
     : slug;
-  const varianteSuffix = tiposVariantes?.[tipoActivo]?.slugSuffix ?? "";
+  const varianteSuffix = tipoVarianteActiva?.slugSuffix ?? "";
   const preciosBase = varianteSuffix === "" ? producto?.preciosPorCantidad : undefined;
   // Los packs de BD (× 12 und, × 100 und...) son del producto base (ej. Cierre Plástico).
   // Al elegir un tipo con sufijo (ej. Cierre Metálico) no aplican — el precio de ese tipo
@@ -523,9 +563,21 @@ export default function ProductoDetalleClient() {
     if (!producto || producto.puedeComprar === false) return;
     const pricing = getVolumePricing(precioEfectivo, cantidad, effectiveSlug, preciosBase, producto.sku, packTiersEfectivos);
     const varianteActiva = allVariants[colorActivo];
-    const imagenSeleccionada = varianteActiva?.images?.[0] ?? varianteActiva?.image ?? producto.imagen;
+    // La imagen del carrito sigue al último selector tocado (color o
+    // presentación) y cae al producto base si ese selector no trae foto.
+    const tipoActiva = tipoVarianteActiva;
+    const colorTienePropias = (varianteActiva?.variacionesPresentacion ?? []).length > 0;
+    const focus = colorTienePropias ? "tipo" : variantFocus;
+    const imagenSeleccionada =
+      focus === "color"
+        ? varianteActiva?.images?.[0] ?? varianteActiva?.image ?? producto.imagen
+        : tipoActiva?.images?.[0] ??
+          tipoActiva?.image ??
+          varianteActiva?.images?.[0] ??
+          varianteActiva?.image ??
+          producto.imagen;
     const colorLabel = allVariants.length > 0 ? varianteActiva?.label : undefined;
-    const tipoLabel = tiposVariantes ? tiposVariantes[tipoActivo].label : undefined;
+    const tipoLabel = tipoVarianteActiva?.label;
     const itemId = [producto.slug, varianteActiva?.color, tipoLabel].filter(Boolean).join("--");
     addItem({
       id: itemId,
@@ -545,28 +597,40 @@ export default function ProductoDetalleClient() {
 
   const galleryImages = useMemo(() => {
     if (!producto) return [];
-    const tipoImage = tiposVariantes?.[tipoActivo]?.image;
+    const tipoActiva = tipoVarianteActiva;
+    const tipoImages = tipoActiva?.images?.length
+      ? tipoActiva.images
+      : tipoActiva?.image
+        ? [tipoActiva.image]
+        : [];
     if (allVariants.length > 0) {
       const varianteSeleccionada = allVariants[colorActivo];
-      // Si el color tiene sus propias fotos (2+), la galería muestra solo esas
-      if (varianteSeleccionada?.images && varianteSeleccionada.images.length > 1) {
-        return [...varianteSeleccionada.images, tipoImage]
-          .filter((x): x is string => Boolean(x))
-          .filter((x, i, arr) => arr.indexOf(x) === i);
+      const colorImages =
+        varianteSeleccionada?.images && varianteSeleccionada.images.length > 0
+          ? varianteSeleccionada.images
+          : [varianteSeleccionada?.image ?? producto.imagen].filter((x): x is string => Boolean(x));
+      // Color con set de fotos propio (2+) y sin presentaciones: la galería
+      // muestra solo esas fotos, como antes.
+      if (colorImages.length > 1 && tipoImages.length === 0) {
+        return colorImages.filter((x, i, arr) => arr.indexOf(x) === i);
       }
-      // Si no, comportamiento clásico: imagen del color + otras variantes + extras del producto
-      const selected = varianteSeleccionada?.images?.[0] ?? varianteSeleccionada?.image ?? producto.imagen;
+      // Si el color trae sus propias presentaciones, la imagen de la presentación
+      // activa (color + cierre) manda. Si no, decide el último selector tocado.
+      const colorTienePropias = (varianteSeleccionada?.variacionesPresentacion ?? []).length > 0;
+      const focus = colorTienePropias ? "tipo" : variantFocus;
+      const lead = focus === "color" ? colorImages : tipoImages;
+      const trailing = focus === "color" ? tipoImages : colorImages;
       const others = allVariants.filter((_, i) => i !== colorActivo).map((v) => v.image);
-      const extras = (producto.imagenesExtra || []).filter((img) => img !== tipoImage);
-      // La imagen del color seleccionado va primero para que tocar una variante cambie la imagen principal
-      return [selected, tipoImage, ...others, ...extras]
+      const extras = (producto.imagenesExtra || []).filter(
+        (img) => !tipoImages.includes(img) && !colorImages.includes(img),
+      );
+      return [...lead, ...trailing, ...others, ...extras]
         .filter((x): x is string => Boolean(x))
         .filter((x, i, arr) => arr.indexOf(x) === i);
     }
-    const extras = (producto.imagenesExtra || []).filter((img) => img !== tipoImage);
-    return [tipoImage, producto.imagen, ...extras].filter((x): x is string => Boolean(x));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [producto, colorActivo, allVariants, tipoActivo, tiposVariantes]);
+    const extras = (producto.imagenesExtra || []).filter((img) => !tipoImages.includes(img));
+    return [...tipoImages, producto.imagen, ...extras].filter((x): x is string => Boolean(x));
+  }, [producto, colorActivo, allVariants, tipoVarianteActiva, variantFocus]);
 
   if (!producto) {
     return (
@@ -679,7 +743,7 @@ export default function ProductoDetalleClient() {
         <div className="grid gap-8 lg:grid-cols-[1fr_480px] lg:gap-10 xl:grid-cols-[1fr_520px]">
 
           {/* LEFT — image gallery */}
-          <ImageGallery key={`${colorActivo}-${tipoActivo}`} nombre={producto.nombre} images={galleryImages} videoUrl={producto.videoUrl} />
+          <ImageGallery key={`${colorActivo}-${tipoActivo}-${variantFocus}`} nombre={producto.nombre} images={galleryImages} videoUrl={producto.videoUrl} />
 
           {/* RIGHT — product info */}
           <div className="space-y-4 lg:sticky lg:top-[72px] lg:self-start">
@@ -735,7 +799,22 @@ export default function ProductoDetalleClient() {
                     <button
                       key={v.color}
                       type="button"
-                      onClick={() => setColorActivo(i)}
+                      onClick={() => {
+                        // Conserva el mismo cierre (presentación) al cambiar de
+                        // color si ese color lo tiene; si no, vuelve a la primera.
+                        const prevLabel = tipoVarianteActiva?.label?.trim().toLowerCase();
+                        const nuevo = allVariants[i];
+                        const pres =
+                          (nuevo?.variacionesPresentacion ?? []).length > 0
+                            ? nuevo.variacionesPresentacion ?? []
+                            : producto?.variacionesPresentacion ?? [];
+                        const matchIndex = prevLabel
+                          ? pres.findIndex((p) => p.label.trim().toLowerCase() === prevLabel)
+                          : -1;
+                        setColorActivo(i);
+                        setTipoActivo(matchIndex >= 0 ? matchIndex : 0);
+                        setVariantFocus("color");
+                      }}
                       aria-label={v.label}
                       aria-pressed={colorActivo === i}
                       title={v.label}
@@ -764,14 +843,14 @@ export default function ProductoDetalleClient() {
             {tiposVariantes && tiposVariantes.length > 0 && (
               <div>
                 <p className="mb-2 text-sm font-semibold text-[#333]">
-                  Presentación: <span className="font-normal text-[#555]">{tiposVariantes[tipoActivo].label}</span>
+                  Presentación: <span className="font-normal text-[#555]">{tipoVarianteActiva?.label}</span>
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {tiposVariantes.map((tipo, i) => (
                     <button
                       key={tipo.label}
                       type="button"
-                      onClick={() => setTipoActivo(i)}
+                      onClick={() => { setTipoActivo(i); setVariantFocus("tipo"); }}
                       className={`rounded-full border px-4 py-1.5 text-xs font-semibold transition-all duration-150 ${
                         tipoActivo === i
                           ? "border-[#27B1B8] bg-[#27B1B8] text-white shadow-sm"

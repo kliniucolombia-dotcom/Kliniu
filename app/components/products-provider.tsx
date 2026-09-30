@@ -11,6 +11,7 @@ import {
   type Disponibilidad,
   type ProductoEspecificacion,
   type VariacionColor,
+  type VariacionPresentacion,
 } from "../data/catalog";
 import type { StoreProduct } from "@/lib/products";
 
@@ -34,6 +35,7 @@ export type AdminProductInput = {
   garantia?: string;
   especificacionesTecnicas?: ProductoEspecificacion[];
   variacionesColor?: VariacionColor[];
+  variacionesPresentacion?: VariacionPresentacion[];
   videoUrl?: string;
 };
 

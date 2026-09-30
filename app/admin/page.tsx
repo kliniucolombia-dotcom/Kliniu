@@ -12,9 +12,10 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useProducts } from "../components/products-provider";
 import { categorias, type Categoria, type ProductoCatalogo } from "../data/catalog";
-import type { ProductoEspecificacion, VariacionColor } from "../data/catalog";
+import type { ProductoEspecificacion, VariacionColor, VariacionPresentacion } from "../data/catalog";
 import type { InventoryMovementSummary } from "@/lib/products";
 import type { ShippingStatus } from "@/lib/orders";
+import { TIPO_VARIANTES } from "@/lib/volume-discounts";
 
 const disponibilidades: ProductoCatalogo["disponibilidad"][] = [
   "Entrega inmediata",
@@ -575,10 +576,12 @@ function ColorVariantImageUpload({
   value,
   onChange,
   galleryImages,
+  label = "Fotos del color",
 }: {
   value: string[];
   onChange: (urls: string[]) => void;
   galleryImages: string[];
+  label?: string;
 }) {
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -625,7 +628,7 @@ function ColorVariantImageUpload({
   return (
     <div className="space-y-2">
       <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">
-        Fotos del color ({images.length}/{MAX_VARIANT_IMAGES})
+        {label} ({images.length}/{MAX_VARIANT_IMAGES})
       </span>
 
       {/* Preview grid */}
@@ -728,6 +731,47 @@ function ColorVariantsEditor({
   };
   const updateVariantImages = (i: number, images: string[]) =>
     onChange(variants.map((v, idx) => (idx === i ? { ...v, images, image: images[0] ?? "" } : v)));
+  const addColorPresentacion = (i: number) => {
+    const initialImage = galleryImages[0] ?? "";
+    onChange(
+      variants.map((v, idx) =>
+        idx === i
+          ? {
+              ...v,
+              variacionesPresentacion: [
+                ...(v.variacionesPresentacion ?? []),
+                { label: "", image: initialImage, images: initialImage ? [initialImage] : [] },
+              ],
+            }
+          : v,
+      ),
+    );
+  };
+  const removeColorPresentacion = (i: number, pi: number) =>
+    onChange(
+      variants.map((v, idx) =>
+        idx === i
+          ? { ...v, variacionesPresentacion: (v.variacionesPresentacion ?? []).filter((_, j) => j !== pi) }
+          : v,
+      ),
+    );
+  const updateColorPresentacion = (
+    i: number,
+    pi: number,
+    patch: Partial<VariacionPresentacion>,
+  ) =>
+    onChange(
+      variants.map((v, idx) =>
+        idx === i
+          ? {
+              ...v,
+              variacionesPresentacion: (v.variacionesPresentacion ?? []).map((p, j) =>
+                j === pi ? { ...p, ...patch } : p,
+              ),
+            }
+          : v,
+      ),
+    );
 
   return (
     <div className="md:col-span-2 rounded-[1.5rem] border border-black/8 bg-[#fafaf9] p-5">
@@ -754,48 +798,190 @@ function ColorVariantsEditor({
           </div>
         )}
         {variants.map((v, i) => (
-          <div key={i} className="grid gap-3 rounded-[1.2rem] border border-black/8 bg-white p-4 md:grid-cols-[56px_1fr_140px_minmax(0,2fr)_auto]">
-            {/* Color picker */}
-            <div className="flex flex-col items-center gap-2">
-              <label className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Color</label>
-              <div className="relative">
+          <div key={i} className="space-y-3 rounded-[1.2rem] border border-black/8 bg-white p-4">
+            <div className="grid gap-3 md:grid-cols-[56px_1fr_140px_minmax(0,2fr)_auto]">
+              {/* Color picker */}
+              <div className="flex flex-col items-center gap-2">
+                <label className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Color</label>
+                <div className="relative">
+                  <input
+                    type="color"
+                    value={v.color}
+                    onChange={(e) => updateVariant(i, "color", e.target.value)}
+                    className="h-10 w-10 cursor-pointer rounded-full border border-black/10 p-0.5"
+                  />
+                </div>
+              </div>
+              {/* Label */}
+              <label className="space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Nombre</span>
                 <input
-                  type="color"
-                  value={v.color}
-                  onChange={(e) => updateVariant(i, "color", e.target.value)}
-                  className="h-10 w-10 cursor-pointer rounded-full border border-black/10 p-0.5"
+                  value={v.label}
+                  onChange={(e) => updateVariant(i, "label", e.target.value)}
+                  placeholder="Ej. Blanco, Negro..."
+                  className="w-full rounded-xl border border-black/10 bg-[#fafaf9] px-3 py-2.5 text-sm text-[#1f2328] outline-none focus:border-[#27B1B8]"
                 />
+              </label>
+              {/* Precio por color (opcional) */}
+              <label className="space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Precio (opcional)</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={v.precioValor ?? ""}
+                  onChange={(e) => updateVariantPrice(i, e.target.value)}
+                  placeholder="Precio del producto"
+                  className="w-full rounded-xl border border-black/10 bg-[#fafaf9] px-3 py-2.5 text-sm text-[#1f2328] outline-none focus:border-[#27B1B8]"
+                />
+              </label>
+              {/* Image upload */}
+              <ColorVariantImageUpload
+                value={v.images?.length ? v.images : v.image ? [v.image] : []}
+                onChange={(urls) => updateVariantImages(i, urls)}
+                galleryImages={galleryImages}
+              />
+              {/* Remove */}
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  onClick={() => removeVariant(i)}
+                  className="inline-flex rounded-full border border-black/10 px-4 py-2.5 text-sm font-semibold text-[#0C535B] transition-colors hover:bg-[#0C535B] hover:text-white"
+                >
+                  Quitar
+                </button>
               </div>
             </div>
-            {/* Label */}
+
+            {/* Presentaciones propias de este color */}
+            <div className="rounded-xl border border-dashed border-black/12 bg-[#fafaf9] p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">
+                  Presentaciones de {v.label.trim() || "este color"}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => addColorPresentacion(i)}
+                  className="inline-flex rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold text-[#0C535B] transition-colors hover:bg-[#0C535B] hover:text-white"
+                >
+                  Agregar presentación
+                </button>
+              </div>
+              {(v.variacionesPresentacion ?? []).length === 0 ? (
+                <p className="mt-2 text-[11px] text-[#9a9da2]">
+                  Sin presentaciones propias. Se usarán las presentaciones generales del producto.
+                </p>
+              ) : (
+                <div className="mt-3 space-y-3">
+                  {(v.variacionesPresentacion ?? []).map((p, pi) => (
+                    <div
+                      key={pi}
+                      className="grid gap-3 rounded-xl border border-black/8 bg-white p-3 md:grid-cols-[minmax(0,200px)_minmax(0,2fr)_auto]"
+                    >
+                      <label className="space-y-2">
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Nombre</span>
+                        <input
+                          value={p.label}
+                          onChange={(e) => updateColorPresentacion(i, pi, { label: e.target.value })}
+                          placeholder="Ej. Cierre Plástico..."
+                          className="w-full rounded-lg border border-black/10 bg-[#fafaf9] px-3 py-2 text-sm text-[#1f2328] outline-none focus:border-[#27B1B8]"
+                        />
+                      </label>
+                      <ColorVariantImageUpload
+                        label="Fotos"
+                        value={p.images?.length ? p.images : p.image ? [p.image] : []}
+                        onChange={(urls) =>
+                          updateColorPresentacion(i, pi, { images: urls, image: urls[0] ?? "" })
+                        }
+                        galleryImages={galleryImages}
+                      />
+                      <div className="flex items-end">
+                        <button
+                          type="button"
+                          onClick={() => removeColorPresentacion(i, pi)}
+                          className="inline-flex rounded-full border border-black/10 px-3 py-2 text-sm font-semibold text-[#0C535B] transition-colors hover:bg-[#0C535B] hover:text-white"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PresentationVariantsEditor({
+  variants,
+  onChange,
+  galleryImages,
+}: {
+  variants: VariacionPresentacion[];
+  onChange: (v: VariacionPresentacion[]) => void;
+  galleryImages: string[];
+}) {
+  const addVariant = () => {
+    const initialImage = galleryImages[0] ?? "";
+    onChange([
+      ...variants,
+      { label: "", image: initialImage, images: initialImage ? [initialImage] : [] },
+    ]);
+  };
+  const removeVariant = (i: number) => onChange(variants.filter((_, idx) => idx !== i));
+  const updateLabel = (i: number, value: string) =>
+    onChange(variants.map((v, idx) => (idx === i ? { ...v, label: value } : v)));
+  const updateImages = (i: number, images: string[]) =>
+    onChange(variants.map((v, idx) => (idx === i ? { ...v, images, image: images[0] ?? "" } : v)));
+
+  return (
+    <div className="md:col-span-2 rounded-[1.5rem] border border-black/8 bg-[#fafaf9] p-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-[#4f545a]">Variaciones de presentación</p>
+          <p className="mt-2 text-xs leading-6 text-[#6e7379]">
+            Define las presentaciones del producto (ej. Cierre Plástico, Cierre Metálico). Al elegir una
+            presentación en la ficha se mostrará su imagen.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={addVariant}
+          className="inline-flex rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-[#0C535B] transition-colors duration-200 hover:bg-[#0C535B] hover:text-white"
+        >
+          Agregar presentación
+        </button>
+      </div>
+
+      <div className="mt-5 space-y-3">
+        {variants.length === 0 && (
+          <div className="rounded-[1.2rem] border border-dashed border-black/12 bg-white px-4 py-5 text-sm text-[#6e7379]">
+            Sin variaciones de presentación. Agrega las presentaciones disponibles del producto.
+          </div>
+        )}
+        {variants.map((v, i) => (
+          <div
+            key={i}
+            className="grid gap-3 rounded-[1.2rem] border border-black/8 bg-white p-4 md:grid-cols-[minmax(0,220px)_minmax(0,2fr)_auto]"
+          >
             <label className="space-y-2">
               <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Nombre</span>
               <input
                 value={v.label}
-                onChange={(e) => updateVariant(i, "label", e.target.value)}
-                placeholder="Ej. Blanco, Negro..."
+                onChange={(e) => updateLabel(i, e.target.value)}
+                placeholder="Ej. Cierre Plástico, Cierre Metálico..."
                 className="w-full rounded-xl border border-black/10 bg-[#fafaf9] px-3 py-2.5 text-sm text-[#1f2328] outline-none focus:border-[#27B1B8]"
               />
             </label>
-            {/* Precio por color (opcional) */}
-            <label className="space-y-2">
-              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Precio (opcional)</span>
-              <input
-                type="number"
-                min={0}
-                value={v.precioValor ?? ""}
-                onChange={(e) => updateVariantPrice(i, e.target.value)}
-                placeholder="Precio del producto"
-                className="w-full rounded-xl border border-black/10 bg-[#fafaf9] px-3 py-2.5 text-sm text-[#1f2328] outline-none focus:border-[#27B1B8]"
-              />
-            </label>
-            {/* Image upload */}
             <ColorVariantImageUpload
+              label="Fotos de la presentación"
               value={v.images?.length ? v.images : v.image ? [v.image] : []}
-              onChange={(urls) => updateVariantImages(i, urls)}
+              onChange={(urls) => updateImages(i, urls)}
               galleryImages={galleryImages}
             />
-            {/* Remove */}
             <div className="flex items-end">
               <button
                 type="button"
@@ -945,6 +1131,7 @@ export default function AdminPage() {
     createTechnicalSpecItem({ etiqueta: "Observaciones" }),
   ]);
   const [colorVariants, setColorVariants] = useState<VariacionColor[]>([]);
+  const [presentationVariants, setPresentationVariants] = useState<VariacionPresentacion[]>([]);
   const [selectedExtraImages, setSelectedExtraImages] = useState<Array<File | null>>(
     () => Array.from({ length: EXTRA_IMAGE_SLOTS }, () => null),
   );
@@ -1366,6 +1553,7 @@ export default function AdminPage() {
         garantia: form.garantia,
         especificacionesTecnicas: normalizeTechnicalSpecFormItems(technicalSpecs),
         variacionesColor: colorVariants,
+        variacionesPresentacion: presentationVariants,
         videoUrl: form.videoUrl,
         isOutlet: form.isOutlet,
       };
@@ -1388,6 +1576,7 @@ export default function AdminPage() {
       setSelectedImage(null);
       setTechnicalSpecs([createTechnicalSpecItem({ etiqueta: "Observaciones" })]);
       setColorVariants([]);
+      setPresentationVariants([]);
       setSelectedExtraImages(Array.from({ length: EXTRA_IMAGE_SLOTS }, () => null));
       setPrimaryImageIndex(0);
       setFileInputKey((current) => current + 1);
@@ -1454,6 +1643,23 @@ export default function AdminPage() {
         : [createTechnicalSpecItem({ etiqueta: "Observaciones" })],
     );
     setColorVariants(product.variacionesColor ?? []);
+    // Presentaciones: si la ficha aún no las tiene guardadas, se precargan las
+    // del mapa legado TIPO_VARIANTES (Cierre Plástico/Metálico, Bolsa/Botella…)
+    // para poder editar su imagen sin perder el slugSuffix/SKU ya definidos.
+    const presentacionesGuardadas = product.variacionesPresentacion ?? [];
+    const presentacionesLegadas = TIPO_VARIANTES[product.slug] ?? [];
+    setPresentationVariants(
+      presentacionesGuardadas.length > 0
+        ? presentacionesGuardadas
+        : presentacionesLegadas.map((t) => ({
+            label: t.label,
+            slugSuffix: t.slugSuffix,
+            image: t.image ?? product.imagen,
+            images: t.image ? [t.image] : [product.imagen],
+            sku: t.sku,
+            skuSello: t.skuSello,
+          })),
+    );
     setEditingSlug(product.slug);
     setActiveTab("edit");
     setSelectedImage(null);
@@ -1468,6 +1674,7 @@ export default function AdminPage() {
     setSelectedImage(null);
     setTechnicalSpecs([createTechnicalSpecItem({ etiqueta: "Observaciones" })]);
     setColorVariants([]);
+    setPresentationVariants([]);
     setSelectedExtraImages(Array.from({ length: EXTRA_IMAGE_SLOTS }, () => null));
     setPrimaryImageIndex(0);
     setEditingSlug(null);
@@ -1571,6 +1778,8 @@ export default function AdminPage() {
 
   const openCreateView = () => {
     setForm(initialState);
+    setColorVariants([]);
+    setPresentationVariants([]);
     setSelectedImage(null);
     setSelectedExtraImages(Array.from({ length: EXTRA_IMAGE_SLOTS }, () => null));
     setPrimaryImageIndex(0);
@@ -1582,6 +1791,8 @@ export default function AdminPage() {
 
   const openCreateOutletView = () => {
     setForm({ ...initialState, isOutlet: true });
+    setColorVariants([]);
+    setPresentationVariants([]);
     setSelectedImage(null);
     setSelectedExtraImages(Array.from({ length: EXTRA_IMAGE_SLOTS }, () => null));
     setPrimaryImageIndex(0);
@@ -2095,6 +2306,12 @@ export default function AdminPage() {
                 <ColorVariantsEditor
                   variants={colorVariants}
                   onChange={setColorVariants}
+                  galleryImages={[previewImageUrl, ...previewExtraImageUrls].filter((u): u is string => Boolean(u))}
+                />
+
+                <PresentationVariantsEditor
+                  variants={presentationVariants}
+                  onChange={setPresentationVariants}
                   galleryImages={[previewImageUrl, ...previewExtraImageUrls].filter((u): u is string => Boolean(u))}
                 />
 
@@ -2655,6 +2872,16 @@ export default function AdminPage() {
                     <ColorVariantsEditor
                       variants={colorVariants}
                       onChange={setColorVariants}
+                      galleryImages={
+                        editingProduct
+                          ? [editingProduct.imagen, ...(editingProduct.imagenesExtra ?? [])].filter(Boolean)
+                          : []
+                      }
+                    />
+
+                    <PresentationVariantsEditor
+                      variants={presentationVariants}
+                      onChange={setPresentationVariants}
                       galleryImages={
                         editingProduct
                           ? [editingProduct.imagen, ...(editingProduct.imagenesExtra ?? [])].filter(Boolean)

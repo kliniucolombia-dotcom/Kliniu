@@ -153,7 +153,16 @@ const TOALLA_CZ_BLANCO_METALICO   = `${BASE}/toalla-cz-blanco-metalico.png`;
 const TOALLA_CZ_NEGRO_METALICO    = `${BASE}/toalla-cz-negro-metalico.png`;
 const TOALLA_CZ_BLANCO_PLASTICO   = `${BASE}/toalla-cz-blanco-plastico.png`;
 
-export const TIPO_VARIANTES: Record<string, { label: string; slugSuffix: string; image?: string; sku?: string; skuSello?: string }[]> = {
+export type TipoVariante = {
+  label: string;
+  slugSuffix: string;
+  image?: string;
+  images?: string[];
+  sku?: string;
+  skuSello?: string;
+};
+
+export const TIPO_VARIANTES: Record<string, TipoVariante[]> = {
   "dispensador-xpert-professional-para-jabon-espuma": [
     { label: "Bolsa", slugSuffix: "", image: XPERT_IMG_BOLSA },
     { label: "Contenedor", slugSuffix: "--frasco", image: XPERT_IMG_FRASCO },

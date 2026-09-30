@@ -258,6 +258,16 @@ export type VariacionColor = {
   skuSello?: string;
   precioValor?: number;
   precioAnteriorValor?: number;
+  variacionesPresentacion?: VariacionPresentacion[];
+};
+
+export type VariacionPresentacion = {
+  label: string;
+  image: string;
+  images?: string[];
+  sku?: string;
+  skuSello?: string;
+  slugSuffix?: string;
 };
 
 export type ProductoCatalogo = {
@@ -285,6 +295,7 @@ export type ProductoCatalogo = {
   garantia?: string;
   especificacionesTecnicas?: ProductoEspecificacion[];
   variacionesColor?: VariacionColor[];
+  variacionesPresentacion?: VariacionPresentacion[];
   videoUrl?: string;
   destacado?: boolean;
   esOutlet?: boolean;
