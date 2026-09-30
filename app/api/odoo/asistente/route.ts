@@ -4,6 +4,7 @@ import {
   getCustomerPurchaseHistory,
   getCustomersByDateRange,
   getOdooProducts,
+  getSalesBySalesperson,
   getSalesSummary,
   getTopProducts,
 } from "@/lib/odoo";
@@ -42,6 +43,23 @@ const TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
           start_date: { type: "string", description: "Fecha inicio en formato YYYY-MM-DD HH:MM:SS" },
           end_date: { type: "string", description: "Fecha fin en formato YYYY-MM-DD HH:MM:SS" },
           period_label: { type: "string", description: "Etiqueta del período, ej: 'este mes', 'el año 2023'" },
+        },
+        required: ["start_date", "end_date", "period_label"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_sales_by_salesperson",
+      description: "Ventas confirmadas por vendedor (comercial) en un período: total vendido, pedidos y ticket promedio de cada uno. Úsala SIEMPRE que pregunten cuánto vendió un vendedor o quién vendió más. Si dan un nombre, pásalo en seller_name; si no, devuelve el ranking de todos.",
+      parameters: {
+        type: "object",
+        properties: {
+          start_date: { type: "string", description: "Fecha inicio en formato YYYY-MM-DD HH:MM:SS" },
+          end_date: { type: "string", description: "Fecha fin en formato YYYY-MM-DD HH:MM:SS" },
+          period_label: { type: "string", description: "Etiqueta del período, ej: 'este mes'" },
+          seller_name: { type: "string", description: "Nombre o parte del nombre del vendedor (opcional)" },
         },
         required: ["start_date", "end_date", "period_label"],
       },
@@ -138,6 +156,28 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
       ticket_promedio: fmtMoney(result.averageTicket),
       cotizaciones_abiertas: result.quotations,
       pedidos_por_facturar: result.toInvoice,
+    });
+  }
+
+  if (name === "get_sales_by_salesperson") {
+    const sellerName = (args.seller_name as string | undefined)?.trim();
+    const sellers = await getSalesBySalesperson(args.start_date as string, args.end_date as string, sellerName);
+    if (sellers.length === 0) {
+      return JSON.stringify({
+        mensaje: sellerName
+          ? `No se encontraron ventas confirmadas de un vendedor que coincida con "${sellerName}" en ese período.`
+          : "No se encontraron ventas confirmadas en ese período.",
+      });
+    }
+    return JSON.stringify({
+      periodo: args.period_label,
+      total_general: fmtMoney(sellers.reduce((sum, s) => sum + s.total, 0)),
+      vendedores: sellers.map((s) => ({
+        vendedor: s.name,
+        total_vendido: fmtMoney(s.total),
+        pedidos_confirmados: s.orderCount,
+        ticket_promedio: fmtMoney(s.averageTicket),
+      })),
     });
   }
 
@@ -239,6 +279,7 @@ Hoy es ${new Date().toLocaleDateString("es-CO", { weekday: "long", year: "numeri
 
 Tu especialidad es ayudar al equipo comercial con:
 - Análisis de ventas por período
+- Ventas por vendedor (cuánto vendió cada comercial, ranking) — usa get_sales_by_salesperson
 - Identificar clientes inactivos (no han comprado hace X meses/años) para estrategias de recuperación
 - Ver quién compró en un período específico del pasado
 - Estadísticas de productos más vendidos

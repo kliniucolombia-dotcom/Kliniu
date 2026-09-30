@@ -452,6 +452,50 @@ export async function getSalesSummary(startDate: string, endDate: string) {
   };
 }
 
+export type OdooSalespersonSummary = {
+  id: number | null;
+  name: string;
+  total: number;
+  orderCount: number;
+  averageTicket: number;
+};
+
+// Ventas confirmadas agrupadas por vendedor (sale.order.user_id). `sellerName`
+// filtra por coincidencia parcial del nombre del vendedor.
+export async function getSalesBySalesperson(
+  startDate: string,
+  endDate: string,
+  sellerName?: string,
+): Promise<OdooSalespersonSummary[]> {
+  const domain: unknown[] = [
+    ["date_order", ">=", startDate],
+    ["date_order", "<=", endDate],
+    ["state", "in", ["sale", "done"]],
+  ];
+  if (sellerName?.trim()) domain.push(["user_id.name", "ilike", sellerName.trim()]);
+
+  type SellerGroup = { user_id?: [number, string] | false; amount_total?: number; __count?: number };
+  const groups = await executeOdooKw<SellerGroup[]>(
+    "sale.order",
+    "read_group",
+    [domain, ["user_id", "amount_total:sum"], ["user_id"]],
+    { orderby: "amount_total desc", lazy: false },
+  );
+
+  return groups.map((g) => {
+    const seller = Array.isArray(g.user_id) ? g.user_id : null;
+    const total = g.amount_total ?? 0;
+    const count = g.__count ?? 0;
+    return {
+      id: seller ? seller[0] : null,
+      name: seller ? seller[1] : "Sin vendedor asignado",
+      total,
+      orderCount: count,
+      averageTicket: count > 0 ? total / count : 0,
+    };
+  });
+}
+
 export async function getTopProducts(startDate: string, endDate: string, limit = 8) {
   type ProductGroup = { product_id?: [number, string] | false; product_uom_qty?: number; price_total?: number };
   const groups = await executeOdooKw<ProductGroup[]>(
