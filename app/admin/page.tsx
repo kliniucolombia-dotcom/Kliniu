@@ -11,7 +11,8 @@ import {
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useProducts } from "../components/products-provider";
-import { categorias, type Categoria, type ProductoCatalogo } from "../data/catalog";
+import { categorias, MAX_EXTRA_IMAGES, type Categoria, type ProductoCatalogo } from "../data/catalog";
+import { MdAdd } from "react-icons/md";
 import type { ProductoEspecificacion, VariacionColor, VariacionPresentacion } from "../data/catalog";
 import type { InventoryMovementSummary } from "@/lib/products";
 import type { ShippingStatus } from "@/lib/orders";
@@ -1220,6 +1221,12 @@ export default function AdminPage() {
   const [selectedExtraImages, setSelectedExtraImages] = useState<Array<File | null>>(
     () => Array.from({ length: EXTRA_IMAGE_SLOTS }, () => null),
   );
+  // Casillas de imagen extra visibles; arranca en 3 y el usuario puede agregar más.
+  const [extraSlots, setExtraSlots] = useState(EXTRA_IMAGE_SLOTS);
+  const addExtraSlot = () => {
+    setExtraSlots((current) => Math.min(current + 1, MAX_EXTRA_IMAGES));
+    setSelectedExtraImages((current) => [...current, null]);
+  };
   const [primaryImageIndex, setPrimaryImageIndex] = useState(0);
   const [fileInputKey, setFileInputKey] = useState(0);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
@@ -1295,7 +1302,7 @@ export default function AdminPage() {
   }, [editingProduct?.imagen, selectedImage]);
   const previewExtraImageUrls = useMemo(
     () =>
-      Array.from({ length: EXTRA_IMAGE_SLOTS }, (_, index) => {
+      Array.from({ length: extraSlots }, (_, index) => {
         const file = selectedExtraImages[index];
 
         if (file) {
@@ -1304,7 +1311,7 @@ export default function AdminPage() {
 
         return editingProduct?.imagenesExtra?.[index] ?? null;
       }),
-    [editingProduct?.imagenesExtra, selectedExtraImages],
+    [editingProduct?.imagenesExtra, extraSlots, selectedExtraImages],
   );
   const productImageChoices = useMemo(
     () => [
@@ -1586,7 +1593,7 @@ export default function AdminPage() {
       const currentExtraImages =
         adminProducts.find((product) => product.slug === editingSlug)?.imagenesExtra || [];
       const extraImageUrls = await Promise.all(
-        Array.from({ length: EXTRA_IMAGE_SLOTS }, async (_, index) => {
+        Array.from({ length: extraSlots }, async (_, index) => {
           const selectedFile = selectedExtraImages[index];
 
           if (selectedFile) {
@@ -1628,7 +1635,7 @@ export default function AdminPage() {
         stock: Number(form.stock),
         stockMinimo: Number(form.stockMinimo),
         imagen: nextPrimaryImage,
-        imagenesExtra: reorderedExtraImages.slice(0, EXTRA_IMAGE_SLOTS),
+        imagenesExtra: reorderedExtraImages.slice(0, MAX_EXTRA_IMAGES),
         disponibilidad: form.disponibilidad,
         descripcion: form.descripcion,
         oemReferencia: form.oemReferencia,
@@ -1664,6 +1671,7 @@ export default function AdminPage() {
       setColorVariants([]);
       setPresentationVariants([]);
       setSelectedExtraImages(Array.from({ length: EXTRA_IMAGE_SLOTS }, () => null));
+      setExtraSlots(EXTRA_IMAGE_SLOTS);
       setPrimaryImageIndex(0);
       setFileInputKey((current) => current + 1);
       setEditingSlug(null);
@@ -1745,7 +1753,9 @@ export default function AdminPage() {
     setEditingSlug(product.slug);
     setActiveTab("edit");
     setSelectedImage(null);
-    setSelectedExtraImages(Array.from({ length: EXTRA_IMAGE_SLOTS }, () => null));
+    const slots = Math.max(EXTRA_IMAGE_SLOTS, (product.imagenesExtra ?? []).length);
+    setExtraSlots(slots);
+    setSelectedExtraImages(Array.from({ length: slots }, () => null));
     setPrimaryImageIndex(0);
     setRequestError("");
     setFileInputKey((current) => current + 1);
@@ -1758,6 +1768,7 @@ export default function AdminPage() {
     setColorVariants([]);
     setPresentationVariants([]);
     setSelectedExtraImages(Array.from({ length: EXTRA_IMAGE_SLOTS }, () => null));
+    setExtraSlots(EXTRA_IMAGE_SLOTS);
     setPrimaryImageIndex(0);
     setEditingSlug(null);
     setRequestError("");
@@ -1864,6 +1875,7 @@ export default function AdminPage() {
     setPresentationVariants([]);
     setSelectedImage(null);
     setSelectedExtraImages(Array.from({ length: EXTRA_IMAGE_SLOTS }, () => null));
+    setExtraSlots(EXTRA_IMAGE_SLOTS);
     setPrimaryImageIndex(0);
     setEditingSlug(null);
     setRequestError("");
@@ -1877,6 +1889,7 @@ export default function AdminPage() {
     setPresentationVariants([]);
     setSelectedImage(null);
     setSelectedExtraImages(Array.from({ length: EXTRA_IMAGE_SLOTS }, () => null));
+    setExtraSlots(EXTRA_IMAGE_SLOTS);
     setPrimaryImageIndex(0);
     setEditingSlug(null);
     setRequestError("");
@@ -2294,7 +2307,7 @@ export default function AdminPage() {
                 </label>
 
                 <div className="grid gap-5 md:col-span-2 md:grid-cols-3">
-                  {Array.from({ length: EXTRA_IMAGE_SLOTS }, (_, index) => (
+                  {Array.from({ length: extraSlots }, (_, index) => (
                     <label
                       key={`create-extra-${index}`}
                       className="space-y-2 rounded-[1.4rem] border border-black/8 bg-[#fafaf9] p-4"
@@ -2331,6 +2344,20 @@ export default function AdminPage() {
                       )}
                     </label>
                   ))}
+                </div>
+
+                <div className="md:col-span-2">
+                  <button
+                    type="button"
+                    onClick={addExtraSlot}
+                    disabled={extraSlots >= MAX_EXTRA_IMAGES}
+                    className="inline-flex items-center gap-2 rounded-full border border-[#0C535B] px-4 py-2 text-sm font-semibold text-[#0C535B] transition-colors hover:bg-[#0C535B] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <MdAdd size={18} /> Agregar otra imagen
+                  </button>
+                  <p className="mt-2 text-xs text-[#6e7379]">
+                    {extraSlots} de {MAX_EXTRA_IMAGES} imágenes extra.
+                  </p>
                 </div>
 
                 {previewImageUrl && (
@@ -2838,7 +2865,7 @@ export default function AdminPage() {
                     </label>
 
                     <div className="grid gap-5 md:col-span-2 md:grid-cols-3">
-                      {Array.from({ length: EXTRA_IMAGE_SLOTS }, (_, index) => (
+                      {Array.from({ length: extraSlots }, (_, index) => (
                         <label
                           key={`edit-extra-${index}`}
                           className="space-y-2 rounded-[1.4rem] border border-black/8 bg-[#fafaf9] p-4"
@@ -2875,6 +2902,20 @@ export default function AdminPage() {
                           )}
                         </label>
                       ))}
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <button
+                        type="button"
+                        onClick={addExtraSlot}
+                        disabled={extraSlots >= MAX_EXTRA_IMAGES}
+                        className="inline-flex items-center gap-2 rounded-full border border-[#0C535B] px-4 py-2 text-sm font-semibold text-[#0C535B] transition-colors hover:bg-[#0C535B] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <MdAdd size={18} /> Agregar otra imagen
+                      </button>
+                      <p className="mt-2 text-xs text-[#6e7379]">
+                        {extraSlots} de {MAX_EXTRA_IMAGES} imágenes extra.
+                      </p>
                     </div>
 
                     {previewImageUrl && (

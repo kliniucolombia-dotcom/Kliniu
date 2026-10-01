@@ -270,6 +270,9 @@ export type VariacionPresentacion = {
   slugSuffix?: string;
 };
 
+/** Máximo de imágenes extra por producto (además de la principal). */
+export const MAX_EXTRA_IMAGES = 8;
+
 export type ProductoCatalogo = {
   slug: string;
   sku?: string;

@@ -6,7 +6,7 @@ import { buildFullCatalogContext } from "@/lib/chatbot";
 import { formatearMoneda } from "@/app/data/catalog";
 import { buildKliniuKnowledge } from "@/lib/kliniu-knowledge";
 import { institutionalQuoteReply, isInstitutionalQuoteRequest } from "@/lib/wati-campaign";
-import { buildCommercialConditionsPrompt, buildConversationStatePrompt } from "@/lib/wati-followup";
+import { buildCommercialConditionsPrompt, buildConversationStatePrompt, hasProductInterest } from "@/lib/wati-followup";
 
 /** Mensaje automático principal (Sistema Maestro §28), con saludo por nombre si lo hay. */
 function initialMessage(firstName: string | null) {
@@ -24,6 +24,9 @@ Somos fabricantes colombianos de soluciones de dispensación e higiene, diseñad
 
 const COMBO_PREMIUM_CATALOG_LINE =
   "- Combo Premium (slug: combo-premium) | categoría: Promociones | precio: $309.900 COP | dispensadores de acero inoxidable + insumos iniciales, envío gratis a ciudades principales y pago contra entrega.";
+
+/** Frases que el Sistema Maestro (§44) prohíbe en cualquier respuesta. */
+const FORBIDDEN_PHRASES = /sigues interesad|contin[uú]as interesad|quedo atent|quedamos atent|av[ií]same cualquier|nuestra p[aá]gina dice|el cat[aá]logo dice|indestructible|no se rompe/i;
 
 const WATI_CHANNEL_PROMPT = `CANAL WHATSAPP (instrucciones específicas de este canal, tienen prioridad sobre el formato web):
 - El cliente ya está escribiendo por WhatsApp. NO incluyas enlaces wa.me de asesores ni pidas correo electrónico (los enlaces de producto del sitio sí están permitidos, ver abajo).
@@ -233,12 +236,16 @@ export async function runWatiAssistant(
       };
     }
 
-    return {
-      reply: initialMessage(customerFirstName),
-      orderCreated: null as { orderId: string } | null,
-      escalateToHuman: false,
-      escalationSummary: null as string | null,
-    };
+    // Saludo con menú solo si el primer mensaje no trae una consulta concreta;
+    // si pregunta por un producto, se responde primero lo que preguntó (§2).
+    if (!hasProductInterest(newUserMessage)) {
+      return {
+        reply: initialMessage(customerFirstName),
+        orderCreated: null as { orderId: string } | null,
+        escalateToHuman: false,
+        escalationSummary: null as string | null,
+      };
+    }
   }
 
   if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_NOT_CONFIGURED");
@@ -283,6 +290,12 @@ export async function runWatiAssistant(
     ...(allowOrderCreation
       ? []
       : [{ role: "system" as const, content: "Esta conversación ya tiene un pedido registrado. No vuelvas a crear otro pedido; responde solo dudas de soporte o posventa." }]),
+    ...(history.length === 0
+      ? [{
+          role: "system" as const,
+          content: "Es el PRIMER mensaje del cliente y ya trae una consulta concreta: preséntate en una frase corta como Gabriel, de KLINIU® 🇨🇴 y responde de inmediato lo que preguntó (sin repetir el menú de bienvenida).",
+        }]
+      : []),
     ...history,
     { role: "user" as const, content: newUserMessage },
   ];
@@ -291,16 +304,31 @@ export async function runWatiAssistant(
     ? [CREAR_PEDIDO_TOOL, SOLICITAR_ASESOR_TOOL]
     : [SOLICITAR_ASESOR_TOOL];
 
-  const response = await openai.responses.create({
-    // gpt-4.1-mini: buen tool-calling a bajo costo. Para más precisión en
-    // pruebas, subir a gpt-4.1 con OPENAI_WATI_MODEL.
-    model: process.env.OPENAI_WATI_MODEL ?? "gpt-4.1-mini",
-    input,
-    tools,
-    // Temperatura baja: respuestas más estables en precio, políticas y formato.
-    temperature: Number(process.env.OPENAI_WATI_TEMPERATURE ?? 0.4),
-    max_output_tokens: 500,
-  });
+  const generate = (messages: typeof input) =>
+    openai.responses.create({
+      // gpt-4.1-mini: buen tool-calling a bajo costo. Para más precisión en
+      // pruebas, subir a gpt-4.1 con OPENAI_WATI_MODEL.
+      model: process.env.OPENAI_WATI_MODEL ?? "gpt-4.1-mini",
+      input: messages,
+      tools,
+      // Temperatura baja: respuestas más estables en precio, políticas y formato.
+      temperature: Number(process.env.OPENAI_WATI_TEMPERATURE ?? 0.4),
+      max_output_tokens: 500,
+    });
+
+  let response = await generate(input);
+  // Guardia de frases prohibidas (§44): el prompt no basta, el modelo a veces las usa.
+  // Se regenera una vez con la corrección; si reincide, se envía igual.
+  if (!response.output.some((item) => item.type === "function_call") && FORBIDDEN_PHRASES.test(response.output_text)) {
+    response = await generate([
+      ...input,
+      { role: "assistant" as const, content: response.output_text },
+      {
+        role: "system" as const,
+        content: "Tu borrador usó una frase prohibida (“quedo atento”, “avísame cualquier cosa”, “¿sigues interesado?”, “nuestra página dice”, “no se rompe”, “indestructible”). Reescríbelo sin ella: confirma lo que dijo el cliente y haz UNA pregunta concreta que avance la venta (cantidad, uso o referencia).",
+      },
+    ]);
+  }
 
   const toolCall = response.output.find((item) => item.type === "function_call");
 

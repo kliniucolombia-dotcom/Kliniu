@@ -107,6 +107,7 @@ export const NOTIFICATION_EVENTS: Record<string, Omit<NotificationEvent, "title"
   "wati.reply_send_failed":    { type: "wati", category: "reply_send_failed",    targetRoles: SALES, severity: "warning" },
   "wati.order_created":        { type: "wati", category: "order_created",        targetRoles: SALES, severity: "info" },
   "wati.advisor_request":      { type: "wati", category: "advisor_request",      targetRoles: SALES, severity: "warning" },
+  "wati.remarketing_reply":    { type: "wati", category: "remarketing_reply",    targetRoles: SALES, severity: "info" },
   "wati.shipped_outside_window": { type: "wati", category: "shipped_outside_window", targetRoles: SALES, severity: "warning" },
 
   // ─── Comunicados ──

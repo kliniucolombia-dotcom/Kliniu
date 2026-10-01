@@ -5,6 +5,7 @@ import {
   disponibilidades,
   formatearDescuento,
   formatearMoneda,
+  MAX_EXTRA_IMAGES,
   productosCatalogo,
   slugify,
   type Categoria,
@@ -154,7 +155,7 @@ function normalizeGalleryImages(images: Array<string | null | undefined>) {
   return images
     .map(normalizeProductImage)
     .filter(Boolean)
-    .slice(0, 3);
+    .slice(0, MAX_EXTRA_IMAGES);
 }
 
 function normalizeTextList(values: Array<string | null | undefined>) {

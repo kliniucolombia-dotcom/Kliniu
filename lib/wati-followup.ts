@@ -228,8 +228,22 @@ function readUsed(value: unknown): UsedItems {
   return { benefits: v.benefits ?? [], ctas: v.ctas ?? [], products: v.products ?? [] };
 }
 
+// "No me contacten" explícito: vale en cualquier momento.
 const OPT_OUT_PATTERN =
-  /\b(no me (escriban|escribas|contacten|contactes|interesa|molesten)|no estoy interesad|no (quiero|deseo) (recibir|mas mensajes)|dejen de escribir|deja de escribir|stop|basta)\b/;
+  /\b(no me (escriban|escribas|contacten|contactes|interesa|molesten|molestes|llamen|llames)|no (me )?(vuelvan|vuelvas) a (escribir|contactar|llamar)|no (me )?(envien|manden|envies|mandes) mas|dejen de (escribir|molestar|contactar)|deja de (escribir|molestar|contactar)|(eliminen|borren|quiten) mi (numero|contacto)|quitenme|darme de baja|no estoy interesad[oa]|no (quiero|deseo) (recibir|mas mensajes|que me)|stop|basta)\b/;
+
+// Rechazo suave: solo cuenta como tal si responde a un remarketing ("no gracias" a
+// otra pregunta del bot no significa que no quiera ser contactado).
+const DECLINE_PATTERN =
+  /\b(no,? gracias|ya (compre|compramos|adquiri|adquirimos|tengo|tenemos|lo resolvi|conseguimos|consegui)|(compre|compramos) en otro|ya no (necesito|necesitamos|requiero|me interesa|lo necesito)|no (necesito|necesitamos|requiero|me hace falta))\b/;
+
+/** Intención de salida del cliente en su mensaje. */
+export function classifyExitIntent(text: string, afterRemarketing: boolean): "OPT_OUT" | "DECLINED" | null {
+  const normalized = normalizeText(text);
+  if (OPT_OUT_PATTERN.test(normalized)) return "OPT_OUT";
+  if (afterRemarketing && DECLINE_PATTERN.test(normalized)) return "DECLINED";
+  return null;
+}
 
 /**
  * Se llama con cada mensaje entrante del cliente: cancela la secuencia
@@ -238,19 +252,20 @@ const OPT_OUT_PATTERN =
  */
 export async function cancelRemarketingOnReply(conversationId: string, text: string) {
   if (!prisma) return;
-  const optOut = OPT_OUT_PATTERN.test(normalizeText(text));
   const now = new Date();
 
   // La respuesta se atribuye al último envío; los anteriores quedan sin respuesta.
   const last = await prisma.watiRemarketingEvent.findFirst({
     where: { conversationId, outcome: "PENDING" },
     orderBy: { sentAt: "desc" },
-    select: { id: true },
+    select: { id: true, stage: true },
   });
+  const exit = classifyExitIntent(text, Boolean(last));
+
   if (last) {
     await prisma.watiRemarketingEvent.update({
       where: { id: last.id },
-      data: { outcome: optOut ? "OPTED_OUT" : "REPLIED", repliedAt: now },
+      data: { outcome: exit === "OPT_OUT" ? "OPTED_OUT" : exit === "DECLINED" ? "DECLINED" : "REPLIED", repliedAt: now },
     });
     await prisma.watiRemarketingEvent.updateMany({
       where: { conversationId, outcome: "PENDING" },
@@ -263,9 +278,28 @@ export async function cancelRemarketingOnReply(conversationId: string, text: str
       remarketingStage: 0,
       remarketingNextAt: null,
       remarketingUsed: {},
-      ...(optOut ? { remarketingOptOut: true, commercialStage: "LOST" } : {}),
+      ...(exit === "OPT_OUT" ? { remarketingOptOut: true, commercialStage: "LOST" } : {}),
+      ...(exit === "DECLINED" ? { commercialStage: "LOST" } : {}),
     },
   });
+
+  // Cliente recuperado: avisa al vendedor asignado para que no se pierda el lead.
+  if (last && !exit) {
+    const conversation = await prisma.watiConversation.findUnique({
+      where: { id: conversationId },
+      select: { phone: true, contactName: true, assignedSellerId: true },
+    });
+    if (conversation) {
+      await createNotification({
+        eventKey: "wati.remarketing_reply",
+        title: `WhatsApp: ${conversation.contactName ?? conversation.phone} respondió al remarketing`,
+        detail: `Respondió tras el seguimiento de la etapa ${last.stage}: "${text.slice(0, 120)}". El bot continúa la atención; revisa el chat para cerrar la venta.`,
+        href: "/panel/whatsapp",
+        targetUserId: conversation.assignedSellerId ?? undefined,
+        metadata: { conversationId, phone: conversation.phone, stage: last.stage },
+      }).catch((error) => console.error("WATI_REMARKETING_NOTIFY_FAILED", conversationId, error));
+    }
+  }
 }
 
 function normalizeText(value: string) {
@@ -325,6 +359,14 @@ function summarizeProduct(product: StoreProduct) {
     specs: (product.especificacionesTecnicas ?? []).slice(0, 8),
     packs: product.paquetes ?? [],
   };
+}
+
+/** Señal mínima de que el cliente habló de un producto o categoría. */
+const PRODUCT_INTEREST =
+  /\b(jabon|gel|liquido|papel|higienico|toalla|servilleta|crema dental|dentifric|cepillo|combo|dispensador|secador|insumo|repuesto|espuma|acero)/;
+
+export function hasProductInterest(text: string) {
+  return PRODUCT_INTEREST.test(normalizeText(text));
 }
 
 const STAGE_GOALS: Record<number, string> = {
@@ -473,6 +515,16 @@ export async function sendPendingWatiFollowUps(now = new Date(), onlyConversatio
       const transcript = chronological.map((m) => `${m.role}: ${m.content}`).join("\n");
       const product =
         products.find((p) => p.slug === conversation.chosenProductSlug) ?? findDiscussedProduct(products, transcript);
+      // Spec §6: solo se activa si el cliente preguntó por un producto o categoría.
+      const userText = normalizeText(chronological.filter((m) => m.role === "USER").map((m) => m.content).join(" "));
+      if (!product && !PRODUCT_INTEREST.test(userText)) {
+        skipped += 1;
+        await prisma.watiConversation.update({
+          where: { id: conversation.id },
+          data: { remarketingStage: config.delaysMin.length, remarketingNextAt: null },
+        });
+        continue;
+      }
       const manual = product ? config.alternatives[product.slug] ?? [] : [];
       const alternatives = product
         ? (manual.length > 0
