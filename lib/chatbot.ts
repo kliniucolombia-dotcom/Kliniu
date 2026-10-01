@@ -303,13 +303,36 @@ export function buildCatalogContext(snapshot: CatalogSnapshot) {
  * conocer toda la oferta, no solo las coincidencias de una consulta. Se usa en el
  * bot de WhatsApp para responder por cualquier producto de la página.
  */
+const GENERIC_SPEC_LABELS = new Set(["Observaciones", "Categoría", "Marca", "Disponibilidad", "Garantía", "Aplicación"]);
+
 export async function buildFullCatalogContext() {
   const products = await getProducts();
   const lines = products.map((product) => {
     const description = product.descripcion
-      ? product.descripcion.replace(/\s+/g, " ").trim().slice(0, 120)
+      ? product.descripcion.replace(/\s+/g, " ").trim().slice(0, 220)
       : null;
-    return `- ${product.nombre} | categoría: ${product.categoria} | marca: ${product.marca} | precio: ${formatearMoneda(product.precioValor)} | disponibilidad: ${product.disponibilidad} | stock: ${product.stock ?? 0} | slug: ${product.slug}${description ? ` | descripción: ${description}` : ""}`;
+    // Ficha (Sistema Maestro §10): solo lo que existe en la base, sin rellenar.
+    const specs = (product.especificacionesTecnicas ?? [])
+      .filter((spec) => !GENERIC_SPEC_LABELS.has(spec.etiqueta) && spec.valor.trim())
+      .map((spec) => `${spec.etiqueta}: ${spec.valor.replace(/\s+/g, " ").trim().slice(0, 80)}`);
+    const colors = (product.variacionesColor ?? []).map((variant) => variant.label).filter(Boolean);
+    return [
+      `- ${product.nombre}`,
+      `categoría: ${product.categoria}`,
+      product.sku && `referencia: ${product.sku}`,
+      `marca: ${product.marca}`,
+      `precio: ${formatearMoneda(product.precioValor)}`,
+      `disponibilidad: ${product.disponibilidad}`,
+      `stock: ${product.stock ?? 0}`,
+      `slug: ${product.slug}`,
+      colors.length > 0 && `colores: ${colors.join(", ")}`,
+      specs.length > 0 && `ficha: ${specs.join("; ")}`,
+      product.garantia && `garantía: ${product.garantia}`,
+      description && `descripción: ${description}`,
+      product.actualizadoEl && `actualizado: ${product.actualizadoEl}`,
+    ]
+      .filter(Boolean)
+      .join(" | ");
   });
 
   return [

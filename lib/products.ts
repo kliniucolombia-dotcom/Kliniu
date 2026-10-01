@@ -41,6 +41,7 @@ type ProductRecord = {
   technicalSpecs?: unknown;
   colorVariants?: unknown;
   presentationVariants?: unknown;
+  presentationVariantsManaged?: boolean | null;
   videoUrl?: string | null;
   featured: boolean;
   active: boolean;
@@ -55,6 +56,8 @@ export type StoreProduct = ProductoCatalogo & {
   destacado: boolean;
   esOutlet: boolean;
   paquetes?: { label: string; qty: number; totalPrice: number }[];
+  /** YYYY-MM-DD de la última edición de la ficha. */
+  actualizadoEl?: string;
 };
 
 export type InventoryMovementSummary = {
@@ -90,6 +93,7 @@ export type ProductMutationInput = {
   especificacionesTecnicas?: ProductoEspecificacion[];
   variacionesColor?: VariacionColor[];
   variacionesPresentacion?: VariacionPresentacion[];
+  presentacionesAdministradas?: boolean;
   videoUrl?: string;
   isOutlet?: boolean;
 };
@@ -271,12 +275,12 @@ function toStoreProduct(
       product.application?.trim() ||
       `Aplicación recomendada para la línea ${categoria}.`,
     compatibilidad: normalizeTextList(product.compatibility || []),
-    garantia: product.warranty?.trim() || "1 año de garantía del fabricante",
+    garantia: product.warranty?.trim() || "3 meses de garantía",
     especificacionesTecnicas: normalizeTechnicalSpecs(product.technicalSpecs, {
       categoria,
       marca: product.brand,
       disponibilidad,
-      garantia: product.warranty?.trim() || "1 año de garantía del fabricante",
+      garantia: product.warranty?.trim() || "3 meses de garantía",
       aplicacion:
         product.application?.trim() ||
         `Aplicación recomendada para la línea ${categoria}.`,
@@ -285,11 +289,13 @@ function toStoreProduct(
     variacionesPresentacion: Array.isArray(product.presentationVariants)
       ? (product.presentationVariants as VariacionPresentacion[])
       : [],
+    presentacionesAdministradas: product.presentationVariantsManaged === true,
     videoUrl: product.videoUrl?.trim() || undefined,
     destacado: product.featured,
     esOutlet: product.isOutlet,
     outletExpiraEl: product.outletExpiresAt ?? null,
     paquetes: packPricesByProductId?.get(product.id),
+    actualizadoEl: product.updatedAt?.slice(0, 10),
   };
 }
 
@@ -327,14 +333,14 @@ function getFallbackProducts(): StoreProduct[] {
       `Aplicación comercial para ${producto.categoria.toLowerCase()}.`,
     compatibilidad:
       producto.compatibilidad || [producto.marca, producto.categoria],
-    garantia: producto.garantia || "1 año de garantía del fabricante",
+    garantia: producto.garantia || "3 meses de garantía",
     especificacionesTecnicas: normalizeTechnicalSpecs(
       producto.especificacionesTecnicas,
       {
         categoria: producto.categoria,
         marca: producto.marca,
         disponibilidad: producto.disponibilidad,
-        garantia: producto.garantia || "1 año de garantía del fabricante",
+        garantia: producto.garantia || "3 meses de garantía",
         aplicacion:
           producto.aplicacion ||
           `Aplicación comercial para ${producto.categoria.toLowerCase()}.`,
@@ -481,10 +487,11 @@ export async function createProduct(input: ProductMutationInput, actorUserId: st
         descripcionProducto({ nombre, categoria: input.categoria, marca }),
       application: input.aplicacion?.trim() || null,
       compatibility: normalizeTextList(input.compatibilidad || []),
-      warranty: input.garantia?.trim() || "1 año de garantía del fabricante",
+      warranty: input.garantia?.trim() || "3 meses de garantía",
       technicalSpecs: normalizeTechnicalSpecs(input.especificacionesTecnicas),
       colorVariants: input.variacionesColor ?? [],
       presentationVariants: input.variacionesPresentacion ?? [],
+      presentationVariantsManaged: input.presentacionesAdministradas ?? false,
       videoUrl: input.videoUrl?.trim() || null,
       featured: false,
       active: true,
@@ -614,10 +621,14 @@ export async function updateProduct(slug: string, input: ProductMutationInput, a
         descripcionProducto({ nombre, categoria: input.categoria, marca }),
       application: input.aplicacion?.trim() || null,
       compatibility: normalizeTextList(input.compatibilidad || []),
-      warranty: input.garantia?.trim() || "1 año de garantía del fabricante",
+      warranty: input.garantia?.trim() || "3 meses de garantía",
       technicalSpecs: normalizeTechnicalSpecs(input.especificacionesTecnicas),
       colorVariants: input.variacionesColor ?? [],
       presentationVariants: input.variacionesPresentacion ?? [],
+      presentationVariantsManaged:
+        input.presentacionesAdministradas ??
+        existingRecord.presentationVariantsManaged ??
+        false,
       videoUrl: input.videoUrl?.trim() || null,
       isOutlet: input.isOutlet ?? existingRecord.isOutlet,
       updatedAt: new Date().toISOString(),
@@ -703,6 +714,7 @@ export async function updateOutletProductPricing(
       especificacionesTecnicas: normalizeTechnicalSpecs(record.technicalSpecs),
       variacionesColor: (record.colorVariants as ProductMutationInput["variacionesColor"]) ?? [],
       variacionesPresentacion: (record.presentationVariants as ProductMutationInput["variacionesPresentacion"]) ?? [],
+      presentacionesAdministradas: record.presentationVariantsManaged === true,
       videoUrl: record.videoUrl || undefined,
       isOutlet: record.isOutlet,
       precioValor: input.precioValor,

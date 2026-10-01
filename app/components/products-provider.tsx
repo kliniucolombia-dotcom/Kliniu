@@ -36,6 +36,7 @@ export type AdminProductInput = {
   especificacionesTecnicas?: ProductoEspecificacion[];
   variacionesColor?: VariacionColor[];
   variacionesPresentacion?: VariacionPresentacion[];
+  presentacionesAdministradas?: boolean;
   videoUrl?: string;
 };
 

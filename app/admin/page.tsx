@@ -64,7 +64,7 @@ const initialState: FormState = {
   descripcion: "",
   aplicacion: "",
   compatibilidad: "",
-  garantia: "1 año de garantía del fabricante",
+  garantia: "3 meses de garantía",
   videoUrl: "",
   isOutlet: false,
 };
@@ -128,6 +128,19 @@ function createTechnicalSpecItem(
     etiqueta: spec?.etiqueta || "",
     valor: spec?.valor || "",
   };
+}
+
+/** Ficha mínima que necesita la IA (Sistema Maestro §10); las filas vacías no se guardan. */
+const FICHA_BASE = ["Material", "Capacidad", "Dimensiones", "Peso", "Observaciones"];
+
+function withFichaBase(items: ProductoEspecificacion[]): TechnicalSpecFormItem[] {
+  const present = new Set(items.map((item) => item.etiqueta.trim().toLowerCase()));
+  return [
+    ...items.map((item) => createTechnicalSpecItem(item)),
+    ...FICHA_BASE.filter((etiqueta) => !present.has(etiqueta.toLowerCase())).map((etiqueta) =>
+      createTechnicalSpecItem({ etiqueta }),
+    ),
+  ];
 }
 
 function normalizeTechnicalSpecFormItems(
@@ -1201,9 +1214,7 @@ export default function AdminPage() {
   >("all");
   const [form, setForm] = useState<FormState>(initialState);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [technicalSpecs, setTechnicalSpecs] = useState<TechnicalSpecFormItem[]>([
-    createTechnicalSpecItem({ etiqueta: "Observaciones" }),
-  ]);
+  const [technicalSpecs, setTechnicalSpecs] = useState<TechnicalSpecFormItem[]>(() => withFichaBase([]));
   const [colorVariants, setColorVariants] = useState<VariacionColor[]>([]);
   const [presentationVariants, setPresentationVariants] = useState<VariacionPresentacion[]>([]);
   const [selectedExtraImages, setSelectedExtraImages] = useState<Array<File | null>>(
@@ -1628,6 +1639,7 @@ export default function AdminPage() {
         especificacionesTecnicas: normalizeTechnicalSpecFormItems(technicalSpecs),
         variacionesColor: colorVariants,
         variacionesPresentacion: presentationVariants,
+        presentacionesAdministradas: true,
         videoUrl: form.videoUrl,
         isOutlet: form.isOutlet,
       };
@@ -1648,7 +1660,7 @@ export default function AdminPage() {
 
       setForm(initialState);
       setSelectedImage(null);
-      setTechnicalSpecs([createTechnicalSpecItem({ etiqueta: "Observaciones" })]);
+      setTechnicalSpecs(withFichaBase([]));
       setColorVariants([]);
       setPresentationVariants([]);
       setSelectedExtraImages(Array.from({ length: EXTRA_IMAGE_SLOTS }, () => null));
@@ -1709,19 +1721,15 @@ export default function AdminPage() {
       videoUrl: product.videoUrl || "",
       isOutlet: product.esOutlet === true,
     });
-    setTechnicalSpecs(
-      (product.especificacionesTecnicas || []).length > 0
-        ? (product.especificacionesTecnicas || []).map((item) =>
-            createTechnicalSpecItem(item),
-          )
-        : [createTechnicalSpecItem({ etiqueta: "Observaciones" })],
-    );
+    setTechnicalSpecs(withFichaBase(product.especificacionesTecnicas || []));
     setColorVariants(product.variacionesColor ?? []);
     // Presentaciones: si la ficha aún no las tiene guardadas, se precargan las
     // del mapa legado TIPO_VARIANTES (Cierre Plástico/Metálico, Bolsa/Botella…)
     // para poder editar su imagen sin perder el slugSuffix/SKU ya definidos.
     const presentacionesGuardadas = product.variacionesPresentacion ?? [];
-    const presentacionesLegadas = TIPO_VARIANTES[product.slug] ?? [];
+    const presentacionesLegadas = product.presentacionesAdministradas
+      ? []
+      : TIPO_VARIANTES[product.slug] ?? [];
     setPresentationVariants(
       presentacionesGuardadas.length > 0
         ? presentacionesGuardadas
@@ -1746,7 +1754,7 @@ export default function AdminPage() {
   const handleResetForm = () => {
     setForm(initialState);
     setSelectedImage(null);
-    setTechnicalSpecs([createTechnicalSpecItem({ etiqueta: "Observaciones" })]);
+    setTechnicalSpecs(withFichaBase([]));
     setColorVariants([]);
     setPresentationVariants([]);
     setSelectedExtraImages(Array.from({ length: EXTRA_IMAGE_SLOTS }, () => null));

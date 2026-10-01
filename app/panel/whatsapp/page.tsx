@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import {
   MdAdd,
   MdArrowBack,
+  MdAutorenew,
   MdCheckCircle,
   MdClose,
   MdDeleteOutline,
@@ -22,6 +23,7 @@ import {
   MdSupportAgent,
   MdWhatsapp,
 } from "react-icons/md";
+import Link from "next/link";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 type ConversationSummary = {
@@ -1196,6 +1198,14 @@ export default function WhatsappPanelPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                <Link
+                  href="/panel/whatsapp/remarketing"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-white shadow-lg shadow-black/10 transition hover:scale-105 hover:bg-white/25"
+                  aria-label="Remarketing IA"
+                  title="Remarketing IA"
+                >
+                  <MdAutorenew size={20} />
+                </Link>
                 <button
                   type="button"
                   onClick={clearAllConversations}

@@ -16,6 +16,7 @@ import {
 import { createNotification } from "@/lib/notifications";
 import { isAdvisorPhone, notifyAdvisor, replyRequestsAdvisor } from "@/lib/wati-escalation";
 import { summarizeConversation, WATI_MEMORY_KEEP_RECENT } from "@/lib/wati-memory";
+import { cancelRemarketingOnReply, detectCommercialStage, updateConversationState } from "@/lib/wati-followup";
 
 export const maxDuration = 60;
 
@@ -158,16 +159,32 @@ async function resolveContextProduct(
   return namedUser[0] ?? null;
 }
 
-/** Fotos del producto por el que pregunta el cliente. Solo se envían cuando el
- * cliente pide fotos explícitamente; nunca de forma proactiva. Devuelve [] si no
- * pide fotos, no hay producto claro, o el producto no tiene imágenes. */
+/** Fotos a enviar con la respuesta (sistema maestro §2/§27: MOSTRAR).
+ * - Si el cliente pide fotos: galería del producto en contexto (hasta 4).
+ * - Si no: foto principal de los productos que la respuesta acaba de ofrecer
+ *   (2–4), saltando los que ya se mostraron en la conversación para no repetir
+ *   catálogo. */
 async function getProductMediaToSend(
   history: ConversationHistory[],
   message: string,
   currentReply: string,
 ): Promise<ProductMedia[]> {
   const wantsPhotos = PHOTO_REQUEST.test(normalizeForIntent(message));
-  if (!wantsPhotos) return [];
+  if (!wantsPhotos) {
+    const products = await getProducts();
+    const offered = productsLinkedIn(products, currentReply);
+    const candidates = offered.length > 0 ? offered : productsNamedIn(products, currentReply);
+    const alreadyShown = history.filter(({ role }) => role === "assistant").map(({ content }) => content).join("\n");
+    return [...new Map(candidates.map((p) => [p.slug, p])).values()]
+      .filter((p) => p.imagen && !alreadyShown.includes(`📸 Foto de ${p.nombre} enviada.`))
+      .slice(0, 4)
+      .map((p) => ({
+        url: toWatiImageUrl(p.imagen.startsWith("http") ? p.imagen : `${SITE_URL}${p.imagen}`),
+        fileName: p.imagen.split("/").pop() || `${p.slug}.jpg`,
+        caption: `${p.nombre} · ${p.precio}`,
+        marker: `📸 Foto de ${p.nombre} enviada.`,
+      }));
+  }
 
   let product = await resolveContextProduct(history, message, currentReply);
   if (!product) {
@@ -403,6 +420,7 @@ export async function POST(request: Request) {
         }
         throw error;
       }
+      await cancelRemarketingOnReply(mediaConversation.id, "");
       await broadcastPanelUpdate("wati");
 
       if (mediaConversation.botPaused) {
@@ -482,6 +500,7 @@ export async function POST(request: Request) {
     }
     throw error;
   }
+  await cancelRemarketingOnReply(conversation.id, text);
   // Persist and notify before invoking external services so the panel stays live
   // even if WATI or the assistant is temporarily unavailable.
   await broadcastPanelUpdate("wati");
@@ -675,6 +694,12 @@ export async function POST(request: Request) {
   await prisma.watiMessage.create({
     data: { conversationId: conversation.id, role: "ASSISTANT", content: reply },
   });
+  await prisma.watiConversation.update({
+    where: { id: conversation.id },
+    data: {
+      commercialStage: detectCommercialStage(conversation.commercialStage, text, reply, Boolean(orderCreated)),
+    },
+  });
 
   if (orderCreated) {
     await prisma.watiConversation.update({
@@ -746,6 +771,15 @@ export async function POST(request: Request) {
     }
   }
 
+  // Estado estructurado (ciudad, negocio, cantidad…) tras responder, para no demorar la respuesta.
+  if (!assistantFailed) {
+    try {
+      await updateConversationState(conversation.id);
+    } catch (error) {
+      console.error("WATI_STATE_UPDATE_FAILED", conversation.id, error);
+    }
+  }
+
   if (assistantFailed) {
     // La promesa de "un asesor continuará" solo es real si pausamos el bot y
     // avisamos a un asesor (WhatsApp + in-app). No enviamos fotos si falló.
@@ -804,7 +838,7 @@ export async function POST(request: Request) {
         data: {
           conversationId: conversation.id,
           role: "ASSISTANT",
-          content: productMedia[0].marker,
+          content: [...new Set(productMedia.map((m) => m.marker))].join("\n"),
         },
       });
       await broadcastPanelUpdate("wati");

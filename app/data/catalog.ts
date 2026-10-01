@@ -296,6 +296,7 @@ export type ProductoCatalogo = {
   especificacionesTecnicas?: ProductoEspecificacion[];
   variacionesColor?: VariacionColor[];
   variacionesPresentacion?: VariacionPresentacion[];
+  presentacionesAdministradas?: boolean;
   videoUrl?: string;
   destacado?: boolean;
   esOutlet?: boolean;

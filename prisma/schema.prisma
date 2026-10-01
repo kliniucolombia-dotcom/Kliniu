@@ -37,6 +37,7 @@ model Product {
   updatedAt             DateTime                @updatedAt
   colorVariants         Json?                   @default("[]")
   presentationVariants  Json?                   @default("[]")
+  presentationVariantsManaged Boolean          @default(false)
   videoUrl              String?
   campaigns             Campaign[]
   inventoryMovements    InventoryMovement[]
@@ -675,13 +676,61 @@ model WatiConversation {
   assignedSellerId   String?
   assignedSeller     User?                  @relation("WatiAssignedSeller", fields: [assignedSellerId], references: [id])
   followUpSentAt     DateTime?
+  commercialStage    WatiCommercialStage    @default(DISCOVERY)
+  /// Estado estructurado (Sistema Maestro §49 capa 4), lo extrae la IA tras cada intercambio.
+  customerCity       String?
+  businessType       String?
+  chosenProductSlug  String?
+  quantityRequested  Int?
+  lastObjection      String?
+  dispatchDataComplete Boolean              @default(false)
+  remarketingStage   Int                    @default(0)
+  remarketingNextAt  DateTime?
+  remarketingStartedAt DateTime?
+  remarketingOptOut  Boolean                @default(false)
+  remarketingUsed    Json                   @default("{}")
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
   messages           WatiMessage[]
+  remarketingEvents  WatiRemarketingEvent[]
 
   @@index([status, updatedAt])
   @@index([salesStage, updatedAt])
   @@index([followUpSentAt])
+  @@index([remarketingNextAt])
+}
+
+enum WatiCommercialStage {
+  DISCOVERY
+  PRODUCT_SHOWN
+  PRICE_SHOWN
+  QUANTITY_REQUESTED
+  QUOTE_SENT
+  OBJECTION_PRICE
+  OBJECTION_THINKING
+  PURCHASE_INTENT
+  CHECKOUT
+  CLOSED
+  LOST
+}
+
+/// Un mensaje de remarketing enviado; base de las métricas de recuperación.
+model WatiRemarketingEvent {
+  id             String           @id @default(cuid())
+  conversationId String
+  conversation   WatiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  stage          Int
+  productSlug    String?
+  message        String
+  goal           String?
+  usedBenefit    String?
+  usedCta        String?
+  sentAt         DateTime         @default(now())
+  repliedAt      DateTime?
+  outcome        String           @default("PENDING")
+
+  @@index([conversationId, sentAt])
+  @@index([stage, outcome])
 }
 
 model WatiMessage {

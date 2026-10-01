@@ -549,6 +549,7 @@ export async function updateOrderShipping(
       id: true,
       status: true,
       paymentStatus: true,
+      shippingStatus: true,
     },
   });
 
@@ -598,6 +599,15 @@ export async function updateOrderShipping(
 
   if (nextPaymentStatus === "PAID" && currentOrder.paymentStatus !== "PAID") {
     await syncOrderToOdoo(orderId);
+  }
+
+  if (shippingStatus === "SHIPPED" && currentOrder.shippingStatus !== "SHIPPED" && trackingNumber) {
+    try {
+      const { sendShippedMessage } = await import("@/lib/wati-followup");
+      await sendShippedMessage(orderId);
+    } catch (error) {
+      console.error("WATI_SHIPPED_MESSAGE_FAILED", orderId, error);
+    }
   }
 
   return updated;

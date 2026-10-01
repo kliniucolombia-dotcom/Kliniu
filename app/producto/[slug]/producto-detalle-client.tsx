@@ -505,7 +505,9 @@ export default function ProductoDetalleClient() {
       presentacionesColor.length > 0
         ? presentacionesColor
         : producto.variacionesPresentacion ?? [];
-    if (source.length === 0) return hardcoded;
+    if (source.length === 0) {
+      return producto.presentacionesAdministradas ? undefined : hardcoded;
+    }
     return source
       .filter((v) => v.label.trim())
       .map((v) => {
