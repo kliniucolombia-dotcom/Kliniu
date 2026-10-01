@@ -739,14 +739,6 @@ export default function OutletPanel() {
                 <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]" />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-bold text-[#64748B]">Referencia OEM</label>
-                <input value={form.oemReferencia} onChange={(e) => setForm({ ...form, oemReferencia: e.target.value })} placeholder="Ej. OEM-45892" className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]" />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-bold text-[#64748B]">Referencias alternas</label>
-                <input value={form.referenciasAlternas} onChange={(e) => setForm({ ...form, referenciasAlternas: e.target.value })} placeholder="Separadas por coma" className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]" />
-              </div>
-              <div>
                 <label className="mb-1 block text-xs font-bold text-[#64748B]">Precio actual</label>
                 <input type="number" value={form.precioValor} onChange={(e) => setForm({ ...form, precioValor: e.target.value })} className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm outline-none focus:border-[#27B1B8]" />
               </div>

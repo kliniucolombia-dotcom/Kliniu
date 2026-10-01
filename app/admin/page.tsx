@@ -731,6 +731,12 @@ function ColorVariantsEditor({
   };
   const updateVariantImages = (i: number, images: string[]) =>
     onChange(variants.map((v, idx) => (idx === i ? { ...v, images, image: images[0] ?? "" } : v)));
+  const updateVariantCode = (i: number, field: "sku" | "skuSello", value: string) =>
+    onChange(
+      variants.map((v, idx) =>
+        idx === i ? { ...v, [field]: value.trim() === "" ? undefined : value } : v,
+      ),
+    );
   const addColorPresentacion = (i: number) => {
     const initialImage = galleryImages[0] ?? "";
     onChange(
@@ -852,6 +858,28 @@ function ColorVariantsEditor({
               </div>
             </div>
 
+            {/* Código por color */}
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Código (sin sello)</span>
+                <input
+                  value={v.sku ?? ""}
+                  onChange={(e) => updateVariantCode(i, "sku", e.target.value)}
+                  placeholder="Ej. SVNK.G.TK - 247"
+                  className="w-full rounded-xl border border-black/10 bg-[#fafaf9] px-3 py-2.5 text-sm text-[#1f2328] outline-none focus:border-[#27B1B8]"
+                />
+              </label>
+              <label className="space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Código con sello</span>
+                <input
+                  value={v.skuSello ?? ""}
+                  onChange={(e) => updateVariantCode(i, "skuSello", e.target.value)}
+                  placeholder="Ej. SVNK.G.TK - 247"
+                  className="w-full rounded-xl border border-black/10 bg-[#fafaf9] px-3 py-2.5 text-sm text-[#1f2328] outline-none focus:border-[#27B1B8]"
+                />
+              </label>
+            </div>
+
             {/* Presentaciones propias de este color */}
             <div className="rounded-xl border border-dashed border-black/12 bg-[#fafaf9] p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -903,6 +931,26 @@ function ColorVariantsEditor({
                           Quitar
                         </button>
                       </div>
+                      <div className="grid gap-3 md:col-span-3 md:grid-cols-2">
+                        <label className="space-y-2">
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Código (sin sello)</span>
+                          <input
+                            value={p.sku ?? ""}
+                            onChange={(e) => updateColorPresentacion(i, pi, { sku: e.target.value })}
+                            placeholder="Ej. SVNK.G.TK - 247"
+                            className="w-full rounded-lg border border-black/10 bg-[#fafaf9] px-3 py-2 text-sm text-[#1f2328] outline-none focus:border-[#27B1B8]"
+                          />
+                        </label>
+                        <label className="space-y-2">
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Código con sello</span>
+                          <input
+                            value={p.skuSello ?? ""}
+                            onChange={(e) => updateColorPresentacion(i, pi, { skuSello: e.target.value })}
+                            placeholder="Ej. SVNK.G.TK - 247"
+                            className="w-full rounded-lg border border-black/10 bg-[#fafaf9] px-3 py-2 text-sm text-[#1f2328] outline-none focus:border-[#27B1B8]"
+                          />
+                        </label>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -936,6 +984,12 @@ function PresentationVariantsEditor({
     onChange(variants.map((v, idx) => (idx === i ? { ...v, label: value } : v)));
   const updateImages = (i: number, images: string[]) =>
     onChange(variants.map((v, idx) => (idx === i ? { ...v, images, image: images[0] ?? "" } : v)));
+  const updateCode = (i: number, field: "sku" | "skuSello", value: string) =>
+    onChange(
+      variants.map((v, idx) =>
+        idx === i ? { ...v, [field]: value.trim() === "" ? undefined : value } : v,
+      ),
+    );
 
   return (
     <div className="md:col-span-2 rounded-[1.5rem] border border-black/8 bg-[#fafaf9] p-5">
@@ -990,6 +1044,26 @@ function PresentationVariantsEditor({
               >
                 Quitar
               </button>
+            </div>
+            <div className="grid gap-3 md:col-span-3 md:grid-cols-2">
+              <label className="space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Código (sin sello)</span>
+                <input
+                  value={v.sku ?? ""}
+                  onChange={(e) => updateCode(i, "sku", e.target.value)}
+                  placeholder="Ej. SVNK.G.TK - 247"
+                  className="w-full rounded-xl border border-black/10 bg-[#fafaf9] px-3 py-2.5 text-sm text-[#1f2328] outline-none focus:border-[#27B1B8]"
+                />
+              </label>
+              <label className="space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8b8d91]">Código con sello</span>
+                <input
+                  value={v.skuSello ?? ""}
+                  onChange={(e) => updateCode(i, "skuSello", e.target.value)}
+                  placeholder="Ej. SVNK.G.TK - 247"
+                  className="w-full rounded-xl border border-black/10 bg-[#fafaf9] px-3 py-2.5 text-sm text-[#1f2328] outline-none focus:border-[#27B1B8]"
+                />
+              </label>
             </div>
           </div>
         ))}
@@ -2131,28 +2205,6 @@ export default function AdminPage() {
                 </label>
 
                 <label className="space-y-2">
-                  <span className="text-sm font-medium text-[#4f545a]">Referencia OEM</span>
-                  <input
-                    name="oemReferencia"
-                    value={form.oemReferencia}
-                    onChange={handleChange}
-                    placeholder="Ej. OEM-45892"
-                    className="w-full rounded-2xl border border-black/10 bg-[#fafaf9] px-4 py-3 text-sm text-[#1f2328] outline-none transition-colors duration-200 focus:border-[#27B1B8]"
-                  />
-                </label>
-
-                <label className="space-y-2">
-                  <span className="text-sm font-medium text-[#4f545a]">Referencias alternas</span>
-                  <input
-                    name="referenciasAlternas"
-                    value={form.referenciasAlternas}
-                    onChange={handleChange}
-                    placeholder="Separadas por coma"
-                    className="w-full rounded-2xl border border-black/10 bg-[#fafaf9] px-4 py-3 text-sm text-[#1f2328] outline-none transition-colors duration-200 focus:border-[#27B1B8]"
-                  />
-                </label>
-
-                <label className="space-y-2">
                   <span className="text-sm font-medium text-[#4f545a]">Precio actual</span>
                   <input
                     name="precioValor"
@@ -2632,28 +2684,6 @@ export default function AdminPage() {
                         value={form.nombre}
                         onChange={handleChange}
                         required
-                        className="w-full rounded-2xl border border-black/10 bg-[#fafaf9] px-4 py-3 text-sm text-[#1f2328] outline-none transition-colors duration-200 focus:border-[#27B1B8]"
-                      />
-                    </label>
-
-                    <label className="space-y-2">
-                      <span className="text-sm font-medium text-[#4f545a]">Referencia OEM</span>
-                      <input
-                        name="oemReferencia"
-                        value={form.oemReferencia}
-                        onChange={handleChange}
-                        placeholder="Ej. OEM-45892"
-                        className="w-full rounded-2xl border border-black/10 bg-[#fafaf9] px-4 py-3 text-sm text-[#1f2328] outline-none transition-colors duration-200 focus:border-[#27B1B8]"
-                      />
-                    </label>
-
-                    <label className="space-y-2">
-                      <span className="text-sm font-medium text-[#4f545a]">Referencias alternas</span>
-                      <input
-                        name="referenciasAlternas"
-                        value={form.referenciasAlternas}
-                        onChange={handleChange}
-                        placeholder="Separadas por coma"
                         className="w-full rounded-2xl border border-black/10 bg-[#fafaf9] px-4 py-3 text-sm text-[#1f2328] outline-none transition-colors duration-200 focus:border-[#27B1B8]"
                       />
                     </label>
