@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { getWatiTemplates, sendWatiMessage, sendWatiTemplateMessage } from "@/lib/wati";
+import {
+  getWatiContactNames,
+  getWatiTemplates,
+  sendWatiMessage,
+  sendWatiTemplateMessage,
+} from "@/lib/wati";
 
 function normalizeWhatsappPhone(value: string) {
   const digits = value.replace(/\D/g, "");
@@ -31,8 +36,9 @@ export async function pickSellerForNewConversation() {
 
 export async function getAllWatiConversations() {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
+  const db = prisma;
 
-  const conversations = await prisma.watiConversation.findMany({
+  const conversations = await db.watiConversation.findMany({
     orderBy: { updatedAt: "desc" },
     include: {
       messages: {
@@ -42,6 +48,37 @@ export async function getAllWatiConversations() {
       assignedSeller: { select: { id: true, fullName: true } },
     },
   });
+
+  // El webhook de WATI no siempre trae el nombre del remitente; para los chats
+  // nuevos lo completamos desde la agenda de WATI (cacheada) y lo persistimos.
+  const missingName = conversations.filter((conversation) => !conversation.contactName);
+  if (missingName.length > 0) {
+    try {
+      const names = await getWatiContactNames();
+      const resolved: Array<{ phone: string; name: string }> = [];
+      for (const conversation of missingName) {
+        const name = names.get(conversation.phone);
+        if (name) {
+          conversation.contactName = name;
+          resolved.push({ phone: conversation.phone, name });
+        }
+      }
+      if (resolved.length > 0) {
+        await Promise.all(
+          resolved.map(({ phone, name }) =>
+            db.watiConversation.updateMany({
+              where: { phone, contactName: null },
+              data: { contactName: name },
+            }),
+          ),
+        );
+      }
+    } catch (error) {
+      // Nunca bloqueamos el panel por la agenda de WATI: si falla, se muestra el
+      // teléfono y el nombre se completa en la próxima carga.
+      console.error("WATI_CONTACT_NAMES_LOOKUP_FAILED", error);
+    }
+  }
 
   const orderIds = conversations.flatMap((conversation) =>
     conversation.orderId ? [conversation.orderId] : [],
@@ -69,6 +106,7 @@ export async function getAllWatiConversations() {
     return {
     id: c.id,
     phone: c.phone,
+    contactName: c.contactName,
     status: c.status,
     salesStage: c.salesStage,
     notes: c.notes,

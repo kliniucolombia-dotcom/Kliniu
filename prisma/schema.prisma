@@ -659,6 +659,7 @@ enum WatiMessageRole {
 model WatiConversation {
   id                 String                 @id @default(cuid())
   phone              String                 @unique
+  contactName        String?
   status             WatiConversationStatus @default(ACTIVE)
   salesStage         WatiSalesStage         @default(NEW)
   notes              String?

@@ -377,10 +377,15 @@ export async function POST(request: Request) {
         return Response.json({ received: true, duplicate: true });
       }
 
+      const mediaName = getSenderName(payload);
       const mediaConversation = await prisma.watiConversation.upsert({
         where: { phone: media.phone },
-        update: { updatedAt: new Date() },
-        create: { phone: media.phone, assignedSellerId: await pickSellerForNewConversation() },
+        update: { updatedAt: new Date(), ...(mediaName ? { contactName: mediaName } : {}) },
+        create: {
+          phone: media.phone,
+          contactName: mediaName,
+          assignedSellerId: await pickSellerForNewConversation(),
+        },
       });
 
       try {
@@ -448,8 +453,8 @@ export async function POST(request: Request) {
 
   let conversation = await prisma.watiConversation.upsert({
     where: { phone },
-    update: { updatedAt: new Date() },
-    create: { phone, assignedSellerId: await pickSellerForNewConversation() },
+    update: { updatedAt: new Date(), ...(customerName ? { contactName: customerName } : {}) },
+    create: { phone, contactName: customerName, assignedSellerId: await pickSellerForNewConversation() },
   });
 
   if (!conversation.orderId && conversation.salesStage !== "SOLD") {

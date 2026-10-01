@@ -242,6 +242,62 @@ export async function getWatiTemplates(): Promise<WatiTemplate[]> {
     });
 }
 
+type WatiV3Contact = {
+  wa_id?: string;
+  phone?: string;
+  name?: string;
+  custom_params?: Array<{ name?: string; value?: string }>;
+};
+
+// Los nombres de la agenda cambian poco: cachear evita paginar toda la agenda
+// de WATI en cada carga del panel (que refresca en tiempo real).
+let contactNamesCache: { value: Map<string, string>; expiresAt: number } | null = null;
+const CONTACT_NAMES_TTL_MS = 5 * 60 * 1000;
+
+/**
+ * Mapa phone (digits) -> nombre de contacto, leído de la agenda de WATI.
+ * Pagina de a 100 hasta agotar `contact_list`.
+ */
+export async function getWatiContactNames(): Promise<Map<string, string>> {
+  if (contactNamesCache && contactNamesCache.expiresAt > Date.now()) {
+    return contactNamesCache.value;
+  }
+
+  const { host, authorization, channel } = getWatiConfig();
+  const names = new Map<string, string>();
+  const pageSize = 100;
+
+  for (let page = 1; page <= 100; page += 1) {
+    const url = new URL(`${host}/api/ext/v3/contacts`);
+    url.searchParams.set("page_size", String(pageSize));
+    url.searchParams.set("page_number", String(page));
+    if (channel) url.searchParams.set("channel", channel);
+
+    const response = await fetch(url, {
+      headers: { Authorization: authorization, "Content-Type": "application/json" },
+      cache: "no-store",
+    });
+    if (!response.ok) break;
+
+    const data = (await response.json()) as { contact_list?: WatiV3Contact[] };
+    const list = data.contact_list ?? [];
+
+    for (const contact of list) {
+      const phone = (contact.wa_id ?? contact.phone ?? "").replace(/\D/g, "");
+      const rawName =
+        contact.name?.trim() ||
+        contact.custom_params?.find((param) => param.name === "name")?.value?.trim() ||
+        "";
+      if (phone && rawName) names.set(phone, rawName.slice(0, 80));
+    }
+
+    if (list.length < pageSize) break;
+  }
+
+  contactNamesCache = { value: names, expiresAt: Date.now() + CONTACT_NAMES_TTL_MS };
+  return names;
+}
+
 export async function sendWatiTemplateMessage(
   phone: string,
   templateName: string,

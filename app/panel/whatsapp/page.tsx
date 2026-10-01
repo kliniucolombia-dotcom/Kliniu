@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   MdAdd,
   MdArrowBack,
@@ -27,6 +27,7 @@ import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 type ConversationSummary = {
   id: string;
   phone: string;
+  contactName: string | null;
   status: "ACTIVE" | "CLOSED";
   salesStage: "NEW" | "IN_PROGRESS" | "FOLLOW_UP" | "SOLD";
   notes: string | null;
@@ -48,6 +49,7 @@ type ConversationSummary = {
 };
 
 type ConversationFilter = "ALL" | "NEW" | "ACTIVE" | "SOLD" | "CLOSED";
+type ConversationDateFilter = "ALL" | "TODAY" | "7D" | "30D";
 type SalesStage = "NEW" | "IN_PROGRESS" | "FOLLOW_UP" | "SOLD";
 type ConversationTab = "CHAT" | "INFORMATION" | "HISTORY" | "NOTES" | "FILES";
 
@@ -108,6 +110,101 @@ const CONVERSATION_TABS: Array<{ value: ConversationTab; label: string }> = [
   { value: "FILES", label: "Archivos" },
 ];
 
+const DATE_FILTER_OPTIONS: Array<{ value: ConversationDateFilter; label: string }> = [
+  { value: "ALL", label: "Todo el tiempo" },
+  { value: "TODAY", label: "Hoy" },
+  { value: "7D", label: "Últimos 7 días" },
+  { value: "30D", label: "Últimos 30 días" },
+];
+
+function FilterDropdown({
+  value,
+  options,
+  onChange,
+  ariaLabel,
+  buttonClassName,
+  menuClassName,
+  align = "left",
+}: {
+  value: string;
+  options: Array<{ value: string; label: string }>;
+  onChange: (value: string) => void;
+  ariaLabel: string;
+  buttonClassName?: string;
+  menuClassName?: string;
+  align?: "left" | "right";
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  const selected = options.find((option) => option.value === value);
+
+  return (
+    <div ref={containerRef} className="relative min-w-0">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={ariaLabel}
+        className={`flex w-full items-center justify-between gap-1.5 rounded-lg px-2 py-1.5 text-[10px] font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-white/90 ${buttonClassName ?? ""}`}
+      >
+        <span className="truncate">{selected?.label ?? ""}</span>
+        <MdExpandMore className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`} size={15} />
+      </button>
+      {open ? (
+        <div
+          role="listbox"
+          aria-label={ariaLabel}
+          className={`absolute z-40 mt-1.5 min-w-[150px] max-h-56 overflow-y-auto rounded-xl border border-[#DCE5EA] bg-white p-1 shadow-xl shadow-[#0F172A]/15 ${
+            align === "right" ? "right-0" : "left-0"
+          } ${menuClassName ?? ""}`}
+        >
+          {options.map((option) => {
+            const active = option.value === value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="option"
+                aria-selected={active}
+                onClick={() => {
+                  onChange(option.value);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-[11px] font-semibold transition ${
+                  active ? "bg-[#E8FAFB] text-[#0E7C82]" : "text-[#334155] hover:bg-[#F1F5F9]"
+                }`}
+              >
+                <span className="truncate">{option.label}</span>
+                {active ? <MdCheckCircle className="shrink-0" size={14} /> : null}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 type Message = {
   id: string;
   role: "USER" | "ASSISTANT" | "AGENT";
@@ -146,6 +243,20 @@ const AVATAR_COLORS = [
 function avatarColor(phone: string) {
   const sum = phone.split("").reduce((acc, character) => acc + character.charCodeAt(0), 0);
   return AVATAR_COLORS[sum % AVATAR_COLORS.length];
+}
+
+function contactTitle(conversation: { contactName: string | null; phone: string }) {
+  return conversation.contactName?.trim() || `+${conversation.phone}`;
+}
+
+function contactInitials(name: string | null, phone: string) {
+  const clean = name?.trim();
+  if (clean) {
+    const parts = clean.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return clean.slice(0, 2).toUpperCase();
+  }
+  return phone.slice(-2);
 }
 
 function formatTime(iso: string) {
@@ -556,6 +667,8 @@ export default function WhatsappPanelPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [conversationFilter, setConversationFilter] = useState<ConversationFilter>("ALL");
+  const [sellerFilter, setSellerFilter] = useState<string>("ALL");
+  const [dateFilter, setDateFilter] = useState<ConversationDateFilter>("ALL");
   const [showNewChat, setShowNewChat] = useState(false);
   const [clearingAll, setClearingAll] = useState(false);
   const [templates, setTemplates] = useState<WatiTemplate[]>([]);
@@ -816,6 +929,7 @@ export default function WhatsappPanelPage() {
   }, [showConversationMenu]);
 
   const selected = conversations.find((conversation) => conversation.id === selectedId) ?? null;
+  const selectedContactName = selected?.contactName?.trim() || null;
   const effectiveSalesStage: SalesStage = selected?.orderId
     ? "SOLD"
     : conversationSalesStage;
@@ -836,31 +950,53 @@ export default function WhatsappPanelPage() {
             ? "Ya se envió un mensaje de seguimiento."
             : "El seguimiento se enviará si el cliente deja de responder.";
   const activeCount = conversations.filter((conversation) => conversation.status === "ACTIVE").length;
-  const normalizedSearch = search.trim().toLowerCase();
-  const searchedConversations = normalizedSearch
-    ? conversations.filter(
-        (conversation) =>
-          conversation.phone.includes(normalizedSearch) ||
-          conversation.lastMessage?.content.toLowerCase().includes(normalizedSearch),
-      )
-    : conversations;
-  const filteredConversations = searchedConversations.filter((conversation) => {
-    switch (conversationFilter) {
-      case "NEW":
-        return conversation.status === "ACTIVE" && conversation.salesStage === "NEW";
-      case "ACTIVE":
-        return (
-          conversation.status === "ACTIVE" &&
-          (conversation.salesStage === "IN_PROGRESS" ||
-            conversation.salesStage === "FOLLOW_UP")
-        );
-      case "SOLD":
-        return conversation.salesStage === "SOLD";
-      case "CLOSED":
-        return conversation.status === "CLOSED" && conversation.salesStage !== "SOLD";
-      default:
-        return true;
+
+  const sellers = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const conversation of conversations) {
+      if (conversation.assignedSellerId) {
+        map.set(conversation.assignedSellerId, conversation.assignedSellerName ?? "Asesor");
+      }
     }
+    return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [conversations]);
+  const hasUnassigned = conversations.some((conversation) => !conversation.assignedSellerId);
+
+  const normalizedSearch = search.trim().toLowerCase();
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const now = Date.now();
+
+  const matchesDateFilter = (conversation: ConversationSummary) => {
+    if (dateFilter === "ALL") return true;
+    const iso = conversation.lastMessage?.createdAt ?? conversation.updatedAt;
+    const time = new Date(iso).getTime();
+    if (dateFilter === "TODAY") return time >= todayStart.getTime();
+    if (dateFilter === "7D") return time >= now - 7 * 864e5;
+    return time >= now - 30 * 864e5;
+  };
+
+  const filteredConversations = conversations.filter((conversation) => {
+    if (normalizedSearch) {
+      const inName = conversation.contactName?.toLowerCase().includes(normalizedSearch) ?? false;
+      const inPhone = conversation.phone.includes(normalizedSearch);
+      const inLastMessage = conversation.lastMessage?.content.toLowerCase().includes(normalizedSearch) ?? false;
+      if (!inName && !inPhone && !inLastMessage) return false;
+    }
+
+    if (conversationFilter === "NEW" && !(conversation.status === "ACTIVE" && conversation.salesStage === "NEW")) return false;
+    if (
+      conversationFilter === "ACTIVE" &&
+      !(conversation.status === "ACTIVE" && (conversation.salesStage === "IN_PROGRESS" || conversation.salesStage === "FOLLOW_UP"))
+    )
+      return false;
+    if (conversationFilter === "SOLD" && conversation.salesStage !== "SOLD") return false;
+    if (conversationFilter === "CLOSED" && !(conversation.status === "CLOSED" && conversation.salesStage !== "SOLD")) return false;
+
+    if (sellerFilter === "UNASSIGNED" && conversation.assignedSellerId) return false;
+    if (sellerFilter !== "ALL" && sellerFilter !== "UNASSIGNED" && conversation.assignedSellerId !== sellerFilter) return false;
+
+    return matchesDateFilter(conversation);
   });
   const visibleConversationIdsKey = filteredConversations
     .map((conversation) => conversation.id)
@@ -1117,6 +1253,28 @@ export default function WhatsappPanelPage() {
               ))}
               </div>
             </div>
+
+            <div className="mt-2 grid grid-cols-2 gap-1.5">
+              <FilterDropdown
+                value={sellerFilter}
+                onChange={setSellerFilter}
+                ariaLabel="Filtrar por asesor"
+                buttonClassName="bg-white/90 text-[#0F172A] hover:bg-white"
+                options={[
+                  { value: "ALL", label: "Todos los asesores" },
+                  ...sellers.map(([id, name]) => ({ value: id, label: name })),
+                  ...(hasUnassigned ? [{ value: "UNASSIGNED", label: "Sin asesor" }] : []),
+                ]}
+              />
+              <FilterDropdown
+                value={dateFilter}
+                onChange={(value) => setDateFilter(value as ConversationDateFilter)}
+                ariaLabel="Filtrar por fecha"
+                buttonClassName="bg-white/90 text-[#0F172A] hover:bg-white"
+                options={DATE_FILTER_OPTIONS}
+                align="right"
+              />
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto">
@@ -1192,12 +1350,12 @@ export default function WhatsappPanelPage() {
                 <span
                   className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-xs font-bold ${avatarColor(conversation.phone)}`}
                 >
-                  {conversation.phone.slice(-2)}
+                  {contactInitials(conversation.contactName, conversation.phone)}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
                     <span className="truncate text-sm font-semibold text-[#0F172A]">
-                      +{conversation.phone}
+                      {contactTitle(conversation)}
                     </span>
                     {conversation.lastMessage ? (
                       <span className="shrink-0 text-[10px] text-[#94A3B8]">
@@ -1205,6 +1363,9 @@ export default function WhatsappPanelPage() {
                       </span>
                     ) : null}
                   </div>
+                  {conversation.contactName ? (
+                    <p className="truncate text-[10px] text-[#94A3B8]">+{conversation.phone}</p>
+                  ) : null}
                   <p className="mt-0.5 line-clamp-1 text-xs text-[#64748B]">
                     {conversation.lastMessage?.content ?? "Sin mensajes"}
                   </p>
@@ -1268,12 +1429,13 @@ export default function WhatsappPanelPage() {
                   <span
                     className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold ${avatarColor(conversationPhone)}`}
                   >
-                    {conversationPhone.slice(-2)}
+                    {contactInitials(selectedContactName, conversationPhone)}
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-[#0F172A]">+{conversationPhone}</p>
+                    <p className="truncate text-sm font-bold text-[#0F172A]">{selectedContactName ?? `+${conversationPhone}`}</p>
                     <p className="flex items-center gap-1 text-[11px] text-[#64748B]">
                       <span className={`h-1.5 w-1.5 rounded-full ${conversationStatus === "CLOSED" ? "bg-[#94A3B8]" : "bg-[#22C55E]"}`} />
+                      {selectedContactName ? `+${conversationPhone} · ` : ""}
                       {getSalesStageMeta(effectiveSalesStage).label}
                     </p>
                   </div>
@@ -1468,7 +1630,7 @@ export default function WhatsappPanelPage() {
                 {activeTab === "INFORMATION" ? <div className="mx-auto max-w-xl rounded-2xl bg-white p-5 shadow-sm">
                   <p className="text-xs font-bold uppercase tracking-wide text-[#64748B]">Información de la conversación</p>
                   <dl className="mt-4 divide-y divide-[#F1F5F9] text-sm">
-                    <div className="flex items-center justify-between py-3"><dt className="text-[#64748B]">Contacto</dt><dd className="font-semibold text-[#0F172A]">+{conversationPhone}</dd></div>
+                    <div className="flex items-center justify-between gap-3 py-3"><dt className="text-[#64748B]">Contacto</dt><dd className="text-right font-semibold text-[#0F172A]">{selectedContactName ?? "Sin nombre"}<span className="block text-xs font-normal text-[#94A3B8]">+{conversationPhone}</span></dd></div>
                     <div className="flex items-center justify-between py-3"><dt className="text-[#64748B]">Etapa</dt><dd className={`rounded-full px-2.5 py-1 text-xs font-bold ${getSalesStageMeta(effectiveSalesStage).className}`}>{getSalesStageMeta(effectiveSalesStage).label}</dd></div>
                     <div className="flex items-center justify-between py-3"><dt className="text-[#64748B]">Estado del chat</dt><dd className="font-semibold text-[#475569]">{conversationStatus === "ACTIVE" ? "Abierto" : "Cerrado"}</dd></div>
                     <div className="flex items-center justify-between py-3"><dt className="text-[#64748B]">Pedido</dt><dd className="font-semibold text-[#475569]">{selected.orderId ? "Generado" : "Sin pedido"}</dd></div>
@@ -1544,11 +1706,11 @@ export default function WhatsappPanelPage() {
                 <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#64748B]">Contacto</p>
                 <div className="mt-3 flex items-center gap-2.5">
                   <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold ${avatarColor(conversationPhone)}`}>
-                    {conversationPhone.slice(-2)}
+                    {contactInitials(selectedContactName, conversationPhone)}
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-[#0F172A]">+{conversationPhone}</p>
-                    <p className="mt-0.5 flex items-center gap-1 text-[10px] text-[#16A34A]"><MdWhatsapp size={12} /> WhatsApp</p>
+                    <p className="truncate text-sm font-bold text-[#0F172A]">{selectedContactName ?? `+${conversationPhone}`}</p>
+                    <p className="mt-0.5 flex items-center gap-1 text-[10px] text-[#16A34A]"><MdWhatsapp size={12} /> {selectedContactName ? `+${conversationPhone}` : "WhatsApp"}</p>
                   </div>
                 </div>
                 <dl className="mt-4 space-y-2 border-t border-[#F1F5F9] pt-3 text-[11px]">
