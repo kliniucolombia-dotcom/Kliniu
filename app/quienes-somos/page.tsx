@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { MdChevronRight, MdFileDownload } from "react-icons/md";
 import SiteFooter from "../components/site-footer";
 import { getBannerByKey } from "@/lib/banners";
 
@@ -200,6 +201,35 @@ export default async function QuienesSomosPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Certificación ISO 9001 */}
+        <div className="relative mx-auto mt-10 flex flex-col rounded-[10px] bg-[#C90030] text-white md:mt-12 md:h-[124px] md:flex-row md:items-center md:justify-between">
+          <div className="relative h-[84px] md:h-full md:w-[400px] md:shrink-0">
+            <Image
+              src="/certificados/bureau-veritas-iso-9001-transparente.png"
+              alt="Bureau Veritas Certification ISO 9001"
+              width={1724}
+              height={808}
+              className="absolute left-4 top-1/2 h-[136%] w-auto max-w-none -translate-y-1/2 object-contain md:left-[3%]"
+            />
+          </div>
+          <p className="hidden max-w-[560px] flex-1 px-6 text-sm font-medium leading-6 text-white/90 xl:block xl:text-base xl:leading-7">
+            Nuestro Sistema de Gestión ha sido auditado y certificado bajo la norma ISO 9001:2015,
+            reafirmando nuestro compromiso con la calidad y la mejora continua.
+          </p>
+          <a
+            href="/certificados/Certificado-ISO-9001-KLINIU.pdf"
+            download="Certificado-ISO-9001-KLINIU.pdf"
+            className="group flex cursor-pointer items-center justify-end gap-4 border-t border-white/25 px-6 pb-5 pt-6 text-base font-semibold transition-colors hover:bg-black/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:h-full md:shrink-0 md:justify-start md:rounded-r-[10px] md:border-l md:border-t-0 md:px-10 md:py-0 md:text-lg lg:px-14"
+          >
+            <MdFileDownload className="h-9 w-9 shrink-0" aria-hidden="true" />
+            Descargar certificado
+            <MdChevronRight
+              className="h-6 w-6 shrink-0 transition-transform group-hover:translate-x-1"
+              aria-hidden="true"
+            />
+          </a>
         </div>
       </section>
 
