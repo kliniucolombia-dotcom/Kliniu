@@ -14,6 +14,7 @@ import {
   RESPECT_BOUNDARY_REPLY,
 } from "@/lib/moderation";
 import { createNotification } from "@/lib/notifications";
+import { getUpsellState, recordUpsellTurn } from "@/lib/wati-upselling";
 import { isAdvisorPhone, notifyAdvisor, replyRequestsAdvisor } from "@/lib/wati-escalation";
 import { summarizeConversation, WATI_MEMORY_KEEP_RECENT } from "@/lib/wati-memory";
 import { cancelRemarketingOnReply, detectCommercialStage, updateConversationState } from "@/lib/wati-followup";
@@ -677,6 +678,7 @@ export async function POST(request: Request) {
   let assistantFailed = false;
   let escalateToHuman = false;
   let escalationSummary: string | null = null;
+  const upsellStateBefore = await getUpsellState(conversation.id).catch(() => null);
   try {
     const result = await runWatiAssistant(history, text, {
       allowOrderCreation: !conversation.orderId,
@@ -691,6 +693,11 @@ export async function POST(request: Request) {
     orderCreated = result.orderCreated;
     escalateToHuman = result.escalateToHuman;
     escalationSummary = result.escalationSummary;
+    if (upsellStateBefore) {
+      await recordUpsellTurn(conversation.id, upsellStateBefore, text, result.upsellOffered).catch((error) =>
+        console.error("WATI_UPSELL_RECORD_FAILED", conversation.id, error),
+      );
+    }
   } catch (error) {
     // Nunca dejamos al cliente sin respuesta: si el asistente o Odoo fallan,
     // avisamos que un asesor continúa, pausamos el bot y avisamos al asesor

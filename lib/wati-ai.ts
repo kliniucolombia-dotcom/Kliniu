@@ -8,6 +8,18 @@ import { buildKliniuKnowledge } from "@/lib/kliniu-knowledge";
 import { institutionalQuoteReply, isInstitutionalQuoteRequest } from "@/lib/wati-campaign";
 import { buildCommercialConditionsPrompt, buildConversationStatePrompt, hasProductInterest } from "@/lib/wati-followup";
 import { getApprovedLessonsPrompt } from "@/lib/wati-lessons";
+import {
+  POST_SALE_NOTE,
+  UPSELLING_INSTRUCTIONS,
+  buildUpsellDataPrompt,
+  buildUpsellTurnDirective,
+  extractOfferMarker,
+  getUpsellState,
+  escalationFallbackReply,
+  needsSpecialHandling,
+  usesFormalAddress,
+  wantsPerson,
+} from "@/lib/wati-upselling";
 
 /** Mensaje automático principal (Sistema Maestro §28), con saludo por nombre si lo hay. */
 function initialMessage(firstName: string | null) {
@@ -211,7 +223,7 @@ function summarizeItems(items: Array<{ name: string; quantity: number }>) {
     .join(", ");
 }
 
-export async function runWatiAssistant(
+async function runWatiAssistantCore(
   history: { role: "user" | "assistant"; content: string }[],
   newUserMessage: string,
   options: {
@@ -227,12 +239,21 @@ export async function runWatiAssistant(
 ) {
   const customerFirstName = options.customerName?.trim().split(/\s+/)[0] || null;
 
+  if (wantsPerson(newUserMessage)) {
+    return {
+      reply: escalationFallbackReply(newUserMessage),
+      orderCreated: null as { orderId: string } | null,
+      escalateToHuman: true,
+      escalationSummary: `El cliente pidió hablar con una persona. Último mensaje: "${newUserMessage.slice(0, 200)}"`,
+    };
+  }
+
   if (history.length === 0) {
     // Lead de campaña B2B ("quiero cotizar los dispensadores que fabrican e
     // importan"): responder directo en vez del saludo genérico.
     if (isInstitutionalQuoteRequest(newUserMessage)) {
       return {
-        reply: institutionalQuoteReply(customerFirstName),
+        reply: institutionalQuoteReply(customerFirstName, usesFormalAddress([newUserMessage])),
         orderCreated: null as { orderId: string } | null,
         escalateToHuman: false,
         escalationSummary: null as string | null,
@@ -241,7 +262,8 @@ export async function runWatiAssistant(
 
     // Saludo con menú solo si el primer mensaje no trae una consulta concreta;
     // si pregunta por un producto, se responde primero lo que preguntó (§2).
-    if (!hasProductInterest(newUserMessage)) {
+    // Pedir una persona, un reclamo o ser institucional (hotel…) exige trato propio, no el menú.
+    if (!hasProductInterest(newUserMessage) && !needsSpecialHandling(newUserMessage)) {
       return {
         reply: initialMessage(customerFirstName),
         orderCreated: null as { orderId: string } | null,
@@ -254,13 +276,21 @@ export async function runWatiAssistant(
   if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_NOT_CONFIGURED");
 
   const allowOrderCreation = options.allowOrderCreation !== false;
-  const [{ styleExamples, whatsappPhone }, catalog, commercialConditions, conversationState, lessonsPrompt] = await Promise.all([
+  const [{ styleExamples, whatsappPhone }, catalog, commercialConditions, conversationState, lessonsPrompt, upsellData, upsellState] = await Promise.all([
     getSellerContext(options.sellerId),
     getCatalogContext(),
     buildCommercialConditionsPrompt(),
     options.conversationId ? buildConversationStatePrompt(options.conversationId) : Promise.resolve(null),
     getApprovedLessonsPrompt().catch(() => null),
+    buildUpsellDataPrompt().catch(() => null),
+    options.conversationId ? getUpsellState(options.conversationId).catch(() => null) : Promise.resolve(null),
   ]);
+  const upsellDirective = buildUpsellTurnDirective({
+    historyLength: history.length,
+    userMessage: newUserMessage,
+    state: upsellState ?? { offers: 0, pending: false, declined: false, hasOrder: !allowOrderCreation },
+    previousUserMessages: history.filter((m) => m.role === "user").map((m) => m.content),
+  });
 
   const sellerLink = whatsappPhone ? `https://wa.me/${whatsappPhone}` : "";
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -272,6 +302,8 @@ export async function runWatiAssistant(
       content: `CATÁLOGO VIGENTE DE KLINIU (fuente de verdad):\n${catalog}`,
     },
     { role: "system" as const, content: commercialConditions },
+    { role: "system" as const, content: UPSELLING_INSTRUCTIONS },
+    ...(upsellData ? [{ role: "system" as const, content: upsellData }] : []),
     ...(lessonsPrompt ? [{ role: "system" as const, content: lessonsPrompt }] : []),
     ...(conversationState ? [{ role: "system" as const, content: conversationState }] : []),
     ...(options.customerName
@@ -301,13 +333,14 @@ export async function runWatiAssistant(
     ...(allowOrderCreation
       ? []
       : [{ role: "system" as const, content: "Esta conversación ya tiene un pedido registrado. No vuelvas a crear otro pedido; responde solo dudas de soporte o posventa." }]),
-    ...(history.length === 0
+    ...(history.length === 0 && !needsSpecialHandling(newUserMessage)
       ? [{
           role: "system" as const,
           content: "Es el PRIMER mensaje del cliente y ya trae una consulta concreta: preséntate en una frase corta como Gabriel, de KLINIU® 🇨🇴 y responde de inmediato lo que preguntó (sin repetir el menú de bienvenida).",
         }]
       : []),
     ...history,
+    { role: "system" as const, content: upsellDirective },
     { role: "user" as const, content: newUserMessage },
   ];
 
@@ -353,7 +386,7 @@ export async function runWatiAssistant(
     return {
       reply:
         response.output_text.trim() ||
-        "Para darte la información correcta, un asesor continuará contigo por este mismo chat en un momento 👌",
+        escalationFallbackReply(newUserMessage),
       orderCreated: null as { orderId: string } | null,
       escalateToHuman: true,
       escalationSummary: [args.motivo, args.resumen].filter(Boolean).join(" — "),
@@ -440,5 +473,19 @@ export async function runWatiAssistant(
     orderCreated: null as { orderId: string } | null,
     escalateToHuman: false,
     escalationSummary: null as string | null,
+  };
+}
+
+/**
+ * Asistente de WhatsApp con la guía de upselling v2: quita la marca interna de
+ * oferta (para contarla) y añade la mención única de insumos al cerrar la compra.
+ */
+export async function runWatiAssistant(...args: Parameters<typeof runWatiAssistantCore>) {
+  const result = await runWatiAssistantCore(...args);
+  const { reply, offered } = extractOfferMarker(result.reply);
+  return {
+    ...result,
+    reply: result.orderCreated ? `${reply}\n\n${POST_SALE_NOTE}` : reply,
+    upsellOffered: offered,
   };
 }

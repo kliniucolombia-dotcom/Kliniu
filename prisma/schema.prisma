@@ -690,6 +690,10 @@ model WatiConversation {
   remarketingOptOut  Boolean                @default(false)
   /// Última vez que la IA analizó esta conversación para proponer lecciones (una sola vez).
   lessonsAnalyzedAt  DateTime?
+  /// Upselling (guía maestra v2): ofertas adicionales hechas, si hay una sin responder y si el cliente ya dijo no / la ignoró.
+  upsellOffers       Int                    @default(0)
+  upsellPending      Boolean                @default(false)
+  upsellDeclined     Boolean                @default(false)
   remarketingUsed    Json                   @default("{}")
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt

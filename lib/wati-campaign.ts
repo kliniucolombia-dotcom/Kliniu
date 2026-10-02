@@ -11,16 +11,15 @@ export function isInstitutionalQuoteRequest(message: string): boolean {
   return wantsQuote && product;
 }
 
-export function institutionalQuoteReply(firstName?: string | null) {
-  const hello = firstName ? `👋 ¡Hola, ${firstName}!` : "👋 ¡Hola!";
-  return `${hello} Gracias por escribir a Kliniu.
+export function institutionalQuoteReply(firstName?: string | null, formal = false) {
+  // Guía de upselling v2, sección 3: sin ofertas ni promesas no verificadas; tipo y cantidad juntos.
+  const hello = firstName ? `¡Claro, ${firstName}! 😊` : "¡Claro! 😊";
+  if (formal) {
+    return `${hello} Con gusto le cotizo. Fabricamos e importamos diferentes referencias de dispensadores.
 
-Fabricamos e importamos dispensadores institucionales y atendemos a empresas, hoteles, restaurantes, clínicas e instituciones, con precios especiales por volumen.
+¿Qué tipo necesita y cuántas unidades? Así le comparto las opciones y precios que aplican.`;
+  }
+  return `${hello} Con gusto te cotizo. Fabricamos e importamos diferentes referencias de dispensadores.
 
-Para tu cotización cuéntame:
-1. Qué productos necesitas (jabón, líquidos, toallas, papel higiénico, servilletas…)
-2. Cantidad aproximada
-3. Ciudad de entrega
-
-Pago contra entrega y envío gratis en Bogotá D.C. Un asesor te acompaña en el proceso. ¿Empezamos?`;
+¿Qué tipo necesitas y cuántas unidades? Así te comparto las opciones y precios que aplican.`;
 }
