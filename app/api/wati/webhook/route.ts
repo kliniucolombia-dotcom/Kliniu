@@ -685,6 +685,7 @@ export async function POST(request: Request) {
       conversationId: conversation.id,
       customerName,
       memorySummary,
+      fromAudio: audioTranscript,
     });
     reply = result.reply;
     orderCreated = result.orderCreated;

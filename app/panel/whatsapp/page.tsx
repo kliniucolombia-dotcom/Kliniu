@@ -11,6 +11,7 @@ import {
   MdErrorOutline,
   MdExpandMore,
   MdFilterList,
+  MdPsychology,
   MdHeadsetMic,
   MdLockClock,
   MdMoreVert,
@@ -1249,6 +1250,14 @@ export default function WhatsappPanelPage() {
                   title="Remarketing IA"
                 >
                   <MdAutorenew size={20} />
+                </Link>
+                <Link
+                  href="/panel/whatsapp/lecciones"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-white shadow-lg shadow-black/10 transition hover:scale-105 hover:bg-white/25"
+                  aria-label="Lecciones de la IA"
+                  title="Lecciones de la IA"
+                >
+                  <MdPsychology size={20} />
                 </Link>
                 <button
                   type="button"

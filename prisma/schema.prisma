@@ -688,6 +688,8 @@ model WatiConversation {
   remarketingNextAt  DateTime?
   remarketingStartedAt DateTime?
   remarketingOptOut  Boolean                @default(false)
+  /// Última vez que la IA analizó esta conversación para proponer lecciones (una sola vez).
+  lessonsAnalyzedAt  DateTime?
   remarketingUsed    Json                   @default("{}")
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
@@ -2154,4 +2156,36 @@ model ProductionTimeEntry {
   @@index([workDate])
   @@index([workOrderId])
   @@index([operationId])
+}
+
+enum WatiLessonCategory {
+  VOCABULARIO
+  ERROR
+  ESTILO
+  PROCESO
+  VENTA
+  /// Posible dato incorrecto (precio, garantía, política…): no se inyecta al bot, solo se avisa al superadmin.
+  REVISAR
+}
+
+enum WatiLessonStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// Lección propuesta por la IA tras analizar conversaciones. Solo las APPROVED llegan al prompt del bot.
+model WatiLesson {
+  id             String             @id @default(cuid())
+  text           String
+  category       WatiLessonCategory
+  status         WatiLessonStatus   @default(PENDING)
+  /// Fragmento de la conversación que originó la lección.
+  evidence       String
+  conversationId String?
+  reviewedById   String?
+  reviewedAt     DateTime?
+  createdAt      DateTime           @default(now())
+
+  @@index([status, createdAt])
 }

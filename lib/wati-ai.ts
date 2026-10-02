@@ -7,6 +7,7 @@ import { formatearMoneda } from "@/app/data/catalog";
 import { buildKliniuKnowledge } from "@/lib/kliniu-knowledge";
 import { institutionalQuoteReply, isInstitutionalQuoteRequest } from "@/lib/wati-campaign";
 import { buildCommercialConditionsPrompt, buildConversationStatePrompt, hasProductInterest } from "@/lib/wati-followup";
+import { getApprovedLessonsPrompt } from "@/lib/wati-lessons";
 
 /** Mensaje automático principal (Sistema Maestro §28), con saludo por nombre si lo hay. */
 function initialMessage(firstName: string | null) {
@@ -220,6 +221,8 @@ export async function runWatiAssistant(
     conversationId?: string | null;
     customerName?: string | null;
     memorySummary?: string | null;
+    /** El mensaje del cliente es una transcripción automática de una nota de voz. */
+    fromAudio?: boolean;
   } = {},
 ) {
   const customerFirstName = options.customerName?.trim().split(/\s+/)[0] || null;
@@ -251,11 +254,12 @@ export async function runWatiAssistant(
   if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_NOT_CONFIGURED");
 
   const allowOrderCreation = options.allowOrderCreation !== false;
-  const [{ styleExamples, whatsappPhone }, catalog, commercialConditions, conversationState] = await Promise.all([
+  const [{ styleExamples, whatsappPhone }, catalog, commercialConditions, conversationState, lessonsPrompt] = await Promise.all([
     getSellerContext(options.sellerId),
     getCatalogContext(),
     buildCommercialConditionsPrompt(),
     options.conversationId ? buildConversationStatePrompt(options.conversationId) : Promise.resolve(null),
+    getApprovedLessonsPrompt().catch(() => null),
   ]);
 
   const sellerLink = whatsappPhone ? `https://wa.me/${whatsappPhone}` : "";
@@ -268,11 +272,18 @@ export async function runWatiAssistant(
       content: `CATÁLOGO VIGENTE DE KLINIU (fuente de verdad):\n${catalog}`,
     },
     { role: "system" as const, content: commercialConditions },
+    ...(lessonsPrompt ? [{ role: "system" as const, content: lessonsPrompt }] : []),
     ...(conversationState ? [{ role: "system" as const, content: conversationState }] : []),
     ...(options.customerName
       ? [{
           role: "system" as const,
           content: `El cliente se llama ${options.customerName} en WhatsApp. Trátalo por su nombre con naturalidad, sin repetirlo en cada mensaje.`,
+        }]
+      : []),
+    ...(options.fromAudio
+      ? [{
+          role: "system" as const,
+          content: "El último mensaje del cliente es la transcripción automática de una nota de voz y puede traer errores de oído (palabras mal escuchadas, p. ej. 'ser billeteros' por 'servilleteros', 'ustedes' por 'hoteles'). Interprétalo por contexto y por el catálogo; si algo es ambiguo, confirma con el cliente en una frase corta en vez de asumir.",
         }]
       : []),
     ...(options.memorySummary
