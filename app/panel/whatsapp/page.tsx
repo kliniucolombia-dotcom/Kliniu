@@ -50,13 +50,14 @@ type ConversationSummary = {
   lastMessage: { content: string; role: "USER" | "ASSISTANT" | "AGENT"; createdAt: string } | null;
 };
 
-type ConversationFilter = "ALL" | "NEW" | "ACTIVE" | "SOLD" | "CLOSED";
+type ConversationFilter = "ALL" | "HELP" | "NEW" | "ACTIVE" | "SOLD" | "CLOSED";
 type ConversationDateFilter = "ALL" | "TODAY" | "7D" | "30D";
 type SalesStage = "NEW" | "IN_PROGRESS" | "FOLLOW_UP" | "SOLD";
 type ConversationTab = "CHAT" | "INFORMATION" | "HISTORY" | "NOTES" | "FILES";
 
 const CONVERSATION_FILTERS: Array<{ value: ConversationFilter; label: string }> = [
   { value: "ALL", label: "Todos" },
+  { value: "HELP", label: "Ayuda" },
   { value: "NEW", label: "Nuevos" },
   { value: "ACTIVE", label: "En conversación" },
   { value: "SOLD", label: "Vendidos" },
@@ -65,6 +66,7 @@ const CONVERSATION_FILTERS: Array<{ value: ConversationFilter; label: string }> 
 
 const FILTER_HEADER_CLASSES: Record<ConversationFilter, string> = {
   ALL: "from-[#075E54] via-[#0E7C82] to-[#35B8BE]",
+  HELP: "from-[#991B1B] via-[#DC2626] to-[#F87171]",
   NEW: "from-[#5B21B6] via-[#7C3AED] to-[#A78BFA]",
   ACTIVE: "from-[#1E40AF] via-[#2563EB] to-[#60A5FA]",
   SOLD: "from-[#14532D] via-[#16A34A] to-[#4ADE80]",
@@ -73,6 +75,7 @@ const FILTER_HEADER_CLASSES: Record<ConversationFilter, string> = {
 
 const FILTER_ACTIVE_BUTTON_CLASSES: Record<ConversationFilter, string> = {
   ALL: "bg-white text-[#0E7C82] ring-white",
+  HELP: "bg-[#7F1D1D] text-white ring-[#FECACA]",
   NEW: "bg-[#4C1D95] text-white ring-[#C4B5FD]",
   ACTIVE: "bg-[#1E3A8A] text-white ring-[#BFDBFE]",
   SOLD: "bg-[#14532D] text-white ring-[#BBF7D0]",
@@ -211,8 +214,43 @@ type Message = {
   id: string;
   role: "USER" | "ASSISTANT" | "AGENT";
   content: string;
+  mediaType?: string | null;
+  mediaUrls?: string[];
   createdAt: string;
 };
+
+const PLAYABLE_MEDIA = new Set(["audio", "image", "sticker", "video"]);
+
+// "📎 (audio recibido)" solo es relleno cuando el panel ya puede mostrar el archivo.
+function isMediaPlaceholder(message: Message) {
+  return Boolean(message.mediaType && PLAYABLE_MEDIA.has(message.mediaType)) && message.content.startsWith("📎 (");
+}
+
+function MessageMedia({ message }: { message: Message }) {
+  const type = message.mediaType;
+  if (!type) return null;
+  // Salientes: URLs públicas guardadas. Entrantes: el servidor las pide a WATI.
+  const sources = message.mediaUrls?.length ? message.mediaUrls : [`/api/panel/whatsapp/media/${message.id}`];
+  if (type === "audio") {
+    return <audio controls preload="none" src={sources[0]} className="mb-1.5 h-10 w-full min-w-[220px]" />;
+  }
+  if (type === "video") {
+    return <video controls preload="metadata" src={sources[0]} className="mb-1.5 max-h-72 w-full rounded-xl" />;
+  }
+  if (type === "image" || type === "sticker") {
+    return (
+      <div className={`mb-1.5 grid gap-1.5 ${sources.length > 1 ? "grid-cols-2" : ""}`}>
+        {sources.map((src) => (
+          <a key={src} href={src} target="_blank" rel="noreferrer">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={src} alt="Imagen del chat" loading="lazy" className="max-h-72 w-full rounded-xl object-cover" />
+          </a>
+        ))}
+      </div>
+    );
+  }
+  return null;
+}
 
 type WatiTemplate = {
   name: string;
@@ -951,6 +989,11 @@ export default function WhatsappPanelPage() {
           : selected.followUpSentAt
             ? "Ya se envió un mensaje de seguimiento."
             : "El seguimiento se enviará si el cliente deja de responder.";
+  // Necesita asesor: el bot está pausado (escalada de la IA o pausa manual) y el
+  // último mensaje es del cliente, o sea que nadie le ha respondido.
+  const needsAdvisor = (conversation: ConversationSummary) =>
+    conversation.status === "ACTIVE" && conversation.botPaused && conversation.lastMessage?.role === "USER";
+  const helpCount = conversations.filter(needsAdvisor).length;
   const activeCount = conversations.filter((conversation) => conversation.status === "ACTIVE").length;
 
   const sellers = useMemo(() => {
@@ -986,6 +1029,7 @@ export default function WhatsappPanelPage() {
       if (!inName && !inPhone && !inLastMessage) return false;
     }
 
+    if (conversationFilter === "HELP" && !needsAdvisor(conversation)) return false;
     if (conversationFilter === "NEW" && !(conversation.status === "ACTIVE" && conversation.salesStage === "NEW")) return false;
     if (
       conversationFilter === "ACTIVE" &&
@@ -1259,6 +1303,7 @@ export default function WhatsappPanelPage() {
                   }`}
                 >
                   {filter.label}
+                  {filter.value === "HELP" && helpCount > 0 ? ` (${helpCount})` : ""}
                 </button>
               ))}
               </div>
@@ -1630,7 +1675,8 @@ export default function WhatsappPanelPage() {
                               · {formatTime(message.createdAt)}
                             </span>
                           </div>
-                          <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                          <MessageMedia message={message} />
+                          {isMediaPlaceholder(message) ? null : <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>}
                         </div>
                       </div>
                     );

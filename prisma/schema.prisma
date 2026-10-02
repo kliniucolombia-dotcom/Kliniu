@@ -739,6 +739,9 @@ model WatiMessage {
   conversationId String
   role           WatiMessageRole
   content        String
+  /// "image" | "audio" | "video"… Entrantes: el binario se pide a WATI por externalId; salientes: mediaUrls.
+  mediaType      String?
+  mediaUrls      String[]         @default([])
   senderId       String?
   sender         User?            @relation("WatiMessageSender", fields: [senderId], references: [id])
   createdAt      DateTime         @default(now())

@@ -366,17 +366,23 @@ export async function POST(request: Request) {
     // (probando los candidatos de ID hasta que uno responda).
     let transcript = "";
     if (AUDIO_INBOUND_TYPES.has(media.type)) {
-      try {
-        if (media.mediaUrl) {
+      // Cada intento va en su propio try: la URL del payload suele dar 401 y no
+      // debe impedir probar el endpoint v3.
+      if (media.mediaUrl) {
+        try {
           transcript = await transcribeAudioFromUrl(media.mediaUrl);
+        } catch (error) {
+          console.error("WATI_TRANSCRIBE_URL_FAILED", error);
         }
-        for (const messageId of media.messageIds) {
-          if (transcript) break;
+      }
+      for (const messageId of media.messageIds) {
+        if (transcript) break;
+        try {
           const file = await fetchWatiMedia(messageId);
           if (file) transcript = await transcribeAudioBuffer(file.buffer, file.contentType);
+        } catch (error) {
+          console.error("WATI_TRANSCRIBE_FAILED", error);
         }
-      } catch (error) {
-        console.error("WATI_TRANSCRIBE_FAILED", error);
       }
     }
 
@@ -412,6 +418,7 @@ export async function POST(request: Request) {
             conversationId: mediaConversation.id,
             role: "USER",
             content: `📎 (${media.type} recibido)`,
+            mediaType: media.type,
           },
         });
       } catch (error) {
@@ -490,6 +497,7 @@ export async function POST(request: Request) {
         conversationId: conversation.id,
         role: "USER",
         content: audioTranscript ? `🎤 ${text}` : text,
+        ...(audioTranscript ? { mediaType: "audio" } : {}),
       },
     });
   } catch (error) {
@@ -839,6 +847,8 @@ export async function POST(request: Request) {
           conversationId: conversation.id,
           role: "ASSISTANT",
           content: [...new Set(productMedia.map((m) => m.marker))].join("\n"),
+          mediaType: "image",
+          mediaUrls: productMedia.map((m) => m.url),
         },
       });
       await broadcastPanelUpdate("wati");
