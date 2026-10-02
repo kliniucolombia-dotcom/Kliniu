@@ -1,0 +1,26 @@
+name: WATI lessons
+
+on:
+  schedule:
+    # 07:00 UTC = 02:00 en Colombia: analiza las conversaciones ya asentadas del día.
+    - cron: "0 7 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: kliniu-wati-lessons
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Analyze conversations
+        run: |
+          # Cada llamada procesa un lote (12); repite hasta vaciar la cola o 6 vueltas.
+          for i in 1 2 3 4 5 6; do
+            out=$(curl -fsS --max-time 120 \
+              -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+              "https://kliniucolombia.com/api/cron/wati-lessons")
+            echo "$out"
+            [ "$(echo "$out" | jq -r '.remaining // 0')" = "0" ] && break
+          done
