@@ -292,27 +292,27 @@ export default function CalendarioPage() {
       </div>
 
       {/* Filtros */}
-      <div className="mb-5 flex flex-wrap items-end gap-3 rounded-2xl border border-[#E2E8F0] bg-white p-3">
+      <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-[#E2E8F0] bg-white p-3 sm:flex-row sm:flex-wrap sm:items-end">
         <div className="w-full sm:w-[190px]">
           <SimpleSelect value={month} options={monthOptions} onChange={(m) => { setMonth(m); setWeekStart(mondayOf(`${m}-01`)); }} triggerClassName={filterTrigger} portal />
         </div>
-        <label className="flex min-w-0 flex-1 items-center gap-2 text-xs font-semibold text-[#64748B] sm:flex-none">
+        <label className="flex w-full items-center gap-2 text-xs font-semibold text-[#64748B] sm:w-auto sm:flex-none">
           Vendedor
-          <div className="min-w-[140px] flex-1">
+          <div className="min-w-0 flex-1 sm:flex-none sm:min-w-[140px]">
             <SimpleSelect value={sellerFilter} onChange={setSellerFilter} triggerClassName={filterTrigger} portal
               options={[{ value: "", label: "Todos" }, ...(data?.sellers ?? []).map((s) => ({ value: s.id, label: s.name }))]} />
           </div>
         </label>
-        <label className="flex min-w-0 flex-1 items-center gap-2 text-xs font-semibold text-[#64748B] sm:flex-none">
+        <label className="flex w-full items-center gap-2 text-xs font-semibold text-[#64748B] sm:w-auto sm:flex-none">
           Plataforma
-          <div className="min-w-[130px] flex-1">
+          <div className="min-w-0 flex-1 sm:flex-none sm:min-w-[130px]">
             <SimpleSelect value={platform} onChange={setPlatform} triggerClassName={filterTrigger} portal
               options={[{ value: "", label: "Todas" }, ...platforms.map((p) => ({ value: p, label: p }))]} />
           </div>
         </label>
-        <label className="flex min-w-0 flex-1 items-center gap-2 text-xs font-semibold text-[#64748B] sm:flex-none">
+        <label className="flex w-full items-center gap-2 text-xs font-semibold text-[#64748B] sm:w-auto sm:flex-none">
           Estado
-          <div className="min-w-[130px] flex-1">
+          <div className="min-w-0 flex-1 sm:flex-none sm:min-w-[130px]">
             <SimpleSelect value={statusFilter} onChange={setStatusFilter} triggerClassName={filterTrigger} portal
               options={[
                 { value: "", label: "Todos" }, { value: "GREEN", label: "Reportado" }, { value: "YELLOW", label: "Parcial" },
@@ -320,7 +320,7 @@ export default function CalendarioPage() {
               ]} />
           </div>
         </label>
-        <div className="ml-auto inline-flex rounded-xl border border-[#E2E8F0] p-0.5">
+        <div className="inline-flex rounded-xl border border-[#E2E8F0] p-0.5 sm:ml-auto">
           {(["month", "week"] as const).map((v) => (
             <button key={v} onClick={() => setView(v)}
               className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${view === v ? "bg-[#27B1B8] text-white" : "text-[#64748B]"}`}>
