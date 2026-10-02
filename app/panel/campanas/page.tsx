@@ -150,7 +150,7 @@ function displayStatusOf(c: Campaign, roas: number): DisplayStatus {
 
 const DISPLAY_STATUS: Record<DisplayStatus, { label: string; color: string; bg: string }> = {
   meta:     { label: "Meta cumplida", color: "#0F9D6A", bg: "#DCFCE7" },
-  rentable: { label: "Aceptable",     color: "#0F9D6A", bg: "#DCFCE7" },
+  rentable: { label: "Aceptable",     color: "#65A30D", bg: "#ECFCCB" },
   revision: { label: "En revisión",   color: "#B45309", bg: "#FEF3C7" },
   riesgo:   { label: "En riesgo",     color: "#DC2626", bg: "#FEE2E2" },
   pausada:  { label: "Pausada",       color: "#64748B", bg: "#F1F5F9" },
@@ -325,7 +325,11 @@ export default function CampanasPanel() {
 
   const matchesFilters = useCallback((c: Campaign) => {
     if (sellerFilter !== "all" && c.seller.id !== sellerFilter) return false;
-    if (statusFilter !== "all" && !statusFilter.split(",").includes(displayStatusOf(c, roasOf(c)))) return false;
+    if (statusFilter !== "all") {
+      const sel = statusFilter.split(",");
+      const isActive = (c.status || "ACTIVE") === "ACTIVE";
+      if (!sel.includes(displayStatusOf(c, roasOf(c))) && !(sel.includes("activas") && isActive)) return false;
+    }
     if (platformFilter !== "all" && c.platform !== platformFilter) return false;
     const q = search.trim().toLowerCase();
     if (q && !(`${c.name} ${c.seller.fullName} ${c.platform}`.toLowerCase().includes(q))) return false;
@@ -455,6 +459,7 @@ export default function CampanasPanel() {
   ];
   const statusOpts = [
     { value: "all", label: <span className="flex items-center gap-2"><MdCheckCircleOutline size={15} className="text-[#94A3B8]" />Todos</span> },
+    { value: "activas", label: <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{ background: "#2563EB" }} />Activas</span> },
     ...(Object.keys(DISPLAY_STATUS) as DisplayStatus[]).map((k) => ({
       value: k,
       label: <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{ background: DISPLAY_STATUS[k].color }} />{DISPLAY_STATUS[k].label}</span>,
