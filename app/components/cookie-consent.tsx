@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { MdCookie } from "react-icons/md";
 import GoogleTags from "./google-tags";
+import { updateConsent } from "@/lib/datalayer";
 
 const STORAGE_KEY = "kliniu_cookie_consent";
 
@@ -23,6 +24,7 @@ export default function CookieConsent({ nonce }: { nonce?: string }) {
   const choose = (value: "accepted" | "rejected") => {
     window.localStorage.setItem(STORAGE_KEY, value);
     setConsent(value);
+    updateConsent(value === "accepted");
   };
 
   // Rutas de impresión/PDF: no deben mostrar banners ni cargar analítica.

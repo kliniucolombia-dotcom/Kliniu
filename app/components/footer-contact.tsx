@@ -1,28 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
-import { ADVISORS, formatAdvisorPhone, type Advisor } from "@/lib/advisors";
+import { MAIN_ADVISOR, formatAdvisorPhone } from "@/lib/advisors";
+import { MAIN_WHATSAPP, whatsappUrl } from "@/lib/site";
 
-/**
- * Muestra el WhatsApp y el correo del mismo asesor elegido al azar, para que
- * ambos datos siempre correspondan a la misma persona.
- */
+/** WhatsApp único del sitio y el correo del asesor que lo atiende. */
 export default function FooterContact() {
-  const [advisor, setAdvisor] = useState<Advisor>(ADVISORS[0]);
-
-  useEffect(() => {
-    setAdvisor(ADVISORS[Math.floor(Math.random() * ADVISORS.length)]);
-  }, []);
-
   return (
     <>
       <li>
         <a
-          href={`https://wa.me/${advisor.phone}`}
+          href={whatsappUrl()}
           target="_blank"
           rel="noreferrer"
-          className="flex items-start gap-4 whitespace-pre-line text-[16px] leading-[1.12] text-white transition-colors hover:text-white/75 md:text-[18px]"
+          className="btn-whatsapp flex items-start gap-4 whitespace-pre-line text-[16px] leading-[1.12] text-white transition-colors hover:text-white/75 md:text-[18px]"
         >
           <Image
             src="/icono-whatsapp.png"
@@ -31,12 +22,12 @@ export default function FooterContact() {
             height={24}
             className="mt-[-2px] h-6 w-6 shrink-0 brightness-0 invert"
           />
-          {formatAdvisorPhone(advisor.phone)}
+          {formatAdvisorPhone(MAIN_WHATSAPP)}
         </a>
       </li>
       <li>
         <a
-          href={`mailto:${advisor.email}`}
+          href={`mailto:${MAIN_ADVISOR.email}`}
           className="flex items-start gap-4 whitespace-pre-line text-[16px] leading-[1.12] text-white transition-colors hover:text-white/75 md:text-[18px]"
         >
           <Image
@@ -46,7 +37,7 @@ export default function FooterContact() {
             height={24}
             className="mt-[-2px] h-6 w-6 shrink-0 brightness-0 invert"
           />
-          {advisor.email}
+          {MAIN_ADVISOR.email}
         </a>
       </li>
     </>

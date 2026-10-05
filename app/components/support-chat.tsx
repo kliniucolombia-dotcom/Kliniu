@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode, Fragment }
 import { FaWhatsapp } from "react-icons/fa";
 import { MdChatBubbleOutline, MdChevronRight, MdClose } from "react-icons/md";
 import { fbContact } from "@/lib/fbpixel";
-import { pickAdvisor } from "@/lib/advisors";
+import { whatsappUrl } from "@/lib/site";
 
 function renderMarkdown(text: string): ReactNode {
   return text.split("\n").map((line, li) => {
@@ -65,7 +65,6 @@ const initialMessage: ChatMessage = {
 };
 
 const CHAT_STORAGE_KEY = "kliniu:chat-history";
-const WHATSAPP_TEXT = encodeURIComponent("Hola, tengo una consulta sobre un producto de Kliniu");
 
 function loadStoredMessages(): ChatMessage[] {
   if (typeof window === "undefined") return [initialMessage];
@@ -89,7 +88,6 @@ export default function SupportChat() {
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [requestError, setRequestError] = useState("");
-  const [sellerContact, setSellerContact] = useState<{ phone: string; name: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -143,13 +141,6 @@ export default function SupportChat() {
       window.sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
     } catch {}
   }, [messages]);
-
-  useEffect(() => {
-    fetch("/api/seller/contact")
-      .then((r) => r.json())
-      .then((d: { phone: string; name: string }) => setSellerContact(d))
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -229,8 +220,7 @@ export default function SupportChat() {
   const handleWhatsApp = () => {
     setIsMenuOpen(false);
     fbContact();
-    const { phone } = pickAdvisor();
-    window.open(`https://wa.me/${phone}?text=${WHATSAPP_TEXT}`, "_blank", "noopener,noreferrer");
+    window.open(whatsappUrl(), "_blank", "noopener,noreferrer");
   };
 
   const handleOpenChat = () => {
@@ -497,7 +487,7 @@ export default function SupportChat() {
             type="button"
             role="menuitem"
             onClick={handleWhatsApp}
-            className="flex min-h-12 w-full items-center gap-3 rounded-full border border-black/5 bg-white py-2 pl-2 pr-4 text-left shadow-[0_14px_34px_rgba(15,23,42,0.16)] transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366] focus-visible:ring-offset-2 motion-reduce:transition-none"
+            className="btn-whatsapp flex min-h-12 w-full items-center gap-3 rounded-full border border-black/5 bg-white py-2 pl-2 pr-4 text-left shadow-[0_14px_34px_rgba(15,23,42,0.16)] transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366] focus-visible:ring-offset-2 motion-reduce:transition-none"
           >
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white">
               <FaWhatsapp size={18} />

@@ -27,3 +27,6 @@ export function formatAdvisorPhone(phone: string) {
   const rest = phone.slice(2);
   return `+${country} ${rest.slice(0, 3)} ${rest.slice(3, 6)} ${rest.slice(6)}`;
 }
+
+/** Asesor dueño del WhatsApp único público (lib/site.ts); su correo acompaña ese número. */
+export const MAIN_ADVISOR = ADVISORS[0];

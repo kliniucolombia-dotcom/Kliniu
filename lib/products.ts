@@ -17,6 +17,7 @@ import {
 } from "@/app/data/catalog";
 import { supabaseDb } from "@/lib/supabase-db";
 import { prisma } from "@/lib/prisma";
+import { INSUMO_PACK_TIERS_BY_SKU, NO_UNIT_SALE_SKUS, parsePriceValue } from "@/lib/volume-discounts";
 import { getWarehouseByKey, setWarehouseStockAbsolute, WAREHOUSE_KEYS } from "@/lib/warehouses";
 
 type ProductRecord = {
@@ -60,6 +61,29 @@ export type StoreProduct = ProductoCatalogo & {
   /** YYYY-MM-DD de la última edición de la ficha. */
   actualizadoEl?: string;
 };
+
+/**
+ * Precio y stock que la ficha muestra al cargar (primer color si trae precio propio).
+ * Lo usan el JSON-LD y el feed de Merchant para coincidir con lo que ve Google en la página.
+ */
+export function getDefaultOffer(producto: StoreProduct) {
+  const inStock = producto.estadoInventario !== "out-of-stock";
+  // Insumos sin venta por unidad: lo mínimo que se puede comprar es el paquete más chico, y ese es su precio.
+  if (producto.sku && NO_UNIT_SALE_SKUS.has(producto.sku)) {
+    const pack = (producto.paquetes?.length ? producto.paquetes : INSUMO_PACK_TIERS_BY_SKU[producto.sku])?.[0];
+    if (pack) return { price: pack.totalPrice, previousPrice: undefined, inStock, pack };
+  }
+  const colores = producto.variacionesColor ?? [];
+  const primero = colores.some((v) => v.sku || v.label.toLowerCase() === "blanco") ? colores[0] : undefined;
+  const price = primero?.precioValor ?? producto.precioValor;
+  const previous = primero?.precioAnteriorValor ?? parsePriceValue(producto.precioAnterior);
+  return {
+    price,
+    previousPrice: previous > price ? previous : undefined,
+    inStock,
+    pack: undefined,
+  };
+}
 
 export type InventoryMovementSummary = {
   id: string;

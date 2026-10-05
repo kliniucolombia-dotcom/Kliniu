@@ -1,4 +1,4 @@
-const KLINIU_WHATSAPP_NUMBER = "573057249454";
+import { MAIN_WHATSAPP as KLINIU_WHATSAPP_NUMBER } from "@/lib/site";
 
 export function buildWhatsAppProductUrl(input: {
   nombre: string;

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { departamentosColombia, getCitiesForDepartment } from "@/lib/colombia-locations";
 import { getShippingForLocation, getShippingOverride, formatShippingPrice } from "@/lib/shipping-rates";
 import { fbInitiateCheckout } from "@/lib/fbpixel";
+import { pushEcommerce } from "@/lib/datalayer";
+import { parsePriceValue } from "@/lib/volume-discounts";
 
 type CheckoutItem = {
   id: string;
@@ -113,6 +115,15 @@ export default function CheckoutForm({
       num_items: items.reduce((acc, i) => acc + i.cantidad, 0),
       value: subtotal,
       currency: "COP",
+    });
+    pushEcommerce("begin_checkout", {
+      value: subtotal,
+      items: items.map((i) => ({
+        item_id: i.sku ?? i.id,
+        item_name: i.nombre,
+        price: parsePriceValue(i.precio),
+        quantity: i.cantidad,
+      })),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

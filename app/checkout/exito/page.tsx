@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { getSessionFromCookies } from "@/lib/auth";
 import PurchaseTracker from "./purchase-tracker";
 import PaymentStatusPoller from "./payment-status-poller";
 
@@ -13,9 +14,21 @@ export default async function CheckoutSuccessPage({
   const order = params.pedido && prisma
     ? await prisma.order.findUnique({
         where: { id: params.pedido },
-        select: { paymentStatus: true, subtotal: true },
+        select: {
+          paymentStatus: true,
+          subtotal: true,
+          shippingCost: true,
+          userId: true,
+          customerEmail: true,
+          customerPhone: true,
+          items: { select: { id: true, sku: true, name: true, unitPrice: true, quantity: true } },
+        },
       })
     : null;
+
+  // Los datos del cliente solo viajan al navegador si quien mira es el dueño del pedido.
+  const session = order ? await getSessionFromCookies() : null;
+  const isOwner = Boolean(order && session?.userId === order.userId);
 
   const paymentConfirmed = order?.paymentStatus === "PAID";
   const paymentFailed = order?.paymentStatus === "FAILED";
@@ -23,7 +36,18 @@ export default async function CheckoutSuccessPage({
   return (
     <main className="flex min-h-[calc(100vh-88px)] items-center justify-center bg-[#f5f5f5] px-6 py-16">
       {paymentConfirmed && params.pedido && (
-        <PurchaseTracker orderId={params.pedido} value={order.subtotal} />
+        <PurchaseTracker
+          orderId={params.pedido}
+          value={order.subtotal + order.shippingCost}
+          shipping={order.shippingCost}
+          items={order.items.map((item) => ({
+            item_id: item.sku ?? item.id,
+            item_name: item.name,
+            price: item.unitPrice,
+            quantity: item.quantity,
+          }))}
+          userData={isOwner ? { email: order.customerEmail, phone: order.customerPhone } : undefined}
+        />
       )}
       {!paymentConfirmed && !paymentFailed && params.pedido && (
         <PaymentStatusPoller orderId={params.pedido} />

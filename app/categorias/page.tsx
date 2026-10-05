@@ -24,17 +24,19 @@ export async function generateMetadata({
   }
 
   const meta = categoriaMeta(categoriaNombre);
+  const title = meta.seoTitle || categoriaNombre;
   const description =
+    meta.seoDescription ||
     meta.bannerCopy ||
     `Compra ${categoriaNombre.toLowerCase()} de Kliniu para hoteles, restaurantes y negocios en Colombia.`;
   const canonical = `/categorias?categoria=${slugCategoria(categoriaNombre)}`;
 
   return {
-    title: categoriaNombre,
+    title,
     description,
     keywords: [categoriaNombre, "dispensadores", "Kliniu Colombia", "higiene para negocios"],
     alternates: { canonical },
-    openGraph: { title: categoriaNombre, description, url: canonical },
+    openGraph: { title, description, url: canonical },
   };
 }
 

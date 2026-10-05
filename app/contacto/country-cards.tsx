@@ -132,7 +132,7 @@ export default function CountryCards({ paises }: { paises: Pais[] }) {
                     href={activo.wa}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#27B1B8] px-4 py-2.5 text-[13px] font-bold text-white transition-colors hover:bg-[#0C535B]"
+                    className="btn-whatsapp inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#27B1B8] px-4 py-2.5 text-[13px] font-bold text-white transition-colors hover:bg-[#0C535B]"
                   >
                     <MdWhatsapp className="h-4 w-4" />
                     WhatsApp

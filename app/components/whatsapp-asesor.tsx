@@ -1,58 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { fbContact } from "@/lib/fbpixel";
-import { ADVISOR_PHONES } from "@/lib/advisors";
+import { whatsappUrl } from "@/lib/site";
 
 type Props = {
   children: React.ReactNode;
   className?: string;
   message?: string;
-  randomAsesor?: boolean;
-  /** Link de panel/admin (ej. banner.link); si viene distinto del wa.me por defecto, gana sobre el random */
+  /** Link de panel/admin (ej. banner.link); si viene distinto del wa.me por defecto viejo, gana */
   overrideLink?: string | null;
-  /** WhatsApp del vendedor asignado (ej. combo con "Vendedor" en panel); gana sobre todo lo demás */
+  /** WhatsApp del vendedor asignado (ej. combo con "Vendedor" en panel); gana sobre el número único */
   phone?: string | null;
 };
 
-const FALLBACK = "573125860921";
+// Valor por defecto que quedó guardado en banners antiguos; no cuenta como link personalizado.
+const LEGACY_DEFAULT_LINK = "https://wa.me/573125860921";
 
-export default function WhatsAppAsesor({ children, className, message, randomAsesor, overrideLink, phone }: Props) {
-  const [href, setHref] = useState(`https://wa.me/${FALLBACK}`);
-  const hasCustomLink = Boolean(overrideLink) && overrideLink !== `https://wa.me/${FALLBACK}`;
-  const hasFixedPhone = Boolean(phone);
-
-  useEffect(() => {
-    if (randomAsesor || hasCustomLink || hasFixedPhone) return;
-    fetch("/api/seller/contact")
-      .then((r) => r.json())
-      .then((d: { phone: string; name: string }) => {
-        const text = message ?? `Hola ${d.name}, tengo una consulta sobre un producto de Kliniu`;
-        setHref(`https://wa.me/${d.phone}?text=${encodeURIComponent(text)}`);
-      })
-      .catch(() => {});
-  }, [message, randomAsesor, hasCustomLink, hasFixedPhone]);
-
-  const handleClick = (e: React.MouseEvent) => {
-    fbContact();
-
-    if (hasCustomLink || hasFixedPhone || !randomAsesor) return;
-    e.preventDefault();
-    const p = ADVISOR_PHONES[Math.floor(Math.random() * ADVISOR_PHONES.length)];
-    const text = message ?? "Hola, tengo una consulta sobre un producto de Kliniu";
-    window.open(`https://wa.me/${p}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
-  };
-
-  const finalHref = hasCustomLink
-    ? overrideLink!
-    : hasFixedPhone
-      ? `https://wa.me/${phone}?text=${encodeURIComponent(message ?? "Hola, tengo una consulta sobre un producto de Kliniu")}`
-      : randomAsesor
-        ? "#"
-        : href;
+export default function WhatsAppAsesor({ children, className, message, overrideLink, phone }: Props) {
+  const href =
+    overrideLink && overrideLink !== LEGACY_DEFAULT_LINK
+      ? overrideLink
+      : whatsappUrl(message, phone || undefined);
 
   return (
-    <a href={finalHref} onClick={handleClick} target="_blank" rel="noreferrer" className={className}>
+    <a
+      href={href}
+      onClick={() => fbContact()}
+      target="_blank"
+      rel="noreferrer"
+      className={`btn-whatsapp ${className ?? ""}`}
+    >
       {children}
     </a>
   );

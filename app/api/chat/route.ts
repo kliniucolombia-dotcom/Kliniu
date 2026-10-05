@@ -4,23 +4,7 @@ import { buildKliniuKnowledge } from "@/lib/kliniu-knowledge";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { classifyMessage, RESPECT_BOUNDARY_REPLY } from "@/lib/moderation";
-
-const FALLBACK_SELLER_PHONE = "573125860921";
-
-async function getSellerWhatsappLink(): Promise<string> {
-  let phone = FALLBACK_SELLER_PHONE;
-  if (prisma) {
-    const sellers = await prisma.user.findMany({
-      where: { role: "SELLER", whatsappPhone: { not: null } },
-      select: { whatsappPhone: true },
-    });
-    if (sellers.length > 0) {
-      const random = sellers[Math.floor(Math.random() * sellers.length)];
-      phone = random.whatsappPhone ?? FALLBACK_SELLER_PHONE;
-    }
-  }
-  return `https://wa.me/${phone}`;
-}
+import { whatsappUrl } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -191,7 +175,7 @@ export async function POST(request: Request) {
       .normalize("NFD").replace(/[̀-ͯ]/g, "");
     const isComplaintOrReturn = COMPLAINT_WORDS.some((w) => latestNormalizedForComplaint.includes(w));
 
-    const sellerWhatsapp = await getSellerWhatsappLink();
+    const sellerWhatsapp = whatsappUrl();
 
     const filterShownProducts = (products?: ChatProductCard[]) => {
       if (!products || products.length === 0) return undefined;

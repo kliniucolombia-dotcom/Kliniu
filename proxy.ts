@@ -15,18 +15,30 @@ async function hasValidSession(request: NextRequest) {
   }
 }
 
+// Destinos de GA4 y de las conversiones/remarketing de Google Ads disparados desde GTM
+// (lista de la guía CSP de Google Tag Platform).
+const GOOGLE_TAG_HOSTS = [
+  "https://*.google-analytics.com",
+  "https://*.googletagmanager.com",
+  "https://*.g.doubleclick.net",
+  "https://www.google.com",
+  "https://google.com",
+  "https://www.googleadservices.com",
+  "https://pagead2.googlesyndication.com",
+].join(" ");
+
 function buildCsp(nonce: string) {
   // React en desarrollo usa eval() para reconstruir callstacks. Nunca en producción.
   const devEval = process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${devEval} https://va.vercel-scripts.com https://www.googletagmanager.com https://www.googleadservices.com https://connect.facebook.net`,
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https://*.supabase.co https://www.google-analytics.com https://www.googletagmanager.com https://www.facebook.com",
+    "style-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://fonts.googleapis.com",
+    `img-src 'self' data: blob: https://*.supabase.co https://www.facebook.com ${GOOGLE_TAG_HOSTS} https://www.google.com.co https://ssl.gstatic.com https://www.gstatic.com https://fonts.gstatic.com`,
     "media-src 'self' blob: https://*.supabase.co",
-    "font-src 'self' data:",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://www.facebook.com https://connect.facebook.net",
-    "frame-src 'self' https://www.youtube.com https://www.googletagmanager.com",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.analytics.google.com https://www.facebook.com https://connect.facebook.net ${GOOGLE_TAG_HOSTS}`,
+    "frame-src 'self' https://www.youtube.com https://www.googletagmanager.com https://td.doubleclick.net https://www.facebook.com",
     "object-src 'none'",
     "base-uri 'self'",
     "frame-ancestors 'self'",

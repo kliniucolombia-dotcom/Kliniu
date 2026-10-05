@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { fbAddToCart } from "@/lib/fbpixel";
+import { pushEcommerce } from "@/lib/datalayer";
 import { parsePriceValue } from "@/lib/volume-discounts";
 
 export type CartItem = {
@@ -203,6 +204,15 @@ export function CartProvider({
           content_type: "product",
           value: parsePriceValue(item.precio) * quantityToAdd,
           currency: "COP",
+        });
+        pushEcommerce("add_to_cart", {
+          value: parsePriceValue(item.precio) * quantityToAdd,
+          items: [{
+            item_id: item.sku ?? normalizedId,
+            item_name: item.nombre,
+            price: parsePriceValue(item.precio),
+            quantity: quantityToAdd,
+          }],
         });
 
         if (currentUserId) {

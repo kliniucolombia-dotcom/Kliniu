@@ -1,8 +1,3 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { ADVISORS, formatAdvisorPhone, type Advisor } from "@/lib/advisors";
-
 type ContactItem = {
   label: string;
   value: string;
@@ -11,34 +6,15 @@ type ContactItem = {
 };
 
 export default function ContactBar({ items }: { items: ContactItem[] }) {
-  const [advisor, setAdvisor] = useState<Advisor | null>(null);
-
-  useEffect(() => {
-    setAdvisor(ADVISORS[Math.floor(Math.random() * ADVISORS.length)]);
-  }, []);
-
-  const resolved = items.map((item) => {
-    if (item.label === "Llámanos" && advisor) {
-      return { ...item, value: formatAdvisorPhone(advisor.phone), href: `tel:+${advisor.phone}` };
-    }
-    if (item.label === "WhatsApp" && advisor) {
-      return { ...item, value: formatAdvisorPhone(advisor.phone), href: `https://wa.me/${advisor.phone}` };
-    }
-    if (item.label === "Escríbenos" && advisor) {
-      return { ...item, value: advisor.email, href: `mailto:${advisor.email}` };
-    }
-    return item;
-  });
-
   return (
     <div className="grid grid-cols-2 [&>a]:border-b [&>a]:border-r [&>a]:border-black/8 [&>a:nth-child(2n)]:border-r-0 [&>a:nth-child(n+3)]:border-b-0 md:grid-cols-4 md:[&>a]:border-b-0 md:[&>a:nth-child(2n)]:border-r md:[&>a:nth-child(4n)]:border-r-0">
-      {resolved.map((item) => (
+      {items.map((item) => (
         <a
           key={item.label}
           href={item.href}
           target={item.href.startsWith("http") ? "_blank" : undefined}
           rel={item.href.startsWith("http") ? "noreferrer" : undefined}
-          className="interactive-lift flex flex-col items-center gap-2 px-4 py-5 text-center transition-colors hover:bg-[#f0f8f8]"
+          className={`${item.href.includes("wa.me") ? "btn-whatsapp " : ""}interactive-lift flex flex-col items-center gap-2 px-4 py-5 text-center transition-colors hover:bg-[#f0f8f8]`}
         >
           <span className="text-[#27B1B8]">{item.icon}</span>
           <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6e7379]">

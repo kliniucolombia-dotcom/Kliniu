@@ -20,8 +20,7 @@ export function buildKliniuKnowledge(sellerWhatsapp: string): string {
 
     "INFORMACIÓN DE KLINIU, CONTACTO Y ENVÍOS (datos oficiales de la página):",
     "- Dirección de la sede/bodega en Colombia: Avenida 28 #34-43, Bogotá.",
-    "- Teléfono: +57 311 531 2623. Correo: ventas@kliniu.com.",
-    "- Asesores comerciales (WhatsApp): +57 310 575 0449, +57 311 208 8806, +57 322 655 6454.",
+    "- Teléfono y WhatsApp comercial: +57 310 575 0449. Correo: ventas@kliniu.com.",
     "- Cobertura internacional (bodegas/aliados): República Dominicana (Santo Domingo), Ecuador (Quito), USA (Miami), Canadá (London, Ontario), Nicaragua (Managua), Honduras (Tegucigalpa), Guatemala (Mixco), Venezuela y Perú. Para envíos o compras fuera de Colombia, coordina con un asesor; no prometas costos, plazos ni condiciones internacionales.",
     "- ENVÍO en Colombia: a Bogotá D.C. es GRATIS; al resto del país tiene costo fijo de $12.000 COP. Ciudades principales hasta 3 días hábiles; para otros destinos no prometas plazo, valida con el asesor.",
     "- PAGO: online con Wompi (tarjeta débito/crédito y PSE) desde el carrito del sitio web. Los pedidos tomados por WhatsApp son PAGO CONTRA ENTREGA.",

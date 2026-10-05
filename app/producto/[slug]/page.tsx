@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { getProducts, type StoreProduct } from "@/lib/products";
+import { getDefaultOffer, getProducts, type StoreProduct } from "@/lib/products";
 import { SITE_URL } from "@/lib/site";
 import ProductoDetalleClient from "./producto-detalle-client";
 
@@ -11,15 +11,9 @@ function absoluteUrl(path: string) {
   return `${SITE_URL}${value.startsWith("/") ? value : `/${value}`}`;
 }
 
-function productAvailability(producto: StoreProduct) {
-  if (producto.estadoInventario === "out-of-stock" || producto.disponibilidad === "Agotado") {
-    return "https://schema.org/BackOrder";
-  }
-  return "https://schema.org/InStock";
-}
-
 function buildProductJsonLd(producto: StoreProduct) {
   const url = `${SITE_URL}/producto/${producto.slug}`;
+  const offer = getDefaultOffer(producto);
   const images = [producto.imagen, ...(producto.imagenesExtra ?? [])]
     .map(absoluteUrl)
     .filter((image): image is string => Boolean(image));
@@ -39,8 +33,8 @@ function buildProductJsonLd(producto: StoreProduct) {
       "@type": "Offer",
       url,
       priceCurrency: "COP",
-      price: producto.precioValor,
-      availability: productAvailability(producto),
+      price: offer.price,
+      availability: `https://schema.org/${offer.inStock ? "InStock" : "OutOfStock"}`,
       itemCondition: "https://schema.org/NewCondition",
       seller: { "@type": "Organization", name: "Kliniu" },
     },

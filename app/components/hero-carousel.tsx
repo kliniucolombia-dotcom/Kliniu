@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import BannerImg, { DESKTOP_ONLY, MOBILE_ONLY } from "./banner-img";
 
 type SlideButton =
   | { type: "primary"; label: string; sub?: string; href: string }
@@ -111,6 +112,15 @@ export default function HeroCarousel({ banners = [] }: { banners?: (HeroSlideBan
     };
   });
   const [currentSlide, setCurrentSlide] = useState(0);
+  // Solo la primera diapositiva carga de entrada; el resto se pide cuando la página ya terminó de cargar.
+  const [restReady, setRestReady] = useState(false);
+
+  useEffect(() => {
+    const enable = () => setRestReady(true);
+    if (document.readyState === "complete") enable();
+    else window.addEventListener("load", enable, { once: true });
+    return () => window.removeEventListener("load", enable);
+  }, []);
 
   const advanceSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
   const goToPrev = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
@@ -129,19 +139,24 @@ export default function HeroCarousel({ banners = [] }: { banners?: (HeroSlideBan
         className="flex transition-transform duration-700 ease-out"
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
       >
-        {slides.map((slide) => (
+        {slides.map((slide, index) => (
           <article key={slide.id} className="w-full shrink-0 bg-[#f4f0ea]">
 
             {/* ── MÓVIL ── */}
             <div className="md:hidden">
               <div className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={slide.imageMobile}
-                  alt={`Banner ${slide.id}`}
-                  className="w-full"
-                  style={{ aspectRatio: "4/3", objectFit: "cover", objectPosition: "center", display: "block" }}
-                />
+                <div style={{ aspectRatio: "4/3" }}>
+                  {(index === 0 || restReady) && (
+                    <BannerImg
+                      src={slide.imageMobile}
+                      media={MOBILE_ONLY}
+                      alt={`Banner ${slide.id}`}
+                      eager={index === 0}
+                      className="h-full w-full"
+                      style={{ objectFit: "cover", objectPosition: "center", display: "block" }}
+                    />
+                  )}
+                </div>
                 <button
                   type="button"
                   aria-label="Banner anterior"
@@ -223,13 +238,16 @@ export default function HeroCarousel({ banners = [] }: { banners?: (HeroSlideBan
               className="relative hidden w-full md:block"
               style={{ aspectRatio: "10000 / 2084" }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={slide.image}
-                alt={`Banner ${slide.id}`}
-                className="h-full w-full"
-                style={{ objectFit: "cover", objectPosition: "center center" }}
-              />
+              {(index === 0 || restReady) && (
+                <BannerImg
+                  src={slide.image}
+                  media={DESKTOP_ONLY}
+                  alt={`Banner ${slide.id}`}
+                  eager={index === 0}
+                  className="h-full w-full"
+                  style={{ objectFit: "cover", objectPosition: "center center" }}
+                />
+              )}
               {slide.buttons[0].type === "primary" && (
                 <Link
                   href={slide.buttons[0].href}

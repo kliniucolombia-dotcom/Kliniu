@@ -16,7 +16,7 @@ import { getSessionFromCookies } from "@/lib/auth";
 import { getUserById } from "@/lib/users";
 import { getCartItemsForUser } from "@/lib/cart";
 import { getSaleMode } from "@/lib/sale-mode";
-import { SITE_URL } from "@/lib/site";
+import { MAIN_WHATSAPP, SITE_URL } from "@/lib/site";
 
 const figtree = Figtree({
   subsets: ["latin"],
@@ -32,6 +32,22 @@ export const metadata: Metadata = {
   description: "Dispensadores, insumos y soluciones de higiene para hoteles, restaurantes y negocios en Colombia.",
   verification: {
     google: process.env.GOOGLE_SITE_VERIFICATION,
+  },
+};
+
+const localBusinessJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  name: "Kliniu Colombia",
+  url: SITE_URL,
+  logo: `${SITE_URL}/logo.png`,
+  image: `${SITE_URL}/logo.png`,
+  telephone: `+${MAIN_WHATSAPP}`,
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "Avenida 28 #34-43",
+    addressLocality: "Bogotá",
+    addressCountry: "CO",
   },
 };
 
@@ -67,6 +83,16 @@ export default async function RootLayout({
       data-scroll-behavior="smooth"
     >
       <head>
+        {/* Consent Mode v2: todo denegado por defecto, antes de GTM; se concede si ya aceptó cookies. */}
+        <script
+          nonce={nonce}
+          dangerouslySetInnerHTML={{
+            __html: `(function(){window.dataLayer=window.dataLayer||[];function g(){dataLayer.push(arguments);}
+g('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',wait_for_update:500});
+try{if(localStorage.getItem('kliniu_cookie_consent')==='accepted'){g('consent','update',{ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted',analytics_storage:'granted'});}}catch(e){}
+})();`,
+          }}
+        />
         <script
           nonce={nonce}
           dangerouslySetInnerHTML={{
@@ -76,6 +102,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','GTM-NQSTZ4ZL');`,
           }}
+        />
+        <script
+          type="application/ld+json"
+          nonce={nonce}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd) }}
         />
       </head>
       <body className="min-h-full flex flex-col bg-[#050C14]">

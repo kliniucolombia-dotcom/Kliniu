@@ -26,7 +26,6 @@ export default function ComboCtaCard({ className = "" }: { className?: string })
         />
       </div>
       <WhatsAppAsesor
-        randomAsesor
         message="Hola, quiero armar un combo a la medida de mis espacios"
         className="shine-sweep relative z-10 flex items-center justify-center gap-2 rounded-full bg-[#0C535B] px-5 py-2.5 text-[13px] font-extrabold leading-none text-white transition-opacity hover:opacity-90"
       >

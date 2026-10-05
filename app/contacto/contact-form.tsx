@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState, type FormEvent } from "react";
 import { fbLead } from "@/lib/fbpixel";
+import { pushEvent } from "@/lib/datalayer";
 
 const helpOptions = [
   {
@@ -90,6 +91,7 @@ export default function ContactForm() {
       setFeedback("¡Mensaje enviado! Te contactaremos pronto.");
       setForm(initialState);
       fbLead();
+      pushEvent("cotizacion_enviada");
     } catch {
       setFeedback("No pudimos enviar tu mensaje. Intenta de nuevo o escríbenos a ventas@kliniu.com.");
     } finally {

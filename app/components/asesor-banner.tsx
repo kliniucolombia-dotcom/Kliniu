@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ADVISOR_PHONES } from "@/lib/advisors";
+import { whatsappUrl } from "@/lib/site";
 
 export type AsesorBannerData = {
   desktopImage: string | null;
@@ -9,17 +9,8 @@ export type AsesorBannerData = {
   link: string | null;
 };
 
-function pickAsesorLink(customLink: string | null | undefined) {
-  if (customLink) return customLink;
-  const phone = ADVISOR_PHONES[Math.floor(Math.random() * ADVISOR_PHONES.length)];
-  return `https://wa.me/${phone}`;
-}
-
 export default function AsesorBanner({ banner }: { banner?: AsesorBannerData }) {
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    window.open(pickAsesorLink(banner?.link), "_blank", "noopener,noreferrer");
-  };
+  const href = banner?.link || whatsappUrl();
 
   const desktopImage = banner?.desktopImage ?? "/banners-web/BANNER-FINALES-20.png";
 
@@ -43,9 +34,10 @@ export default function AsesorBanner({ banner }: { banner?: AsesorBannerData }) 
             ¿Necesitas ayuda<br />para elegir?
           </p>
           <a
-            href="#"
-            onClick={handleClick}
-            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#0C535B] px-5 py-2.5 text-sm font-extrabold text-white transition-opacity hover:opacity-90"
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            className="btn-whatsapp mt-5 inline-flex items-center gap-2 rounded-lg bg-[#0C535B] px-5 py-2.5 text-sm font-extrabold text-white transition-opacity hover:opacity-90"
           >
             <span>Hablar con un asesor</span>
             <Image src="/icono-whatsapp.png" alt="" width={16} height={16} className="h-4 w-4 brightness-0 invert" />
@@ -55,7 +47,7 @@ export default function AsesorBanner({ banner }: { banner?: AsesorBannerData }) 
 
       {/* DESKTOP */}
       <div className="mx-auto hidden w-full max-w-[1440px] px-4 md:block md:px-2">
-        <a href="#" onClick={handleClick} className="block w-full">
+        <a href={href} target="_blank" rel="noreferrer" className="btn-whatsapp block w-full">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={desktopImage}

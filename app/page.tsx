@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BannerImg, { DESKTOP_ONLY, MOBILE_ONLY } from "./components/banner-img";
 import ComboCarousel from "./components/combo-carousel";
 import ComboCtaCard from "./components/combo-cta-card";
 import { getComboItemNormalPrice } from "@/lib/volume-discounts";
@@ -127,29 +128,22 @@ export default async function Home() {
 
       {/* ── Features strip ── */}
       <section className="home-reveal hidden md:block">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={bannerFeatures?.desktopImage ?? "/banners-web/BANNER-FINALES-12.png"} alt="Kliniu" className="hidden w-full object-cover md:block" />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={bannerFeatures?.mobileImage ?? "/banners-responsive/BANNER-FINALES-34.png"} alt="Kliniu" className="hidden" />
+        <BannerImg src={bannerFeatures?.desktopImage ?? "/banners-web/BANNER-FINALES-12.png"} media={DESKTOP_ONLY} alt="Kliniu" className="hidden w-full object-cover md:block" />
       </section>
 
       {/* ── Dos CTAs ── */}
       <section className="home-reveal bg-white px-4 py-10 sm:px-6 md:py-16">
         <div className="mx-auto grid max-w-[1440px] gap-4 md:grid-cols-2 md:gap-5">
           {/* Asesoría → WhatsApp */}
-          <WhatsAppAsesor randomAsesor overrideLink={bannerAsesoria?.link} className="interactive-lift block overflow-hidden rounded-2xl">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={bannerAsesoria?.desktopImage ?? "/banners-web/BANNER-FINALES-13.png"} alt="Asesoría Kliniu" className="hidden w-full object-cover md:block" />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={bannerAsesoria?.mobileImage ?? "/banners-responsive/BANNER-FINALES-32.png"} alt="Asesoría Kliniu" className="w-full object-cover md:hidden" />
+          <WhatsAppAsesor overrideLink={bannerAsesoria?.link} className="interactive-lift block overflow-hidden rounded-2xl">
+            <BannerImg src={bannerAsesoria?.desktopImage ?? "/banners-web/BANNER-FINALES-13.png"} media={DESKTOP_ONLY} sizes="(min-width: 768px) 50vw, 100vw" alt="Asesoría Kliniu" className="hidden w-full object-cover md:block" />
+            <BannerImg src={bannerAsesoria?.mobileImage ?? "/banners-responsive/BANNER-FINALES-32.png"} media={MOBILE_ONLY} alt="Asesoría Kliniu" className="w-full object-cover md:hidden" />
           </WhatsAppAsesor>
 
           {/* Insumos → /categorias?tipo=insumos */}
           <Link href={bannerInsumos?.link ?? "/categorias?tipo=insumos"} className="interactive-lift block overflow-hidden rounded-2xl">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={bannerInsumos?.desktopImage ?? "/banners-web/BANNER-FINALES-14.png"} alt="Insumos Kliniu" className="hidden w-full object-cover md:block" />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={bannerInsumos?.mobileImage ?? "/banners-responsive/BANNER-FINALES-33.png"} alt="Insumos Kliniu" className="w-full object-cover md:hidden" />
+            <BannerImg src={bannerInsumos?.desktopImage ?? "/banners-web/BANNER-FINALES-14.png"} media={DESKTOP_ONLY} sizes="(min-width: 768px) 50vw, 100vw" alt="Insumos Kliniu" className="hidden w-full object-cover md:block" />
+            <BannerImg src={bannerInsumos?.mobileImage ?? "/banners-responsive/BANNER-FINALES-33.png"} media={MOBILE_ONLY} alt="Insumos Kliniu" className="w-full object-cover md:hidden" />
           </Link>
         </div>
       </section>

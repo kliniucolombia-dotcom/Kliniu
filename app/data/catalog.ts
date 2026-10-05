@@ -8,6 +8,9 @@ export type CategoriaMeta = {
   heroBannerImagen?: string;
   heroBannerMovil?: string;
   bannerCopy?: string;
+  /** Título y descripción para buscadores (meta title/description de la categoría). */
+  seoTitle?: string;
+  seoDescription?: string;
   heroTitulo1?: string;
   heroTitulo2?: string;
   heroDestacado?: string;
@@ -40,6 +43,8 @@ export const categoriasData: readonly CategoriaMeta[] = [
     iconoImagen: "/cat-liquidos.png",
     flipImagen: false,
     bannerCopy: "Soluciones de dispensación líquida para higiene eficiente en cualquier espacio.",
+    seoTitle: "Dispensadores de jabón y líquidos para negocios",
+    seoDescription: "Dispensadores de jabón y líquidos Kliniu, manuales y automáticos, para baños de empresas, hoteles y restaurantes. Compra en línea con envío a toda Colombia.",
     heroTitulo1: "Dispensadores para",
     heroTitulo2: "",
     heroDestacado: "líquidos",
@@ -72,6 +77,8 @@ export const categoriasData: readonly CategoriaMeta[] = [
     iconoImagen: "/cat-papel.png",
     flipImagen: false,
     bannerCopy: "Sistemas de dispensación de papel diseñados para crear higiene, ahorro y eficiencia en cada uso.",
+    seoTitle: "Dispensadores de papel higiénico, toallas y servilletas",
+    seoDescription: "Dispensadores de papel higiénico, toallas de mano y servilletas Kliniu para baños y zonas comunes de tu negocio. Compra en línea con envío a toda Colombia.",
     heroTitulo1: "Dispensadores de",
     heroTitulo2: "",
     heroDestacado: "papel y toalla",
@@ -104,6 +111,8 @@ export const categoriasData: readonly CategoriaMeta[] = [
     iconoImagen: "/cat-klinox.png",
     flipImagen: false,
     bannerCopy: "Dispensadores premium en acero inoxidable diseñados para máxima durabilidad.",
+    seoTitle: "Dispensadores en acero inoxidable KlinOx",
+    seoDescription: "Línea KlinOx de dispensadores en acero inoxidable para jabón, papel y toallas en baños de alto tráfico. Compra en línea con envío a toda Colombia.",
     heroTitulo1: "Dispensadores en",
     heroTitulo2: "",
     heroDestacado: "acero inoxidable 304",
@@ -136,6 +145,8 @@ export const categoriasData: readonly CategoriaMeta[] = [
     iconoImagen: "/cat-crema-dental.png",
     flipImagen: false,
     bannerCopy: "Sistemas de dispensación higiénica de crema dental para instituciones, colegios y empresas.",
+    seoTitle: "Dispensadores de crema dental",
+    seoDescription: "Dispensadores de crema dental Kliniu para colegios, empresas e instituciones. Compra en línea con envío a toda Colombia.",
     heroTitulo1: "Dispensadores de",
     heroTitulo2: "",
     heroDestacado: "pasta dental",
@@ -166,6 +177,8 @@ export const categoriasData: readonly CategoriaMeta[] = [
     iconoImagen: "/cat-hoteles.png",
     flipImagen: true,
     bannerCopy: "Sistemas de dispensación de papel diseñados para crear higiene, ahorro y eficiencia en cada uso.",
+    seoTitle: "Dispensadores para hoteles y restaurantes",
+    seoDescription: "Dispensadores de jabón, papel y toallas Kliniu para hoteles y restaurantes. Compra en línea con envío a toda Colombia.",
     heroTitulo1: "Dispensadores para",
     heroTitulo2: "Hoteles/",
     heroDestacado: "Restaurantes",
@@ -200,6 +213,8 @@ export const categoriasData: readonly CategoriaMeta[] = [
     heroBannerMovilPosition: "object-left",
     iconoImagen: "/cat-insumos.png",
     bannerCopy: "Insumos y repuestos originales para mantener tus dispensadores KLINIU siempre en óptimas condiciones.",
+    seoTitle: "Insumos y repuestos para dispensadores",
+    seoDescription: "Insumos y repuestos originales para dispensadores Kliniu. Compra en línea con envío a toda Colombia.",
     heroTitulo1: "Insumos y",
     heroTitulo2: "",
     heroDestacado: "Repuestos",
@@ -227,6 +242,8 @@ export const categoriasData: readonly CategoriaMeta[] = [
     heroBannerImagen: "/banner-outlet-kliniu.jpg",
     iconoImagen: "/banner-outlet-kliniu.jpg",
     bannerCopy: "Mejores dispensadores al mejor precio. Encuentra ofertas especiales con descuentos de hasta 70% OFF.",
+    seoTitle: "Outlet de dispensadores con descuento",
+    seoDescription: "Dispensadores Kliniu en oferta por tiempo limitado en el Outlet. Compra en línea con envío a toda Colombia.",
     heroTitulo1: "Outlet Virtual",
     heroTitulo2: "de",
     heroDestacado: "Dispensadores",

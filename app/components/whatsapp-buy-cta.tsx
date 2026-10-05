@@ -19,7 +19,6 @@ type Props = {
 export default function WhatsAppBuyCTA({ nombre, className, children, phone }: Props) {
   return (
     <WhatsAppAsesor
-      randomAsesor={!phone}
       phone={phone}
       message={`Hola, quiero comprar "${nombre}"`}
       className={className}
