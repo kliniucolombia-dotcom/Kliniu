@@ -246,6 +246,16 @@ function getSenderId(payload: WatiWebhookPayload): string | null {
   return null;
 }
 
+const BSUID_ONLY_GRACE_MS = 4000;
+
+/** Mensaje de cliente identificado solo por BSUID (sin waId ni phone). */
+function isBsuidOnlyInbound(payload: WatiWebhookPayload) {
+  const isOwner = payload.owner === true || payload.owner === "true" || payload.owner === 1 || payload.owner === "1";
+  if (!isInboundMessageEvent(payload) || isOwner) return false;
+  const hasPhone = [payload.waId, payload.phone].some((v) => typeof v === "string" && v.trim());
+  return !hasPhone && typeof payload.bsuid === "string" && Boolean(payload.bsuid.trim());
+}
+
 function getInboundTextMessage(payload: WatiWebhookPayload) {
   // WATI also notifies us of messages sent by the business and delivery states.
   // Only a customer text message can start the assistant workflow.
@@ -367,6 +377,15 @@ export async function POST(request: Request) {
     payload = (await request.json()) as WatiWebhookPayload;
   } catch {
     return Response.json({ error: "JSON inválido." }, { status: 400 });
+  }
+
+  // Un cliente con teléfono visible puede llegar dos veces: por el evento normal
+  // (con waId) y por el BSUID (a veces sin waId). Si este trae solo BSUID le
+  // damos ventaja al otro: así el mensaje cae en su conversación de siempre
+  // (con su pausa, pedido y opt-out) y este se descarta por externalId, en vez
+  // de abrir una conversación paralela que se salte ese estado.
+  if (isBsuidOnlyInbound(payload)) {
+    await new Promise((resolve) => setTimeout(resolve, BSUID_ONLY_GRACE_MS));
   }
 
   let incoming = getInboundTextMessage(payload);
