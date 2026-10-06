@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requirePermissionWithFallback } from "@/lib/permissions";
-import { getDashboardStats, getSellerStats, calcROAS, getCampaignStatus, STATUS_META } from "@/lib/panel";
+import { getDashboardStats, getSellerStats, STATUS_META } from "@/lib/panel";
 import { fmtDateOnly } from "@/lib/date";
 import { Sparkline, AreaChart, DonutChart } from "../_components/mini-charts";
 import { DashboardLiveRefresher } from "../_components/dashboard-live-refresher";
@@ -82,30 +83,30 @@ export default async function PanelDashboard() {
           <div className="rounded-xl border border-[#E2E8F0] bg-white px-3 py-2 text-xs font-semibold text-[#64748B]">
             Este mes · {rangeLabel}
           </div>
-          <a href="/panel" className="flex items-center gap-1.5 rounded-xl border border-[#E2E8F0] bg-white px-3 py-2 text-xs font-bold text-[#1A1A1A] hover:bg-[#F8FAFC]">
+          <Link href="/panel" className="flex items-center gap-1.5 rounded-xl border border-[#E2E8F0] bg-white px-3 py-2 text-xs font-bold text-[#1A1A1A] hover:bg-[#F8FAFC]">
             <MdRefresh size={15} /> Actualizar
-          </a>
+          </Link>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-8 grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {kpis.map((kpi) => {
           const Icon = kpi.icon;
           return (
-            <div key={kpi.label} className="flex items-center justify-between gap-3 rounded-2xl border border-[#E2E8F0] bg-white p-5">
-              <div className="flex shrink-0 items-start gap-3">
+            <div key={kpi.label} className="flex min-w-0 items-center justify-between gap-3 overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white p-5">
+              <div className="flex min-w-0 items-start gap-3">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: kpi.color + "1A", color: kpi.color }}>
                   <Icon size={19} />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-[#64748B]">{kpi.label}</p>
-                  <p className="whitespace-nowrap text-xl font-black" style={{ color: kpi.color }}>{kpi.value}</p>
-                  <p className="mt-0.5 text-xs text-[#94A3B8]">{kpi.sub}</p>
+                  <p className="truncate text-xs font-semibold text-[#64748B]">{kpi.label}</p>
+                  <p className="truncate text-xl font-black" style={{ color: kpi.color }}>{kpi.value}</p>
+                  <p className="mt-0.5 truncate text-xs text-[#94A3B8]">{kpi.sub}</p>
                 </div>
               </div>
               {kpi.trend && kpi.trend.length > 1 && (
-                <div className="min-w-0 overflow-hidden"><Sparkline values={kpi.trend} color={kpi.color} /></div>
+                <div className="hidden min-w-0 shrink-[100] overflow-hidden xl:block"><Sparkline values={kpi.trend} color={kpi.color} width={72} height={30} /></div>
               )}
             </div>
           );
@@ -121,9 +122,9 @@ export default async function PanelDashboard() {
               {sellers.length} vendedores
             </span>
           </div>
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-5 sm:grid-cols-2">
             {sellers.map((seller, i) => (
-              <div key={seller.id} className="rounded-2xl border border-[#E2E8F0] bg-white p-5">
+              <div key={seller.id} className="min-w-0 rounded-2xl border border-[#E2E8F0] bg-white p-5">
                 {/* Seller header */}
                 <div className="mb-4 flex items-center gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-base font-black text-white"
@@ -188,8 +189,8 @@ export default async function PanelDashboard() {
 
       {/* Ventas del mes + Ventas por canal */}
       {stats && (
-        <div className="mb-8 grid gap-6 lg:grid-cols-3">
-          <div className="rounded-2xl border border-[#E2E8F0] bg-white p-6 lg:col-span-2">
+        <div className="mb-8 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-3">
+          <div className="min-w-0 rounded-2xl border border-[#E2E8F0] bg-white p-6 lg:col-span-2">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h2 className="text-sm font-black text-[#1A1A1A]">Ventas del mes</h2>
@@ -217,7 +218,7 @@ export default async function PanelDashboard() {
             />
           </div>
 
-          <div className="rounded-2xl border border-[#E2E8F0] bg-white p-6">
+          <div className="min-w-0 rounded-2xl border border-[#E2E8F0] bg-white p-6">
             <h2 className="mb-4 text-sm font-black text-[#1A1A1A]">Ventas por canal</h2>
             {stats.salesByChannel.length === 0 ? (
               <p className="text-xs text-[#94A3B8]">Sin ventas este mes todavía.</p>
@@ -259,8 +260,8 @@ export default async function PanelDashboard() {
       {stats && (
         <div className="mb-8 rounded-2xl border border-[#E2E8F0] bg-white p-6">
           <h2 className="mb-4 text-sm font-black text-[#1A1A1A]">Atención comercial</h2>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <a href="/panel/pedidos" className="flex items-center gap-3 rounded-xl p-3 transition hover:brightness-95" style={{ background: stats.pendingOrders > 0 ? "#FEF3C7" : "#F8FAFC" }}>
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-3">
+            <Link href="/panel/pedidos" className="flex items-center gap-3 rounded-xl p-3 transition hover:brightness-95" style={{ background: stats.pendingOrders > 0 ? "#FEF3C7" : "#F8FAFC" }}>
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ color: "#D97706", background: "#FDE68A" }}>
                 <MdAssignmentLate size={17} />
               </span>
@@ -268,8 +269,8 @@ export default async function PanelDashboard() {
                 <p className="text-lg font-black text-[#1A1A1A]">{stats.pendingOrders}</p>
                 <p className="text-xs text-[#64748B]">pedidos pendientes</p>
               </div>
-            </a>
-            <a href="/panel/cotizaciones" className="flex items-center gap-3 rounded-xl p-3 transition hover:brightness-95" style={{ background: stats.quotationsSent > 0 ? "#DBEAFE" : "#F8FAFC" }}>
+            </Link>
+            <Link href="/panel/cotizaciones" className="flex items-center gap-3 rounded-xl p-3 transition hover:brightness-95" style={{ background: stats.quotationsSent > 0 ? "#DBEAFE" : "#F8FAFC" }}>
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ color: "#2563EB", background: "#BFDBFE" }}>
                 <MdChatBubbleOutline size={17} />
               </span>
@@ -277,8 +278,8 @@ export default async function PanelDashboard() {
                 <p className="text-lg font-black text-[#1A1A1A]">{stats.quotationsSent}</p>
                 <p className="text-xs text-[#64748B]">cotizaciones sin responder</p>
               </div>
-            </a>
-            <a href="/panel/productos" className="flex items-center gap-3 rounded-xl p-3 transition hover:brightness-95" style={{ background: stats.lowStockCount > 0 ? "#FEE2E2" : "#F8FAFC" }}>
+            </Link>
+            <Link href="/panel/productos" className="flex items-center gap-3 rounded-xl p-3 transition hover:brightness-95" style={{ background: stats.lowStockCount > 0 ? "#FEE2E2" : "#F8FAFC" }}>
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ color: "#DC2626", background: "#FECACA" }}>
                 <MdInventory2 size={17} />
               </span>
@@ -286,16 +287,16 @@ export default async function PanelDashboard() {
                 <p className="text-lg font-black text-[#1A1A1A]">{stats.lowStockCount}</p>
                 <p className="text-xs text-[#64748B]">productos con inventario bajo</p>
               </div>
-            </a>
+            </Link>
           </div>
         </div>
       )}
 
       {/* Bottom grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-3">
 
         {/* Highlights */}
-        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-6">
+        <div className="min-w-0 rounded-2xl border border-[#E2E8F0] bg-white p-6">
           <h2 className="mb-4 text-sm font-black text-[#1A1A1A]">Destacados del mes</h2>
           <div className="space-y-4">
             {stats?.topProduct && (
@@ -308,10 +309,10 @@ export default async function PanelDashboard() {
                     <MdInventory2 size={18} />
                   </div>
                 )}
-                <div>
+                <div className="min-w-0">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#0E9488]">Producto más vendido</p>
-                  <p className="text-sm font-black text-[#1A1A1A]">{stats.topProduct.name}</p>
-                  <p className="text-xs text-[#64748B]">{stats.topProduct.qty} unidades vendidas</p>
+                  <p className="truncate text-sm font-black text-[#1A1A1A]">{stats.topProduct.name}</p>
+                  <p className="truncate text-xs text-[#64748B]">{stats.topProduct.qty} unidades vendidas</p>
                 </div>
               </div>
             )}
@@ -323,22 +324,22 @@ export default async function PanelDashboard() {
                 ) : (
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FF6B00]/15 text-lg">🏆</div>
                 )}
-                <div>
+                <div className="min-w-0">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#C2410C]">Mejor vendedor</p>
-                  <p className="text-sm font-black text-[#1A1A1A]">{stats.topSeller.name}</p>
-                  <p className="text-xs text-[#64748B]">{fmt(stats.topSeller.total)} en campañas</p>
+                  <p className="truncate text-sm font-black text-[#1A1A1A]">{stats.topSeller.name}</p>
+                  <p className="truncate text-xs text-[#64748B]">{fmt(stats.topSeller.total)} en campañas</p>
                 </div>
               </div>
             )}
             <div className="flex items-center justify-between gap-3 rounded-xl bg-[#EFFCFB] p-3">
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#16A34A]/15 text-[#15803D]">
                   <MdGroups size={18} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#15803D]">Clientes únicos</p>
-                  <p className="text-sm font-black text-[#1A1A1A]">{stats?.uniqueCustomers ?? 0} compradores</p>
-                  <p className="text-xs text-[#64748B]">este mes</p>
+                  <p className="truncate text-sm font-black text-[#1A1A1A]">{stats?.uniqueCustomers ?? 0} compradores</p>
+                  <p className="truncate text-xs text-[#64748B]">este mes</p>
                 </div>
               </div>
             </div>
@@ -346,10 +347,10 @@ export default async function PanelDashboard() {
         </div>
 
         {/* Últimos pedidos */}
-        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-6">
+        <div className="min-w-0 rounded-2xl border border-[#E2E8F0] bg-white p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-black text-[#1A1A1A]">Últimos pedidos</h2>
-            <a href="/panel/pedidos" className="text-xs font-bold text-[#27B1B8] hover:underline">Ver todos</a>
+            <Link href="/panel/pedidos" className="text-xs font-bold text-[#27B1B8] hover:underline">Ver todos</Link>
           </div>
           <div className="space-y-3">
             {stats?.recentOrders.length === 0 && (
@@ -384,7 +385,7 @@ export default async function PanelDashboard() {
         </div>
 
         {/* ROAS Rule */}
-        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-6">
+        <div className="min-w-0 rounded-2xl border border-[#E2E8F0] bg-white p-6">
           <h2 className="mb-4 text-sm font-black text-[#1A1A1A]">Regla Comercial Kliniu ×10</h2>
           <div className="mb-4 rounded-xl bg-[#F0F9F8] p-4">
             <p className="text-xs font-semibold text-[#27B1B8]">Meta mínima de retorno</p>
