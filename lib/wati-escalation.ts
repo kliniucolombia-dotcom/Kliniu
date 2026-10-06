@@ -73,6 +73,27 @@ function buildAdvisorMessage(input: {
  * tienen `whatsappPhone`. Si el envío falla (p. ej. sin ventana de 24h), deja
  * una notificación in-app como respaldo. Nunca lanza.
  */
+const ADVISOR_NOTICE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * ¿Ya se avisó a un asesor por esta conversación en las últimas 24 h? Acota los
+ * avisos por simple mención: como esa mención ya no pausa el bot, sin este
+ * límite cada respuesta podría generar otro WhatsApp al vendedor.
+ */
+export async function advisorNotifiedRecently(conversationId: string) {
+  if (!prisma) return false;
+  const recent = await prisma.notification.findFirst({
+    where: {
+      type: "wati",
+      category: "advisor_request",
+      createdAt: { gt: new Date(Date.now() - ADVISOR_NOTICE_COOLDOWN_MS) },
+      metadata: { path: ["conversationId"], equals: conversationId },
+    },
+    select: { id: true },
+  });
+  return Boolean(recent);
+}
+
 export async function notifyAdvisor(input: {
   conversationId: string;
   customerPhone: string;

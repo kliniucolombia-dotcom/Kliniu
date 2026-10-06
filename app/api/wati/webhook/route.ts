@@ -15,7 +15,7 @@ import {
 } from "@/lib/moderation";
 import { createNotification } from "@/lib/notifications";
 import { getUpsellState, recordUpsellTurn } from "@/lib/wati-upselling";
-import { isAdvisorPhone, notifyAdvisor, replyRequestsAdvisor } from "@/lib/wati-escalation";
+import { advisorNotifiedRecently, isAdvisorPhone, notifyAdvisor, replyRequestsAdvisor } from "@/lib/wati-escalation";
 import { summarizeConversation, WATI_MEMORY_KEEP_RECENT } from "@/lib/wati-memory";
 import { cancelRemarketingOnReply, detectCommercialStage, updateConversationState } from "@/lib/wati-followup";
 
@@ -870,7 +870,10 @@ export async function POST(request: Request) {
   // promesa tenga destinatario, pero la IA sigue atendiendo el chat.
   const mentionEscalation =
     !orderCreated && !assistantFailed && !escalateToHuman && replyRequestsAdvisor(reply);
-  if (escalateToHuman || mentionEscalation) {
+  // Por simple mención, un solo aviso por conversación cada 24 h.
+  const notifyMention =
+    mentionEscalation && !(await advisorNotifiedRecently(conversation.id).catch(() => false));
+  if (escalateToHuman || notifyMention) {
     if (escalateToHuman) {
       await prisma.watiConversation.update({
         where: { id: conversation.id },
