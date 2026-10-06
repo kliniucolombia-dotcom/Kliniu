@@ -2,13 +2,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MdGroups, MdSchedule, MdTimer, MdTrendingUp } from "react-icons/md";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
-import { addDays } from "@/lib/commercial-calendar";
 import { fmtDateOnly } from "@/lib/date";
 import type { buildIndicators } from "@/lib/production-control-calculator";
 import { SimpleSelect } from "../../_components/simple-select";
 import { Badge, DateRange, Kpi, Section, Table, labelCls } from "../../_components/ops-ui";
 import { SkeletonTable } from "../../../components/skeleton";
-import { EfficiencyChip, fmtMin, jsonError, type Notify, type Options } from "./shared";
+import { EfficiencyChip, EntrySpanHint, defaultRangeEnd, defaultRangeStart, fmtMin, jsonError, type Notify, type Options } from "./shared";
 
 type Indicators = ReturnType<typeof buildIndicators>;
 
@@ -27,8 +26,8 @@ function Deviation({ value }: { value: number | null }) {
 
 export function IndicatorsTab({ options, notify }: { options: Options; notify: Notify }) {
   const own = options.scope === "own";
-  const [from, setFrom] = useState(addDays(options.today, -29));
-  const [to, setTo] = useState(options.today);
+  const [from, setFrom] = useState(defaultRangeStart(options, 29));
+  const [to, setTo] = useState(defaultRangeEnd(options));
   const [section, setSection] = useState("all");
   const [data, setData] = useState<Indicators | null>(null);
 
@@ -59,13 +58,14 @@ export function IndicatorsTab({ options, notify }: { options: Options; notify: N
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-end gap-2">
-        <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} />
+        <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} min={options.firstEntryDate ?? undefined} max={options.today} />
         <div className="w-36">
           <label className={labelCls}>Sección</label>
           <SimpleSelect value={section} portal
             options={[{ value: "all", label: "Todas" }, { value: "ENSAMBLE", label: "Ensamble" }, { value: "EMPAQUE", label: "Empaque" }]}
             onChange={setSection} />
         </div>
+        <div className="w-full"><EntrySpanHint options={options} /></div>
       </div>
 
       {!data || !t ? <SkeletonTable /> : (

@@ -329,7 +329,7 @@ export function parseEntryInput(body: unknown, partial = false): Partial<EntryIn
 const entryInclude = {
   operator: { select: { id: true, fullName: true } },
   operation: { select: { id: true, code: true, name: true, family: true } },
-  workOrder: { select: { id: true, number: true, reference: true, productName: true, status: true } },
+  workOrder: { select: { id: true, number: true, reference: true, productName: true, status: true, quantity: true, producedQuantity: true } },
 } as const;
 
 const clock = (date: string, hhmm: string) => new Date(`${date}T${hhmm}:00.000Z`);
@@ -473,7 +473,7 @@ export async function listEntries(filters: EntryFilters, actor: EntryActor, scop
 export async function getControlOptions(scope: ControlScope, actorId: string) {
   const db = requirePrisma();
   const today = bogotaNow().key;
-  const [openOrders, operations, products, pastOrders, pastClients, nextNumber, operators, recent] = await Promise.all([
+  const [openOrders, operations, products, pastOrders, pastClients, nextNumber, operators, recent, span] = await Promise.all([
     db.workOrder.findMany({
       where: { status: "OPEN" },
       select: { id: true, number: true, reference: true, productName: true, client: true },
@@ -510,6 +510,12 @@ export async function getControlOptions(scope: ControlScope, actorId: string) {
       orderBy: { createdAt: "desc" },
       take: 200,
     }),
+    // Primer y último día con registros visibles para este usuario: acota los filtros de fecha.
+    db.productionTimeEntry.aggregate({
+      where: scope === "own" ? { operatorId: actorId } : {},
+      _min: { workDate: true },
+      _max: { workDate: true },
+    }),
   ]);
 
   const references = new Map<string, string>();
@@ -528,6 +534,8 @@ export async function getControlOptions(scope: ControlScope, actorId: string) {
     ownWindowDays: OWN_WINDOW_DAYS,
     recentOperationIds: [...new Set(recent.map((r) => r.operationId))].slice(0, 15),
     lastSection: recent[0]?.section ?? null,
+    firstEntryDate: span._min.workDate ? dateKeyOf(span._min.workDate) : null,
+    lastEntryDate: span._max.workDate ? dateKeyOf(span._max.workDate) : null,
   };
 }
 

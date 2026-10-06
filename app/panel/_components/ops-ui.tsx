@@ -142,16 +142,16 @@ export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { key:
   );
 }
 
-export function DateRange({ from, to, onFrom, onTo }: { from: string; to: string; onFrom: (v: string) => void; onTo: (v: string) => void }) {
+export function DateRange({ from, to, onFrom, onTo, min, max }: { from: string; to: string; onFrom: (v: string) => void; onTo: (v: string) => void; min?: string; max?: string }) {
   return (
     <div className="flex items-end gap-2">
       <div>
         <label className={labelCls}>Desde</label>
-        <input type="date" value={from} max={to} onChange={(e) => onFrom(e.target.value)} className={inputCls} />
+        <input type="date" value={from} min={min} max={to} onChange={(e) => onFrom(e.target.value)} className={inputCls} />
       </div>
       <div>
         <label className={labelCls}>Hasta</label>
-        <input type="date" value={to} min={from} onChange={(e) => onTo(e.target.value)} className={inputCls} />
+        <input type="date" value={to} min={from} max={max} onChange={(e) => onTo(e.target.value)} className={inputCls} />
       </div>
     </div>
   );

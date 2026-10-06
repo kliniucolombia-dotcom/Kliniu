@@ -1,22 +1,23 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { MdDelete, MdEdit, MdSearch, MdTimer, MdTrendingUp, MdViewList } from "react-icons/md";
+import { MdDelete, MdEdit, MdPictureAsPdf, MdSearch, MdTimer, MdTrendingUp, MdViewList } from "react-icons/md";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { blockEfficiencies, blockKey, standardMinutesOf, summarize } from "@/lib/production-control-calculator";
-import { addDays } from "@/lib/commercial-calendar";
+import { addDays, weekday } from "@/lib/commercial-calendar";
 import { fmtDateOnly, fmtTimeOnly } from "@/lib/date";
 import { SimpleSelect } from "../../_components/simple-select";
 import { DateRange, Footer, Kpi, Modal, Section, Table, inputCls, labelCls, patchReq } from "../../_components/ops-ui";
 import { SkeletonTable } from "../../../components/skeleton";
-import { EfficiencyChip, SECTION_LABEL, fmtMin, fmtStdMinutes, jsonError, normalize, type Entry, type Notify, type Options } from "./shared";
+import { EfficiencyChip, EntrySpanHint, SECTION_LABEL, defaultRangeEnd, defaultRangeStart, fmtMin, fmtStdMinutes, jsonError, normalize, type Entry, type Notify, type Options } from "./shared";
+import { EnsambleReport } from "./report";
 import { EntryFields, canModifyEntry, entryFormFromEntry, entryPayload, isEntryFormValid, type EntryFormState } from "./entry-form";
 
 export function EntriesTab({ options, notify }: { options: Options; notify: Notify }) {
   const confirm = useConfirm();
   const own = options.scope === "own";
-  const [from, setFrom] = useState(addDays(options.today, -6));
-  const [to, setTo] = useState(options.today);
+  const [from, setFrom] = useState(defaultRangeStart(options, 6));
+  const [to, setTo] = useState(defaultRangeEnd(options));
   const [operatorId, setOperatorId] = useState("all");
   const [section, setSection] = useState("all");
   const [q, setQ] = useState("");
@@ -57,6 +58,11 @@ export function EntriesTab({ options, notify }: { options: Options; notify: Noti
   // Los bloques se calculan con todo lo del operario/día, no solo lo filtrado por texto.
   const blocks = useMemo(() => blockEfficiencies(data?.entries ?? []), [data]);
   const totals = useMemo(() => summarize(visible), [visible]);
+  const setWeek = (offset: number) => {
+    const monday = addDays(options.today, -((weekday(options.today) + 6) % 7) + offset * 7);
+    setFrom(monday);
+    setTo(addDays(monday, 6));
+  };
 
   const saveEdit = async () => {
     if (!editing) return;
@@ -85,8 +91,8 @@ export function EntriesTab({ options, notify }: { options: Options; notify: Noti
 
   return (
     <Section title={own ? "Mis registros" : "Registros por operario"}>
-      <div className="mb-4 flex flex-wrap items-end gap-2">
-        <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} />
+      <div className="mb-2 flex flex-wrap items-end gap-2">
+        <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} min={options.firstEntryDate ?? undefined} max={options.today} />
         {!own && (
           <div className="w-52">
             <label className={labelCls}>Operario</label>
@@ -101,6 +107,10 @@ export function EntriesTab({ options, notify }: { options: Options; notify: Noti
             options={[{ value: "all", label: "Todas" }, { value: "ENSAMBLE", label: "Ensamble" }, { value: "EMPAQUE", label: "Empaque" }]}
             onChange={setSection} />
         </div>
+        <div className="flex gap-1">
+          <button type="button" onClick={() => setWeek(0)} className="rounded-xl border border-[#E2E8F0] bg-white px-3 py-2 text-xs font-bold text-[#475569] hover:bg-[#F1F5F9]">Esta semana</button>
+          <button type="button" onClick={() => setWeek(-1)} className="rounded-xl border border-[#E2E8F0] bg-white px-3 py-2 text-xs font-bold text-[#475569] hover:bg-[#F1F5F9]">Semana pasada</button>
+        </div>
         <div className="min-w-[200px] flex-1">
           <label className={labelCls}>Buscar</label>
           <div className="relative">
@@ -108,7 +118,16 @@ export function EntriesTab({ options, notify }: { options: Options; notify: Noti
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="ODT, referencia, operación u operario" className={`${inputCls} pl-9`} />
           </div>
         </div>
+        {/* El reporte PDF es solo para quien gestiona o supervisa, no para el operario. */}
+        {!own && (
+          <button type="button" onClick={() => window.print()} disabled={visible.length === 0}
+            className="flex items-center gap-1.5 rounded-xl bg-[#27B1B8] px-3 py-2 text-xs font-bold text-white hover:bg-[#0E7C82] disabled:cursor-not-allowed disabled:opacity-40">
+            <MdPictureAsPdf size={16} /> Descargar PDF
+          </button>
+        )}
       </div>
+
+      <EntrySpanHint options={options} />
 
       {data && (
         <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -155,6 +174,12 @@ export function EntriesTab({ options, notify }: { options: Options; notify: Noti
           })}
           empty="Sin registros en este rango."
         />
+      )}
+
+      {!own && (
+        <EnsambleReport entries={visible} blocks={blocks} from={from} to={to} truncated={!!data?.truncated} search={q.trim()}
+          operator={own ? options.me.fullName : operatorId === "all" ? "Todos" : options.operators.find((o) => o.id === operatorId)?.fullName ?? "—"}
+          section={section === "all" ? "Todas" : SECTION_LABEL[section as keyof typeof SECTION_LABEL]} />
       )}
 
       {editing && (
