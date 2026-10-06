@@ -8,6 +8,7 @@ export type WatiEscalationReason =
   | "advisor_mention"
   | "moderation"
   | "assistant_failed"
+  | "unattended"
   | "sale";
 
 const REASON_LABEL: Record<WatiEscalationReason, string> = {
@@ -15,6 +16,7 @@ const REASON_LABEL: Record<WatiEscalationReason, string> = {
   advisor_mention: "la respuesta ofreció pasar con un asesor",
   moderation: "lenguaje ofensivo o amenazas",
   assistant_failed: "fallo técnico del asistente",
+  unattended: "el cliente lleva más de 1 hora esperando a un asesor",
   sale: "venta cerrada por la IA",
 };
 
@@ -23,6 +25,7 @@ const REASON_TITLE: Record<WatiEscalationReason, string> = {
   advisor_mention: "cliente derivado a asesor",
   moderation: "conversación escalada por moderación",
   assistant_failed: "fallo técnico, requiere asesor",
+  unattended: "cliente sigue esperando asesor",
   sale: "venta cerrada por la IA",
 };
 
@@ -223,4 +226,76 @@ export function replyRequestsAdvisor(reply: string) {
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
   return ADVISOR_WORD.test(normalized) && HANDOFF_VERB.test(normalized);
+}
+
+const UNATTENDED_AFTER_MS = 60 * 60 * 1000;
+const UNATTENDED_MAX_AGE_MS = 48 * 60 * 60 * 1000;
+
+/**
+ * ¿Toca recordarle al asesor este chat pausado? Solo si nadie del equipo ha
+ * respondido tras el último mensaje, ya pasó 1 h y es horario laboral en
+ * Bogotá (lun–sáb, 8:00–18:00). Puro, testeable.
+ */
+export function needsAdvisorReminder(last: { role: string; createdAt: Date } | undefined, now: Date) {
+  if (!last || last.role === "AGENT") return false;
+  const waited = now.getTime() - last.createdAt.getTime();
+  if (waited < UNATTENDED_AFTER_MS || waited > UNATTENDED_MAX_AGE_MS) return false;
+  // Colombia es UTC-5 fijo (sin horario de verano).
+  const bogota = new Date(now.getTime() - 5 * 60 * 60 * 1000);
+  return bogota.getUTCDay() !== 0 && bogota.getUTCHours() >= 8 && bogota.getUTCHours() < 18;
+}
+
+/**
+ * Chats que el bot pasó a un asesor y nadie atendió: re-avisa una sola vez por
+ * cada espera (hasta que el cliente o el asesor vuelvan a escribir). Lo llama el cron.
+ */
+export async function remindUnattendedEscalations(now = new Date()) {
+  if (!prisma) return { reminded: 0 };
+  const conversations = await prisma.watiConversation.findMany({
+    where: {
+      botPaused: true,
+      status: "ACTIVE",
+      orderId: null,
+      updatedAt: { gte: new Date(now.getTime() - UNATTENDED_MAX_AGE_MS) },
+    },
+    select: {
+      id: true,
+      phone: true,
+      contactName: true,
+      assignedSellerId: true,
+      messages: { orderBy: { createdAt: "desc" }, take: 5, select: { role: true, content: true, createdAt: true } },
+    },
+    take: 50,
+  });
+
+  let reminded = 0;
+  for (const conversation of conversations) {
+    const last = conversation.messages[0];
+    if (!needsAdvisorReminder(last, now)) continue;
+
+    const already = await prisma.notification.findFirst({
+      where: {
+        type: "wati",
+        category: "advisor_request",
+        createdAt: { gt: last.createdAt },
+        AND: [
+          { metadata: { path: ["conversationId"], equals: conversation.id } },
+          { metadata: { path: ["reason"], equals: "unattended" } },
+        ],
+      },
+      select: { id: true },
+    });
+    if (already) continue;
+
+    await notifyAdvisor({
+      conversationId: conversation.id,
+      customerPhone: conversation.phone,
+      customerName: conversation.contactName,
+      reason: "unattended",
+      snippet: conversation.messages.find((m) => m.role === "USER")?.content ?? null,
+      advisorId: conversation.assignedSellerId,
+    });
+    reminded += 1;
+  }
+  return { reminded };
 }

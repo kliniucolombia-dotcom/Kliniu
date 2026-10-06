@@ -147,7 +147,7 @@ export async function buildUpsellDataPrompt(): Promise<string | null> {
 
 const normalize = (value: string) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
-const CLAIM = /(reclamo|queja|garantia|devolucion|devolver|roto|rota|rotos|danad[oa]s?|defectuos|no funciona|llego (mal|roto|danad)|no (me )?llego|demora|demorad|retras|donde (va|esta) mi pedido|estado de (mi|el) pedido|numero de guia|estafa|mal servicio|pesimo|inconforme|decepcion)/;
+const CLAIM = /(reclamo|queja|garantia|devolucion|devolver|roto|rota|rotos|danad[oa]s?|defectuos|no funciona|llego (mal|roto|danad)|no (me )?llego|demorad|se (esta )?demor(o|ando)|retras|donde (va|esta) mi pedido|estado de (mi|el) pedido|numero de guia|estafa|mal servicio|pesimo|inconforme|decepcion)/;
 const HURRY_OR_ANGRY = /(urgente|con afan|de afan|ya mismo|molest[oa]|furios|indignad|harto|cansad[oa] de)/;
 const CLOSING =
   /(\blo quiero\b|\bme lo llevo\b|\blo llevo\b|quiero (comprar|pedir|hacer el pedido)|como pago|como (hago|puedo) (el )?pago|a donde (consigno|transfiero)|numero de cuenta|me lo (envian|mandan|despachan) hoy|pasame los datos|hagamos el pedido|haga(mos)? el pedido|confirmo el pedido|(calle|carrera|cra\.?|cll\.?|avenida|av\.?|diagonal|transversal|kr)\s*\d)/;

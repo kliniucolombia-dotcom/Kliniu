@@ -235,7 +235,7 @@ const OPT_OUT_PATTERN =
 // Rechazo suave: solo cuenta como tal si responde a un remarketing ("no gracias" a
 // otra pregunta del bot no significa que no quiera ser contactado).
 const DECLINE_PATTERN =
-  /\b(no,? gracias|ya (compre|compramos|adquiri|adquirimos|tengo|tenemos|lo resolvi|conseguimos|consegui)|(compre|compramos) en otro|ya no (necesito|necesitamos|requiero|me interesa|lo necesito)|no (necesito|necesitamos|requiero|me hace falta))\b/;
+  /\b(no,? (senora?,? |sra?\.?,? )?gracias|solo (estaba )?pregunta[bv]a|ya (me|nos) l[oa]s? regalaron|ya (compre|compramos|adquiri|adquirimos|tengo|tenemos|lo resolvi|conseguimos|consegui)|(compre|compramos) en otro|ya no (necesito|necesitamos|requiero|me interesa|lo necesito)|no (necesito|necesitamos|requiero|me hace falta))\b/;
 
 /** Intención de salida del cliente en su mensaje. */
 export function classifyExitIntent(text: string, afterRemarketing: boolean): "OPT_OUT" | "DECLINED" | null {
@@ -345,6 +345,8 @@ function findDiscussedProduct(products: StoreProduct[], transcript: string) {
   return best?.product ?? null;
 }
 
+const HOME_BUSINESS = /\b(hogar|casa|apartamento|apto|familia)\b/;
+
 function summarizeProduct(product: StoreProduct) {
   return {
     slug: product.slug,
@@ -377,6 +379,10 @@ const STAGE_GOALS: Record<number, string> = {
   5: "CIERRE: si 'commercial' trae promoción o envío incluido válidos, úsalos. Si no, cierra sin inventar incentivo.",
 };
 
+// Con intención de compra el seguimiento no vuelve a vender: pide lo que falta para despachar.
+const CLOSING_GOAL =
+  "CIERRE DIRECTO: el cliente ya mostró intención de compra. No presentes otros productos, packs ni beneficios nuevos y no preguntes por el uso: retoma el producto que eligió y pide el dato de despacho que falte (nombre completo, ciudad o dirección) para dejar el pedido listo.";
+
 const REMARKETING_PROMPT = `Eres el Asesor Digital Comercial de Kliniu.
 Tu tarea en este módulo es recuperar una conversación comercial detenida.
 Lee el contexto JSON entregado por el backend y genera SOLO el mensaje de remarketing de la etapa actual.
@@ -390,6 +396,8 @@ REGLAS:
 - Prohibido: "¿Sigues interesado?", "Quedo atento", "Avísame cualquier cosa".
 - No inventes urgencia ni escasez.
 - Si conversation_stage indica intención de compra, prioriza el cierre.
+- Si customer.is_home es true (cliente de hogar): no ofrezcas packs ni compra por volumen, no hables de "alto tráfico", "institucional" ni de negocios, y no pidas cantidad más allá de las unidades para su casa. Habla de tamaño, facilidad de uso y diseño.
+- No preguntes datos que ya están en "customer" (tipo de espacio, ciudad, cantidad) ni que el cliente ya dijo en la conversación.
 - Regla maestra: no persigas al cliente, dale una razón nueva para responder.
 - Si en la conversación el cliente nunca preguntó por un producto o categoría, o pidió no ser contactado, o ya cerró la compra, devuelve skip=true.
 Devuelve SOLO un JSON con esta forma:
@@ -423,6 +431,12 @@ async function generateRemarketingMessage(context: unknown): Promise<GeneratorOu
 export async function sendPendingWatiFollowUps(now = new Date(), onlyConversationId?: string) {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
   if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_NOT_CONFIGURED");
+
+  // Envíos que ya salieron de la ventana de 24 h sin respuesta: se cierran para que las métricas no queden en PENDING.
+  await prisma.watiRemarketingEvent.updateMany({
+    where: { outcome: "PENDING", sentAt: { lt: new Date(now.getTime() - WHATSAPP_WINDOW_MS) } },
+    data: { outcome: "NO_REPLY" },
+  });
 
   const config = await getRemarketingConfig();
   if (!config.enabled) return { scanned: 0, sent: 0, skipped: 0, failed: 0, disabled: true };
@@ -537,20 +551,23 @@ export async function sendPendingWatiFollowUps(now = new Date(), onlyConversatio
       const promotions = activePromotions(config, product, now);
       const used = readUsed(conversation.remarketingUsed);
       const outlet = Boolean(product?.esOutlet && product.descuento);
+      // Cliente de hogar: los packs y reglas de volumen no se le entregan al generador.
+      const isHome = HOME_BUSINESS.test(normalizeText(conversation.businessType ?? ""));
 
       const output = await generateRemarketingMessage({
         remarketing_stage: dueStage,
-        stage_goal: STAGE_GOALS[dueStage],
+        stage_goal: conversation.commercialStage === "PURCHASE_INTENT" ? CLOSING_GOAL : STAGE_GOALS[dueStage],
         conversation_stage: conversation.commercialStage,
         customer: {
           name: conversation.contactName?.split(/\s+/)[0] ?? null,
           city: conversation.customerCity,
           business_type: conversation.businessType,
+          is_home: isHome,
           quantity_requested: conversation.quantityRequested,
           objection: conversation.lastObjection,
         },
-        product: product ? summarizeProduct(product) : null,
-        alternatives,
+        product: product ? { ...summarizeProduct(product), ...(isHome ? { packs: [] } : {}) } : null,
+        alternatives: isHome ? alternatives.map((a) => ({ ...a, packs: [] })) : alternatives,
         commercial: {
           promotion_active: outlet || promotions.length > 0,
           promotion_description:
@@ -563,8 +580,9 @@ export async function sendPendingWatiFollowUps(now = new Date(), onlyConversatio
           shipping_rule:
             "Bogotá D.C.: envío gratis. Resto de Colombia: $12.000 COP." +
             (config.shippingIncludedRule ? ` Envío incluido autorizado: ${config.shippingIncludedRule}` : ""),
-          volume_discount_rule:
-            (product && config.volumeRules[product.categoria]) || config.volumeRules["*"] || null,
+          volume_discount_rule: isHome
+            ? null
+            : (product && config.volumeRules[product.categoria]) || config.volumeRules["*"] || null,
           payment_methods: config.cashOnDelivery ? ["contra entrega"] : [],
         },
         memory_summary: conversation.memorySummary,
