@@ -204,32 +204,68 @@ export default async function QuienesSomosPage() {
         </div>
 
         {/* Certificación ISO 9001 */}
-        <div className="relative mx-auto mt-10 flex flex-col rounded-[10px] bg-[#C90030] text-white md:mt-12 md:h-[124px] md:flex-row md:items-center md:justify-between">
-          <div className="relative h-[84px] md:h-full md:w-[400px] md:shrink-0">
+        <div className="relative mx-auto mt-16 md:mt-12">
+          {/* Móvil / tablet */}
+          <div className="relative rounded-[10px] bg-[#C90030] px-6 pb-6 pt-20 text-center text-white md:hidden">
             <Image
-              src="/certificados/bureau-veritas-iso-9001-transparente.png"
+              src="/certificados/bureau-veritas-sello.png"
               alt="Bureau Veritas Certification ISO 9001"
-              width={1724}
-              height={808}
-              className="absolute left-4 top-1/2 h-[136%] w-auto max-w-none -translate-y-1/2 object-contain md:left-[3%]"
+              width={643}
+              height={799}
+              className="absolute left-1/2 top-0 h-[128px] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.25)]"
             />
+            <p className="text-lg font-extrabold leading-tight">ISO 9001</p>
+            <p className="mt-0.5 text-2xl font-black uppercase leading-tight tracking-wide">
+              Bureau Veritas
+            </p>
+            <p className="text-base font-bold leading-tight">Certification</p>
+            <p className="mx-auto mt-4 max-w-[300px] text-sm font-medium leading-6 text-white/90">
+              Nuestro Sistema de Gestión ha sido auditado y certificado bajo la norma ISO
+              9001:2015, reafirmando nuestro compromiso con la calidad y la mejora continua.
+            </p>
+            <div className="my-5 h-px w-full bg-white/30" />
+            <a
+              href="/certificados/Certificado-ISO-9001-KLINIU.pdf"
+              download="Certificado-ISO-9001-KLINIU.pdf"
+              className="group flex w-full cursor-pointer items-center gap-3 rounded-lg bg-[#A80028] px-5 py-4 text-base font-semibold transition-colors hover:bg-black/10"
+            >
+              <MdFileDownload className="h-7 w-7 shrink-0" aria-hidden="true" />
+              <span className="flex-1 text-center">Descargar certificado</span>
+              <MdChevronRight
+                className="h-6 w-6 shrink-0 transition-transform group-hover:translate-x-1"
+                aria-hidden="true"
+              />
+            </a>
           </div>
-          <p className="hidden max-w-[560px] flex-1 px-6 text-sm font-medium leading-6 text-white/90 xl:block xl:text-base xl:leading-7">
-            Nuestro Sistema de Gestión ha sido auditado y certificado bajo la norma ISO 9001:2015,
-            reafirmando nuestro compromiso con la calidad y la mejora continua.
-          </p>
-          <a
-            href="/certificados/Certificado-ISO-9001-KLINIU.pdf"
-            download="Certificado-ISO-9001-KLINIU.pdf"
-            className="group flex cursor-pointer items-center justify-end gap-4 border-t border-white/25 px-6 pb-5 pt-6 text-base font-semibold transition-colors hover:bg-black/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:h-full md:shrink-0 md:justify-start md:rounded-r-[10px] md:border-l md:border-t-0 md:px-10 md:py-0 md:text-lg lg:px-14"
-          >
-            <MdFileDownload className="h-9 w-9 shrink-0" aria-hidden="true" />
-            Descargar certificado
-            <MdChevronRight
-              className="h-6 w-6 shrink-0 transition-transform group-hover:translate-x-1"
-              aria-hidden="true"
-            />
-          </a>
+
+          {/* Escritorio */}
+          <div className="hidden rounded-[10px] bg-[#C90030] text-white md:flex md:h-[124px] md:flex-row md:items-center md:justify-between">
+            <div className="relative h-full w-[400px] shrink-0">
+              <Image
+                src="/certificados/bureau-veritas-iso-9001-transparente.png"
+                alt="Bureau Veritas Certification ISO 9001"
+                width={1724}
+                height={808}
+                className="absolute left-[3%] top-1/2 h-[136%] w-auto max-w-none -translate-y-1/2 object-contain"
+              />
+            </div>
+            <p className="hidden max-w-[560px] flex-1 px-6 text-sm font-medium leading-6 text-white/90 xl:block xl:text-base xl:leading-7">
+              Nuestro Sistema de Gestión ha sido auditado y certificado bajo la norma ISO
+              9001:2015, reafirmando nuestro compromiso con la calidad y la mejora continua.
+            </p>
+            <a
+              href="/certificados/Certificado-ISO-9001-KLINIU.pdf"
+              download="Certificado-ISO-9001-KLINIU.pdf"
+              className="group flex h-full shrink-0 cursor-pointer items-center gap-4 rounded-r-[10px] border-l border-white/25 px-10 text-lg font-semibold transition-colors hover:bg-black/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:px-14"
+            >
+              <MdFileDownload className="h-9 w-9 shrink-0" aria-hidden="true" />
+              Descargar certificado
+              <MdChevronRight
+                className="h-6 w-6 shrink-0 transition-transform group-hover:translate-x-1"
+                aria-hidden="true"
+              />
+            </a>
+          </div>
         </div>
       </section>
 
