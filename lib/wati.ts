@@ -54,8 +54,16 @@ function getWatiConfig() {
   };
 }
 
+/**
+ * WhatsApp permite ocultar el número: esos contactos llegan identificados por
+ * un BSUID ("CO.1234…") en vez de teléfono. WATI lo acepta como target.
+ */
+export function isWatiBsuid(value: string) {
+  return /^[A-Z]{2}\.[\w.-]+$/i.test(value.trim());
+}
+
 function normalizePhone(phone: string) {
-  return phone.replace(/\D/g, "");
+  return isWatiBsuid(phone) ? phone.trim() : phone.replace(/\D/g, "");
 }
 
 // V3 acepta target como "PhoneNumber" o "Channel:PhoneNumber"; fijar el canal

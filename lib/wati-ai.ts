@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { prisma } from "@/lib/prisma";
 import { createWatiOrder } from "@/lib/wati-order";
+import { isWatiBsuid } from "@/lib/wati";
 import { syncOrderToOdoo } from "@/lib/orders";
 import { buildFullCatalogContext } from "@/lib/chatbot";
 import { formatearMoneda } from "@/app/data/catalog";
@@ -276,6 +277,8 @@ async function runWatiAssistantCore(
   if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_NOT_CONFIGURED");
 
   const allowOrderCreation = options.allowOrderCreation !== false;
+  // Cliente con el número oculto en WhatsApp: no hay teléfono real para la orden.
+  const phoneHidden = Boolean(options.customerPhone && isWatiBsuid(options.customerPhone));
   const [{ styleExamples, whatsappPhone }, catalog, commercialConditions, conversationState, lessonsPrompt, upsellData, upsellState] = await Promise.all([
     getSellerContext(options.sellerId),
     getCatalogContext(),
@@ -333,6 +336,12 @@ async function runWatiAssistantCore(
     ...(allowOrderCreation
       ? []
       : [{ role: "system" as const, content: "Esta conversación ya tiene un pedido registrado. No vuelvas a crear otro pedido; responde solo dudas de soporte o posventa." }]),
+    ...(allowOrderCreation && phoneHidden
+      ? [{
+          role: "system" as const,
+          content: "Este cliente escribe con su número oculto en WhatsApp, así que no puedes registrar el pedido tú mismo. Atiéndelo normal; cuando confirme que quiere comprar, pídele un número de contacto y usa solicitar_asesor con el resumen del pedido (productos, cantidades, ciudad, dirección y ese número).",
+        }]
+      : []),
     ...(history.length === 0 && !needsSpecialHandling(newUserMessage)
       ? [{
           role: "system" as const,
@@ -344,7 +353,7 @@ async function runWatiAssistantCore(
     { role: "user" as const, content: newUserMessage },
   ];
 
-  const tools = allowOrderCreation
+  const tools = allowOrderCreation && !phoneHidden
     ? [CREAR_PEDIDO_TOOL, SOLICITAR_ASESOR_TOOL]
     : [SOLICITAR_ASESOR_TOOL];
 

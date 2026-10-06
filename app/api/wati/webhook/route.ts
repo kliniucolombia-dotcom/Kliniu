@@ -30,6 +30,7 @@ type WatiWebhookPayload = {
   type?: unknown;
   waId?: unknown;
   phone?: unknown;
+  bsuid?: unknown;
   text?: unknown;
   message?: unknown;
   id?: unknown;
@@ -229,15 +230,31 @@ function isAuthorizedWebhook(request: Request) {
   return providedSecret === expectedSecret;
 }
 
+/** "message_bsuid" es el mismo evento en el contrato nuevo de WATI (BSUID primero). */
+function isInboundMessageEvent(payload: WatiWebhookPayload) {
+  return payload.eventType === "message" || payload.eventType === "message_bsuid";
+}
+
+/**
+ * Identificador del cliente. Con el número oculto en WhatsApp no llega `waId`,
+ * solo el BSUID: lo usamos como llave de la conversación y como target de envío.
+ */
+function getSenderId(payload: WatiWebhookPayload): string | null {
+  for (const candidate of [payload.waId, payload.phone, payload.bsuid]) {
+    if (typeof candidate === "string" && candidate.trim()) return candidate.trim();
+  }
+  return null;
+}
+
 function getInboundTextMessage(payload: WatiWebhookPayload) {
   // WATI also notifies us of messages sent by the business and delivery states.
   // Only a customer text message can start the assistant workflow.
   const isOwner = payload.owner === true || payload.owner === "true" || payload.owner === 1 || payload.owner === "1";
-  if (payload.eventType !== "message" || isOwner || payload.type !== "text") {
+  if (!isInboundMessageEvent(payload) || isOwner || payload.type !== "text") {
     return null;
   }
 
-  const phone = typeof payload.waId === "string" ? payload.waId : typeof payload.phone === "string" ? payload.phone : null;
+  const phone = getSenderId(payload);
   const rawText = typeof payload.text === "string" ? payload.text : typeof payload.message === "string" ? payload.message : null;
   const text = rawText?.trim();
   const rawExternalId =
@@ -304,12 +321,12 @@ function getInboundNonTextMessage(payload: WatiWebhookPayload) {
   // Mensaje del cliente que no es texto (audio/imagen/documento…). Sin esto el
   // cliente quedaba en silencio absoluto.
   const isOwner = payload.owner === true || payload.owner === "true" || payload.owner === 1 || payload.owner === "1";
-  if (payload.eventType !== "message" || isOwner) return null;
+  if (!isInboundMessageEvent(payload) || isOwner) return null;
 
   const type = typeof payload.type === "string" ? payload.type.toLowerCase() : null;
   if (!type || type === "text" || !NON_TEXT_INBOUND_TYPES.has(type)) return null;
 
-  const phone = typeof payload.waId === "string" ? payload.waId : typeof payload.phone === "string" ? payload.phone : null;
+  const phone = getSenderId(payload);
   const rawExternalId =
     typeof payload.id === "string"
       ? payload.id
@@ -357,7 +374,20 @@ export async function POST(request: Request) {
 
   if (!incoming) {
     const media = getInboundNonTextMessage(payload);
-    if (!media) return Response.json({ received: true });
+    if (!media) {
+      // Mensaje de cliente que no supimos procesar: queda rastro (solo la forma
+      // del payload, sin contenido) para no volver a perderlo en silencio.
+      const isOwner = payload.owner === true || payload.owner === "true" || payload.owner === 1 || payload.owner === "1";
+      if (isInboundMessageEvent(payload) && !isOwner) {
+        console.warn("WATI_INBOUND_IGNORED", {
+          eventType: payload.eventType,
+          type: payload.type,
+          hasSender: Boolean(getSenderId(payload)),
+          keys: Object.keys(payload),
+        });
+      }
+      return Response.json({ received: true });
+    }
     if (await isAdvisorPhone(media.phone)) {
       return Response.json({ received: true, advisor: true });
     }
