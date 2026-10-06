@@ -864,15 +864,19 @@ export async function POST(request: Request) {
     return Response.json({ received: true, assistantFailed: true });
   }
 
-  // Escalada a asesor: por tool explícita de la IA o porque su respuesta ofrece
-  // pasar con un asesor. Pausa el bot y avisa (WhatsApp + in-app).
+  // Escalada a asesor. Solo la tool explícita de la IA (cliente que pide una
+  // persona, reclamo, caso que no puede resolver) pausa el bot. Si la respuesta
+  // apenas menciona a un asesor, se le avisa (WhatsApp + in-app) para que esa
+  // promesa tenga destinatario, pero la IA sigue atendiendo el chat.
   const mentionEscalation =
     !orderCreated && !assistantFailed && !escalateToHuman && replyRequestsAdvisor(reply);
   if (escalateToHuman || mentionEscalation) {
-    await prisma.watiConversation.update({
-      where: { id: conversation.id },
-      data: { botPaused: true },
-    });
+    if (escalateToHuman) {
+      await prisma.watiConversation.update({
+        where: { id: conversation.id },
+        data: { botPaused: true },
+      });
+    }
     await notifyAdvisor({
       conversationId: conversation.id,
       customerPhone: phone,
