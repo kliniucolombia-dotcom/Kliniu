@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
 export function useNotificationCount() {
   const [count, setCount] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchCount = useCallback(async () => {
     try {
@@ -22,15 +21,12 @@ export function useNotificationCount() {
   useEffect(() => {
     fetchCount();
 
-    // Poll cada 30s
-    intervalRef.current = setInterval(fetchCount, 30000);
-
-    // Refetch al hacer focus
+    // Sin sondeo periódico: el contador se actualiza por realtime (abajo) y al
+    // volver a la pestaña. El poll de 30s era ~20% del CPU de Vercel.
     const onFocus = () => fetchCount();
     window.addEventListener("focus", onFocus);
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
       window.removeEventListener("focus", onFocus);
     };
   }, [fetchCount]);
