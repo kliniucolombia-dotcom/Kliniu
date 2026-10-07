@@ -1,5 +1,5 @@
 import { authenticateUser } from "@/lib/users";
-import { setSessionCookie } from "@/lib/auth";
+import { checkAdminPin, setSessionCookie } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
@@ -37,7 +37,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const expectedAdminPin = process.env.ADMIN_EXTRA_PIN?.trim() || "1234";
+    if (user.role === "ADMIN" && checkAdminPin("") === "unset") {
+      console.error("ADMIN_EXTRA_PIN no está configurada: login de ADMIN bloqueado.");
+      return Response.json(
+        { error: "PIN de administrador no configurado. Contacta al superadministrador." },
+        { status: 500 },
+      );
+    }
 
     if (user.role === "ADMIN" && !adminPin) {
       return Response.json(
@@ -50,7 +56,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (user.role === "ADMIN" && adminPin !== expectedAdminPin) {
+    if (user.role === "ADMIN" && checkAdminPin(adminPin) !== "ok") {
       return Response.json(
         { error: "El PIN de administrador es incorrecto." },
         { status: 403 },

@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent 
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import WhatsAppAsesor from "../components/whatsapp-asesor";
+import EmailVerifyBanner from "./email-verify-banner";
+import PrivacySection from "./privacy-section";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { departamentosColombia, getCitiesForDepartment } from "@/lib/colombia-locations";
@@ -63,6 +65,7 @@ type FormState = {
   addressLine2: string;
   newPassword: string;
   confirmPassword: string;
+  currentPassword: string;
 };
 
 type AccountPanel = "summary" | "details" | "orders" | "facturas";
@@ -233,9 +236,11 @@ function OrderProgressTimeline({ order }: { order: AccountOrder }) {
 export default function AccountProfileForm({
   user,
   orders,
+  emailVerified,
 }: {
   user: AccountUser;
   orders: AccountOrder[];
+  emailVerified: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -261,6 +266,7 @@ export default function AccountProfileForm({
     addressLine2: user.addressLine2 || "",
     newPassword: "",
     confirmPassword: "",
+    currentPassword: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<ToastState>(null);
@@ -384,7 +390,7 @@ export default function AccountProfileForm({
       return;
     }
 
-    setForm((current) => ({ ...current, newPassword: "", confirmPassword: "" }));
+    setForm((current) => ({ ...current, newPassword: "", confirmPassword: "", currentPassword: "" }));
     setToast({
       tone: "success",
       message: payload.message || "Cuenta actualizada correctamente.",
@@ -543,6 +549,7 @@ export default function AccountProfileForm({
 
       {/* Content area */}
       <div className="w-full flex-1 min-w-0 overflow-x-hidden px-6 pt-8 pb-16 lg:px-12 lg:pt-12 lg:pb-24">
+        <EmailVerifyBanner email={user.email} verified={emailVerified} />
 
         {/* — Inicio panel — */}
         {(activePanel === "summary") && (
@@ -957,6 +964,24 @@ export default function AccountProfileForm({
                 />
               </div>
 
+              {(form.newPassword || form.email.trim().toLowerCase() !== user.email) && (
+                <div className="md:col-span-2">
+                  <label htmlFor="currentPassword" className="mb-2 block text-sm font-medium text-slate-700">
+                    Contraseña actual
+                  </label>
+                  <input
+                    id="currentPassword"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    value={form.currentPassword}
+                    onChange={handleChange}
+                    placeholder="Para confirmar que eres tú"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none transition-colors duration-200 focus:border-[#27B1B8]"
+                  />
+                </div>
+              )}
+
               {inlineError && (
                 <p className="rounded-xl border border-[#27B1B8]/20 bg-[#EAF8F6] px-4 py-3 text-sm font-medium text-[#0C535B] md:col-span-2">
                   {inlineError}
@@ -973,6 +998,8 @@ export default function AccountProfileForm({
                 </button>
               </div>
             </form>
+
+            <PrivacySection />
           </div>
         )}
 

@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import { getUserByEmail } from "@/lib/users";
 import { createResetPasswordToken } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { emailLinkOrigin } from "@/lib/site";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -32,8 +33,7 @@ export async function POST(request: Request) {
     }
 
     const token = await createResetPasswordToken(user.id, user.email);
-    const origin = new URL(request.url).origin;
-    const resetUrl = `${origin}/restablecer-contrasena?token=${token}`;
+    const resetUrl = `${emailLinkOrigin(request)}/restablecer-contrasena?token=${token}`;
 
     await resend.emails.send({
       from: "Kliniu <contacto@kliniu.com>",

@@ -181,7 +181,8 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   const [closedGroups, setClosedGroups] = useState<Record<string, boolean>>({});
   const [navSearch, setNavSearch] = useState("");
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [profileForm, setProfileForm] = useState({ fullName: "", email: "", phone: "", company: "" });
+  const [profileForm, setProfileForm] = useState({ fullName: "", email: "", phone: "", company: "", currentPassword: "" });
+  const [profileOriginalEmail, setProfileOriginalEmail] = useState("");
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
   const [profileAvatarFile, setProfileAvatarFile] = useState<File | null>(null);
   const [profileSaving, setProfileSaving] = useState(false);
@@ -197,8 +198,17 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     fetch("/api/panel/permissions")
-      .then((r) => r.json())
+      .then((r) => {
+        // Sesión de una cuenta eliminada o inactiva: se limpia la cookie y va a login,
+        // en vez de renderizar el panel sin datos de usuario.
+        if (r.status === 401) {
+          window.location.replace("/api/auth/session-expired");
+          return null;
+        }
+        return r.json();
+      })
       .then((d) => {
+        if (!d) return;
         setIsSuperAdmin(d.role === "SUPERADMIN");
         setUserInfo({ fullName: d.fullName, email: d.email, avatarUrl: d.avatarUrl, role: d.role });
         const perms = d.permissions as Record<string, { canView: boolean }> | undefined;
@@ -245,7 +255,8 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
       if (r.ok) {
         const d = await r.json();
         const u = d.user;
-        setProfileForm({ fullName: u.fullName ?? "", email: u.email ?? "", phone: u.phone ?? "", company: u.company ?? "" });
+        setProfileForm({ fullName: u.fullName ?? "", email: u.email ?? "", phone: u.phone ?? "", company: u.company ?? "", currentPassword: "" });
+        setProfileOriginalEmail(u.email ?? "");
         setProfileAvatar(u.avatarUrl ?? null);
       }
     } catch {}
@@ -276,7 +287,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
       const res = await fetch("/api/account", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName: profileForm.fullName, email: profileForm.email, phone: profileForm.phone, company: profileForm.company }),
+        body: JSON.stringify({ fullName: profileForm.fullName, email: profileForm.email, phone: profileForm.phone, company: profileForm.company, currentPassword: profileForm.currentPassword || undefined }),
       });
       if (res.ok) {
         setProfileMsg({ type: "ok", text: "Perfil actualizado" });
@@ -619,6 +630,14 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                 <label className="mb-1 block text-xs font-medium text-[#64748B]">Correo</label>
                 <input type="email" value={profileForm.email} onChange={(e) => setProfileForm((f) => ({ ...f, email: e.target.value }))} className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" />
               </div>
+
+              {/* Cambiar el correo exige la contraseña actual */}
+              {profileForm.email.trim().toLowerCase() !== profileOriginalEmail && (
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[#64748B]">Contraseña actual</label>
+                  <input type="password" autoComplete="current-password" value={profileForm.currentPassword} onChange={(e) => setProfileForm((f) => ({ ...f, currentPassword: e.target.value }))} placeholder="Para confirmar el cambio de correo" className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm outline-none focus:border-[#27B1B8]" />
+                </div>
+              )}
 
               {/* Teléfono */}
               <div>

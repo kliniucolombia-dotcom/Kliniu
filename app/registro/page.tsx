@@ -43,6 +43,7 @@ export default function RegistroPage() {
   const [inlineError, setInlineError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   const cityOptions = useMemo(
     () => getCitiesForDepartment(form.department),
@@ -91,7 +92,7 @@ export default function RegistroPage() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, acceptTerms }),
     });
 
     const payload = (await response.json()) as {
@@ -400,10 +401,31 @@ export default function RegistroPage() {
             </p>
           )}
 
+          <label className="flex items-start gap-3 text-sm leading-6 text-[#4b5158] md:col-span-2">
+            <input
+              type="checkbox"
+              checked={acceptTerms}
+              onChange={(event) => setAcceptTerms(event.target.checked)}
+              required
+              className="mt-1 h-4 w-4 shrink-0 accent-[#27B1B8]"
+            />
+            <span>
+              Acepto la{" "}
+              <Link href="/politicas/tratamiento-datos" target="_blank" className="font-semibold text-[#27B1B8] hover:underline">
+                Política de tratamiento de datos
+              </Link>{" "}
+              y los{" "}
+              <Link href="/politicas/terminos-y-condiciones" target="_blank" className="font-semibold text-[#27B1B8] hover:underline">
+                Términos y Condiciones
+              </Link>
+              .
+            </span>
+          </label>
+
           <div className="md:col-span-2">
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !acceptTerms}
               className="w-full rounded-xl bg-[#27B1B8] px-4 py-3 font-semibold text-white transition-colors duration-200 hover:bg-[#1E969B] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isSubmitting ? "Creando cuenta..." : "Crear cuenta"}

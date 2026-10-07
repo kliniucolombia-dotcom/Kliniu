@@ -90,6 +90,12 @@ model User {
   kTier                    String             @default("NONE")
   monthlyPeriod            String             @default("")
   whatsappPhone            String?
+  // Verificación suave del correo: null = pendiente (no bloquea la compra).
+  emailVerifiedAt          DateTime?
+  // Aceptación de la política de tratamiento de datos y los términos al registrarse.
+  acceptedTermsAt          DateTime?
+  // Cuenta anonimizada a petición del titular; los pedidos se conservan.
+  deletedAt                DateTime?
   // Quién cubre a esta persona cuando falta. Una persona puede respaldar varios puestos.
   backupUserId             String?
   backupUser               User?              @relation("UserBackup", fields: [backupUserId], references: [id], onDelete: SetNull)

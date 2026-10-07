@@ -18,7 +18,9 @@ export default async function MiCuentaPage() {
   const session = await getSessionFromCookies();
 
   if (!session) {
-    redirect("/login");
+    // proxy.ts ya dejó pasar la cookie (JWT válido), así que aquí la cuenta ya no
+    // existe o no está activa: hay que limpiar la cookie o /login rebota en bucle.
+    redirect("/api/auth/session-expired");
   }
 
   const user = await getUserById(session.userId);
@@ -37,5 +39,5 @@ export default async function MiCuentaPage() {
 
   const orders = await getOrdersForUser(session.userId);
 
-  return <AccountProfileForm user={user} orders={orders} />;
+  return <AccountProfileForm user={user} orders={orders} emailVerified={Boolean(user.emailVerifiedAt)} />;
 }

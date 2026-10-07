@@ -86,6 +86,11 @@ export default function ContactForm() {
         body: JSON.stringify(form),
       });
 
+      if (res.status === 429 || res.status === 400) {
+        const payload = (await res.json().catch(() => ({}))) as { error?: string };
+        setFeedback(payload.error || "No pudimos enviar tu mensaje.");
+        return;
+      }
       if (!res.ok) throw new Error("fallo el envío");
 
       setFeedback("¡Mensaje enviado! Te contactaremos pronto.");

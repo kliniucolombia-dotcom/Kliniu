@@ -1,6 +1,7 @@
 import { registerUser } from "@/lib/users";
 import { setSessionCookie } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { sendVerificationEmail } from "@/lib/email-verification";
 
 export async function POST(request: Request) {
   try {
@@ -22,6 +23,7 @@ export async function POST(request: Request) {
       addressLine2?: string;
       password?: string;
       confirmPassword?: string;
+      acceptTerms?: boolean;
     };
 
     const fullName = body.fullName?.trim() || "";
@@ -35,6 +37,13 @@ export async function POST(request: Request) {
     if (!fullName || !email || !department || !city || !addressLine1 || !password || !confirmPassword) {
       return Response.json(
         { error: "Completa todos los campos obligatorios." },
+        { status: 400 },
+      );
+    }
+
+    if (body.acceptTerms !== true) {
+      return Response.json(
+        { error: "Debes aceptar la política de tratamiento de datos y los términos y condiciones." },
         { status: 400 },
       );
     }
@@ -77,6 +86,9 @@ export async function POST(request: Request) {
       email: user.email,
       role: user.role,
     });
+
+    // Verificación suave: si el correo no sale, la cuenta igual queda creada.
+    await sendVerificationEmail(user, request);
 
     return Response.json(
       {

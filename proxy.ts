@@ -8,8 +8,9 @@ async function hasValidSession(request: NextRequest) {
   const secret = process.env.APP_SESSION_SECRET;
   if (!secret) return false;
   try {
-    await jwtVerify(token, new TextEncoder().encode(secret));
-    return true;
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(secret));
+    // Tokens de reset/verificación (llevan `purpose`) no son sesiones. Ver lib/auth.ts.
+    return !("purpose" in payload) && Boolean(payload.userId);
   } catch {
     return false;
   }
@@ -27,6 +28,15 @@ const GOOGLE_TAG_HOSTS = [
   "https://pagead2.googlesyndication.com",
 ].join(" ");
 
+// Gateway de la API de Conversiones de Meta: el propio script del pixel
+// (connect.facebook.net/signals/config/<pixel>) manda ahí una copia de cada evento.
+// Hosts exactos, no comodines: *.run.app y *.on.aws los puede alojar cualquiera.
+// Si Meta los cambia, la consola mostrará de nuevo el bloqueo de connect-src.
+const META_GATEWAY_HOSTS = [
+  "https://sl-11a463aaedf44600a99367660fd6fa70.ecs.us-east-1.on.aws",
+  "https://bded8a3c6ae-1-1053047382554.us-central1.run.app",
+].join(" ");
+
 function buildCsp(nonce: string) {
   // React en desarrollo usa eval() para reconstruir callstacks. Nunca en producción.
   const devEval = process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
@@ -37,7 +47,7 @@ function buildCsp(nonce: string) {
     `img-src 'self' data: blob: https://*.supabase.co https://www.facebook.com ${GOOGLE_TAG_HOSTS} https://www.google.com.co https://ssl.gstatic.com https://www.gstatic.com https://fonts.gstatic.com`,
     "media-src 'self' blob: https://*.supabase.co",
     "font-src 'self' data: https://fonts.gstatic.com",
-    `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.analytics.google.com https://www.facebook.com https://connect.facebook.net ${GOOGLE_TAG_HOSTS}`,
+    `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.analytics.google.com https://www.facebook.com https://connect.facebook.net ${META_GATEWAY_HOSTS} ${GOOGLE_TAG_HOSTS}`,
     "frame-src 'self' https://www.youtube.com https://www.googletagmanager.com https://td.doubleclick.net https://www.facebook.com",
     "object-src 'none'",
     "base-uri 'self'",

@@ -95,6 +95,8 @@ export async function POST(request: Request) {
       email: normalizedEmail,
       passwordHash,
       role: "EMPLOYEE",
+      // La crea RRHH con un correo que define la empresa: nace verificada.
+      emailVerifiedAt: new Date(),
     },
   });
 

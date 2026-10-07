@@ -406,9 +406,9 @@ export default function CheckoutForm({
               </button>
               <p className="mt-3 text-center text-xs text-[#aaa]">
                 Al continuar, aceptas nuestros{" "}
-                <Link href="/contacto" className="text-[#27B1B8] hover:underline">Términos y Condiciones</Link>
+                <Link href="/politicas/terminos-y-condiciones" target="_blank" className="text-[#27B1B8] hover:underline">Términos y Condiciones</Link>
                 {" "}y la{" "}
-                <Link href="/contacto" className="text-[#27B1B8] hover:underline">Política de privacidad</Link>.
+                <Link href="/politicas/privacidad" target="_blank" className="text-[#27B1B8] hover:underline">Política de privacidad</Link>.
               </p>
             </div>
           </form>
