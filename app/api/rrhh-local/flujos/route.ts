@@ -15,26 +15,31 @@ export async function GET() {
       where: { status: "PENDING" },
       orderBy: { createdAt: "asc" },
       include: employeeInclude,
+      take: 500,
     }),
     prisma.overtimeRequest.findMany({
       where: { status: "PENDING" },
       orderBy: { createdAt: "asc" },
       include: employeeInclude,
+      take: 500,
     }),
     prisma.benefitRequest.findMany({
       where: { status: "PENDING" },
       orderBy: { createdAt: "asc" },
       include: { ...employeeInclude, benefit: { select: { title: true } } },
+      take: 500,
     }),
     prisma.certificateRequest.findMany({
       where: { status: "PENDING" },
       orderBy: { createdAt: "asc" },
       include: employeeInclude,
+      take: 500,
     }),
     prisma.ticket.findMany({
       where: { status: { notIn: ["FINALIZADO", "CANCELADO"] } },
       orderBy: { createdAt: "asc" },
       include: { ...employeeInclude, category: { select: { name: true } } },
+      take: 500,
     }),
   ]);
 

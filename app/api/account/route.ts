@@ -2,6 +2,7 @@ import { clearSessionCookie, getSessionFromCookies, setSessionCookie } from "@/l
 import { anonymizeCustomerAccount, getUserById, updateUserProfile } from "@/lib/users";
 import { sendVerificationEmail } from "@/lib/email-verification";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { logAudit } from "@/lib/audit";
 
 export async function GET() {
   try {
@@ -166,6 +167,14 @@ export async function DELETE(request: Request) {
 
     await anonymizeCustomerAccount(session.userId, password);
     await clearSessionCookie();
+
+    await logAudit({
+      actorId: session.userId,
+      actorEmail: session.email,
+      action: "account.anonymize",
+      entity: "user",
+      entityId: session.userId,
+    });
 
     return Response.json({ message: "Tu cuenta fue eliminada." });
   } catch (error) {

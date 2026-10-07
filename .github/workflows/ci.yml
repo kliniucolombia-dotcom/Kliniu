@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # El repo arrastra deuda de lint preexistente: se reporta pero no bloquea.
+      # Sirve para ver si un cambio agrega problemas nuevos sin dejar el CI en rojo fijo.
+      - name: Lint (informativo)
+        continue-on-error: true
+        run: npx eslint
+
+      - name: Tests de operaciones
+        run: npm run test:operations

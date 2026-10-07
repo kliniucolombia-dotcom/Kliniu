@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { ALL_MODULES, type Permission } from "@/lib/permission-defaults";
 import type { PanelModule } from "@/generated/prisma/client";
 import { broadcastPanelUpdate } from "@/lib/realtime";
+import { logAudit } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requireSuperAdmin();
@@ -72,5 +74,14 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   );
 
   await broadcastPanelUpdate("permissions");
+  await logAudit({
+    actorId: access.user.id,
+    actorEmail: access.user.email,
+    action: "user.permissions_update",
+    entity: "user",
+    entityId: id,
+    meta: { modules: body.permissions.map((p) => p.module) },
+    ip: getClientIp(request),
+  });
   return Response.json({ ok: true });
 }

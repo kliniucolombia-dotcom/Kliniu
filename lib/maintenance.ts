@@ -72,6 +72,7 @@ export async function getEquipmentHistory(id: string) {
   return requirePrisma().maintenanceOrder.findMany({
     where: { equipmentId: id },
     orderBy: { reportedAt: "desc" },
+    take: 200,
     include: { reportedBy: { select: { fullName: true } }, assignedTo: { select: { fullName: true } } },
   });
 }
@@ -81,6 +82,7 @@ export async function listOrders(from: string, to: string) {
   return requirePrisma().maintenanceOrder.findMany({
     where: { OR: [{ status: { in: OPEN_STATUSES } }, { reportedAt: range }] },
     orderBy: [{ status: "asc" }, { priority: "desc" }, { reportedAt: "desc" }],
+    take: 500,
     include: {
       equipment: { select: { id: true, name: true, code: true, type: true, status: true } },
       reportedBy: { select: { fullName: true } },

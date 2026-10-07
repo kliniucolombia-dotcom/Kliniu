@@ -36,6 +36,7 @@ export async function listCalendarSellers(session: CalendarSession, onlyId?: str
     },
     select: { id: true, fullName: true, email: true, role: true },
     orderBy: { fullName: "asc" },
+    take: 500,
   });
   const settings = await prisma.sellerCalendarSetting.findMany({ where: { userId: { in: users.map((u) => u.id) } } });
   const byUser = new Map(settings.map((s) => [s.userId, s]));
@@ -94,7 +95,7 @@ export async function loadCalendar(opts: { month: string; session: CalendarSessi
 
   const holidaySet = new Set(holidays.map((h) => dateToKey(h.date)));
   const actorIds = [...new Set(events.map((e) => e.actorId))];
-  const actors = await prisma.user.findMany({ where: { id: { in: actorIds } }, select: { id: true, fullName: true, email: true } });
+  const actors = await prisma.user.findMany({ where: { id: { in: actorIds } }, select: { id: true, fullName: true, email: true }, take: 1000 });
   const actorName = new Map(actors.map((a) => [a.id, a.fullName || a.email]));
 
   type Bucket = {

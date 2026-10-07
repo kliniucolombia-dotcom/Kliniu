@@ -482,6 +482,7 @@ export async function getOrdersForUser(userId: string) {
   return await prisma.order.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
+    take: 200,
     include: {
       items: {
         orderBy: { createdAt: "asc" },
@@ -497,6 +498,7 @@ export async function getAllOrders() {
 
   return await prisma.order.findMany({
     orderBy: { createdAt: "desc" },
+    take: 500,
     include: {
       user: {
         select: {

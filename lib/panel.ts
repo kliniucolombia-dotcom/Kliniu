@@ -1111,6 +1111,7 @@ export async function getProductionRuns(filters?: { machineId?: string; operator
       product: { select: { id: true, name: true, sku: true } },
     },
     orderBy: [{ productionDate: "desc" }, { startTime: "desc" }],
+    take: 500,
   });
   return runs.map((r) => ({ ...r, summary: buildProductionSummary(toProductionRunInput(r)) }));
 }
@@ -1310,6 +1311,7 @@ export async function getProductionOrders(filters?: { status?: string; area?: st
     },
     include: { items: true, createdBy: { select: { fullName: true } } },
     orderBy: { createdAt: "desc" },
+    take: 500,
   });
   return orders.map((o) => ({
     id: o.id,

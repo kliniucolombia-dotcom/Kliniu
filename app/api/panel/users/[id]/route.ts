@@ -2,6 +2,8 @@ import { requireSuperAdmin } from "@/lib/permissions";
 import { deleteUserByAdmin, getUserDeletionImpact, hasDeletionImpact, updateUserByAdmin } from "@/lib/users";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { prisma } from "@/lib/prisma";
+import { logAudit } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requireSuperAdmin();
@@ -20,6 +22,15 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   try {
     const user = await updateUserByAdmin(id, body);
     await broadcastPanelUpdate("users");
+    await logAudit({
+      actorId: access.user.id,
+      actorEmail: access.user.email,
+      action: body.newPassword?.trim() ? "user.password_reset" : "user.update",
+      entity: "user",
+      entityId: id,
+      meta: { role: body.role, status: body.status, emailChanged: Boolean(body.email?.trim()) },
+      ip: getClientIp(request),
+    });
     return Response.json(user);
   } catch (e) {
     if (e instanceof Error && e.message === "EMAIL_ALREADY_EXISTS") {
@@ -60,6 +71,15 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   try {
     await deleteUserByAdmin(id, { force });
     await broadcastPanelUpdate("users");
+    await logAudit({
+      actorId: access.user.id,
+      actorEmail: access.user.email,
+      action: "user.delete",
+      entity: "user",
+      entityId: id,
+      meta: { force },
+      ip: getClientIp(request),
+    });
     return Response.json({ ok: true });
   } catch (e) {
     if (e && typeof e === "object" && "code" in e && e.code === "P2003") {

@@ -74,18 +74,21 @@ type WompiEventPayload = {
 
 // Verifica el checksum del webhook: SHA256 de los valores de `properties`
 // concatenados + timestamp + secreto de eventos, en ese orden.
+// Wompi especifica las propiedades relativas al objeto `data`
+// (docs.wompi.co/docs/colombia/eventos), no a la raíz del evento.
 export function verifyWompiEventSignature(payload: WompiEventPayload) {
   const secret = process.env.WOMPI_EVENTS_SECRET;
   if (!secret) throw new Error("WOMPI_NOT_CONFIGURED");
 
+  const data = (payload.data ?? {}) as Record<string, unknown>;
   const values = payload.signature.properties
     .map((path) => {
       const parts = path.split(".");
-      let value: unknown = payload;
+      let value: unknown = data;
       for (const part of parts) {
-        value = (value as Record<string, unknown>)?.[part];
+        value = (value as Record<string, unknown> | undefined)?.[part];
       }
-      return value;
+      return value ?? "";
     })
     .join("");
 
@@ -94,7 +97,14 @@ export function verifyWompiEventSignature(payload: WompiEventPayload) {
     .update(`${values}${payload.timestamp}${secret}`)
     .digest("hex");
 
-  return expected === payload.signature.checksum;
+  // El checksum de Wompi puede venir en mayúsculas; se compara en tiempo constante.
+  const provided = (payload.signature.checksum ?? "").toLowerCase();
+  const expectedBuf = Buffer.from(expected);
+  const providedBuf = Buffer.from(provided);
+  return (
+    expectedBuf.length === providedBuf.length &&
+    crypto.timingSafeEqual(expectedBuf, providedBuf)
+  );
 }
 
 // Doble verificación server-to-server: nunca confiar solo en el payload

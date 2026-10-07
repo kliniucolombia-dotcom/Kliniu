@@ -25,6 +25,10 @@ export type SessionPayload = {
   role: UserRole;
 };
 
+// El payload verificado además trae `iat` (fecha de emisión en segundos), que se
+// usa para revocar sesiones emitidas antes del último cambio de contraseña.
+export type VerifiedSession = SessionPayload & { iat: number };
+
 export async function createSessionToken(payload: SessionPayload) {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
@@ -40,7 +44,7 @@ export async function readSessionToken(token: string) {
   if ("purpose" in verified.payload || !verified.payload.userId) {
     throw new Error("INVALID_SESSION_TOKEN");
   }
-  return verified.payload as SessionPayload;
+  return verified.payload as VerifiedSession;
 }
 
 export async function setSessionCookie(payload: SessionPayload) {
@@ -62,6 +66,8 @@ export type ResetPasswordPayload = {
   purpose: "password-reset";
 };
 
+export type VerifiedResetPasswordPayload = ResetPasswordPayload & { iat: number };
+
 export async function createResetPasswordToken(userId: string, email: string) {
   return await new SignJWT({ userId, email, purpose: "password-reset" })
     .setProtectedHeader({ alg: "HS256" })
@@ -78,7 +84,7 @@ export async function readResetPasswordToken(token: string) {
     throw new Error("INVALID_RESET_TOKEN");
   }
 
-  return payload as ResetPasswordPayload;
+  return payload as VerifiedResetPasswordPayload;
 }
 
 export type EmailVerificationPayload = {
@@ -119,7 +125,7 @@ export async function getSessionFromCookies() {
     return null;
   }
 
-  let session: SessionPayload;
+  let session: VerifiedSession;
   try {
     session = await readSessionToken(token);
   } catch {
@@ -132,9 +138,19 @@ export async function getSessionFromCookies() {
   if (prisma) {
     const user = await prisma.user.findUnique({
       where: { id: session.userId },
-      select: { status: true },
+      select: { status: true, passwordChangedAt: true },
     });
     if (user?.status !== "ACTIVE") return null;
+
+    // Cambiar la contraseña cierra las demás sesiones: un token emitido antes del
+    // cambio deja de valer. `iat` va en segundos y la fecha se guarda truncada al
+    // segundo (lib/users.ts), para que la cookie reemitida en el mismo segundo viva.
+    if (
+      user.passwordChangedAt &&
+      session.iat * 1000 < user.passwordChangedAt.getTime()
+    ) {
+      return null;
+    }
   }
 
   return session;

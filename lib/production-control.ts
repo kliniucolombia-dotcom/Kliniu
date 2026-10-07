@@ -478,6 +478,7 @@ export async function getControlOptions(scope: ControlScope, actorId: string) {
       where: { status: "OPEN" },
       select: { id: true, number: true, reference: true, productName: true, client: true },
       orderBy: { number: "desc" },
+      take: 500,
     }),
     db.standardOperation.findMany({
       where: { isActive: true },
@@ -496,13 +497,13 @@ export async function getControlOptions(scope: ControlScope, actorId: string) {
         })
       : Promise.resolve([]),
     scope === "manage"
-      ? db.workOrder.findMany({ select: { client: true }, distinct: ["client"], orderBy: { client: "asc" } })
+      ? db.workOrder.findMany({ select: { client: true }, distinct: ["client"], orderBy: { client: "asc" }, take: 1000 })
       : Promise.resolve([]),
     scope === "manage" ? nextWorkOrderNumber() : Promise.resolve(null),
     // "Registrar por" (manage) y filtro por operario (manage/read).
     scope === "own"
       ? Promise.resolve([])
-      : db.user.findMany({ where: OPERATOR_WHERE, select: { id: true, fullName: true }, orderBy: { fullName: "asc" } }),
+      : db.user.findMany({ where: OPERATOR_WHERE, select: { id: true, fullName: true }, orderBy: { fullName: "asc" }, take: 500 }),
     // Operaciones usadas en el último mes por quien registra: salen primero en el selector.
     db.productionTimeEntry.findMany({
       where: { operatorId: actorId, workDate: { gte: civilDate(addDays(today, -30)) } },

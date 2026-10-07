@@ -43,6 +43,7 @@ export async function GET(request: Request) {
       assignedSeller: { select: { fullName: true } },
     },
     orderBy: { createdAt: "desc" },
+    take: 1000,
   });
 
   return Response.json(orders);

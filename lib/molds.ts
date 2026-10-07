@@ -44,6 +44,7 @@ export async function listMoldChanges(from: string, to: string) {
   return requirePrisma().moldChange.findMany({
     where: { startedAt: { gte: parseBogotaDate(from), lte: endOfBogotaDay(to) } },
     orderBy: { startedAt: "desc" },
+    take: 500,
     include: {
       machine: { select: { id: true, code: true, name: true } },
       mold: { select: { id: true, code: true, name: true } },

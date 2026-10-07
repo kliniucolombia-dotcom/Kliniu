@@ -40,6 +40,7 @@ export async function getAllWatiConversations() {
 
   const conversations = await db.watiConversation.findMany({
     orderBy: { updatedAt: "desc" },
+    take: 500,
     include: {
       messages: {
         orderBy: { createdAt: "desc" },

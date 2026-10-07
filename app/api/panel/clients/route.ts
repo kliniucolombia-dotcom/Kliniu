@@ -9,6 +9,7 @@ export async function GET() {
     where: { role: "CUSTOMER" },
     select: { id: true, fullName: true, company: true, email: true, city: true },
     orderBy: { fullName: "asc" },
+    take: 1000,
   });
   return Response.json(clients);
 }

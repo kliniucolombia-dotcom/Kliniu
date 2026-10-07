@@ -20,7 +20,7 @@ export async function GET() {
 
   // RRHH/SUPERADMIN ven todo; un responsable ve lo suyo; el resto ve solo sus propias solicitudes.
   if (isRRHH(access.user)) {
-    const tickets = await prisma.ticket.findMany({ orderBy: { createdAt: "desc" }, include: TICKET_INCLUDE });
+    const tickets = await prisma.ticket.findMany({ orderBy: { createdAt: "desc" }, include: TICKET_INCLUDE, take: 1000 });
     return Response.json(tickets);
   }
 
@@ -34,6 +34,7 @@ export async function GET() {
     },
     orderBy: { createdAt: "desc" },
     include: TICKET_INCLUDE,
+    take: 1000,
   });
   return Response.json(tickets);
 }

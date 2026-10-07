@@ -1,13 +1,8 @@
 import { remindUnattendedEscalations } from "@/lib/wati-escalation";
 import { sendPendingWatiFollowUps } from "@/lib/wati-followup";
+import { hasValidCronSecret } from "@/lib/cron-auth";
 
 export const maxDuration = 60;
-
-function hasValidCronSecret(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  return request.headers.get("authorization") === `Bearer ${secret}`;
-}
 
 export async function GET(request: Request) {
   if (!hasValidCronSecret(request)) {

@@ -14,7 +14,7 @@ export async function GET() {
   if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
 
   if (isRRHH(access.user) || isAdmin(access.user)) {
-    const tickets = await prisma.ticket.findMany({ orderBy: { createdAt: "desc" }, include: TICKET_INCLUDE });
+    const tickets = await prisma.ticket.findMany({ orderBy: { createdAt: "desc" }, include: TICKET_INCLUDE, take: 1000 });
     return Response.json({ tickets, scope: "all" });
   }
 
@@ -29,6 +29,7 @@ export async function GET() {
     },
     orderBy: { createdAt: "desc" },
     include: TICKET_INCLUDE,
+    take: 1000,
   });
   return Response.json({ tickets, scope: "assigned" });
 }

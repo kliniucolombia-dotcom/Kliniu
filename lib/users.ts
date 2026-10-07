@@ -3,6 +3,12 @@ import { compare, hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import type { UserRole } from "@/generated/prisma/client";
 
+// Marca de cambio de contraseña truncada al segundo: el `iat` de la sesión va en
+// segundos, y así la cookie reemitida en el mismo segundo no queda inválida.
+function passwordChangeStamp() {
+  return new Date(Math.floor(Date.now() / 1000) * 1000);
+}
+
 export type RegisterUserInput = {
   fullName: string;
   company?: string;
@@ -213,6 +219,7 @@ export async function updateUserProfile(
     addressLine1?: string | null;
     addressLine2?: string | null;
     passwordHash?: string;
+    passwordChangedAt?: Date;
     emailVerifiedAt?: null;
   } = {
     fullName,
@@ -245,6 +252,7 @@ export async function updateUserProfile(
 
   if (input.newPassword?.trim()) {
     data.passwordHash = await hash(input.newPassword.trim(), 10);
+    data.passwordChangedAt = passwordChangeStamp();
   }
 
   // Un correo nuevo vuelve a quedar pendiente de confirmación.
@@ -372,6 +380,7 @@ export async function anonymizeCustomerAccount(userId: string, password: string)
         emailVerifiedAt: null,
         status: "INACTIVE",
         deletedAt: new Date(),
+        passwordChangedAt: passwordChangeStamp(),
       },
     }),
   ]);
@@ -386,7 +395,7 @@ export async function resetUserPassword(userId: string, newPassword: string) {
 
   await prisma.user.update({
     where: { id: userId },
-    data: { passwordHash },
+    data: { passwordHash, passwordChangedAt: passwordChangeStamp() },
   });
 }
 
@@ -470,6 +479,7 @@ export async function listUsers(): Promise<PublicUser[]> {
   return await prisma.user.findMany({
     where: { role: { not: "CUSTOMER" } },
     orderBy: { createdAt: "desc" },
+    take: 500,
     select: {
       id: true, fullName: true, company: true, email: true, phone: true, whatsappPhone: true,
       department: true, city: true, addressLine1: true, addressLine2: true, avatarUrl: true,
@@ -578,6 +588,7 @@ export async function updateUserByAdmin(userId: string, input: UpdateUserByAdmin
     role?: UserRole;
     status?: "ACTIVE" | "INACTIVE" | "SUSPENDED";
     passwordHash?: string;
+    passwordChangedAt?: Date;
     backupUserId?: string | null;
     avatarUrl?: string | null;
   } = {};
@@ -604,6 +615,7 @@ export async function updateUserByAdmin(userId: string, input: UpdateUserByAdmin
 
   if (input.newPassword?.trim()) {
     data.passwordHash = await hash(input.newPassword.trim(), 10);
+    data.passwordChangedAt = passwordChangeStamp();
   }
 
   const user = await prisma.user.update({

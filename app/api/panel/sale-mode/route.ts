@@ -1,5 +1,7 @@
 import { requireSuperAdmin } from "@/lib/admin";
 import { getSaleMode, setSaleMode, type SaleMode } from "@/lib/sale-mode";
+import { logAudit } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
 
 export async function GET() {
   try {
@@ -14,8 +16,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  let actor: Awaited<ReturnType<typeof requireSuperAdmin>>;
   try {
-    await requireSuperAdmin();
+    actor = await requireSuperAdmin();
   } catch (err) {
     const status = err instanceof Error && err.message === "UNAUTHORIZED" ? 401 : 403;
     return Response.json({ error: "FORBIDDEN" }, { status });
@@ -34,5 +37,14 @@ export async function POST(req: Request) {
   }
 
   await setSaleMode(mode as SaleMode);
+  await logAudit({
+    actorId: actor.id,
+    actorEmail: actor.email,
+    action: "appconfig.sale_mode",
+    entity: "appConfig",
+    entityId: "sale_mode",
+    meta: { mode },
+    ip: getClientIp(req),
+  });
   return Response.json({ mode });
 }

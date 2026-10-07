@@ -1,13 +1,8 @@
 import { expireStaleOrders } from "@/lib/orders";
 import { broadcastPanelUpdate } from "@/lib/realtime";
+import { hasValidCronSecret } from "@/lib/cron-auth";
 
 export const maxDuration = 60;
-
-function hasValidCronSecret(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  return request.headers.get("authorization") === `Bearer ${secret}`;
-}
 
 export async function GET(request: Request) {
   if (!hasValidCronSecret(request)) {

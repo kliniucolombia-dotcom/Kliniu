@@ -1,6 +1,7 @@
 import { authenticateUser } from "@/lib/users";
 import { checkAdminPin, setSessionCookie } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { logAudit } from "@/lib/audit";
 
 export async function POST(request: Request) {
   try {
@@ -57,6 +58,14 @@ export async function POST(request: Request) {
     }
 
     if (user.role === "ADMIN" && checkAdminPin(adminPin) !== "ok") {
+      await logAudit({
+        actorId: user.id,
+        actorEmail: user.email,
+        action: "admin.login_pin_failed",
+        entity: "user",
+        entityId: user.id,
+        ip: getClientIp(request),
+      });
       return Response.json(
         { error: "El PIN de administrador es incorrecto." },
         { status: 403 },
@@ -67,6 +76,15 @@ export async function POST(request: Request) {
       userId: user.id,
       email: user.email,
       role: user.role,
+    });
+
+    await logAudit({
+      actorId: user.id,
+      actorEmail: user.email,
+      action: "admin.login",
+      entity: "user",
+      entityId: user.id,
+      ip: getClientIp(request),
     });
 
     return Response.json({

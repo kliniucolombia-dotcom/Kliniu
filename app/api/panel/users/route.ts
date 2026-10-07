@@ -1,6 +1,8 @@
 import { requireSuperAdmin } from "@/lib/permissions";
 import { createUserByAdmin, listUsers } from "@/lib/users";
 import { createNotification } from "@/lib/notifications";
+import { logAudit } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
 
 export async function GET() {
   const access = await requireSuperAdmin();
@@ -40,6 +42,16 @@ export async function POST(request: Request) {
       createdById: access.user.id,
       metadata: { userId: user.id, role: body.role },
     }).catch(() => {});
+
+    await logAudit({
+      actorId: access.user.id,
+      actorEmail: access.user.email,
+      action: "user.create",
+      entity: "user",
+      entityId: user.id,
+      meta: { role: body.role, email: user.email },
+      ip: getClientIp(request),
+    });
 
     return Response.json(user);
   } catch (e) {

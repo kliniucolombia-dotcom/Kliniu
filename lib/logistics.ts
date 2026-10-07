@@ -185,6 +185,8 @@ export async function listCustomers() {
     db.order.findMany({
       distinct: ["customerName", "addressLine1"],
       select: { id: true, customerName: true, customerPhone: true, addressLine1: true, city: true },
+      orderBy: { createdAt: "desc" },
+      take: 1000,
     }),
   ]);
 

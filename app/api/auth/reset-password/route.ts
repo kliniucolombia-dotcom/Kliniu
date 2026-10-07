@@ -1,5 +1,6 @@
 import { readResetPasswordToken } from "@/lib/auth";
 import { resetUserPassword } from "@/lib/users";
+import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
@@ -31,6 +32,26 @@ export async function POST(request: Request) {
     try {
       payload = await readResetPasswordToken(token);
     } catch {
+      return Response.json(
+        { error: "El enlace expiró o no es válido. Solicita uno nuevo." },
+        { status: 400 },
+      );
+    }
+
+    // Un solo uso: usar el enlace mueve `passwordChangedAt`, así que cualquier
+    // token emitido antes (incluido el propio) queda muerto. También mueren los
+    // enlaces pedidos antes del último cambio de contraseña.
+    const owner = prisma
+      ? await prisma.user.findUnique({
+          where: { id: payload.userId },
+          select: { passwordChangedAt: true },
+        })
+      : null;
+    if (
+      !owner ||
+      (owner.passwordChangedAt &&
+        payload.iat * 1000 <= owner.passwordChangedAt.getTime())
+    ) {
       return Response.json(
         { error: "El enlace expiró o no es válido. Solicita uno nuevo." },
         { status: 400 },

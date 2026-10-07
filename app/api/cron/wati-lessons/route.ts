@@ -1,12 +1,7 @@
 import { runLessonsAnalysis } from "@/lib/wati-lessons";
+import { hasValidCronSecret } from "@/lib/cron-auth";
 
 export const maxDuration = 60;
-
-function hasValidCronSecret(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  return request.headers.get("authorization") === `Bearer ${secret}`;
-}
 
 export async function GET(request: Request) {
   if (!hasValidCronSecret(request)) {

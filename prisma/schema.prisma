@@ -96,6 +96,8 @@ model User {
   acceptedTermsAt          DateTime?
   // Cuenta anonimizada a petición del titular; los pedidos se conservan.
   deletedAt                DateTime?
+  // Invalidación de sesiones: un JWT con iat anterior a esta fecha deja de valer.
+  passwordChangedAt        DateTime?
   // Quién cubre a esta persona cuando falta. Una persona puede respaldar varios puestos.
   backupUserId             String?
   backupUser               User?              @relation("UserBackup", fields: [backupUserId], references: [id], onDelete: SetNull)
@@ -643,6 +645,24 @@ model AppConfig {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+/// Bitácora de acciones sensibles (login de admin, gestión de usuarios, permisos,
+/// modo de venta, borrado de cuenta). Sin relación con User: se conserva aunque el
+/// actor se elimine. RLS deny-all + policy service_role (patrón del proyecto).
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actorEmail String
+  action     String
+  entity     String
+  entityId   String?
+  meta       Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId])
 }
 
 enum WatiConversationStatus {
