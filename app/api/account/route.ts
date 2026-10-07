@@ -170,7 +170,8 @@ export async function DELETE(request: Request) {
 
     await logAudit({
       actorId: session.userId,
-      actorEmail: session.email,
+      // Derecho de supresión: no se conserva el correo de una cuenta anonimizada.
+      actorEmail: "[anonimizado]",
       action: "account.anonymize",
       entity: "user",
       entityId: session.userId,
