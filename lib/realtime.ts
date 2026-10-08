@@ -19,7 +19,8 @@ export type RealtimeResource =
   | "maintenance"
   | "assembly"
   | "production-control"
-  | "rrhh";
+  | "rrhh"
+  | "planner";
 
 /** Notifica a los clientes suscritos al canal "panel-updates" que un recurso cambió. */
 export async function broadcastPanelUpdate(resource: RealtimeResource) {

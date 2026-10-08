@@ -110,6 +110,10 @@ export const NOTIFICATION_EVENTS: Record<string, Omit<NotificationEvent, "title"
   "wati.remarketing_reply":    { type: "wati", category: "remarketing_reply",    targetRoles: SALES, severity: "info" },
   "wati.shipped_outside_window": { type: "wati", category: "shipped_outside_window", targetRoles: SALES, severity: "warning" },
 
+  // ─── Tareas (tablero tipo Planner) ──
+  "task.assigned":  { type: "task", category: "task_assigned", targetRoles: [], severity: "info" }, // targetUserId dinámico
+  "task.due_soon":  { type: "task", category: "task_due_soon", targetRoles: [], severity: "warning" }, // targetUserId dinámico
+
   // ─── Comunicados ──
   "announcement.new": { type: "announcement", category: "announcement_new", targetRoles: ALL_PANEL, severity: "info" },
 };

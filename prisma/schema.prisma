@@ -147,6 +147,10 @@ model User {
   productionTimeEntries        ProductionTimeEntry[] @relation("TimeEntryOperator")
   productionTimeEntriesCreated ProductionTimeEntry[] @relation("TimeEntryCreatedBy")
   workOrdersCreated            WorkOrder[]           @relation("WorkOrderCreatedBy")
+  plannerTasksCreated          PlannerTask[]         @relation("PlannerTaskCreatedBy")
+  plannerAssignments           PlannerTaskAssignee[]
+  plannerComments              PlannerComment[]
+  plannerNotes                 PlannerNote[]
 }
 
 model CartItem {
@@ -608,6 +612,7 @@ enum PanelModule {
   MODULE_ENSAMBLE
   MODULE_TICKETS
   MODULE_CONTROL_PRODUCCION
+  MODULE_TAREAS
 }
 
 enum BannerType {
@@ -2046,6 +2051,85 @@ model OperationsReport {
   @@index([module])
   @@index([periodStart])
   @@index([authorId])
+}
+
+// ─── Tareas del panel (tablero tipo Planner) ────────────────────────────
+
+enum PlannerStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum PlannerPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model PlannerTask {
+  id          String           @id @default(cuid())
+  title       String
+  description String?
+  status      PlannerStatus    @default(PENDING)
+  priority    PlannerPriority  @default(MEDIUM)
+  dueDate     DateTime?
+  // Orden dentro de la columna (para el drag & drop del tablero).
+  position    Int              @default(0)
+  // Etiquetas: ["Compras", "Urgente"].
+  labels      Json             @default("[]")
+  // Checklist: [{ id, text, done }].
+  checklist   Json             @default("[]")
+  // Adjuntos: [{ url, name, isImage }].
+  attachments Json             @default("[]")
+  createdById String
+  completedAt DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  createdBy   User             @relation("PlannerTaskCreatedBy", fields: [createdById], references: [id])
+  assignees   PlannerTaskAssignee[]
+  comments    PlannerComment[]
+
+  @@index([status])
+  @@index([dueDate])
+  @@index([createdById])
+}
+
+model PlannerTaskAssignee {
+  taskId String
+  userId String
+  task   PlannerTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
+  @@index([userId])
+}
+
+model PlannerComment {
+  id        String      @id @default(cuid())
+  taskId    String
+  authorId  String
+  message   String
+  createdAt DateTime    @default(now())
+  task      PlannerTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author    User        @relation(fields: [authorId], references: [id])
+
+  @@index([taskId])
+}
+
+// Notas personales: solo las ve su dueño.
+model PlannerNote {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @default("")
+  content   String   @default("")
+  color     String   @default("#FEF3C7")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
 }
 
 // ─── Notificaciones generales del panel ─────────────────────────────────

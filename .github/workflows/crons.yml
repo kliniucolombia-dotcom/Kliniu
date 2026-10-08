@@ -34,3 +34,10 @@ jobs:
           curl -fsS --max-time 60 \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "https://kliniucolombia.com/api/cron/wati-followup"
+
+      - name: Task reminders (Tareas)
+        if: always()
+        run: |
+          curl -fsS --max-time 60 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://kliniucolombia.com/api/cron/tareas-recordatorio"

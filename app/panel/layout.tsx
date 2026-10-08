@@ -9,7 +9,7 @@ import {
   MdApartment, MdAccessTime, MdBeachAccess, MdRemoveCircleOutline, MdSwapHoriz, MdHandshake,
   MdCreditCard, MdHelpOutline, MdGroup, MdWarehouse, MdArticle, MdSmartToy, MdShoppingCart,
   MdInventory, MdExtension, MdConfirmationNumber, MdChat, MdVideocam, MdFolder,
-  MdLocalShipping, MdBuild, MdCalendarMonth,
+  MdLocalShipping, MdBuild, MdCalendarMonth, MdChecklist,
 } from "react-icons/md";
 import { ConfirmProvider, useConfirm } from "@/app/components/confirm-dialog";
 import AccountEntryLoading from "@/app/components/account-entry-loading";
@@ -40,6 +40,13 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   { key: "inicio", href: "/panel", label: "Inicio", icon: <MdDashboard size={18} />, module: "MODULE_DASHBOARD" },
+  {
+    key: "tareas",
+    href: "/panel/tareas",
+    label: "Tareas",
+    icon: <MdChecklist size={18} />,
+    module: "MODULE_TAREAS",
+  },
   {
     key: "comercial",
     href: "/panel/pedidos",
