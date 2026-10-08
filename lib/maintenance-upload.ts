@@ -17,6 +17,19 @@ const DOC_TYPES: Record<string, string> = {
   "text/csv": "csv",
   "text/plain": "txt",
 };
+const MAGIC = {
+  pdf: [0x25, 0x50, 0x44, 0x46], // %PDF
+  zip: [0x50, 0x4b], // docx/xlsx/pptx
+  ole: [0xd0, 0xcf, 0x11, 0xe0], // doc/xls/ppt
+};
+function matchesMagic(type: string, head: Buffer) {
+  const starts = (sig: number[]) => sig.every((b, i) => head[i] === b);
+  const ext = DOC_TYPES[type];
+  if (ext === "pdf") return starts(MAGIC.pdf);
+  if (ext === "docx" || ext === "xlsx" || ext === "pptx") return starts(MAGIC.zip);
+  if (ext === "doc" || ext === "xls" || ext === "ppt") return starts(MAGIC.ole);
+  return !head.includes(0); // csv/txt: texto plano, sin bytes nulos
+}
 const FOLDERS = ["equipos", "ordenes", "inventario", "cotizaciones", "informes", "tareas"] as const;
 export type MaintenanceFolder = (typeof FOLDERS)[number];
 
@@ -26,7 +39,9 @@ export async function uploadMaintenanceFile(file: File, folder: MaintenanceFolde
   if (file.size > MAX_FILE_SIZE_BYTES) throw new Error("FILE_TOO_LARGE");
 
   const isImage = IMAGE_TYPES.includes(file.type);
-  if (!isImage && !DOC_TYPES[file.type]) throw new Error("INVALID_FILE_TYPE");
+  if (!isImage && !Object.hasOwn(DOC_TYPES, file.type)) throw new Error("INVALID_FILE_TYPE");
+  // El content-type lo declara el cliente: se comprueba contra los primeros bytes del archivo.
+  if (!isImage && !matchesMagic(file.type, Buffer.from(await file.slice(0, 8).arrayBuffer()))) throw new Error("INVALID_FILE_TYPE");
 
   const supabase = createSupabaseStorageClient();
   if (!supabase) throw new Error("STORAGE_NOT_CONFIGURED");
