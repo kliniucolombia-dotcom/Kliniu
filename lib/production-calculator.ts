@@ -45,7 +45,7 @@ export function buildProductionSummary(input: ProductionRunInput): ProductionSum
 export type ProductionEfficiency = {
   /** Minutos transcurridos entre hora de inicio y hora final. */
   durationMinutes: number;
-  /** Piezas que deberían salir en ese tiempo según el ciclo (sin paradas). */
+  /** Piezas que deberían salir en ese tiempo según el ciclo y las cavidades (sin paradas). */
   expectedPieces: number;
   /** Producidas / esperadas × 100. `null` si no hay ciclo válido. */
   efficiencyPercentage: number | null;
@@ -62,11 +62,13 @@ export function calcProductionEfficiency(input: {
   endTime: string | Date;
   cycle: number;
   cycleUnit: string;
+  cavities?: number | null;
 }): ProductionEfficiency {
   const durationMs = new Date(input.endTime).getTime() - new Date(input.startTime).getTime();
   const durationSeconds = Number.isFinite(durationMs) ? Math.max(durationMs / 1000, 0) : 0;
   const cycleSeconds = input.cycleUnit === "minutes" ? input.cycle * 60 : input.cycle;
-  const expectedPieces = cycleSeconds > 0 ? Math.floor(durationSeconds / cycleSeconds) : 0;
+  const cavities = input.cavities && input.cavities > 0 ? Math.floor(input.cavities) : 1;
+  const expectedPieces = cycleSeconds > 0 ? Math.floor(durationSeconds / cycleSeconds) * cavities : 0;
   const efficiencyPercentage = expectedPieces > 0 ? (input.produced / expectedPieces) * 100 : null;
   return { durationMinutes: durationSeconds / 60, expectedPieces, efficiencyPercentage };
 }

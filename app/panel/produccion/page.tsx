@@ -70,6 +70,7 @@ type RunListItem = {
   pieceWeight: number;
   cycle: number;
   cycleUnit: string;
+  cavities: number;
   temperature: number;
   temperatureType: string;
   temperatureZones: Zone[] | null;
@@ -98,6 +99,7 @@ type FormState = {
   pieceWeight: string;
   cycleValue: string;
   cycleUnit: CycleUnit;
+  cavities: string;
   temperatureType: TemperatureType;
   temperature: string;
   zones: Zone[];
@@ -129,6 +131,7 @@ const emptyForm = (): FormState => ({
   pieceWeight: "",
   cycleValue: "",
   cycleUnit: "seconds",
+  cavities: "1",
   temperatureType: "simple",
   temperature: "",
   zones: [
@@ -261,6 +264,19 @@ export default function ProduccionPage() {
   const set = <K extends keyof FormState>(field: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [field]: value }));
 
+  // Autollena las cavidades con las de la última corrida del mismo producto.
+  useEffect(() => {
+    const name = form.manualProductName.trim().toLowerCase();
+    const same = runs.filter((r) =>
+      form.productId === MANUAL_PRODUCT ? name !== "" && r.manualProductName?.trim().toLowerCase() === name : form.productId !== "" && r.product?.id === form.productId,
+    );
+    if (!same.length) return setForm((f) => (f.cavities === "1" ? f : { ...f, cavities: "1" }));
+    const last = same.reduce((a, b) => (new Date(b.productionDate) > new Date(a.productionDate) ? b : a));
+    setForm((f) => (f.cavities === String(last.cavities) ? f : { ...f, cavities: String(last.cavities ?? 1) }));
+    // Solo al cambiar de producto: un refresco de `runs` no debe pisar lo que edite el operario.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.productId, form.manualProductName]);
+
   const setZone = (index: number, value: string) =>
     setForm((f) => ({ ...f, zones: f.zones.map((z, i) => (i === index ? { ...z, value } : z)) }));
 
@@ -354,6 +370,7 @@ export default function ProduccionPage() {
           pieceWeight: sanitize(form.pieceWeight),
           cycle: sanitize(form.cycleValue),
           cycleUnit: form.cycleUnit,
+          cavities: Math.max(1, sanitize(form.cavities, true)),
           temperature: form.temperatureType === "simple" ? sanitize(form.temperature) : 0,
           temperatureType: form.temperatureType,
           temperatureZones:
@@ -767,6 +784,19 @@ export default function ProduccionPage() {
                   </div>
                 </div>
                 {show(form.cycleValue === "") && <p className={errorClass}>Ingresa el ciclo.</p>}
+              </div>
+              <div>
+                <label className={labelClass}>Cavidades del molde</label>
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={form.cavities}
+                  onChange={(e) => set("cavities", e.target.value)}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  placeholder="1"
+                  className={`no-spinner ${inputClass}`}
+                />
               </div>
               <div className="col-span-full sm:col-span-2">
                 <label className={labelClass}>Tipo de temperatura <Req /></label>
@@ -1557,6 +1587,7 @@ function DetailModal({ run, onClose }: { run: RunListItem; onClose: () => void }
             <InfoRow label="Producto">{productLabel(run)}</InfoRow>
             <InfoRow label="Material">{run.material}</InfoRow>
             <InfoRow label="Ciclo">{cycleLabel}</InfoRow>
+            <InfoRow label="Cavidades">{run.cavities ?? 1}</InfoRow>
             <InfoRow label="Producción esperada">{efficiency.expectedPieces.toLocaleString("es-CO")} piezas</InfoRow>
           </SectionCard>
 

@@ -471,6 +471,8 @@ model ProductionRun {
   pieceWeight     Float
   cycle           Float
   cycleUnit       String @default("seconds")
+  // Cavidades del molde: piezas que salen por ciclo.
+  cavities        Int    @default(1)
   temperature     Float
   temperatureType String @default("simple")
   temperatureZones Json? @default("[]")

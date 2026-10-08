@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     productionDate?: string; startTime?: string; endTime?: string;
     material?: string; pigment?: string | null;
     pigmentQuantity?: number | null; pigmentColor?: string | null;
-    injectionWeight?: number; pieceWeight?: number; cycle?: number; cycleUnit?: string;
+    injectionWeight?: number; pieceWeight?: number; cycle?: number; cycleUnit?: string; cavities?: number;
     temperature?: number; temperatureType?: string; temperatureZones?: unknown;
     manualProductName?: string | null;
     produced?: number; damaged?: number; nonConforming?: number;
@@ -66,6 +66,7 @@ export async function POST(request: Request) {
     if (body.nonConforming !== undefined) parseNonNegativeNumber(body.nonConforming);
     if (body.pigmentQuantity !== undefined && body.pigmentQuantity !== null) parseNonNegativeNumber(body.pigmentQuantity);
     if (!Number.isInteger(body.produced) || (body.damaged !== undefined && !Number.isInteger(body.damaged)) || (body.nonConforming !== undefined && !Number.isInteger(body.nonConforming))) throw new Error("INVALID_NUMBER");
+    if (body.cavities !== undefined && (!Number.isInteger(body.cavities) || body.cavities < 1 || body.cavities > 500)) throw new Error("INVALID_NUMBER");
     cycleUnit = body.cycleUnit === undefined ? "seconds" : parseEnum(body.cycleUnit, CYCLE_UNITS);
     temperatureType = body.temperatureType === undefined ? "simple" : parseEnum(body.temperatureType, TEMPERATURE_TYPES);
     couplingStatus = body.couplingStatus === undefined || body.couplingStatus === null
@@ -97,6 +98,7 @@ export async function POST(request: Request) {
       pieceWeight: body.pieceWeight,
       cycle: body.cycle,
       cycleUnit,
+      cavities: body.cavities ?? 1,
       temperature: body.temperature,
       temperatureType,
       temperatureZones,

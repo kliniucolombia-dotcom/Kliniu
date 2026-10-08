@@ -95,6 +95,7 @@ export function ProductionRunDetail({ run }: { run: ProductionRunDetailData }) {
           <PrintRow label="Producto">{productName}</PrintRow>
           <PrintRow label="Material">{run.material}</PrintRow>
           <PrintRow label="Ciclo">{`${run.cycle} ${cycleUnitLabel(run.cycleUnit)}`}</PrintRow>
+          <PrintRow label="Cavidades">{run.cavities ?? 1}</PrintRow>
           <PrintRow label="Producción esperada">{efficiency.expectedPieces.toLocaleString("es-CO")} piezas</PrintRow>
         </PrintSection>
 

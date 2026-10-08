@@ -1147,6 +1147,7 @@ export type ProductionRunWriteData = {
   pieceWeight: number;
   cycle: number;
   cycleUnit?: CycleUnit;
+  cavities?: number;
   temperature: number;
   temperatureType?: TemperatureType;
   temperatureZones?: TemperatureZone[] | null;
@@ -1207,6 +1208,7 @@ export async function createProductionRun(data: ProductionRunWriteData) {
       pieceWeight: sanitizeProductionNumber(data.pieceWeight, { min: 0 }),
       cycle: sanitizeProductionNumber(data.cycle, { min: 0 }),
       cycleUnit: data.cycleUnit ?? "seconds",
+      cavities: data.cavities ? sanitizeProductionNumber(data.cavities, { min: 1, max: 500, integer: true }) : 1,
       temperature: sanitizeProductionNumber(data.temperature, { min: 0 }),
       temperatureType: data.temperatureType ?? "simple",
       temperatureZones: normalizeTemperatureZones(data.temperatureZones),
@@ -1252,6 +1254,7 @@ export async function updateProductionRun(id: string, data: Partial<ProductionRu
       ...(data.pieceWeight !== undefined ? { pieceWeight: sanitizeProductionNumber(data.pieceWeight, { min: 0 }) } : {}),
       ...(data.cycle !== undefined ? { cycle: sanitizeProductionNumber(data.cycle, { min: 0 }) } : {}),
       ...(data.cycleUnit !== undefined ? { cycleUnit: data.cycleUnit } : {}),
+      ...(data.cavities !== undefined ? { cavities: sanitizeProductionNumber(data.cavities, { min: 1, max: 500, integer: true }) } : {}),
       ...(data.temperature !== undefined ? { temperature: sanitizeProductionNumber(data.temperature, { min: 0 }) } : {}),
       ...(data.temperatureType !== undefined ? { temperatureType: data.temperatureType } : {}),
       ...(data.temperatureZones !== undefined ? { temperatureZones: normalizeTemperatureZones(data.temperatureZones) } : {}),
