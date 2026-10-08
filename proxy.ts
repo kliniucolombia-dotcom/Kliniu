@@ -90,7 +90,9 @@ function isCrossOriginMutation(request: NextRequest) {
 }
 
 function isOperationsJsonMutation(request: NextRequest) {
-  return JSON_METHODS.has(request.method) && OPERATIONS_API_PREFIXES.some((prefix) => request.nextUrl.pathname.startsWith(prefix));
+  const { pathname } = request.nextUrl;
+  if (pathname.endsWith("/upload")) return false; // subidas multipart (FormData), no JSON
+  return JSON_METHODS.has(request.method) && OPERATIONS_API_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
 export async function proxy(request: NextRequest) {

@@ -10,7 +10,7 @@ import type {
 } from "@/generated/prisma/client";
 import { parseBogotaDate } from "@/lib/logistics";
 import { nextMaintenanceNumber } from "@/lib/maintenance-policy";
-import type { MaintenanceAttachment } from "@/lib/maintenance-upload";
+import { safeUrl, type MaintenanceAttachment } from "@/lib/maintenance-upload";
 
 function requirePrisma() {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
@@ -61,8 +61,8 @@ export async function createEquipment(data: {
       location: data.location?.trim() || null,
       machineId: data.machineId || null,
       moldId: data.moldId || null,
-      imageUrl: data.imageUrl?.trim() || null,
-      attachmentUrl: data.attachmentUrl?.trim() || null,
+      imageUrl: safeUrl(data.imageUrl),
+      attachmentUrl: safeUrl(data.attachmentUrl),
       attachmentName: data.attachmentName?.trim() || null,
     },
   });
@@ -79,7 +79,17 @@ export async function updateEquipment(
     attachmentName?: string | null;
   },
 ) {
-  return requirePrisma().equipment.update({ where: { id }, data });
+  return requirePrisma().equipment.update({
+    where: { id },
+    data: {
+      name: data.name?.trim() || undefined,
+      location: data.location,
+      status: data.status,
+      imageUrl: data.imageUrl === undefined ? undefined : safeUrl(data.imageUrl),
+      attachmentUrl: data.attachmentUrl === undefined ? undefined : safeUrl(data.attachmentUrl),
+      attachmentName: data.attachmentName,
+    },
+  });
 }
 
 export async function getEquipmentHistory(id: string) {
@@ -235,8 +245,8 @@ export async function createInventoryItem(data: {
       minStock: Math.max(0, Math.round(data.minStock)),
       unit: data.unit?.trim() || "und",
       location: data.location?.trim() || null,
-      imageUrl: data.imageUrl?.trim() || null,
-      attachmentUrl: data.attachmentUrl?.trim() || null,
+      imageUrl: safeUrl(data.imageUrl),
+      attachmentUrl: safeUrl(data.attachmentUrl),
       attachmentName: data.attachmentName?.trim() || null,
     },
   });
@@ -252,8 +262,8 @@ export async function updateInventoryItem(
       name: data.name?.trim() || undefined,
       minStock: data.minStock !== undefined ? Math.max(0, Math.round(data.minStock)) : undefined,
       location: data.location,
-      imageUrl: data.imageUrl,
-      attachmentUrl: data.attachmentUrl,
+      imageUrl: data.imageUrl === undefined ? undefined : safeUrl(data.imageUrl),
+      attachmentUrl: data.attachmentUrl === undefined ? undefined : safeUrl(data.attachmentUrl),
       attachmentName: data.attachmentName,
     },
   });
