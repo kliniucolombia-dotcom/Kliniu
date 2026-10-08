@@ -18,7 +18,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   const { id } = await params;
-  const body = (await request.json()) as { name?: string; location?: string | null; status?: EquipmentStatus };
+  const body = (await request.json()) as {
+    name?: string;
+    location?: string | null;
+    status?: EquipmentStatus;
+    imageUrl?: string | null;
+    attachmentUrl?: string | null;
+    attachmentName?: string | null;
+  };
   if (body.status && !STATUSES.includes(body.status)) return Response.json({ error: "Estado inválido" }, { status: 400 });
 
   const equipment = await updateEquipment(id, body);

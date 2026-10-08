@@ -10,6 +10,7 @@ import type {
 } from "@/generated/prisma/client";
 import { parseBogotaDate } from "@/lib/logistics";
 import { nextMaintenanceNumber } from "@/lib/maintenance-policy";
+import type { MaintenanceAttachment } from "@/lib/maintenance-upload";
 
 function requirePrisma() {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
@@ -48,6 +49,9 @@ export async function createEquipment(data: {
   location?: string;
   machineId?: string;
   moldId?: string;
+  imageUrl?: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
 }) {
   return requirePrisma().equipment.create({
     data: {
@@ -57,13 +61,23 @@ export async function createEquipment(data: {
       location: data.location?.trim() || null,
       machineId: data.machineId || null,
       moldId: data.moldId || null,
+      imageUrl: data.imageUrl?.trim() || null,
+      attachmentUrl: data.attachmentUrl?.trim() || null,
+      attachmentName: data.attachmentName?.trim() || null,
     },
   });
 }
 
 export async function updateEquipment(
   id: string,
-  data: { name?: string; location?: string | null; status?: EquipmentStatus },
+  data: {
+    name?: string;
+    location?: string | null;
+    status?: EquipmentStatus;
+    imageUrl?: string | null;
+    attachmentUrl?: string | null;
+    attachmentName?: string | null;
+  },
 ) {
   return requirePrisma().equipment.update({ where: { id }, data });
 }
@@ -77,10 +91,10 @@ export async function getEquipmentHistory(id: string) {
   });
 }
 
-export async function listOrders(from: string, to: string) {
+export async function listOrders(from: string, to: string, onlyAssignedTo?: string) {
   const range = { gte: parseBogotaDate(from), lte: endOfBogotaDay(to) };
   return requirePrisma().maintenanceOrder.findMany({
-    where: { OR: [{ status: { in: OPEN_STATUSES } }, { reportedAt: range }] },
+    where: { OR: [{ status: { in: OPEN_STATUSES } }, { reportedAt: range }], ...(onlyAssignedTo ? { assignedToId: onlyAssignedTo } : {}) },
     orderBy: [{ status: "asc" }, { priority: "desc" }, { reportedAt: "desc" }],
     take: 500,
     include: {
@@ -109,11 +123,12 @@ export async function createOrder(input: {
   description: string;
   assignedToId?: string;
   reportedById: string;
+  attachments?: MaintenanceAttachment[];
 }) {
   const db = requirePrisma();
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      return await db.$transaction(async (tx) => tx.maintenanceOrder.create({ data: { number: await generateOrderNumber(tx), equipmentId: input.equipmentId, type: input.type, priority: input.priority, description: input.description.trim(), assignedToId: input.assignedToId || null, reportedById: input.reportedById }, include: { equipment: { select: { name: true } } } }));
+      return await db.$transaction(async (tx) => tx.maintenanceOrder.create({ data: { number: await generateOrderNumber(tx), equipmentId: input.equipmentId, type: input.type, priority: input.priority, description: input.description.trim(), assignedToId: input.assignedToId || null, reportedById: input.reportedById, attachments: input.attachments ?? [] }, include: { equipment: { select: { name: true } } } }));
     } catch (error) {
       const duplicate = typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "P2002";
       if (!duplicate || attempt === 2) throw error;
@@ -133,7 +148,7 @@ export async function startOrder(id: string) {
   });
 }
 
-export async function completeOrder(id: string, data: { resolution: string; downtimeMinutes?: number }) {
+export async function completeOrder(id: string, data: { resolution: string; downtimeMinutes?: number; signatureData: string; signedByName: string; executorSignatureData: string; executorName: string; attachments?: MaintenanceAttachment[] }) {
   const db = requirePrisma();
   return db.$transaction(async (tx) => {
     const current = await tx.maintenanceOrder.findUnique({ where: { id } });
@@ -147,7 +162,13 @@ export async function completeOrder(id: string, data: { resolution: string; down
         status: "DONE",
         completedAt,
         resolution: data.resolution.trim(),
+        signatureData: data.signatureData,
+        signedByName: data.signedByName.trim(),
+        executorSignatureData: data.executorSignatureData,
+        executorName: data.executorName.trim(),
+        signedAt: completedAt,
         downtimeMinutes: data.downtimeMinutes ?? autoDowntime,
+        attachments: data.attachments,
       },
     });
     if (changed.count !== 1) throw new Error("INVALID_TRANSITION");
@@ -156,7 +177,9 @@ export async function completeOrder(id: string, data: { resolution: string; down
       where: { equipmentId: order.equipmentId, status: { in: OPEN_STATUSES } },
     });
     if (stillOpen === 0) {
-      await tx.equipment.update({ where: { id: order.equipmentId }, data: { status: "OPERATIVE" } });
+      const eq = await tx.equipment.update({ where: { id: order.equipmentId }, data: { status: "OPERATIVE" } });
+      // Un molde reparado vuelve a quedar disponible en Producción.
+      if (eq.moldId) await tx.mold.updateMany({ where: { id: eq.moldId, status: "MAINTENANCE" }, data: { status: "AVAILABLE" } });
     }
     return order;
   });
@@ -181,7 +204,7 @@ export async function cancelOrder(id: string) {
   });
 }
 
-export async function updateOrder(id: string, data: { priority?: MaintenancePriority; assignedToId?: string | null; description?: string }) {
+export async function updateOrder(id: string, data: { priority?: MaintenancePriority; assignedToId?: string | null; description?: string; attachments?: MaintenanceAttachment[] }) {
   const updated = await requirePrisma().maintenanceOrder.update({ where: { id }, data });
   const equipment = await requirePrisma().equipment.findUnique({ where: { id: updated.equipmentId }, select: { name: true } });
   return { ...updated, equipment };
@@ -199,6 +222,9 @@ export async function createInventoryItem(data: {
   minStock: number;
   unit?: string;
   location?: string;
+  imageUrl?: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
 }) {
   return requirePrisma().inventoryItem.create({
     data: {
@@ -209,6 +235,26 @@ export async function createInventoryItem(data: {
       minStock: Math.max(0, Math.round(data.minStock)),
       unit: data.unit?.trim() || "und",
       location: data.location?.trim() || null,
+      imageUrl: data.imageUrl?.trim() || null,
+      attachmentUrl: data.attachmentUrl?.trim() || null,
+      attachmentName: data.attachmentName?.trim() || null,
+    },
+  });
+}
+
+export async function updateInventoryItem(
+  id: string,
+  data: { name?: string; minStock?: number; location?: string | null; imageUrl?: string | null; attachmentUrl?: string | null; attachmentName?: string | null },
+) {
+  return requirePrisma().inventoryItem.update({
+    where: { id },
+    data: {
+      name: data.name?.trim() || undefined,
+      minStock: data.minStock !== undefined ? Math.max(0, Math.round(data.minStock)) : undefined,
+      location: data.location,
+      imageUrl: data.imageUrl,
+      attachmentUrl: data.attachmentUrl,
+      attachmentName: data.attachmentName,
     },
   });
 }
@@ -236,21 +282,26 @@ export async function listQuotes() {
   });
 }
 
-export async function createQuote(data: { supplier: string; description: string; amount: number; maintenanceOrderId?: string }) {
+export async function createQuote(data: { supplier: string; description: string; amount: number; maintenanceOrderId?: string; attachments?: MaintenanceAttachment[] }) {
   return requirePrisma().maintenanceQuote.create({
     data: {
       supplier: data.supplier.trim(),
       description: data.description.trim(),
       amount: Math.round(data.amount),
       maintenanceOrderId: data.maintenanceOrderId || null,
+      attachments: data.attachments ?? [],
     },
   });
 }
 
-export async function updateQuote(id: string, data: { status?: MaintenanceQuoteStatus; amount?: number }) {
+export async function updateQuote(id: string, data: { status?: MaintenanceQuoteStatus; amount?: number; attachments?: MaintenanceAttachment[] }) {
   return requirePrisma().maintenanceQuote.update({
     where: { id },
-    data: { status: data.status, amount: data.amount !== undefined ? Math.round(data.amount) : undefined },
+    data: {
+      status: data.status,
+      amount: data.amount !== undefined ? Math.round(data.amount) : undefined,
+      attachments: data.attachments,
+    },
   });
 }
 
@@ -278,4 +329,28 @@ export async function getMaintenanceKpis(from: string, to: string) {
     equipmentDown: downEquipment,
     lowStockItems: inventory.filter((i) => i.stock <= i.minStock).length,
   };
+}
+
+// Molde enviado a mantenimiento desde Producción: asegura su equipo y abre una orden correctiva (una sola mientras haya una abierta).
+export async function ensureMoldEquipment(moldId: string) {
+  const db = requirePrisma();
+  const mold = await db.mold.findUniqueOrThrow({ where: { id: moldId } });
+  const equipment =
+    (await db.equipment.findFirst({ where: { moldId } })) ??
+    (await db.equipment.create({ data: { name: `Molde ${mold.name}`, code: `MOL-${mold.code}`.toUpperCase(), type: "MOLD", moldId } }));
+  return { mold, equipment };
+}
+
+export async function openMoldRepairOrder(moldId: string, reportedById: string) {
+  const db = requirePrisma();
+  const { mold, equipment } = await ensureMoldEquipment(moldId);
+  const open = await db.maintenanceOrder.count({ where: { equipmentId: equipment.id, status: { in: OPEN_STATUSES } } });
+  if (open > 0) return null;
+  return createOrder({
+    equipmentId: equipment.id,
+    type: "CORRECTIVE",
+    priority: "MEDIUM",
+    description: `Reparación de molde ${mold.code} - ${mold.name} (enviado desde Moldes)`,
+    reportedById,
+  });
 }

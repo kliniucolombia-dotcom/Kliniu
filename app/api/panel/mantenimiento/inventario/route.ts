@@ -16,6 +16,9 @@ export async function POST(request: Request) {
     minStock?: number;
     unit?: string;
     location?: string;
+    imageUrl?: string;
+    attachmentUrl?: string;
+    attachmentName?: string;
   };
   if (!body.name?.trim() || !body.code?.trim() || (body.category !== "SPARE_PART" && body.category !== "TOOL")) {
     return Response.json({ error: "Faltan datos (name, code, category)" }, { status: 400 });
@@ -33,6 +36,9 @@ export async function POST(request: Request) {
       minStock,
       unit: body.unit,
       location: body.location,
+      imageUrl: body.imageUrl,
+      attachmentUrl: body.attachmentUrl,
+      attachmentName: body.attachmentName,
     });
     broadcastPanelUpdate("maintenance").catch(() => {});
     return Response.json({ item });

@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/permissions";
 import { updateMold } from "@/lib/molds";
+import { openMoldRepairOrder } from "@/lib/maintenance";
 import type { MoldStatus } from "@/generated/prisma/client";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
@@ -15,6 +16,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   try {
     const mold = await updateMold(id, body);
+    if (body.status === "MAINTENANCE") {
+      await openMoldRepairOrder(id, access.user.id);
+      broadcastPanelUpdate("maintenance").catch(() => {});
+    }
     broadcastPanelUpdate("production").catch(() => {});
     return Response.json({ mold });
   } catch (error) {

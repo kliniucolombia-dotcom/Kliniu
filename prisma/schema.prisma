@@ -1966,6 +1966,10 @@ model Equipment {
   machineId String?
   moldId    String?
   location  String?
+  // Foto para reconocer la máquina + documento adjunto (manual/ficha técnica).
+  imageUrl       String?
+  attachmentUrl  String?
+  attachmentName String?
   status    EquipmentStatus    @default(OPERATIVE)
   createdAt DateTime           @default(now())
   updatedAt DateTime           @updatedAt
@@ -1990,6 +1994,15 @@ model MaintenanceOrder {
   downtimeMinutes Int?
   description     String
   resolution      String?
+  // Firma de conformidad al completar: PNG como data URL (~10 KB), sin Storage.
+  signatureData   String?
+  signedByName    String?
+  signedAt        DateTime?
+  // Firma del técnico que ejecutó el trabajo (la de arriba es de quien recibe).
+  executorSignatureData String?
+  executorName          String?
+  // Adjuntos de la orden: [{ url, name, isImage }] (fotos de la falla, documentos).
+  attachments     Json                @default("[]")
   reportedById    String
   assignedToId    String?
   createdAt       DateTime            @default(now())
@@ -2014,6 +2027,10 @@ model InventoryItem {
   minStock  Int                   @default(0)
   unit      String                @default("und")
   location  String?
+  // Foto del repuesto/herramienta + documento adjunto (ficha técnica).
+  imageUrl       String?
+  attachmentUrl  String?
+  attachmentName String?
   createdAt DateTime              @default(now())
   updatedAt DateTime              @updatedAt
 
@@ -2027,6 +2044,8 @@ model MaintenanceQuote {
   description        String
   amount             Int
   status             MaintenanceQuoteStatus @default(REQUESTED)
+  // Adjuntos: [{ url, name, isImage }] (cotización del proveedor, fotos).
+  attachments        Json                   @default("[]")
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
   maintenanceOrder   MaintenanceOrder?      @relation(fields: [maintenanceOrderId], references: [id])
@@ -2045,6 +2064,8 @@ model OperationsReport {
   authorId    String
   kpis        Json
   notes       String?
+  // Adjuntos: [{ url, name, isImage }] (soportes del informe).
+  attachments Json        @default("[]")
   createdAt   DateTime    @default(now())
   author      User        @relation("OperationsReportAuthor", fields: [authorId], references: [id])
 

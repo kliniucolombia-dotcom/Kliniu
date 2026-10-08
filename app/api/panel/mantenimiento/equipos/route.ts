@@ -16,6 +16,9 @@ export async function POST(request: Request) {
     location?: string;
     machineId?: string;
     moldId?: string;
+    imageUrl?: string;
+    attachmentUrl?: string;
+    attachmentName?: string;
   };
   if (!body.name?.trim() || !body.code?.trim() || !body.type || !TYPES.includes(body.type)) {
     return Response.json({ error: "Faltan datos (name, code, type)" }, { status: 400 });

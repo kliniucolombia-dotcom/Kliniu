@@ -1,5 +1,5 @@
 import { requirePermission } from "@/lib/permissions";
-import { adjustInventoryItem } from "@/lib/maintenance";
+import { adjustInventoryItem, updateInventoryItem } from "@/lib/maintenance";
 import { parseNonNegativeNumber } from "@/lib/operations-validation";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
@@ -8,7 +8,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   const { id } = await params;
-  const body = (await request.json()) as { delta?: number; minStock?: number; location?: string | null };
+  const body = (await request.json()) as {
+    delta?: number;
+    minStock?: number;
+    location?: string | null;
+    name?: string;
+    imageUrl?: string | null;
+    attachmentUrl?: string | null;
+    attachmentName?: string | null;
+  };
   if (body.delta !== undefined && (typeof body.delta !== "number" || !Number.isFinite(body.delta) || body.delta === 0)) {
     return Response.json({ error: "Cantidad inválida" }, { status: 400 });
   }
@@ -20,7 +28,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   try {
-    const item = await adjustInventoryItem(id, body);
+    // Con "delta" se registra entrada/salida; sin él, es edición de la ficha del ítem.
+    const item = body.delta !== undefined ? await adjustInventoryItem(id, body) : await updateInventoryItem(id, body);
     broadcastPanelUpdate("maintenance").catch(() => {});
     return Response.json({ item });
   } catch (error) {

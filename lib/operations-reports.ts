@@ -7,6 +7,7 @@ import { getMoldKpis } from "@/lib/molds";
 import { getAssemblyKpis } from "@/lib/production-control";
 import { getWarehouses, listProductsWithWarehouseStock, summarizeWarehouseStock } from "@/lib/warehouses";
 import { OPERATIONS_REPORT_MODULES, reportKpisForModule } from "@/lib/operations-report-policy";
+import type { MaintenanceAttachment } from "@/lib/maintenance-upload";
 
 function requirePrisma() {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
@@ -45,6 +46,7 @@ export async function createOperationsReport(input: {
   kpis: Prisma.InputJsonValue;
   notes?: string;
   authorId: string;
+  attachments?: MaintenanceAttachment[];
 }) {
   return requirePrisma().operationsReport.create({
     data: {
@@ -54,6 +56,7 @@ export async function createOperationsReport(input: {
       kpis: input.kpis,
       notes: input.notes?.trim() || null,
       authorId: input.authorId,
+      attachments: input.attachments ?? [],
     },
   });
 }

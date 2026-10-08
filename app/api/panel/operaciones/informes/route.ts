@@ -1,6 +1,7 @@
 import { getEffectivePermissions, requireActiveUser, requirePermission } from "@/lib/permissions";
 import { buildOperationsReportKpis, createOperationsReport, listAuthorizedOperationsReports, OPERATIONS_REPORT_MODULES } from "@/lib/operations-reports";
 import { operationsModulesWithView } from "@/lib/operations-report-policy";
+import { normalizeAttachments } from "@/lib/maintenance-upload";
 import { parseBogotaCivilDate } from "@/lib/operations-validation";
 import { createNotification } from "@/lib/notifications";
 import type { PanelModule } from "@/generated/prisma/client";
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
     periodStart?: string;
     periodEnd?: string;
     notes?: string;
+    attachments?: unknown;
   };
 
   if (!isReportModule(body.module)) return Response.json({ error: "Módulo inválido" }, { status: 400 });
@@ -49,6 +51,7 @@ export async function POST(request: Request) {
     kpis: await buildOperationsReportKpis(body.module, body.periodStart, body.periodEnd),
     notes: body.notes,
     authorId: access.user.id,
+    attachments: normalizeAttachments(body.attachments),
   });
 
   createNotification({
