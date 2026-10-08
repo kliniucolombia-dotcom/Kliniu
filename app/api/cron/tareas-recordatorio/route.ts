@@ -18,7 +18,7 @@ export async function GET(request: Request) {
 
   // Dedup por día: no repetir el recordatorio de la misma tarea.
   const startOfDay = new Date(Date.now() - 5 * 3600 * 1000);
-  startOfDay.setUTCHours(0, 0, 0, 0);
+  startOfDay.setUTCHours(5, 0, 0, 0); // 00:00 de Bogotá (UTC-5) expresado en UTC
   const recent = await prisma.notification.findMany({
     where: { category: "task_due_soon", createdAt: { gte: startOfDay } },
     select: { metadata: true },
