@@ -728,6 +728,8 @@ model WatiConversation {
   upsellPending      Boolean                @default(false)
   upsellDeclined     Boolean                @default(false)
   remarketingUsed    Json                   @default("{}")
+  /// Archivada por inactividad (cron wati-archive); se desarchiva sola cuando alguien escribe.
+  archivedAt         DateTime?
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
   messages           WatiMessage[]
@@ -737,6 +739,7 @@ model WatiConversation {
   @@index([salesStage, updatedAt])
   @@index([followUpSentAt])
   @@index([remarketingNextAt])
+  @@index([archivedAt, updatedAt])
 }
 
 enum WatiCommercialStage {

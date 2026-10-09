@@ -6,11 +6,13 @@ import {
 } from "@/lib/wati-conversations";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
-export async function GET() {
+export async function GET(request: Request) {
   const access = await requirePermission("MODULE_WHATSAPP", "view");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
-  const conversations = await getAllWatiConversations();
+  const conversations = await getAllWatiConversations(
+    new URL(request.url).searchParams.get("archived") === "1",
+  );
   return Response.json(conversations);
 }
 

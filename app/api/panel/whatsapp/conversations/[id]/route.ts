@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import {
+  setWatiConversationArchived,
   updateWatiConversationNotes,
   updateWatiConversationBotPaused,
   updateWatiConversationStage,
@@ -12,17 +13,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   const { id } = await params;
-  const body = (await request.json()) as { salesStage?: string; notes?: string; botPaused?: boolean };
+  const body = (await request.json()) as { salesStage?: string; notes?: string; botPaused?: boolean; archived?: boolean };
   const hasStage = typeof body.salesStage === "string";
   const hasNotes = typeof body.notes === "string";
   const hasBotPaused = typeof body.botPaused === "boolean";
-  if (!hasStage && !hasNotes && !hasBotPaused) return Response.json({ error: "No hay cambios para guardar." }, { status: 400 });
+  const hasArchived = typeof body.archived === "boolean";
+  if (!hasStage && !hasNotes && !hasBotPaused && !hasArchived) return Response.json({ error: "No hay cambios para guardar." }, { status: 400 });
   if (hasStage && !WATI_SALES_STAGES.includes(body.salesStage as (typeof WATI_SALES_STAGES)[number])) {
     return Response.json({ error: "Etapa comercial no válida." }, { status: 400 });
   }
 
   try {
-    const conversation = hasStage
+    const conversation = hasArchived
+      ? await setWatiConversationArchived(id, body.archived!)
+      : hasStage
       ? await updateWatiConversationStage(id, body.salesStage as (typeof WATI_SALES_STAGES)[number])
       : hasNotes
         ? await updateWatiConversationNotes(id, body.notes!)

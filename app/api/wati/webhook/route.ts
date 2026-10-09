@@ -453,7 +453,7 @@ export async function POST(request: Request) {
       const mediaName = getSenderName(payload);
       const mediaConversation = await prisma.watiConversation.upsert({
         where: { phone: media.phone },
-        update: { updatedAt: new Date(), ...(mediaName ? { contactName: mediaName } : {}) },
+        update: { updatedAt: new Date(), archivedAt: null, ...(mediaName ? { contactName: mediaName } : {}) },
         create: {
           phone: media.phone,
           contactName: mediaName,
@@ -528,7 +528,7 @@ export async function POST(request: Request) {
 
   let conversation = await prisma.watiConversation.upsert({
     where: { phone },
-    update: { updatedAt: new Date(), ...(customerName ? { contactName: customerName } : {}) },
+    update: { updatedAt: new Date(), archivedAt: null, ...(customerName ? { contactName: customerName } : {}) },
     create: { phone, contactName: customerName, assignedSellerId: await pickSellerForNewConversation() },
   });
 

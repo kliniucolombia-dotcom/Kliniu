@@ -34,11 +34,42 @@ export async function pickSellerForNewConversation() {
   return sellers.sort((a, b) => a._count.assignedWatiConversations - b._count.assignedWatiConversations)[0].id;
 }
 
-export async function getAllWatiConversations() {
+// Cierres (CLOSED/SOLD) se archivan a los 7 días sin actividad; el resto a los 30.
+const ARCHIVE_CLOSED_DAYS = 7;
+const ARCHIVE_ACTIVE_DAYS = 30;
+
+// SQL directo: updateMany reescribiría updatedAt (@updatedAt) y se perdería la última actividad real.
+export async function archiveStaleWatiConversations(now = new Date()) {
+  if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
+  const before = (days: number) => new Date(now.getTime() - days * 864e5);
+  const archived = await prisma.$executeRaw`
+    UPDATE "WatiConversation" SET "archivedAt" = ${now}
+    WHERE "archivedAt" IS NULL AND (
+      (("status" = 'CLOSED' OR "salesStage" = 'SOLD') AND "updatedAt" < ${before(ARCHIVE_CLOSED_DAYS)})
+      OR "updatedAt" < ${before(ARCHIVE_ACTIVE_DAYS)}
+    )`;
+  return { archived };
+}
+
+export async function setWatiConversationArchived(conversationId: string, archived: boolean) {
+  if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
+  const current = await prisma.watiConversation.findUnique({
+    where: { id: conversationId },
+    select: { updatedAt: true },
+  });
+  if (!current) throw new Error("CONVERSATION_NOT_FOUND");
+  return prisma.watiConversation.update({
+    where: { id: conversationId },
+    data: { archivedAt: archived ? new Date() : null, updatedAt: current.updatedAt },
+  });
+}
+
+export async function getAllWatiConversations(archived = false) {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
   const db = prisma;
 
   const conversations = await db.watiConversation.findMany({
+    where: { archivedAt: archived ? { not: null } : null },
     orderBy: { updatedAt: "desc" },
     take: 500,
     include: {
@@ -302,8 +333,9 @@ export async function startWatiConversation(input: StartWatiConversationInput, s
               comboImageSentAt: null,
               comboVideoSentAt: null,
               followUpSentAt: null,
+              archivedAt: null,
             }
-          : { status: "ACTIVE", updatedAt: new Date() },
+          : { status: "ACTIVE", updatedAt: new Date(), archivedAt: null },
       })
     : await prisma.watiConversation.create({
         data: { phone, assignedSellerId: await pickSellerForNewConversation() },
@@ -315,7 +347,7 @@ export async function startWatiConversation(input: StartWatiConversationInput, s
 
   await prisma.watiConversation.update({
     where: { id: conversation.id },
-    data: { updatedAt: new Date() },
+    data: { updatedAt: new Date(), archivedAt: null },
   });
 
   return getWatiConversationMessages(conversation.id);

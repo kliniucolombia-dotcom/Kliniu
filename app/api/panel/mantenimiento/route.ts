@@ -30,7 +30,14 @@ export async function GET(request: Request) {
     getMaintenanceKpis(from, to),
     getEffectivePermission(access.user, "MODULE_MANTENIMIENTO"),
     prisma!.user.findMany({
-      where: { role: { in: ["MANTENIMIENTO", "JEFE_OPERACIONES", "LIDER_ENSAMBLE", "LIDER_INYECCION", "INGENIERIA", "LOGISTICA", "OPERARIO"] }, status: "ACTIVE" },
+      where: {
+        status: "ACTIVE",
+        OR: [
+          { role: { in: ["MANTENIMIENTO", "JEFE_OPERACIONES", "LIDER_ENSAMBLE", "LIDER_INYECCION", "INGENIERIA", "LOGISTICA", "OPERARIO"] } },
+          // Personal de Inyección (p. ej. bodega de inyección) con otro rol.
+          { department: "Inyección", role: { not: "CUSTOMER" } },
+        ],
+      },
       select: { id: true, fullName: true },
       orderBy: { fullName: "asc" },
     }),

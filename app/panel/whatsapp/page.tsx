@@ -20,10 +20,13 @@ import {
   MdPerson,
   MdSearch,
   MdSend,
+  MdArchive,
   MdSmartToy,
   MdSupportAgent,
+  MdUnarchive,
   MdWhatsapp,
 } from "react-icons/md";
+import { useConfirm } from "@/app/components/confirm-dialog";
 import Link from "next/link";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 
@@ -73,6 +76,9 @@ const FILTER_HEADER_CLASSES: Record<ConversationFilter, string> = {
   SOLD: "from-[#14532D] via-[#16A34A] to-[#4ADE80]",
   CLOSED: "from-[#334155] via-[#475569] to-[#64748B]",
 };
+
+const ARCHIVED_HEADER_CLASS = "from-[#78350F] via-[#B45309] to-[#F59E0B]";
+const ARCHIVED_BUTTON_CLASS = "bg-[#78350F] text-white ring-[#FDE68A]";
 
 const FILTER_ACTIVE_BUTTON_CLASSES: Record<ConversationFilter, string> = {
   ALL: "bg-white text-[#0E7C82] ring-white",
@@ -693,6 +699,7 @@ function NewConversationModal({
 }
 
 export default function WhatsappPanelPage() {
+  const confirm = useConfirm();
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -721,6 +728,11 @@ export default function WhatsappPanelPage() {
   const [savingNotes, setSavingNotes] = useState(false);
   const [changingBotState, setChangingBotState] = useState(false);
   const [showConversationMenu, setShowConversationMenu] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const [pendingLessons, setPendingLessons] = useState(0);
+  // Ref para que refrescos en vuelo (realtime/poll) nunca pidan la lista equivocada.
+  const showArchivedRef = useRef(false);
+  showArchivedRef.current = showArchived;
   const [hasNewMessagesBelow, setHasNewMessagesBelow] = useState(false);
   const messageViewportRef = useRef<HTMLDivElement>(null);
   const conversationMenuRef = useRef<HTMLDivElement>(null);
@@ -739,7 +751,10 @@ export default function WhatsappPanelPage() {
   const loadConversations = useCallback(async () => {
     const requestId = ++conversationsRequestIdRef.current;
     try {
-      const response = await fetch("/api/panel/whatsapp/conversations", { cache: "no-store" });
+      const response = await fetch(
+        `/api/panel/whatsapp/conversations${showArchivedRef.current ? "?archived=1" : ""}`,
+        { cache: "no-store" },
+      );
       if (!response.ok || requestId !== conversationsRequestIdRef.current) return;
       const data = (await response.json()) as ConversationSummary[];
       if (requestId === conversationsRequestIdRef.current) setConversations(data);
@@ -748,11 +763,53 @@ export default function WhatsappPanelPage() {
     }
   }, []);
 
+  useEffect(() => {
+    void loadConversations();
+  }, [showArchived, loadConversations]);
+
+  const loadPendingLessons = useCallback(async () => {
+    try {
+      const response = await fetch("/api/panel/whatsapp/lessons?status=PENDING", { cache: "no-store" });
+      if (!response.ok) return;
+      const data = (await response.json()) as { counts?: { PENDING?: number } };
+      setPendingLessons(data.counts?.PENDING ?? 0);
+    } catch {
+      // El aviso es opcional: si falla, el icono queda sin contador.
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadPendingLessons();
+  }, [loadPendingLessons]);
+
+  const toggleArchived = useCallback(
+    async (archived: boolean) => {
+      if (!selectedId) return;
+      const response = await fetch(`/api/panel/whatsapp/conversations/${selectedId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archived }),
+      });
+      if (!response.ok) {
+        setSendError("No fue posible archivar la conversación.");
+        return;
+      }
+      setConversations((current) => current.filter((conversation) => conversation.id !== selectedId));
+      setSelectedId(null);
+      setMessages([]);
+    },
+    [selectedId],
+  );
+
   const clearAllConversations = useCallback(async () => {
     if (clearingAll) return;
-    const confirmed = window.confirm(
-      "¿Vaciar TODAS las conversaciones de WhatsApp? Se eliminarán los chats y mensajes de este número. Esta acción no se puede deshacer.",
-    );
+    const confirmed = await confirm({
+      title: "Vaciar todas las conversaciones",
+      message:
+        "Se eliminarán TODOS los chats y mensajes de WhatsApp de este número. Esta acción no se puede deshacer.",
+      confirmLabel: "Vaciar todo",
+      danger: true,
+    });
     if (!confirmed) return;
 
     setClearingAll(true);
@@ -771,7 +828,7 @@ export default function WhatsappPanelPage() {
     } finally {
       setClearingAll(false);
     }
-  }, [clearingAll]);
+  }, [clearingAll, confirm]);
 
   const loadMessages = useCallback(async (id: string) => {    if (id !== selectedIdRef.current) return;
     const requestId = ++messagesRequestIdRef.current;
@@ -839,10 +896,6 @@ export default function WhatsappPanelPage() {
   };
 
   useEffect(() => {
-    loadConversations();
-  }, [loadConversations]);
-
-  useEffect(() => {
     isNearBottomRef.current = true;
     renderedChatRef.current = {
       conversationId: selectedId,
@@ -875,13 +928,14 @@ export default function WhatsappPanelPage() {
         refreshQueuedRef.current = false;
         await Promise.all([
           loadConversations(),
+          loadPendingLessons(),
           selectedId ? loadMessages(selectedId) : Promise.resolve(),
         ]);
       } while (refreshQueuedRef.current);
     } finally {
       refreshInFlightRef.current = false;
     }
-  }, [loadConversations, loadMessages, selectedId]);
+  }, [loadConversations, loadPendingLessons, loadMessages, selectedId]);
 
   useRealtimeRefresh(["wati"], () => {
     void refreshPanel();
@@ -1229,7 +1283,7 @@ export default function WhatsappPanelPage() {
             selected ? "hidden md:flex" : "flex"
           }`}
         >
-          <div className={`bg-gradient-to-br ${FILTER_HEADER_CLASSES[conversationFilter]} px-4 pb-4 pt-5 text-white transition-colors duration-300`}>
+          <div className={`bg-gradient-to-br ${showArchived ? ARCHIVED_HEADER_CLASS : FILTER_HEADER_CLASSES[conversationFilter]} px-4 pb-4 pt-5 text-white transition-colors duration-300`}>
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20">
@@ -1238,7 +1292,7 @@ export default function WhatsappPanelPage() {
                 <div>
                   <h1 className="text-base font-bold">WhatsApp</h1>
                   <p className="text-[11px] text-white/75">
-                    {conversations.length} chats · {activeCount} abiertos
+                    {showArchived ? `${conversations.length} archivados` : `${conversations.length} chats · ${activeCount} abiertos`}
                   </p>
                 </div>
               </div>
@@ -1253,11 +1307,16 @@ export default function WhatsappPanelPage() {
                 </Link>
                 <Link
                   href="/panel/whatsapp/lecciones"
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-white shadow-lg shadow-black/10 transition hover:scale-105 hover:bg-white/25"
-                  aria-label="Lecciones de la IA"
-                  title="Lecciones de la IA"
+                  className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-white shadow-lg shadow-black/10 transition hover:scale-105 hover:bg-white/25"
+                  aria-label={pendingLessons > 0 ? `Lecciones de la IA, ${pendingLessons} pendientes` : "Lecciones de la IA"}
+                  title={pendingLessons > 0 ? `${pendingLessons} lecciones pendientes de revisar` : "Lecciones de la IA"}
                 >
                   <MdPsychology size={20} />
+                  {pendingLessons > 0 ? (
+                    <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#F59E0B] px-1 text-[10px] font-bold leading-none text-white ring-2 ring-[#0E7C82]">
+                      {pendingLessons > 99 ? "99+" : pendingLessons}
+                    </span>
+                  ) : null}
                 </Link>
                 <button
                   type="button"
@@ -1303,10 +1362,17 @@ export default function WhatsappPanelPage() {
                 <button
                   key={filter.value}
                   type="button"
-                  onClick={() => setConversationFilter(filter.value)}
-                  aria-pressed={conversationFilter === filter.value}
+                  onClick={() => {
+                    if (showArchived) {
+                      setSelectedId(null);
+                      setMessages([]);
+                    }
+                    setShowArchived(false);
+                    setConversationFilter(filter.value);
+                  }}
+                  aria-pressed={!showArchived && conversationFilter === filter.value}
                   className={`rounded-lg px-1.5 py-1.5 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 ${
-                    conversationFilter === filter.value
+                    !showArchived && conversationFilter === filter.value
                       ? `${FILTER_ACTIVE_BUTTON_CLASSES[filter.value]} shadow-md ring-1`
                       : "bg-white/10 text-white/75 hover:bg-white/20"
                   }`}
@@ -1315,6 +1381,21 @@ export default function WhatsappPanelPage() {
                   {filter.value === "HELP" && helpCount > 0 ? ` (${helpCount})` : ""}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedId(null);
+                  setMessages([]);
+                  setConversationFilter("ALL");
+                  setShowArchived((current) => !current);
+                }}
+                aria-pressed={showArchived}
+                className={`rounded-lg px-1.5 py-1.5 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 ${
+                  showArchived ? `${ARCHIVED_BUTTON_CLASS} shadow-md ring-1` : "bg-white/10 text-white/75 hover:bg-white/20"
+                }`}
+              >
+                Archivados
+              </button>
               </div>
             </div>
 
@@ -1597,6 +1678,18 @@ export default function WhatsappPanelPage() {
                       >
                         <MdSmartToy size={16} />
                         {conversationBotPaused ? "Reactivar IA" : "Pausar IA"}
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setShowConversationMenu(false);
+                          void toggleArchived(!showArchived);
+                        }}
+                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs font-semibold text-[#475569] transition-colors hover:bg-[#F1F5F9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#11AEB4]/40"
+                      >
+                        {showArchived ? <MdUnarchive size={16} className="text-[#0E7C82]" /> : <MdArchive size={16} className="text-[#0E7C82]" />}
+                        {showArchived ? "Restaurar chat" : "Archivar chat"}
                       </button>
                       <button
                         type="button"
