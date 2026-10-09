@@ -950,7 +950,7 @@ export default function WhatsappPanelPage() {
     const refreshWhenVisible = () => {
       if (document.visibilityState === "visible") refresh();
     };
-    const interval = window.setInterval(refresh, 15_000);
+    const interval = window.setInterval(refresh, 60_000);
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", refreshWhenVisible);
     return () => {
