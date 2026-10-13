@@ -52,8 +52,9 @@ export async function getPanelNotificationsForUser(
   const windowDays = options.windowDays ?? NOTIFICATIONS_WINDOW_DAYS;
   const since = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
 
+  // SUPERADMIN ve todo lo de rol, pero no los avisos dirigidos a otra persona.
   const roleFilter = isSuperAdmin(user)
-    ? {}
+    ? { OR: [{ targetUserId: null }, { targetUserId: user.id }] }
     : {
         OR: [
           { targetRoles: { contains: `"${user.role}"` } },

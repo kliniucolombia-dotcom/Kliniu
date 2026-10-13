@@ -37,8 +37,8 @@ export async function POST(request: Request) {
     if (entry.operator.id !== access.user.id) {
       createNotification({
         eventKey: "ensamble.entry_recorded",
-        title: `Registraron tu tiempo en la ODT ${entry.workOrder?.number ?? ""}`.trim(),
-        detail: `${entry.operation.name} · ${entry.quantity} und · ${access.user.fullName}`,
+        title: `${access.user.fullName} registró tu tiempo en la ODT ${entry.workOrder?.number ?? ""}`.trim(),
+        detail: `${entry.operation.name} · ${entry.quantity} und`,
         href: "/panel/ensamble",
         targetUserId: entry.operator.id,
         createdById: access.user.id,
