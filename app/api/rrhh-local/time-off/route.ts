@@ -3,11 +3,12 @@ import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { calcVacationBalance } from "@/lib/vacation";
 import { broadcastPanelUpdate } from "@/lib/realtime";
+import { apiHandler } from "@/lib/api-handler";
 
-export async function GET() {
+export const GET = apiHandler(async () => {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   if (isRRHH(access.user)) {
     const requests = await prisma.timeOffRequest.findMany({
@@ -27,12 +28,12 @@ export async function GET() {
   });
 
   return Response.json(requests);
-}
+});
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const body = await request.json();
   const {
@@ -167,4 +168,4 @@ export async function POST(request: Request) {
 
   await broadcastPanelUpdate("timeoff");
   return Response.json(timeOffRequest, { status: 201 });
-}
+});

@@ -4,6 +4,7 @@ import { broadcastPanelUpdate } from "@/lib/realtime";
 import { createSupabaseStorageClient } from "@/lib/supabase-storage";
 import { recordTicketEvent } from "@/lib/ticket-events";
 import { canManageTicket } from "@/lib/ticket-access";
+import { apiHandler } from "@/lib/api-handler";
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 const EXT_BY_TYPE: Record<string, string> = {
@@ -18,10 +19,10 @@ const EXT_BY_TYPE: Record<string, string> = {
 };
 const BUCKET = "rrhh-soportes";
 
-export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const POST = apiHandler(async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const { id } = await params;
   const ticket = await prisma.ticket.findUnique({ where: { id } });
@@ -33,7 +34,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const supabase = createSupabaseStorageClient();
   if (!supabase) {
-    return Response.json({ error: "Storage no disponible" }, { status: 500 });
+    return Response.json({ error: "Storage no disponible" }, { status: 503 });
   }
 
   const formData = await request.formData();
@@ -65,4 +66,4 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   await broadcastPanelUpdate("tickets");
 
   return Response.json(attachment, { status: 201 });
-}
+});

@@ -1,5 +1,6 @@
 import { createSupabaseStorageClient } from "@/lib/supabase-storage";
 import { requireActiveUser } from "@/lib/permissions";
+import { apiHandler } from "@/lib/api-handler";
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 const EXT_BY_TYPE: Record<string, string> = {
@@ -14,7 +15,7 @@ const EXT_BY_TYPE: Record<string, string> = {
 };
 const BUCKET = "rrhh-soportes";
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
@@ -49,4 +50,4 @@ export async function POST(request: Request) {
   }
 
   return Response.json({ path: filePath, name: file.name, size: file.size });
-}
+});

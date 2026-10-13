@@ -12,7 +12,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const access = await requirePermission("MODULE_COTIZACIONES", "view");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { session } = access;
-  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 503 });
 
   const { id } = await params;
   const quotation = await prisma.quotation.findUnique({ where: { id }, select: { sellerId: true, status: true, number: true } });

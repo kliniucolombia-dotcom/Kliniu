@@ -4,7 +4,7 @@ import { deleteQuotationItem, updateQuotationItem } from "@/lib/panel";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
 async function checkAccess(itemId: string, session: { role: string; userId: string }) {
-  if (!prisma) return { error: "DB no disponible", status: 500 as const };
+  if (!prisma) return { error: "DB no disponible", status: 503 as const };
   const item = await prisma.quotationItem.findUnique({ where: { id: itemId }, include: { quotation: true } });
   if (!item) return { error: "Ítem no encontrado", status: 404 as const };
   if (session.role !== "ADMIN" && item.quotation.sellerId !== session.userId) {

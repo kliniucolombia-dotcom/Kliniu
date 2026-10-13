@@ -7,7 +7,7 @@ import { isSuperAdmin } from "@/lib/roles";
 export async function GET(request: Request) {
   const access = await requirePermission("MODULE_MATERIAL", "view");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const id = new URL(request.url).searchParams.get("id");
   if (!id) return Response.json({ error: "id es obligatorio" }, { status: 400 });
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   if (!folderAccess.ok) return Response.json({ error: "Archivo no encontrado" }, { status: 404 });
 
   const supabase = createSupabaseStorageClient();
-  if (!supabase) return Response.json({ error: "Storage no disponible" }, { status: 500 });
+  if (!supabase) return Response.json({ error: "Storage no disponible" }, { status: 503 });
 
   const { data, error } = await supabase.storage.from(MATERIAL_BUCKET).createSignedUrl(file.path, 300);
   if (error || !data) return Response.json({ error: "No fue posible generar el enlace" }, { status: 500 });

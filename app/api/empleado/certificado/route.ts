@@ -13,7 +13,7 @@ const CONTRACT_LABELS: Record<string, string> = {
 export async function GET() {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const employee = await prisma.employee.findUnique({
     where: { userId: access.user.id },
@@ -56,7 +56,7 @@ export async function GET() {
 export async function POST(req: Request) {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const employee = await prisma.employee.findUnique({ where: { userId: access.user.id } });
   if (!employee) return Response.json({ error: "No tienes un perfil de empleado" }, { status: 403 });

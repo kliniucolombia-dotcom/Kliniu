@@ -9,7 +9,7 @@ type Stage = (typeof STAGES)[number];
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
   if (!isRRHH(access.user)) return Response.json({ error: "No autorizado" }, { status: 403 });
 
   const { id } = await params;
@@ -39,7 +39,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
   if (!isRRHH(access.user)) return Response.json({ error: "No autorizado" }, { status: 403 });
 
   const { id } = await params;

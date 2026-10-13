@@ -2,6 +2,7 @@ import { isRRHH } from "@/lib/roles";
 import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
+import { apiHandler } from "@/lib/api-handler";
 
 function hoursBetween(start: string, end: string) {
   const [sh, sm] = start.split(":").map(Number);
@@ -9,10 +10,10 @@ function hoursBetween(start: string, end: string) {
   return Math.max(0, (eh * 60 + em - (sh * 60 + sm)) / 60);
 }
 
-export async function GET() {
+export const GET = apiHandler(async () => {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   if (isRRHH(access.user)) {
     const requests = await prisma.overtimeRequest.findMany({
@@ -30,12 +31,12 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
   return Response.json(requests);
-}
+});
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const body = await request.json();
   const { date, startTime, endTime, overtimeType, reason, employeeId } = body as {
@@ -80,4 +81,4 @@ export async function POST(request: Request) {
   });
   await broadcastPanelUpdate("timeoff");
   return Response.json(overtime, { status: 201 });
-}
+});

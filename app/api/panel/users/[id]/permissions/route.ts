@@ -15,7 +15,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   const targetUser = await getUserById(id);
   if (!targetUser) return Response.json({ error: "Usuario no encontrado" }, { status: 404 });
 
-  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 503 });
 
   const overrides = await prisma.userPermission.findMany({ where: { userId: id } });
   const overrideByModule = new Map(overrides.map((o) => [o.module, o]));
@@ -39,7 +39,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const targetUser = await getUserById(id);
   if (!targetUser) return Response.json({ error: "Usuario no encontrado" }, { status: 404 });
 
-  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 503 });
 
   const body = await request.json().catch(() => ({})) as {
     permissions?: Array<{ module: PanelModule } & Permission>;

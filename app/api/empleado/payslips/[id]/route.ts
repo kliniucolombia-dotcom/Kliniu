@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const { id } = await params;
   const payslip = await prisma.payslip.findUnique({

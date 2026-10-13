@@ -1,11 +1,12 @@
 import { requireRRHH } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
+import { apiHandler } from "@/lib/api-handler";
 
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const PATCH = apiHandler(async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
   const access = await requireRRHH();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const { id } = await params;
   const body = await request.json();
@@ -30,15 +31,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const payslip = await prisma.payslip.update({ where: { id }, data });
   await broadcastPanelUpdate("payslips");
   return Response.json(payslip);
-}
+});
 
-export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const DELETE = apiHandler(async (_request: Request, { params }: { params: Promise<{ id: string }> }) => {
   const access = await requireRRHH();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const { id } = await params;
   await prisma.payslip.delete({ where: { id } });
   await broadcastPanelUpdate("payslips");
   return Response.json({ ok: true });
-}
+});

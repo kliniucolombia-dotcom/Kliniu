@@ -11,7 +11,7 @@ const TICKET_INCLUDE = {
 export async function GET() {
   const access = await requirePermission("MODULE_TICKETS", "view");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   if (isRRHH(access.user) || isAdmin(access.user)) {
     const tickets = await prisma.ticket.findMany({ orderBy: { createdAt: "desc" }, include: TICKET_INCLUDE, take: 1000 });

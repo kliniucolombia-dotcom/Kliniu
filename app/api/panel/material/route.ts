@@ -3,11 +3,12 @@ import { isSuperAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseStorageClient } from "@/lib/supabase-storage";
 import { MATERIAL_BUCKET, canViewFolder, resolveFolderAccess, collectFolderContents } from "@/lib/material";
+import { apiHandler } from "@/lib/api-handler";
 
-export async function GET(request: Request) {
+export const GET = apiHandler(async (request: Request) => {
   const access = await requirePermission("MODULE_MATERIAL", "view");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const folderId = new URL(request.url).searchParams.get("folder") || null;
   const superAdmin = isSuperAdmin(access.user);
@@ -31,12 +32,12 @@ export async function GET(request: Request) {
       .map((f) => ({ ...f, canDelete: canDelete(f.createdById) })),
     files: files.map((f) => ({ ...f, canDelete: canDelete(f.createdById) })),
   });
-}
+});
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const access = await requirePermission("MODULE_MATERIAL", "create");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const { name, parentId, isPrivate } = (await request.json()) as {
     name?: string;
@@ -59,12 +60,12 @@ export async function POST(request: Request) {
   });
 
   return Response.json(folder, { status: 201 });
-}
+});
 
-export async function PATCH(request: Request) {
+export const PATCH = apiHandler(async (request: Request) => {
   const access = await requirePermission("MODULE_MATERIAL", "edit");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const { type, id, name } = (await request.json()) as { type?: string; id?: string; name?: string };
   if (!id || !name?.trim()) return Response.json({ error: "Datos incompletos" }, { status: 400 });
@@ -90,12 +91,12 @@ export async function PATCH(request: Request) {
   }
 
   return Response.json({ ok: true });
-}
+});
 
-export async function DELETE(request: Request) {
+export const DELETE = apiHandler(async (request: Request) => {
   const access = await requirePermission("MODULE_MATERIAL", "delete");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const params = new URL(request.url).searchParams;
   const type = params.get("type");
@@ -139,4 +140,4 @@ export async function DELETE(request: Request) {
   }
 
   return Response.json({ ok: true });
-}
+});

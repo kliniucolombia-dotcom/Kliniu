@@ -2,14 +2,15 @@ import sharp from "sharp";
 import { getStorageBucket, createSupabaseStorageClient } from "@/lib/supabase-storage";
 import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { apiHandler } from "@/lib/api-handler";
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const supabase = createSupabaseStorageClient();
   if (!supabase) {
@@ -49,4 +50,4 @@ export async function POST(request: Request) {
   await prisma.user.update({ where: { id: access.user.id }, data: { avatarUrl: data.publicUrl } });
 
   return Response.json({ avatarUrl: data.publicUrl });
-}
+});

@@ -1,14 +1,15 @@
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { apiHandler } from "@/lib/api-handler";
 
-export async function GET() {
+export const GET = apiHandler(async () => {
   const access = await requirePermission("MODULE_TAREAS", "view");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const notes = await prisma!.plannerNote.findMany({ where: { userId: access.user.id }, orderBy: { updatedAt: "desc" } });
   return Response.json({ notes });
-}
+});
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const access = await requirePermission("MODULE_TAREAS", "view");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const b = (await request.json()) as { title?: string; content?: string; color?: string };
@@ -19,4 +20,4 @@ export async function POST(request: Request) {
     data: { userId: access.user.id, title, content, ...(b.color && /^#[0-9A-Fa-f]{6}$/.test(b.color) ? { color: b.color } : {}) },
   });
   return Response.json({ note });
-}
+});

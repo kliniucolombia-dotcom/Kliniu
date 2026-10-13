@@ -8,7 +8,7 @@ type Kind = (typeof KINDS)[number];
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_PRODUCCION", "create");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const { id } = await params;
   const body = (await request.json().catch(() => ({}))) as {

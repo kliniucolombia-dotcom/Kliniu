@@ -17,7 +17,7 @@ async function guard(action: "view" | "edit") {
 export async function GET() {
   const g = await guard("view");
   if (g.error) return g.error;
-  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 503 });
   const [config, holidays, sellers] = await Promise.all([
     getCalendarConfig(),
     prisma.calendarHoliday.findMany({ orderBy: { date: "asc" } }),
@@ -34,7 +34,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   const g = await guard("edit");
   if (g.error) return g.error;
-  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 503 });
 
   const body = await request.json().catch(() => ({})) as {
     deadlineMinutes?: number; trackingStartDate?: string;

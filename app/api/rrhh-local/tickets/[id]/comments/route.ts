@@ -8,7 +8,7 @@ import { canManageTicket } from "@/lib/ticket-access";
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const { id } = await params;
   const ticket = await prisma.ticket.findUnique({

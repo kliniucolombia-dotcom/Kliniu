@@ -5,7 +5,7 @@ import { deleteCampaignDailyEntry, updateCampaignDailyEntry } from "@/lib/panel"
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
 async function loadWithAccess(id: string, session: { role: string; userId: string }) {
-  if (!prisma) return { error: "DB no disponible", status: 500 as const };
+  if (!prisma) return { error: "DB no disponible", status: 503 as const };
   const entry = await prisma.campaignDaily.findUnique({ where: { id }, include: { campaign: true } });
   if (!entry) return { error: "Registro no encontrado", status: 404 as const };
   if (sellerBlockedFromCampaign(session, entry.campaign.sellerId)) {

@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     if (!(await checkRateLimit(`reset-password:${ip}`, 8, 15 * 60 * 1000))) {
       return Response.json(
         { error: "Demasiados intentos. Espera unos minutos e inténtalo de nuevo." },
-        { status: 429 },
+        { status: 429, headers: { "Retry-After": "900" } },
       );
     }
 

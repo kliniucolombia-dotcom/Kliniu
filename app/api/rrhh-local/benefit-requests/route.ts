@@ -6,7 +6,7 @@ import { broadcastPanelUpdate } from "@/lib/realtime";
 export async function GET(request: Request) {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   // RRHH ve todas las solicitudes; el empleado solo las suyas.
   if (isRRHH(access.user)) {
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const employee = await prisma.employee.findUnique({ where: { userId: access.user.id } });
   if (!employee) return Response.json({ error: "No tienes un perfil de empleado" }, { status: 403 });

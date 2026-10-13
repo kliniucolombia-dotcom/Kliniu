@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   if (!hasValidCronSecret(request)) {
     return Response.json({ error: "No autorizado" }, { status: 401 });
   }
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const until = new Date(Date.now() + 24 * 3600 * 1000);
   const tasks = await tasksDueForReminder(until);

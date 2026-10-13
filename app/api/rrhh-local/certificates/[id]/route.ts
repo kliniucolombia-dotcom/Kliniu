@@ -2,11 +2,12 @@ import { isRRHH } from "@/lib/roles";
 import { requireActiveUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
+import { apiHandler } from "@/lib/api-handler";
 
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const PATCH = apiHandler(async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
   if (!isRRHH(access.user)) return Response.json({ error: "No autorizado" }, { status: 403 });
 
   const { id } = await params;
@@ -34,4 +35,4 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   await broadcastPanelUpdate("timeoff");
   return Response.json(updated);
-}
+});

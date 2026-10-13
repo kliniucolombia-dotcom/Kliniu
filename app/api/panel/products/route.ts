@@ -2,8 +2,9 @@ import { requireAnyPermission, requirePermission } from "@/lib/permissions";
 import { getProductsForPanel, setProductActive, updateProductPrice, updateProductPackPrices } from "@/lib/panel";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
+import { apiHandler } from "@/lib/api-handler";
 
-export async function GET(request: Request) {
+export const GET = apiHandler(async (request: Request) => {
   // El panel de Outlet y el formulario de Producción se alimentan de esta misma
   // lista, así que basta con poder ver cualquiera de esos módulos.
   const access = await requireAnyPermission([
@@ -28,9 +29,9 @@ export async function GET(request: Request) {
   }
   const products = await getProductsForPanel();
   return Response.json(products);
-}
+});
 
-export async function PATCH(request: Request) {
+export const PATCH = apiHandler(async (request: Request) => {
   const access = await requirePermission("MODULE_PRODUCTOS", "edit");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { session } = access;
@@ -58,4 +59,4 @@ export async function PATCH(request: Request) {
   }
   await broadcastPanelUpdate("products");
   return Response.json({ ok: true });
-}
+});

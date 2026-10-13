@@ -19,7 +19,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   const access = await requirePermission("MODULE_CAMPANAS", "view");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { session } = access;
-  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 503 });
 
   const { id } = await params;
   const denied = await assertAccess(id, session);
@@ -36,7 +36,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const access = await requirePermission("MODULE_CAMPANAS", "create");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { session } = access;
-  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 503 });
 
   const { id } = await params;
   const denied = await assertAccess(id, session, true);

@@ -135,7 +135,7 @@ async function buildItems(userId: string): Promise<RrhhNotificationItem[]> {
 export async function GET(request: Request) {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
   if (!isRRHH(access.user)) return Response.json({ error: "No autorizado" }, { status: 403 });
 
   const { searchParams } = new URL(request.url);
@@ -164,7 +164,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
   if (!isRRHH(access.user)) return Response.json({ error: "No autorizado" }, { status: 403 });
 
   const body = (await request.json()) as { ids?: unknown; keys?: unknown; all?: boolean };
@@ -197,7 +197,7 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
   if (!isRRHH(access.user)) return Response.json({ error: "No autorizado" }, { status: 403 });
 
   const body = (await request.json().catch(() => ({}))) as { ids?: unknown; keys?: unknown; all?: boolean };

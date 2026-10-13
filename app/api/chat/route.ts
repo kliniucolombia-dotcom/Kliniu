@@ -75,7 +75,7 @@ export async function POST(request: Request) {
     if (!(await checkRateLimit(`chat:${getClientIp(request)}`, 20, 60 * 1000))) {
       return Response.json(
         { error: "Estás enviando mensajes muy rápido. Espera un momento e intenta de nuevo." },
-        { status: 429 },
+        { status: 429, headers: { "Retry-After": "60" } },
       );
     }
 

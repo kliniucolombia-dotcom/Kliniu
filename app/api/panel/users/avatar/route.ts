@@ -1,11 +1,12 @@
 import sharp from "sharp";
 import { getStorageBucket, createSupabaseStorageClient } from "@/lib/supabase-storage";
 import { requireSuperAdmin } from "@/lib/permissions";
+import { apiHandler } from "@/lib/api-handler";
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const access = await requireSuperAdmin();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
@@ -47,4 +48,4 @@ export async function POST(request: Request) {
   const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
 
   return Response.json({ avatarUrl: data.publicUrl });
-}
+});

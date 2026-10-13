@@ -3,15 +3,16 @@ import { prisma } from "@/lib/prisma";
 import { createSupabaseStorageClient } from "@/lib/supabase-storage";
 import { MATERIAL_BUCKET, resolveFolderAccess } from "@/lib/material";
 import { isSuperAdmin } from "@/lib/roles";
+import { apiHandler } from "@/lib/api-handler";
 
 // Vercel corta el body a 4.5 MB en las Server Actions, pero las Route Handlers
 // aceptan hasta 100 MB. Dejamos 50 como tope razonable para material comercial.
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const access = await requirePermission("MODULE_MATERIAL", "create");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const supabase = createSupabaseStorageClient();
   if (!supabase) {
@@ -58,4 +59,4 @@ export async function POST(request: Request) {
   });
 
   return Response.json(saved, { status: 201 });
-}
+});

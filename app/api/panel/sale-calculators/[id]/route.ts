@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { deleteSaleCalculator, getSaleCalculatorWithItems, updateSaleCalculator } from "@/lib/panel";
 
 async function loadWithAccess(id: string, session: { role: string; userId: string }) {
-  if (!prisma) return { error: "DB no disponible", status: 500 as const };
+  if (!prisma) return { error: "DB no disponible", status: 503 as const };
   const calc = await prisma.saleCalculator.findUnique({ where: { id } });
   if (!calc) return { error: "Calculadora no encontrada", status: 404 as const };
   if (calc.userId !== session.userId) return { error: "Sin permiso", status: 403 as const };

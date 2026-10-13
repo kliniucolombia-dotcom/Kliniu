@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   const isPrivileged = isRRHH(access.user) || isAdmin(access.user);
   const isOwnUpload = path.startsWith(`tickets/${access.user.id}/`);
   if (!isPrivileged && !isOwnUpload) {
-    if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+    if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
     const attachment = await prisma.ticketAttachment.findFirst({
       where: { url: path },
       select: { ticket: { select: { employeeId: true, responsibleId: true, categoryId: true } } },
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
   }
 
   const supabase = createSupabaseStorageClient();
-  if (!supabase) return Response.json({ error: "Storage no disponible" }, { status: 500 });
+  if (!supabase) return Response.json({ error: "Storage no disponible" }, { status: 503 });
 
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60);
   if (error || !data) return Response.json({ error: "No fue posible generar el enlace" }, { status: 500 });

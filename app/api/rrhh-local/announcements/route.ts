@@ -6,7 +6,7 @@ import { broadcastPanelUpdate } from "@/lib/realtime";
 export async function GET() {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const announcements = await prisma.announcement.findMany({
     where: isRRHH(access.user)
@@ -32,7 +32,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const access = await requireRRHH();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const body = await request.json();
   const { title, body: content, authorName, category, imageUrl, isImportant, scheduledAt } = body as {

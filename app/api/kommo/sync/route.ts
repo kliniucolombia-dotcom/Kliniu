@@ -1,6 +1,7 @@
 import { requireAdminUser } from "@/lib/admin";
 import { retryFailedJobs } from "@/lib/kommo";
 import { prisma } from "@/lib/prisma";
+import { apiErrorResponse } from "@/lib/api-handler";
 
 export async function POST() {
   try {
@@ -8,7 +9,7 @@ export async function POST() {
     await retryFailedJobs();
     return Response.json({ ok: true, message: "Reintentos procesados." });
   } catch (err) {
-    return Response.json({ error: err instanceof Error ? err.message : "Error" }, { status: 500 });
+    return apiErrorResponse(err, "kommo/sync");
   }
 }
 
@@ -37,6 +38,6 @@ export async function GET() {
 
     return Response.json({ logs });
   } catch (err) {
-    return Response.json({ error: err instanceof Error ? err.message : "Error" }, { status: 500 });
+    return apiErrorResponse(err, "kommo/sync");
   }
 }

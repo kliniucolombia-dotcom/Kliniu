@@ -1,16 +1,17 @@
 import { requirePermission } from "@/lib/permissions";
 import { getAllBanners, upsertBanner, deleteBanner } from "@/lib/banners";
 import type { BannerType } from "@/generated/prisma/client";
+import { apiHandler } from "@/lib/api-handler";
 
-export async function GET() {
+export const GET = apiHandler(async () => {
   const access = await requirePermission("MODULE_BANNERS", "view");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   const banners = await getAllBanners();
   return Response.json(banners);
-}
+});
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const access = await requirePermission("MODULE_BANNERS", "create");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
@@ -45,9 +46,9 @@ export async function POST(request: Request) {
   });
 
   return Response.json(banner);
-}
+});
 
-export async function PATCH(request: Request) {
+export const PATCH = apiHandler(async (request: Request) => {
   const access = await requirePermission("MODULE_BANNERS", "edit");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
@@ -82,9 +83,9 @@ export async function PATCH(request: Request) {
   });
 
   return Response.json(banner);
-}
+});
 
-export async function DELETE(request: Request) {
+export const DELETE = apiHandler(async (request: Request) => {
   const access = await requirePermission("MODULE_BANNERS", "delete");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
@@ -94,4 +95,4 @@ export async function DELETE(request: Request) {
 
   await deleteBanner(id);
   return Response.json({ ok: true });
-}
+});

@@ -83,7 +83,7 @@ export async function PATCH(request: Request) {
     ) {
       return Response.json(
         { error: "Demasiados intentos. Espera unos minutos e intenta de nuevo." },
-        { status: 429 },
+        { status: 429, headers: { "Retry-After": "900" } },
       );
     }
 
@@ -154,7 +154,7 @@ export async function DELETE(request: Request) {
     if (!(await checkRateLimit(`delete-account:${session.userId}`, 5, 15 * 60 * 1000))) {
       return Response.json(
         { error: "Demasiados intentos. Espera unos minutos e intenta de nuevo." },
-        { status: 429 },
+        { status: 429, headers: { "Retry-After": "900" } },
       );
     }
 

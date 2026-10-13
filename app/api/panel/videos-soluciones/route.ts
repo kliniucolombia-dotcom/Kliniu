@@ -1,19 +1,20 @@
 import { requirePermission } from "@/lib/permissions";
 import { getAllSolutionVideos } from "@/lib/solution-videos";
 import { prisma } from "@/lib/prisma";
+import { apiHandler } from "@/lib/api-handler";
 
-export async function GET() {
+export const GET = apiHandler(async () => {
   const access = await requirePermission("MODULE_BANNERS", "view");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   const videos = await getAllSolutionVideos();
   return Response.json(videos);
-}
+});
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const access = await requirePermission("MODULE_BANNERS", "create");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const { title, videoUrl, thumbUrl } = (await request.json()) as {
     title?: string;
@@ -37,4 +38,4 @@ export async function POST(request: Request) {
   });
 
   return Response.json(video, { status: 201 });
-}
+});

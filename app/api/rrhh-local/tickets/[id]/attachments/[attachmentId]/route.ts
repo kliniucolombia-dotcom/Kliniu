@@ -13,7 +13,7 @@ export async function DELETE(
 ) {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const { id, attachmentId } = await params;
   const ticket = await prisma.ticket.findUnique({ where: { id } });

@@ -21,7 +21,7 @@ const TICKET_INCLUDE = {
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const { id } = await params;
   const ticket = await prisma.ticket.findUnique({ where: { id }, include: TICKET_INCLUDE });
@@ -37,7 +37,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const { id } = await params;
   const existing = await prisma.ticket.findUnique({
@@ -182,7 +182,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   if (!canManageTicketAssignment(access.user)) {
     return Response.json({ error: "Solo RRHH o Admin pueden eliminar solicitudes" }, { status: 403 });

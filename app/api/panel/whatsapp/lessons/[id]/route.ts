@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
+import { apiHandler } from "@/lib/api-handler";
 
 // Solo el SUPERADMIN decide qué aprende el bot.
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const PATCH = apiHandler(async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
   const access = await requirePermission("MODULE_WHATSAPP", "edit");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   if (access.user.role !== "SUPERADMIN") return Response.json({ error: "Solo el superadmin puede revisar lecciones" }, { status: 403 });
@@ -36,4 +37,4 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const lesson = await prisma.watiLesson.update({ where: { id }, data });
   return Response.json(lesson);
-}
+});

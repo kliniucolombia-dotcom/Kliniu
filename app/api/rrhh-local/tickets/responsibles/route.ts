@@ -7,7 +7,7 @@ import { groupResponsiblesByDepartment } from "@/lib/tickets";
 export async function GET() {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const employees = await prisma.employee.findMany({
     where: { status: "ACTIVE", departmentId: { not: null } },

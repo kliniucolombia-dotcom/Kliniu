@@ -9,7 +9,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const access = await requirePermission("MODULE_CAMPANAS", "edit");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { session } = access;
-  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 503 });
 
   const { id } = await params;
   const body = await request.json();
@@ -55,7 +55,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   const access = await requirePermission("MODULE_CAMPANAS", "delete");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { session } = access;
-  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 503 });
   const { id } = await params;
 
   const existing = await prisma.campaign.findUnique({ where: { id } });

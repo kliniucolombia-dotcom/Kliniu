@@ -1,7 +1,8 @@
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { apiHandler } from "@/lib/api-handler";
 
-export async function GET() {
+export const GET = apiHandler(async () => {
   const access = await requirePermission("MODULE_COSTOS", "view");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { session } = access;
@@ -18,13 +19,13 @@ export async function GET() {
   ]);
 
   return Response.json({ config, monthOrderCount });
-}
+});
 
-export async function POST(req: Request) {
+export const POST = apiHandler(async (req: Request) => {
   const access = await requirePermission("MODULE_COSTOS", "edit");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { session } = access;
-  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 503 });
 
   const body = await req.json();
   const { costoProd, publicidad, transporte, packing, recaudo, imprevistos, gastosFijos, devolucionesPct } = body;
@@ -54,4 +55,4 @@ export async function POST(req: Request) {
     },
   });
   return Response.json(config);
-}
+});

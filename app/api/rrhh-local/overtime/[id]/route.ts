@@ -4,7 +4,7 @@ import { broadcastPanelUpdate } from "@/lib/realtime";
 import { createNotification } from "@/lib/notifications";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const { id } = await params;
   const body = await request.json();

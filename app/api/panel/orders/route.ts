@@ -53,7 +53,7 @@ export async function PATCH(request: Request) {
   const access = await requirePermission("MODULE_PEDIDOS", "edit");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { session } = access;
-  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "DB no disponible" }, { status: 503 });
 
   const body = (await request.json()) as {
     id: string;

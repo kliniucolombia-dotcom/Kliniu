@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   if (!(await checkRateLimit(`contact:${getClientIp(request)}`, 5, 10 * 60 * 1000))) {
     return NextResponse.json(
       { error: "Demasiados mensajes seguidos. Espera unos minutos e intenta de nuevo." },
-      { status: 429 },
+      { status: 429, headers: { "Retry-After": "600" } },
     );
   }
 

@@ -4,7 +4,7 @@ import { deleteQuotation, getQuotationWithItems, updateQuotation } from "@/lib/p
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
 async function loadWithAccess(id: string, session: { role: string; userId: string }) {
-  if (!prisma) return { error: "DB no disponible", status: 500 as const };
+  if (!prisma) return { error: "DB no disponible", status: 503 as const };
   const quotation = await prisma.quotation.findUnique({ where: { id } });
   if (!quotation) return { error: "Cotización no encontrada", status: 404 as const };
   if (session.role !== "ADMIN" && quotation.sellerId !== session.userId) {

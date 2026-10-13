@@ -7,6 +7,7 @@ import {
   getPanelNotificationsForUser,
   NOTIFICATIONS_WINDOW_DAYS,
 } from "@/lib/notifications/query";
+import { apiErrorResponse } from "@/lib/api-handler";
 
 const DEFAULT_LIMIT = 50;
 
@@ -26,7 +27,7 @@ export type ApiNotificationItem = {
 export async function GET(request: Request) {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   try {
     const { searchParams } = new URL(request.url);
@@ -75,8 +76,7 @@ export async function GET(request: Request) {
       windowDays: NOTIFICATIONS_WINDOW_DAYS,
     });
   } catch (e) {
-    console.error("[notifications GET]", e);
-    return Response.json({ error: "Error al cargar notificaciones", detail: String(e) }, { status: 500 });
+    return apiErrorResponse(e, "notifications GET");
   }
 }
 
@@ -84,7 +84,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const body = (await request.json()) as { ids?: unknown; all?: boolean };
 
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const body = (await request.json().catch(() => ({}))) as { ids?: unknown; all?: boolean };
 

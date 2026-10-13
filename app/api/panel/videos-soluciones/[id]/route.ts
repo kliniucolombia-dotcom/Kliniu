@@ -1,10 +1,11 @@
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { apiHandler } from "@/lib/api-handler";
 
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const PATCH = apiHandler(async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
   const access = await requirePermission("MODULE_BANNERS", "edit");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const { id } = await params;
   const { title, videoUrl, thumbUrl, active, order } = (await request.json()) as {
@@ -30,12 +31,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   });
 
   return Response.json(updated);
-}
+});
 
-export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const DELETE = apiHandler(async (_request: Request, { params }: { params: Promise<{ id: string }> }) => {
   const access = await requirePermission("MODULE_BANNERS", "delete");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const { id } = await params;
   const video = await prisma.solutionVideo.findUnique({ where: { id } });
@@ -43,4 +44,4 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
 
   await prisma.solutionVideo.delete({ where: { id } });
   return Response.json({ ok: true });
-}
+});

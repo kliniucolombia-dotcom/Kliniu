@@ -2,13 +2,14 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { syncOrderToOdoo } from "@/lib/orders";
+import { apiHandler } from "@/lib/api-handler";
 
 /**
  * Sincroniza el pedido con Odoo. Los pedidos de WhatsApp se confirman
  * (action_confirm) para que Odoo genere el albarán de entrega; otros canales
  * quedan como borrador sin confirmar.
  */
-export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const POST = apiHandler(async (_request: Request, { params }: { params: Promise<{ id: string }> }) => {
   const access = await requirePermission("MODULE_WHATSAPP", "edit");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   if (!prisma) return Response.json({ error: "Base de datos no configurada." }, { status: 500 });
@@ -34,4 +35,4 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
         ? `Pedido ${order.odooOrderName ?? ""} confirmado en Odoo; albarán de entrega generado.`
         : `Borrador ${order.odooOrderName ?? ""} creado en Odoo. No fue confirmado ni aprobado.`,
   });
-}
+});

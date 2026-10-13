@@ -6,7 +6,7 @@ import { broadcastPanelUpdate } from "@/lib/realtime";
 export async function GET(request: Request) {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const employeeIdParam = new URL(request.url).searchParams.get("employeeId");
 
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const body = await request.json();
   const { employeeId, category, name, fileUrl, fileName, fileSize, expiresAt } = body as {

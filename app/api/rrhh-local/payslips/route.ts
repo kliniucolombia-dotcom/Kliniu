@@ -2,11 +2,12 @@ import { isRRHH } from "@/lib/roles";
 import { requireActiveUser, requireRRHH } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
+import { apiHandler } from "@/lib/api-handler";
 
-export async function GET(request: Request) {
+export const GET = apiHandler(async (request: Request) => {
   const access = await requireActiveUser();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const employeeIdParam = new URL(request.url).searchParams.get("employeeId");
 
@@ -27,12 +28,12 @@ export async function GET(request: Request) {
     orderBy: { createdAt: "desc" },
   });
   return Response.json(payslips);
-}
+});
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const access = await requireRRHH();
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
-  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 500 });
+  if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
 
   const body = await request.json();
   const {
@@ -72,4 +73,4 @@ export async function POST(request: Request) {
   });
   await broadcastPanelUpdate("payslips");
   return Response.json(payslip, { status: 201 });
-}
+});
