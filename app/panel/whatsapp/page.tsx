@@ -25,6 +25,7 @@ import {
   MdSupportAgent,
   MdUnarchive,
   MdWhatsapp,
+  MdNotificationsActive,
 } from "react-icons/md";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import Link from "next/link";
@@ -730,6 +731,11 @@ export default function WhatsappPanelPage() {
   const [showConversationMenu, setShowConversationMenu] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [pendingLessons, setPendingLessons] = useState(0);
+  const [incoming, setIncoming] = useState<{ id: string; name: string; text: string } | null>(null);
+  // Última fecha de mensaje visto por conversación; null = aún sin sembrar (carga inicial / cambio de vista).
+  const seenMessagesRef = useRef<Map<string, number> | null>(null);
+  const unreadTitleCountRef = useRef(0);
+  const [askNotifications, setAskNotifications] = useState(false);
   // Ref para que refrescos en vuelo (realtime/poll) nunca pidan la lista equivocada.
   const showArchivedRef = useRef(false);
   showArchivedRef.current = showArchived;
@@ -764,8 +770,87 @@ export default function WhatsappPanelPage() {
   }, []);
 
   useEffect(() => {
+    seenMessagesRef.current = null;
     void loadConversations();
   }, [showArchived, loadConversations]);
+
+  // Aviso de mensaje entrante (como Wati): sonido, toast, notificación del navegador y contador en la pestaña.
+  useEffect(() => {
+    const seen = seenMessagesRef.current;
+    const next = new Map<string, number>();
+    const fresh: ConversationSummary[] = [];
+    for (const conversation of conversations) {
+      const last = conversation.lastMessage;
+      const time = last ? new Date(last.createdAt).getTime() : 0;
+      next.set(conversation.id, time);
+      if (!seen || !last || last.role !== "USER") continue;
+      const prev = seen.get(conversation.id);
+      const isNew = prev === undefined ? Date.now() - time < 120_000 : time > prev;
+      const watching =
+        conversation.id === selectedIdRef.current &&
+        document.visibilityState === "visible" &&
+        document.hasFocus();
+      if (isNew && !watching) fresh.push(conversation);
+    }
+    seenMessagesRef.current = next;
+    if (fresh.length === 0) return;
+
+    const top = fresh[0];
+    const name = top.contactName || top.phone;
+    const text = top.lastMessage?.content || "Nuevo mensaje";
+    setIncoming({ id: top.id, name, text });
+
+    try {
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.35);
+      osc.onended = () => void ctx.close();
+    } catch {
+      // Autoplay bloqueado hasta que el usuario interactúe: el toast sigue funcionando.
+    }
+
+    if (document.visibilityState !== "visible") {
+      unreadTitleCountRef.current += fresh.length;
+      document.title = `(${unreadTitleCountRef.current}) Nuevo mensaje · WhatsApp`;
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(name, { body: text, tag: "kliniu-whatsapp" });
+      }
+    }
+  }, [conversations]);
+
+  useEffect(() => {
+    if (!incoming) return;
+    const timer = window.setTimeout(() => setIncoming(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [incoming]);
+
+  useEffect(() => {
+    const baseTitle = document.title;
+    const reset = () => {
+      if (document.visibilityState !== "visible") return;
+      unreadTitleCountRef.current = 0;
+      document.title = baseTitle.replace(/^\(\d+\) Nuevo mensaje · /, "");
+    };
+    let dismissed = false;
+    try {
+      dismissed = localStorage.getItem("wa-notif-dismissed") === "1";
+    } catch {
+      // Sin storage: el aviso simplemente reaparece en cada visita.
+    }
+    if ("Notification" in window && Notification.permission === "default" && !dismissed) {
+      setAskNotifications(true);
+    }
+    document.addEventListener("visibilitychange", reset);
+    return () => {
+      document.removeEventListener("visibilitychange", reset);
+    };
+  }, []);
 
   const loadPendingLessons = useCallback(async () => {
     try {
@@ -1276,6 +1361,63 @@ export default function WhatsappPanelPage() {
 
   return (
     <>
+      <div className="fixed right-4 top-4 z-[70] flex flex-col gap-2">
+      {incoming ? (
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedId(incoming.id);
+            setIncoming(null);
+          }}
+          className="flex w-[320px] max-w-[calc(100vw-2rem)] items-start gap-3 rounded-xl border border-[#DCE5EA] bg-white p-3 text-left shadow-[0_12px_40px_rgba(15,23,42,0.18)]"
+        >
+          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white">
+            <MdNotificationsActive className="h-4 w-4" aria-hidden />
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-semibold text-[#0F172A]">{incoming.name}</span>
+            <span className="line-clamp-2 text-xs text-[#475569]">{incoming.text}</span>
+          </span>
+        </button>
+      ) : null}
+      {askNotifications ? (
+        <div className="flex w-[320px] max-w-[calc(100vw-2rem)] items-start gap-3 rounded-xl border border-[#DCE5EA] bg-white p-3 shadow-[0_12px_40px_rgba(15,23,42,0.18)]">
+          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0C535B] text-white">
+            <MdNotificationsActive className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[#0F172A]">Activar notificaciones</p>
+            <p className="text-xs text-[#475569]">Entérate de los mensajes nuevos aunque estés en otra pestaña.</p>
+            <div className="mt-2 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setAskNotifications(false);
+                  void Notification.requestPermission();
+                }}
+                className="rounded-lg bg-[#0C535B] px-3 py-1.5 text-xs font-semibold text-white"
+              >
+                Activar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAskNotifications(false);
+                  try {
+                    localStorage.setItem("wa-notif-dismissed", "1");
+                  } catch {
+                    // Preferencia opcional.
+                  }
+                }}
+                className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#475569] hover:bg-[#F1F5F9]"
+              >
+                Ahora no
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      </div>
       <main className="min-h-[calc(100dvh-3.5rem)] bg-[#F4F7F8] md:min-h-dvh md:p-4">
       <div className="mx-auto flex h-[calc(100dvh-3.5rem)] min-h-0 max-w-[1600px] overflow-hidden border border-[#DCE5EA] bg-white shadow-sm md:h-[calc(100dvh-2rem)] md:rounded-2xl md:shadow-[0_18px_55px_rgba(15,23,42,0.08)]">
         <aside
