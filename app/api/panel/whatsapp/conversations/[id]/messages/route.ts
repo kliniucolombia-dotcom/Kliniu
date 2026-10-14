@@ -21,14 +21,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   const { id } = await params;
-  const body = (await request.json()) as { text?: string };
+  const body = (await request.json()) as { text?: string; replyToId?: string };
 
   if (!body.text?.trim()) {
     return Response.json({ error: "Mensaje vacío" }, { status: 400 });
   }
 
   try {
-    const message = await sendAgentReply(id, body.text.trim(), access.session.userId);
+    const message = await sendAgentReply(id, body.text.trim(), access.session.userId, body.replyToId);
     await broadcastPanelUpdate("wati");
     return Response.json(message);
   } catch (error) {

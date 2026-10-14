@@ -253,16 +253,21 @@ export async function getWatiConversationMessages(conversationId: string) {  if 
   return conversation;
 }
 
-export async function sendAgentReply(conversationId: string, text: string, senderId: string) {
+export async function sendAgentReply(conversationId: string, text: string, senderId: string, replyToId?: string | null) {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
 
   const conversation = await prisma.watiConversation.findUnique({ where: { id: conversationId } });
   if (!conversation) throw new Error("CONVERSATION_NOT_FOUND");
 
-  await sendWatiMessage(conversation.phone, text);
+  // Solo se puede citar un mensaje de esta conversación que tenga id de WATI.
+  const quoted = replyToId
+    ? await prisma.watiMessage.findFirst({ where: { id: replyToId, conversationId }, select: { id: true, externalId: true } })
+    : null;
+
+  await sendWatiMessage(conversation.phone, text, quoted?.externalId);
 
   const message = await prisma.watiMessage.create({
-    data: { conversationId, role: "AGENT", content: text, senderId },
+    data: { conversationId, role: "AGENT", content: text, senderId, replyToId: quoted?.id ?? null },
   });
 
   await prisma.watiConversation.update({
@@ -351,4 +356,19 @@ export async function startWatiConversation(input: StartWatiConversationInput, s
   });
 
   return getWatiConversationMessages(conversation.id);
+}
+
+export type BulkConversationAction = "archive" | "unarchive" | "delete";
+
+/** Archiva, desarchiva o elimina varias conversaciones; los mensajes se borran en cascada. */
+export async function bulkUpdateWatiConversations(ids: string[], action: BulkConversationAction) {
+  if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
+  const where = { id: { in: ids } };
+  if (action === "delete") {
+    const result = await prisma.watiConversation.deleteMany({ where });
+    return result.count;
+  }
+  // updatedAt se conserva: archivar no debe subir el chat en el orden de la bandeja.
+  const result = await prisma.$executeRaw`UPDATE "WatiConversation" SET "archivedAt" = ${action === "archive" ? new Date() : null} WHERE id = ANY(${ids})`;
+  return result;
 }

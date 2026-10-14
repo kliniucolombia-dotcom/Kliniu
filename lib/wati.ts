@@ -115,7 +115,7 @@ async function parseWatiResponse(response: Response) {
   return data;
 }
 
-export async function sendWatiMessage(phone: string, message: string) {
+export async function sendWatiMessage(phone: string, message: string, replyContextId?: string | null) {
   const { host, authorization, channel } = getWatiConfig();
 
   const response = await fetch(`${host}/api/ext/v3/conversations/messages/text`, {
@@ -124,7 +124,11 @@ export async function sendWatiMessage(phone: string, message: string) {
       Authorization: authorization,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ target: channelTarget(phone, channel), text: message }),
+    body: JSON.stringify({
+      target: channelTarget(phone, channel),
+      text: message,
+      ...(replyContextId ? { replyContextId } : {}),
+    }),
   });
 
   await parseWatiResponse(response);

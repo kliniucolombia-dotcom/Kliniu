@@ -36,6 +36,7 @@ type WatiWebhookPayload = {
   id?: unknown;
   messageId?: unknown;
   whatsappMessageId?: unknown;
+  replyContextId?: unknown;
   mediaUrl?: unknown;
   media_url?: unknown;
   fileUrl?: unknown;
@@ -379,21 +380,41 @@ export async function POST(request: Request) {
     return Response.json({ error: "JSON inválido." }, { status: 400 });
   }
 
+  // Diagnóstico temporal: ver con qué campo llega la cita cuando el cliente responde a un mensaje.
+  if (isInboundMessageEvent(payload)) {
+    const replyish = Object.fromEntries(
+      Object.entries(payload).filter(([k]) => /reply|context|quot|referr/i.test(k)),
+    );
+    console.info("WATI_INBOUND_SHAPE", { keys: Object.keys(payload), replyish });
+  }
+
   const statusEvent = typeof payload.eventType === "string" ? payload.eventType : "";
   if (/^sentMessage/i.test(statusEvent)) {
     const status = /read/i.test(statusEvent) ? "READ" : /deliver/i.test(statusEvent) ? "DELIVERED" : null;
     const phone = getSenderId(payload);
-    if (!status || !phone) {
+    // WATI manda estos eventos sin teléfono: solo traen el texto del mensaje.
+    // Sin teléfono, ubicamos la conversación por el saliente reciente con ese texto.
+    const text = typeof payload.text === "string" ? payload.text.trim() : "";
+    if (!status || (!phone && !text)) {
       console.warn("WATI_STATUS_IGNORED", { eventType: statusEvent, keys: Object.keys(payload) });
       return Response.json({ received: true });
     }
-    const conversation = await prisma.watiConversation.findFirst({ where: { phone }, select: { id: true } });
-    if (conversation) {
+    const outgoing = { role: { in: ["AGENT", "ASSISTANT"] as ("AGENT" | "ASSISTANT")[] } };
+    const conversationId = phone
+      ? (await prisma.watiConversation.findFirst({ where: { phone }, select: { id: true } }))?.id
+      : (
+          await prisma.watiMessage.findFirst({
+            where: { ...outgoing, content: text, createdAt: { gt: new Date(Date.now() - 48 * 3600_000) } },
+            orderBy: { createdAt: "desc" },
+            select: { conversationId: true },
+          })
+        )?.conversationId;
+    if (conversationId) {
       // El estado cubre todo lo saliente previo (leído implica entregado); no se retrocede.
       await prisma.watiMessage.updateMany({
         where: {
-          conversationId: conversation.id,
-          role: { in: ["AGENT", "ASSISTANT"] },
+          conversationId,
+          ...outgoing,
           ...(status === "READ" ? { OR: [{ deliveryStatus: null }, { deliveryStatus: "DELIVERED" }] } : { deliveryStatus: null }),
         },
         data: { deliveryStatus: status },
@@ -564,12 +585,19 @@ export async function POST(request: Request) {
     });
   }
 
+  // Respuesta citada del cliente: WATI manda el id del mensaje citado (replyContextId).
+  const replyContextId = typeof payload.replyContextId === "string" ? payload.replyContextId.trim() : "";
+  const replyTo = replyContextId
+    ? await prisma.watiMessage.findUnique({ where: { externalId: replyContextId }, select: { id: true } })
+    : null;
+
   try {
     await prisma.watiMessage.create({
       data: {
         externalId,
         conversationId: conversation.id,
         role: "USER",
+        replyToId: replyTo?.id ?? null,
         content: audioTranscript ? `🎤 ${text}` : text,
         ...(audioTranscript ? { mediaType: "audio" } : {}),
       },

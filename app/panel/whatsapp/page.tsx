@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   MdAdd,
@@ -17,6 +18,15 @@ import {
   MdDone,
   MdDoneAll,
   MdMoreVert,
+  MdReply,
+  MdAttachFile,
+  MdOutlineEmojiEmotions,
+  MdInsertDriveFile,
+  MdImage,
+  MdChecklist,
+  MdMoreHoriz,
+  MdCheckBox,
+  MdCheckBoxOutlineBlank,
   MdOutlineAssignment,
   MdOutlineDescription,
   MdPerson,
@@ -227,10 +237,12 @@ type Message = {
   mediaType?: string | null;
   mediaUrls?: string[];
   deliveryStatus?: "DELIVERED" | "READ" | null;
+  externalId?: string | null;
+  replyToId?: string | null;
   createdAt: string;
 };
 
-const PLAYABLE_MEDIA = new Set(["audio", "image", "sticker", "video"]);
+const PLAYABLE_MEDIA = new Set(["audio", "image", "sticker", "video", "document"]);
 
 // "📎 (audio recibido)" solo es relleno cuando el panel ya puede mostrar el archivo.
 function isMediaPlaceholder(message: Message) {
@@ -260,8 +272,32 @@ function MessageMedia({ message }: { message: Message }) {
       </div>
     );
   }
+  if (type === "document" && message.mediaUrls?.[0]) {
+    const url = message.mediaUrls[0];
+    const name = decodeURIComponent(url.split("/").pop() ?? "archivo");
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="mb-1.5 flex items-center gap-2 rounded-xl bg-black/5 px-3 py-2 text-xs font-semibold hover:bg-black/10"
+      >
+        <MdInsertDriveFile size={20} className="shrink-0" />
+        <span className="min-w-0 truncate">{name}</span>
+      </a>
+    );
+  }
   return null;
 }
+
+const WHATSAPP_EMOJIS = [
+  "😀", "😁", "😂", "🤣", "😊", "😍", "😘", "😎",
+  "🙂", "😉", "😅", "😇", "🤗", "🤔", "😢", "😭",
+  "😡", "😴", "🙏", "👍", "👎", "👏", "🙌", "💪",
+  "👌", "✌️", "🤝", "👋", "❤️", "💙", "💚", "🔥",
+  "⭐", "✨", "🎉", "🎁", "✅", "❌", "⚠️", "📦",
+  "🚚", "💳", "💰", "📞", "📍", "🕒", "🛒", "🧼",
+];
 
 type WatiTemplate = {
   name: string;
@@ -714,6 +750,24 @@ export default function WhatsappPanelPage() {
   const [activeTab, setActiveTab] = useState<ConversationTab>("CHAT");
   const [conversationPhone, setConversationPhone] = useState("");
   const [draft, setDraft] = useState("");
+  const [headerMenu, setHeaderMenu] = useState<{ top: number; right: number } | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [emojiMenu, setEmojiMenu] = useState<{ bottom: number; left: number } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [attachMenu, setAttachMenu] = useState<{ bottom: number; left: number } | null>(null);
+  const pickFile = (accept: string) => {
+    const input = fileInputRef.current;
+    if (!input) return;
+    input.accept = accept;
+    setAttachMenu(null);
+    input.click();
+  };
+  const draftRef = useRef<HTMLTextAreaElement>(null);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [messageMenu, setMessageMenu] = useState<{ message: Message; top: number; left: number } | null>(null);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -888,6 +942,48 @@ export default function WhatsappPanelPage() {
     },
     [selectedId],
   );
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const runBulkAction = async (action: "archive" | "unarchive" | "delete") => {
+    const ids = [...selectedIds];
+    if (ids.length === 0 || bulkBusy) return;
+    if (action === "delete") {
+      const confirmed = await confirm({
+        title: ids.length === 1 ? "Eliminar conversación" : `Eliminar ${ids.length} conversaciones`,
+        message: "Se eliminarán los chats y todos sus mensajes. Esta acción no se puede deshacer.",
+        confirmLabel: "Eliminar",
+        danger: true,
+      });
+      if (!confirmed) return;
+    }
+    setBulkBusy(true);
+    try {
+      const response = await fetch("/api/panel/whatsapp/conversations/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids, action }),
+      });
+      if (!response.ok) {
+        const data = (await response.json().catch(() => ({}))) as { error?: string };
+        setSendError(data.error ?? "No fue posible completar la acción.");
+        return;
+      }
+      setConversations((current) => current.filter((conversation) => !selectedIds.has(conversation.id)));
+      if (selectedId && selectedIds.has(selectedId)) {
+        setSelectedId(null);
+        setMessages([]);
+      }
+      exitSelectMode();
+    } catch {
+      setSendError("No fue posible conectar con el servidor.");
+    } finally {
+      setBulkBusy(false);
+    }
+  };
 
   const clearAllConversations = useCallback(async () => {
     if (clearingAll) return;
@@ -1330,17 +1426,25 @@ export default function WhatsappPanelPage() {
   };
 
   const handleSend = async () => {
-    if (!selectedId || !draft.trim() || sending) return;
+    if (!selectedId || (!draft.trim() && !attachment) || sending) return;
     setSending(true);
     setSendError("");
     const text = draft.trim();
 
     try {
-      const response = await fetch(`/api/panel/whatsapp/conversations/${selectedId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
+      let response: Response;
+      if (attachment) {
+        const form = new FormData();
+        form.append("file", attachment);
+        form.append("caption", text);
+        response = await fetch(`/api/panel/whatsapp/conversations/${selectedId}/attachments`, { method: "POST", body: form });
+      } else {
+        response = await fetch(`/api/panel/whatsapp/conversations/${selectedId}/messages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, replyToId: replyTo?.id }),
+        });
+      }
       const data = (await response.json()) as Message | { error?: string };
       if (!response.ok) {
         setSendError(
@@ -1352,6 +1456,8 @@ export default function WhatsappPanelPage() {
         return;
       }
       setDraft("");
+      setAttachment(null);
+      setReplyTo(null);
       isNearBottomRef.current = true;
       setHasNewMessagesBelow(false);
       await Promise.all([loadMessages(selectedId), loadConversations()]);
@@ -1430,53 +1536,62 @@ export default function WhatsappPanelPage() {
         >
           <div className={`bg-gradient-to-br ${showArchived ? ARCHIVED_HEADER_CLASS : FILTER_HEADER_CLASSES[conversationFilter]} px-4 pb-4 pt-5 text-white transition-colors duration-300`}>
             <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20">
-                  <MdWhatsapp size={24} />
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20">
+                  <MdWhatsapp size={26} />
                 </span>
-                <div>
-                  <h1 className="text-base font-bold">WhatsApp</h1>
-                  <p className="text-[11px] text-white/75">
-                    {showArchived ? `${conversations.length} archivados` : `${conversations.length} chats · ${activeCount} abiertos`}
+                <div className="min-w-0">
+                  <h1 className="truncate text-base font-bold leading-tight">WhatsApp</h1>
+                  <p className="text-[11px] leading-snug text-white/75">
+                    {showArchived ? (
+                      <span className="whitespace-nowrap"><span className="font-bold text-white">{conversations.length}</span> archivados</span>
+                    ) : (
+                      <>
+                        <span className="mr-2 whitespace-nowrap"><span className="font-bold text-white">{conversations.length}</span> chats</span>
+                        <span className="whitespace-nowrap"><span className="font-bold text-white">{activeCount}</span> abiertos</span>
+                      </>
+                    )}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-1">
                 <Link
                   href="/panel/whatsapp/remarketing"
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-white shadow-lg shadow-black/10 transition hover:scale-105 hover:bg-white/25"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-white transition hover:bg-white/25"
                   aria-label="Remarketing IA"
                   title="Remarketing IA"
                 >
                   <MdAutorenew size={20} />
                 </Link>
-                <Link
-                  href="/panel/whatsapp/lecciones"
-                  className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-white shadow-lg shadow-black/10 transition hover:scale-105 hover:bg-white/25"
-                  aria-label={pendingLessons > 0 ? `Lecciones de la IA, ${pendingLessons} pendientes` : "Lecciones de la IA"}
-                  title={pendingLessons > 0 ? `${pendingLessons} lecciones pendientes de revisar` : "Lecciones de la IA"}
-                >
-                  <MdPsychology size={20} />
-                  {pendingLessons > 0 ? (
-                    <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#F59E0B] px-1 text-[10px] font-bold leading-none text-white ring-2 ring-[#0E7C82]">
-                      {pendingLessons > 99 ? "99+" : pendingLessons}
-                    </span>
-                  ) : null}
-                </Link>
                 <button
                   type="button"
-                  onClick={clearAllConversations}
-                  disabled={clearingAll || conversations.length === 0}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-white shadow-lg shadow-black/10 transition hover:scale-105 hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
-                  aria-label="Vaciar conversaciones"
-                  title="Vaciar conversaciones"
+                  onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
+                  aria-pressed={selectMode}
+                  className={`flex h-9 w-9 items-center justify-center rounded-xl text-white transition ${selectMode ? "bg-white/35" : "bg-white/15 hover:bg-white/25"}`}
+                  aria-label="Seleccionar chats"
+                  title="Seleccionar chats"
                 >
-                  <MdDeleteOutline size={20} />
+                  <MdChecklist size={20} />
+                </button>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    setHeaderMenu({ top: rect.bottom + 8, right: Math.max(8, window.innerWidth - rect.right) });
+                  }}
+                  className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-white transition hover:bg-white/25"
+                  aria-label="Más opciones"
+                  title="Más opciones"
+                >
+                  <MdMoreHoriz size={22} />
+                  {pendingLessons > 0 ? (
+                    <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-[#F59E0B] ring-2 ring-[#0E7C82]" />
+                  ) : null}
                 </button>
                 <button
                   type="button"
                   onClick={openNewChat}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[#0E7C82] shadow-lg shadow-black/10 transition hover:scale-105"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#0E7C82] shadow-lg shadow-black/10 transition hover:scale-105"
                   aria-label="Nuevo chat"
                   title="Nuevo chat"
                 >
@@ -1567,6 +1682,43 @@ export default function WhatsappPanelPage() {
             </div>
           </div>
 
+          {selectMode ? (
+            <div className="flex flex-wrap items-center gap-2 border-b border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs">
+              <span className="font-bold text-[#0F172A]">{selectedIds.size} seleccionados</span>
+              <button
+                type="button"
+                onClick={() =>
+                  setSelectedIds(
+                    selectedIds.size === filteredConversations.length
+                      ? new Set()
+                      : new Set(filteredConversations.map((conversation) => conversation.id)),
+                  )
+                }
+                className="font-semibold text-[#0E7C82] hover:underline"
+              >
+                {selectedIds.size === filteredConversations.length && selectedIds.size > 0 ? "Quitar todos" : "Seleccionar todos"}
+              </button>
+              <div className="ml-auto flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={selectedIds.size === 0 || bulkBusy}
+                  onClick={() => runBulkAction(showArchived ? "unarchive" : "archive")}
+                  className="inline-flex items-center gap-1 rounded-lg bg-white px-2.5 py-1.5 font-semibold text-[#0E7C82] ring-1 ring-[#CBD5E1] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {showArchived ? <MdUnarchive size={15} /> : <MdArchive size={15} />}
+                  {showArchived ? "Desarchivar" : "Archivar"}
+                </button>
+                <button
+                  type="button"
+                  disabled={selectedIds.size === 0 || bulkBusy}
+                  onClick={() => runBulkAction("delete")}
+                  className="inline-flex items-center gap-1 rounded-lg bg-[#DC2626] px-2.5 py-1.5 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <MdDeleteOutline size={15} /> Eliminar
+                </button>
+              </div>
+            </div>
+          ) : null}
           <div className="flex-1 overflow-y-auto">
             {loading ? (
               <div className="flex flex-col gap-3 p-4">
@@ -1619,6 +1771,14 @@ export default function WhatsappPanelPage() {
                 key={conversation.id}
                 type="button"
                   onClick={() => {
+                    if (selectMode) {
+                      setSelectedIds((current) => {
+                        const next = new Set(current);
+                        if (!next.delete(conversation.id)) next.add(conversation.id);
+                        return next;
+                      });
+                      return;
+                    }
                     selectedIdRef.current = conversation.id;
                     setSelectedId(conversation.id);
                     setConversationStatus(conversation.status);
@@ -1637,6 +1797,13 @@ export default function WhatsappPanelPage() {
                   selectedId === conversation.id ? "ring-2 ring-inset ring-[#0E7C82]/45" : ""
                 }`}
               >
+                {selectMode ? (
+                  selectedIds.has(conversation.id) ? (
+                    <MdCheckBox size={22} className="mt-2.5 shrink-0 text-[#0E7C82]" aria-label="Seleccionado" />
+                  ) : (
+                    <MdCheckBoxOutlineBlank size={22} className="mt-2.5 shrink-0 text-[#94A3B8]" aria-label="No seleccionado" />
+                  )
+                ) : null}
                 <span
                   className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-xs font-bold ${avatarColor(conversation.phone)}`}
                 >
@@ -1895,10 +2062,11 @@ export default function WhatsappPanelPage() {
                   </div>
                   {messages.map((message) => {
                     const isCustomer = message.role === "USER";
+                    const quoted = message.replyToId ? messages.find((m) => m.id === message.replyToId) : null;
                     return (
                       <div
                         key={message.id}
-                        className={`flex ${isCustomer ? "justify-start" : "justify-end"}`}
+                        className={`group flex items-start gap-1 ${isCustomer ? "justify-start" : "flex-row-reverse"}`}
                       >
                         <div
                           className={`max-w-[82%] rounded-2xl px-4 py-2.5 text-sm shadow-sm sm:max-w-[70%] ${
@@ -1929,9 +2097,32 @@ export default function WhatsappPanelPage() {
                               <MdDone size={14} aria-label="Enviado" />
                             )}
                           </div>
+                          {quoted ? (
+                            <div className="mb-1.5 rounded-lg border-l-4 border-[#27B1B8] bg-black/5 px-2.5 py-1.5 text-xs">
+                              <p className="font-bold text-[#0E7C82]">{quoted.role === "USER" ? "Cliente" : "Kliniu"}</p>
+                              <p className="line-clamp-3 whitespace-pre-wrap opacity-80">
+                                {isMediaPlaceholder(quoted) ? "Archivo" : quoted.content}
+                              </p>
+                            </div>
+                          ) : null}
                           <MessageMedia message={message} />
                           {isMediaPlaceholder(message) ? null : <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>}
                         </div>
+                        <button
+                          type="button"
+                          aria-label="Opciones del mensaje"
+                          onClick={(event) => {
+                            const rect = event.currentTarget.getBoundingClientRect();
+                            setMessageMenu({
+                              message,
+                              top: rect.bottom + 4,
+                              left: Math.min(Math.max(8, rect.left - (isCustomer ? 0 : 140)), window.innerWidth - 168),
+                            });
+                          }}
+                          className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[#64748B] opacity-0 transition hover:bg-white focus:opacity-100 group-hover:opacity-100"
+                        >
+                          <MdMoreVert size={18} />
+                        </button>
                       </div>
                     );
                   })}
@@ -1973,8 +2164,62 @@ export default function WhatsappPanelPage() {
                     <span>{sendError}</span>
                   </div>
                 ) : null}
+                {replyTo ? (
+                  <div className="mx-auto mb-2 flex max-w-3xl items-start gap-2 rounded-xl border-l-4 border-[#27B1B8] bg-[#F1F5F9] px-3 py-2 text-xs">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-[#0E7C82]">Respondiendo a {replyTo.role === "USER" ? "Cliente" : "Kliniu"}</p>
+                      <p className="line-clamp-2 whitespace-pre-wrap text-[#475569]">
+                        {isMediaPlaceholder(replyTo) ? "Archivo" : replyTo.content}
+                      </p>
+                    </div>
+                    <button type="button" onClick={() => setReplyTo(null)} aria-label="Cancelar respuesta" className="text-[#64748B] hover:text-[#0F172A]">
+                      <MdClose size={16} />
+                    </button>
+                  </div>
+                ) : null}
+                {attachment ? (
+                  <div className="mx-auto mb-2 flex max-w-3xl items-center gap-2 rounded-xl bg-[#F1F5F9] px-3 py-2 text-xs">
+                    <MdInsertDriveFile size={18} className="shrink-0 text-[#0E7C82]" />
+                    <span className="min-w-0 flex-1 truncate font-semibold text-[#0F172A]">{attachment.name}</span>
+                    <button type="button" onClick={() => setAttachment(null)} aria-label="Quitar archivo" className="text-[#64748B] hover:text-[#0F172A]">
+                      <MdClose size={16} />
+                    </button>
+                  </div>
+                ) : null}
                 <div className="mx-auto flex max-w-3xl items-end gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    hidden
+                    onChange={(event) => {
+                      setAttachment(event.target.files?.[0] ?? null);
+                      event.target.value = "";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      const rect = event.currentTarget.getBoundingClientRect();
+                      setAttachMenu({ bottom: window.innerHeight - rect.top + 8, left: Math.max(8, rect.left) });
+                    }}
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#64748B] transition hover:bg-[#F1F5F9]"
+                    aria-label="Adjuntar archivo"
+                  >
+                    <MdAttachFile size={22} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      const rect = event.currentTarget.getBoundingClientRect();
+                      setEmojiMenu({ bottom: window.innerHeight - rect.top + 8, left: Math.max(8, rect.left) });
+                    }}
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#64748B] transition hover:bg-[#F1F5F9]"
+                    aria-label="Insertar emoji"
+                  >
+                    <MdOutlineEmojiEmotions size={22} />
+                  </button>
                   <textarea
+                    ref={draftRef}
                     value={draft}
                     onChange={(event) => setDraft(event.target.value)}
                     onKeyDown={(event) => {
@@ -1994,7 +2239,7 @@ export default function WhatsappPanelPage() {
                   <button
                     type="button"
                     onClick={handleSend}
-                    disabled={sending || !draft.trim()}
+                    disabled={sending || (!draft.trim() && !attachment)}
                     className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0E7C82] text-white shadow-lg shadow-[#0E7C82]/20 transition hover:bg-[#086970] disabled:cursor-not-allowed disabled:opacity-45"
                     aria-label="Enviar mensaje"
                   >
@@ -2008,6 +2253,128 @@ export default function WhatsappPanelPage() {
             </>
           )}
         </section>
+        {headerMenu && typeof document !== "undefined"
+          ? createPortal(
+              <>
+                <div className="fixed inset-0 z-[90]" onClick={() => setHeaderMenu(null)} />
+                <div
+                  style={{ top: headerMenu.top, right: headerMenu.right }}
+                  className="fixed z-[100] w-60 rounded-2xl border border-[#E2E8F0] bg-white p-1.5 text-sm shadow-xl"
+                >
+                  <Link
+                    href="/panel/whatsapp/lecciones"
+                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[#334155] hover:bg-[#F1F5F9]"
+                  >
+                    <MdPsychology size={20} />
+                    <span className="flex-1">Lecciones de la IA</span>
+                    {pendingLessons > 0 ? (
+                      <span className="rounded-full bg-[#F59E0B] px-2 py-0.5 text-[10px] font-bold text-white">
+                        {pendingLessons > 99 ? "99+" : pendingLessons}
+                      </span>
+                    ) : null}
+                  </Link>
+                  <div className="my-1 border-t border-[#E2E8F0]" />
+                  <button
+                    type="button"
+                    disabled={clearingAll || conversations.length === 0}
+                    onClick={() => {
+                      setHeaderMenu(null);
+                      void clearAllConversations();
+                    }}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left font-semibold text-[#DC2626] hover:bg-[#FEF2F2] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <MdDeleteOutline size={20} /> Vaciar conversaciones
+                  </button>
+                </div>
+              </>,
+              document.body,
+            )
+          : null}
+        {attachMenu && typeof document !== "undefined"
+          ? createPortal(
+              <>
+                <div className="fixed inset-0 z-[90]" onClick={() => setAttachMenu(null)} />
+                <div
+                  style={{ bottom: attachMenu.bottom, left: attachMenu.left }}
+                  className="fixed z-[100] w-52 rounded-xl border border-[#E2E8F0] bg-white py-1 text-sm shadow-xl"
+                >
+                  <button
+                    type="button"
+                    onClick={() => pickFile(".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,application/pdf")}
+                    className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-[#0F172A] hover:bg-[#F1F5F9]"
+                  >
+                    <MdInsertDriveFile size={20} className="text-[#7C3AED]" /> Documento
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => pickFile("image/jpeg,image/png,image/webp")}
+                    className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-[#0F172A] hover:bg-[#F1F5F9]"
+                  >
+                    <MdImage size={20} className="text-[#0E7C82]" /> Fotos
+                  </button>
+                </div>
+              </>,
+              document.body,
+            )
+          : null}
+        {emojiMenu && typeof document !== "undefined"
+          ? createPortal(
+              <>
+                <div className="fixed inset-0 z-[90]" onClick={() => setEmojiMenu(null)} />
+                <div
+                  style={{ bottom: emojiMenu.bottom, left: emojiMenu.left }}
+                  className="fixed z-[100] grid w-72 grid-cols-8 gap-0.5 rounded-xl border border-[#E2E8F0] bg-white p-2 shadow-xl"
+                >
+                  {WHATSAPP_EMOJIS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => {
+                        const el = draftRef.current;
+                        const start = el?.selectionStart ?? draft.length;
+                        const end = el?.selectionEnd ?? draft.length;
+                        setDraft((current) => current.slice(0, start) + emoji + current.slice(end));
+                        setEmojiMenu(null);
+                        requestAnimationFrame(() => {
+                          el?.focus();
+                          el?.setSelectionRange(start + emoji.length, start + emoji.length);
+                        });
+                      }}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-xl hover:bg-[#F1F5F9]"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </>,
+              document.body,
+            )
+          : null}
+        {messageMenu && typeof document !== "undefined"
+          ? createPortal(
+              <>
+                <div className="fixed inset-0 z-[90]" onClick={() => setMessageMenu(null)} />
+                <div
+                  style={{ top: messageMenu.top, left: messageMenu.left }}
+                  className="fixed z-[100] w-40 rounded-xl border border-[#E2E8F0] bg-white py-1 text-sm shadow-xl"
+                >
+                  <button
+                    type="button"
+                    disabled={!messageMenu.message.externalId}
+                    title={messageMenu.message.externalId ? undefined : "Este mensaje no se puede citar en WhatsApp"}
+                    onClick={() => {
+                      setReplyTo(messageMenu.message);
+                      setMessageMenu(null);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[#0F172A] hover:bg-[#F1F5F9] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <MdReply size={18} /> Responder
+                  </button>
+                </div>
+              </>,
+              document.body,
+            )
+          : null}
 
         <aside className={`hidden w-[280px] shrink-0 overflow-y-auto border-l border-[#E2E8F0] bg-[#F8FAFC] p-3 xl:block ${selected ? '' : 'opacity-50'}`}>
           {selected ? (

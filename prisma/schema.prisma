@@ -786,6 +786,8 @@ model WatiMessage {
   mediaUrls      String[]         @default([])
   /// Salientes: "DELIVERED" | "READ" según los eventos de estado de WATI; null = enviado.
   deliveryStatus String?
+  /// WatiMessage.id del mensaje citado (respuesta de WhatsApp), sin FK para no bloquear borrados.
+  replyToId      String?
   senderId       String?
   sender         User?            @relation("WatiMessageSender", fields: [senderId], references: [id])
   createdAt      DateTime         @default(now())
