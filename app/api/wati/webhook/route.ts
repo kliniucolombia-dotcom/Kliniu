@@ -380,14 +380,6 @@ export async function POST(request: Request) {
     return Response.json({ error: "JSON inválido." }, { status: 400 });
   }
 
-  // Diagnóstico temporal: ver con qué campo llega la cita cuando el cliente responde a un mensaje.
-  if (isInboundMessageEvent(payload)) {
-    const replyish = Object.fromEntries(
-      Object.entries(payload).filter(([k]) => /reply|context|quot|referr/i.test(k)),
-    );
-    console.info("WATI_INBOUND_SHAPE", { keys: Object.keys(payload), replyish });
-  }
-
   const statusEvent = typeof payload.eventType === "string" ? payload.eventType : "";
   if (/^sentMessage/i.test(statusEvent)) {
     const status = /read/i.test(statusEvent) ? "READ" : /deliver/i.test(statusEvent) ? "DELIVERED" : null;
