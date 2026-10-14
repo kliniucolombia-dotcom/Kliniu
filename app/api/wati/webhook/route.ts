@@ -379,6 +379,30 @@ export async function POST(request: Request) {
     return Response.json({ error: "JSON inválido." }, { status: 400 });
   }
 
+  const statusEvent = typeof payload.eventType === "string" ? payload.eventType : "";
+  if (/^sentMessage/i.test(statusEvent)) {
+    const status = /read/i.test(statusEvent) ? "READ" : /deliver/i.test(statusEvent) ? "DELIVERED" : null;
+    const phone = getSenderId(payload);
+    if (!status || !phone) {
+      console.warn("WATI_STATUS_IGNORED", { eventType: statusEvent, keys: Object.keys(payload) });
+      return Response.json({ received: true });
+    }
+    const conversation = await prisma.watiConversation.findFirst({ where: { phone }, select: { id: true } });
+    if (conversation) {
+      // El estado cubre todo lo saliente previo (leído implica entregado); no se retrocede.
+      await prisma.watiMessage.updateMany({
+        where: {
+          conversationId: conversation.id,
+          role: { in: ["AGENT", "ASSISTANT"] },
+          ...(status === "READ" ? { OR: [{ deliveryStatus: null }, { deliveryStatus: "DELIVERED" }] } : { deliveryStatus: null }),
+        },
+        data: { deliveryStatus: status },
+      });
+    }
+    await broadcastPanelUpdate("wati");
+    return Response.json({ received: true, status });
+  }
+
   // Un cliente con teléfono visible puede llegar dos veces: por el evento normal
   // (con waId) y por el BSUID (a veces sin waId). Si este trae solo BSUID le
   // damos ventaja al otro: así el mensaje cae en su conversación de siempre

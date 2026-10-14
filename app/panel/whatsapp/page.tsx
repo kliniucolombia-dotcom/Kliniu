@@ -14,6 +14,8 @@ import {
   MdPsychology,
   MdHeadsetMic,
   MdLockClock,
+  MdDone,
+  MdDoneAll,
   MdMoreVert,
   MdOutlineAssignment,
   MdOutlineDescription,
@@ -224,6 +226,7 @@ type Message = {
   content: string;
   mediaType?: string | null;
   mediaUrls?: string[];
+  deliveryStatus?: "DELIVERED" | "READ" | null;
   createdAt: string;
 };
 
@@ -1918,6 +1921,13 @@ export default function WhatsappPanelPage() {
                                   : "Kliniu"}{" "}
                               · {formatTime(message.createdAt)}
                             </span>
+                            {isCustomer ? null : message.deliveryStatus === "READ" ? (
+                              <MdDoneAll size={14} className="text-[#27B1B8]" aria-label="Leído" />
+                            ) : message.deliveryStatus === "DELIVERED" ? (
+                              <MdDoneAll size={14} aria-label="Entregado" />
+                            ) : (
+                              <MdDone size={14} aria-label="Enviado" />
+                            )}
                           </div>
                           <MessageMedia message={message} />
                           {isMediaPlaceholder(message) ? null : <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>}
