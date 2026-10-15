@@ -5,6 +5,7 @@ import { digitsTail, matchesAdvisorPhone, needsAdvisorReminder, replyRequestsAdv
 import { classifyExitIntent } from "../lib/wati-followup";
 import { institutionalQuoteReply, isInstitutionalQuoteRequest } from "../lib/wati-campaign";
 import { isClaimMessage } from "../lib/wati-upselling";
+import { buildOrderSummary, isOrderDispute, summaryAlreadyShown } from "../lib/wati-order-guard";
 
 test("replyRequestsAdvisor detecta handoff explícito", () => {
   assert.equal(replyRequestsAdvisor("Listo, un asesor continuará por este mismo chat."), true);
@@ -72,4 +73,22 @@ test("needsAdvisorReminder solo avisa tras 1 h sin asesor y en horario laboral",
   assert.equal(needsAdvisorReminder({ role: "USER", createdAt: new Date(night.getTime() - 90 * 60000) }, night), false);
   const sunday = new Date("2026-10-04T15:00:00Z");
   assert.equal(needsAdvisorReminder({ role: "USER", createdAt: new Date(sunday.getTime() - 90 * 60000) }, sunday), false);
+});
+
+test("resumen de pedido: se exige haberlo mostrado con producto y dirección", () => {
+  const preview = { lines: [{ name: "Dispensador De Toalla Institucional", unitPrice: 56800, quantity: 2 }], subtotal: 113600, shippingCost: 12000 };
+  const data = { customerName: "Lucia Moreno", addressLine1: "Calle 22 c sur 16 c 15 este", city: "Villavicencio" };
+  const summary = buildOrderSummary(preview, data);
+  assert.match(summary, /Total \$125\.600/);
+  assert.equal(summaryAlreadyShown("", preview, data), false);
+  assert.equal(summaryAlreadyShown(summary, preview, data), true);
+  const otro = { ...preview, lines: [{ name: "Dispensador De Toallas Luxury", unitPrice: 109900, quantity: 2 }] };
+  assert.equal(summaryAlreadyShown(summary, otro, data), false);
+});
+
+test("isOrderDispute solo con pedido o total cotizado", () => {
+  assert.equal(isOrderDispute("Pero dice56. 800", true), true);
+  assert.equal(isOrderDispute("Pero dice 56.800", true), true);
+  assert.equal(isOrderDispute("Porque dices 231 mil", true), true);
+  assert.equal(isOrderDispute("no es ese, quiero el otro", false), false);
 });

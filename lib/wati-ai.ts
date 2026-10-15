@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { prisma } from "@/lib/prisma";
-import { createWatiOrder } from "@/lib/wati-order";
+import { createWatiOrder, previewWatiOrder } from "@/lib/wati-order";
+import { buildOrderSummary, isOrderDispute, summaryAlreadyShown } from "@/lib/wati-order-guard";
 import { isWatiBsuid } from "@/lib/wati";
 import { syncOrderToOdoo } from "@/lib/orders";
 import { buildFullCatalogContext } from "@/lib/chatbot";
@@ -42,6 +43,9 @@ const COMBO_PREMIUM_CATALOG_LINE =
 /** Frases que el Sistema Maestro (§44) prohíbe en cualquier respuesta. */
 const FORBIDDEN_PHRASES = /sigues interesad|contin[uú]as interesad|quedo atent|quedamos atent|av[ií]same cualquier|nuestra p[aá]gina dice|el cat[aá]logo dice|indestructible|no se rompe/i;
 
+const REFERENCIA_AMBIGUA_PROMPT =
+  "ELECCIÓN DE PRODUCTO: si el cliente responde 'este', 'ese', 'el primero', 'quiero ese' y en la conversación se mostraron o listaron varios productos (fotos o lista), NO asumas que eligió el que tú recomendaste. Si el mensaje trae una cita (\"El cliente respondió citando…\"), el producto elegido es el de la cita. Si no la trae, confirma por nombre cuál quiere antes de pedir cantidad o cotizar. Antes de crear un pedido, el producto, la cantidad y el precio unitario deben coincidir con lo que el cliente eligió.";
+
 const WATI_CHANNEL_PROMPT = `CANAL WHATSAPP (instrucciones específicas de este canal, tienen prioridad sobre el formato web):
 - El cliente ya está escribiendo por WhatsApp. NO incluyas enlaces wa.me de asesores ni pidas correo electrónico (los enlaces de producto del sitio sí están permitidos, ver abajo).
 - Cuando tengas que escalar algo, indica que un asesor continuará la atención por este mismo chat; no des links.
@@ -52,7 +56,8 @@ const WATI_CHANNEL_PROMPT = `CANAL WHATSAPP (instrucciones específicas de este 
 - ESCALADA A ASESOR HUMANO: cuando no puedas resolver con certeza (dato dudoso, reclamo, caso especial) o el cliente pida hablar con una persona, llama la función solicitar_asesor con el motivo y un resumen breve y, en tu respuesta, avisa que un asesor continuará por este mismo chat. No inventes datos para evitar escalar.
 
 CIERRE DE PEDIDO POR WHATSAPP:
-- En este canal una cotización con datos de entrega ES una venta: en cuanto tengas productos y cantidades + nombre completo + ciudad + dirección principal (+ complemento si aplica: apto, torre, oficina, barrio o "no aplica"), crea el pedido con crear_pedido. No esperes una palabra mágica de "comprar" ni sigas pidiendo datos que el cliente ya dio.
+- En este canal una cotización con datos de entrega ES una venta: en cuanto tengas productos y cantidades + nombre completo + ciudad + dirección principal (+ complemento si aplica: apto, torre, oficina, barrio o "no aplica"), llama crear_pedido. No esperes una palabra mágica de "comprar" ni sigas pidiendo datos que el cliente ya dio.
+- El sistema NO registra el pedido en la primera llamada: responde con un "Resumen de tu pedido" (productos, cantidades, precio y total) para que el cliente confirme. Cuando el cliente confirme ("sí", "confirmo", "dale"), vuelve a llamar crear_pedido con los mismos datos. Si corrige algo, ajusta y vuelve a llamarla.
 - Pide los datos progresivamente, de a poco, y nunca vuelvas a pedir uno que ya tengas.
 - NO pidas teléfono: el sistema usa automáticamente el número de este mismo chat de WhatsApp. Nunca pidas ni inventes un teléfono.
 - Usa SIEMPRE el slug exacto del catálogo vigente para cada producto (Combo Premium: slug "combo-premium"). Si dudas del slug, no inventes: pide el dato o escala a un asesor.
@@ -236,6 +241,8 @@ async function runWatiAssistantCore(
     memorySummary?: string | null;
     /** El mensaje del cliente es una transcripción automática de una nota de voz. */
     fromAudio?: boolean;
+    /** El mensaje es la descripción automática de una imagen que mandó el cliente. */
+    fromImage?: boolean;
   } = {},
 ) {
   const customerFirstName = options.customerName?.trim().split(/\s+/)[0] || null;
@@ -277,6 +284,25 @@ async function runWatiAssistantCore(
   if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_NOT_CONFIGURED");
 
   const allowOrderCreation = options.allowOrderCreation !== false;
+  const lastAssistantText = [...history].reverse().find(({ role }) => role === "assistant")?.content ?? "";
+  // Imagen en medio de un pedido o total cotizado: casi siempre es un reclamo o comprobante; la ve una persona.
+  if (options.fromImage && (!allowOrderCreation || /\bTotal\b/.test(lastAssistantText))) {
+    return {
+      reply: `Recibí tu imagen${customerFirstName ? `, ${customerFirstName}` : ""}. Un asesor la revisará y continuará por este mismo chat. 🙏`,
+      orderCreated: null as { orderId: string } | null,
+      escalateToHuman: true,
+      escalationSummary: `El cliente envió una imagen con un pedido o total en curso. ${newUserMessage.slice(0, 500)}`,
+    };
+  }
+  // Reclamo por precio/producto cuando ya hay pedido o total cotizado: lo atiende una persona.
+  if (isOrderDispute(newUserMessage, !allowOrderCreation || /\bTotal\b/.test(lastAssistantText))) {
+    return {
+      reply: `Tienes razón en revisarlo${customerFirstName ? `, ${customerFirstName}` : ""}. Un asesor continuará por este mismo chat para corregirlo contigo. 🙏`,
+      orderCreated: null as { orderId: string } | null,
+      escalateToHuman: true,
+      escalationSummary: `Posible pedido o precio equivocado. El cliente dijo: "${newUserMessage.slice(0, 200)}". Revisar producto y total del pedido.`,
+    };
+  }
   // Cliente con el número oculto en WhatsApp: no hay teléfono real para la orden.
   const phoneHidden = Boolean(options.customerPhone && isWatiBsuid(options.customerPhone));
   const [{ styleExamples, whatsappPhone }, catalog, commercialConditions, conversationState, lessonsPrompt, upsellData, upsellState] = await Promise.all([
@@ -306,6 +332,7 @@ async function runWatiAssistantCore(
     },
     { role: "system" as const, content: commercialConditions },
     { role: "system" as const, content: UPSELLING_INSTRUCTIONS },
+    { role: "system" as const, content: REFERENCIA_AMBIGUA_PROMPT },
     ...(upsellData ? [{ role: "system" as const, content: upsellData }] : []),
     ...(lessonsPrompt ? [{ role: "system" as const, content: lessonsPrompt }] : []),
     ...(conversationState ? [{ role: "system" as const, content: conversationState }] : []),
@@ -313,6 +340,12 @@ async function runWatiAssistantCore(
       ? [{
           role: "system" as const,
           content: `El cliente se llama ${options.customerName} en WhatsApp. Trátalo por su nombre con naturalidad, sin repetirlo en cada mensaje.`,
+        }]
+      : []),
+    ...(options.fromImage
+      ? [{
+          role: "system" as const,
+          content: "El último mensaje del cliente es la descripción automática de una imagen que envió, no su texto. Úsala solo como contexto, sin afirmar nada que no esté en la descripción; si no basta para saber qué quiere, pregúntale en una frase corta.",
         }]
       : []),
     ...(options.fromAudio
@@ -407,6 +440,23 @@ async function runWatiAssistantCore(
     // El teléfono nunca lo aporta el modelo: es el número de este mismo chat.
     const customerPhone = options.customerPhone?.replace(/\D/g, "").trim();
     if (!customerPhone) throw new Error("MISSING_CUSTOMER_PHONE");
+
+    // Nunca se crea el pedido sin que el cliente haya visto el resumen exacto
+    // (producto, cantidad, precio y dirección): evita pedidos con el producto equivocado.
+    try {
+      const preview = await previewWatiOrder(args);
+      if (!summaryAlreadyShown(lastAssistantText, preview, args)) {
+        return {
+          reply: buildOrderSummary(preview, args),
+          orderCreated: null as { orderId: string } | null,
+          escalateToHuman: false,
+          escalationSummary: null as string | null,
+        };
+      }
+    } catch (error) {
+      // Slug inexistente u otro fallo: sigue el flujo normal, que ya escala a un asesor.
+      console.error("WATI_ORDER_PREVIEW_FAILED", options.conversationId ?? "-", error);
+    }
 
     let order: Awaited<ReturnType<typeof createWatiOrder>> | null;
     try {

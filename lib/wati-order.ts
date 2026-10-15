@@ -30,7 +30,7 @@ export type CreateWatiOrderInput = {
   items: WatiOrderLineInput[];
 };
 
-function resolveDepartment(city: string, explicit?: string | null) {
+export function resolveDepartment(city: string, explicit?: string | null) {
   if (explicit?.trim()) return explicit.trim();
 
   const normalized = city
@@ -217,4 +217,39 @@ export async function createWatiOrder(
     totalItems,
     items: orderLines.map((line) => ({ name: line.name, quantity: line.quantity })),
   };
+}
+
+/** Calcula líneas, subtotal y envío sin crear nada: base del resumen previo a confirmar. */
+export async function previewWatiOrder(input: {
+  city: string;
+  department?: string | null;
+  items: WatiOrderLineInput[];
+}) {
+  if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
+  const slugs = input.items.map((item) => item.slug.trim()).filter(Boolean);
+  const [products, combos] = await Promise.all([
+    prisma.product.findMany({ where: { slug: { in: slugs }, active: true }, select: { slug: true, name: true, sku: true, price: true } }),
+    prisma.combo.findMany({ where: { slug: { in: slugs }, active: true }, select: { slug: true, name: true, sku: true, price: true } }),
+  ]);
+  const bySlug = new Map<string, { name: string; sku: string | null; price: number }>(
+    [...products, ...combos].map((p) => [p.slug, p]),
+  );
+  bySlug.set(COMBO_PREMIUM.slug, COMBO_PREMIUM);
+
+  const lines = input.items.map((item) => {
+    const found = bySlug.get(item.slug.trim());
+    if (!found) throw new Error(`PRODUCT_NOT_FOUND:${item.slug}`);
+    return {
+      name: found.name,
+      sku: found.sku,
+      unitPrice: found.price,
+      quantity: Math.max(1, Math.floor(item.quantity)),
+    };
+  });
+  const subtotal = lines.reduce((total, line) => total + line.unitPrice * line.quantity, 0);
+  const department = resolveDepartment(input.city, input.department);
+  const shippingCost =
+    getShippingOverride(lines.map((line) => ({ sku: line.sku ?? undefined, cantidad: line.quantity }))) ??
+    getShippingForLocation(department, input.city).price;
+  return { lines, subtotal, shippingCost };
 }

@@ -2,6 +2,7 @@ import { SITE_URL } from "@/lib/site";
 import { prisma } from "@/lib/prisma";
 import { runWatiAssistant } from "@/lib/wati-ai";
 import { pickSellerForNewConversation } from "@/lib/wati-conversations";
+import { describeCustomerImage } from "@/lib/wati-vision";
 import { fetchWatiMedia, sendWatiFileFromUrl, sendWatiMessage, toWatiImageUrl } from "@/lib/wati";
 import { getCatalogSnapshot } from "@/lib/chatbot";
 import { transcribeAudioBuffer, transcribeAudioFromUrl } from "@/lib/transcription";
@@ -392,15 +393,28 @@ export async function POST(request: Request) {
       return Response.json({ received: true });
     }
     const outgoing = { role: { in: ["AGENT", "ASSISTANT"] as ("AGENT" | "ASSISTANT")[] } };
+    // El pie de foto "📷 Nombre · precio" corresponde a la fila "📸 Foto de Nombre enviada.".
+    const captionName = text.startsWith("📷 ") ? text.slice(3).split(" · ")[0].trim() : "";
+    const matchContent = captionName ? `📸 Foto de ${captionName} enviada.` : text;
+    const sentMessageId = typeof payload.id === "string" ? payload.id.trim() : "";
+    const sent = text
+      ? await prisma.watiMessage.findFirst({
+          where: { ...outgoing, content: matchContent, createdAt: { gt: new Date(Date.now() - 48 * 3600_000) } },
+          orderBy: { createdAt: "desc" },
+          select: { id: true, conversationId: true, externalId: true },
+        })
+      : null;
+    // Guardamos el id de WATI del saliente: así una cita del cliente (replyContextId) se resuelve.
+    if (sent && !sent.externalId && sentMessageId) {
+      await prisma.watiMessage
+        .update({ where: { id: sent.id }, data: { externalId: sentMessageId } })
+        .catch((error) => {
+          if (!isUniqueConstraintError(error)) throw error;
+        });
+    }
     const conversationId = phone
       ? (await prisma.watiConversation.findFirst({ where: { phone }, select: { id: true } }))?.id
-      : (
-          await prisma.watiMessage.findFirst({
-            where: { ...outgoing, content: text, createdAt: { gt: new Date(Date.now() - 48 * 3600_000) } },
-            orderBy: { createdAt: "desc" },
-            select: { conversationId: true },
-          })
-        )?.conversationId;
+      : sent?.conversationId;
     if (conversationId) {
       // El estado cubre todo lo saliente previo (leído implica entregado); no se retrocede.
       await prisma.watiMessage.updateMany({
@@ -427,6 +441,7 @@ export async function POST(request: Request) {
 
   let incoming = getInboundTextMessage(payload);
   let audioTranscript = false;
+  let imageDescription = "";
 
   if (!incoming) {
     const media = getInboundNonTextMessage(payload);
@@ -473,9 +488,28 @@ export async function POST(request: Request) {
       }
     }
 
+    // Imagen (captura de precio, foto de producto…): se describe con visión y entra como texto.
+    if (media.type === "image") {
+      for (const messageId of media.messageIds) {
+        if (imageDescription) break;
+        try {
+          const file = await fetchWatiMedia(messageId);
+          if (file) imageDescription = (await describeCustomerImage(file.buffer, file.contentType)) ?? "";
+        } catch (error) {
+          console.error("WATI_IMAGE_FETCH_FAILED", error);
+        }
+      }
+    }
+
     if (transcript) {
       incoming = { phone: media.phone, text: transcript, externalId: media.externalId };
       audioTranscript = true;
+    } else if (imageDescription) {
+      incoming = {
+        phone: media.phone,
+        text: `[El cliente envió una imagen. Contenido visible: ${imageDescription}]`,
+        externalId: media.externalId,
+      };
     } else {
       if (
         media.externalId &&
@@ -580,8 +614,12 @@ export async function POST(request: Request) {
   // Respuesta citada del cliente: WATI manda el id del mensaje citado (replyContextId).
   const replyContextId = typeof payload.replyContextId === "string" ? payload.replyContextId.trim() : "";
   const replyTo = replyContextId
-    ? await prisma.watiMessage.findUnique({ where: { externalId: replyContextId }, select: { id: true } })
+    ? await prisma.watiMessage.findUnique({ where: { externalId: replyContextId }, select: { id: true, content: true } })
     : null;
+  // La IA no ve la cita de WhatsApp: se la damos en el texto (lo guardado queda intacto).
+  const aiText = replyTo
+    ? `[El cliente respondió citando este mensaje: "${replyTo.content.slice(0, 300)}"] ${text}`
+    : text;
 
   try {
     await prisma.watiMessage.create({
@@ -590,8 +628,8 @@ export async function POST(request: Request) {
         conversationId: conversation.id,
         role: "USER",
         replyToId: replyTo?.id ?? null,
-        content: audioTranscript ? `🎤 ${text}` : text,
-        ...(audioTranscript ? { mediaType: "audio" } : {}),
+        content: audioTranscript ? `🎤 ${text}` : imageDescription ? `(imagen) ${imageDescription}` : text,
+        ...(audioTranscript ? { mediaType: "audio" } : imageDescription ? { mediaType: "image" } : {}),
       },
     });
   } catch (error) {
@@ -773,7 +811,7 @@ export async function POST(request: Request) {
   let escalationSummary: string | null = null;
   const upsellStateBefore = await getUpsellState(conversation.id).catch(() => null);
   try {
-    const result = await runWatiAssistant(history, text, {
+    const result = await runWatiAssistant(history, aiText, {
       allowOrderCreation: !conversation.orderId,
       sellerId: conversation.assignedSellerId,
       customerPhone: phone,
@@ -781,6 +819,7 @@ export async function POST(request: Request) {
       customerName,
       memorySummary,
       fromAudio: audioTranscript,
+      fromImage: Boolean(imageDescription),
     });
     reply = result.reply;
     orderCreated = result.orderCreated;
@@ -950,15 +989,18 @@ export async function POST(request: Request) {
       }
     }
     if (productMedia.length > 0) {
-      await prisma.watiMessage.create({
-        data: {
-          conversationId: conversation.id,
-          role: "ASSISTANT",
-          content: [...new Set(productMedia.map((m) => m.marker))].join("\n"),
-          mediaType: "image",
-          mediaUrls: productMedia.map((m) => m.url),
-        },
-      });
+      // Una fila por producto: así cada foto puede ligarse a su id de WATI y ser citada.
+      for (const marker of new Set(productMedia.map((m) => m.marker))) {
+        await prisma.watiMessage.create({
+          data: {
+            conversationId: conversation.id,
+            role: "ASSISTANT",
+            content: marker,
+            mediaType: "image",
+            mediaUrls: productMedia.filter((m) => m.marker === marker).map((m) => m.url),
+          },
+        });
+      }
       await broadcastPanelUpdate("wati");
     }
   } catch (error) {
