@@ -34,7 +34,7 @@ import {
   filterProductionRuns,
   type ProductionRunFilters,
 } from "@/lib/production-filters";
-import { fmtDateOnly, fmtTimeOnly } from "@/lib/date";
+import { fmtDateOnly, fmtLoadedDate, fmtTimeOnly, loadLagDays } from "@/lib/date";
 import { efficiencyTone } from "@/lib/production-tone";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { SimpleSelect } from "../_components/simple-select";
@@ -60,6 +60,7 @@ type RunListItem = {
   product: { id: string; name: string; sku: string | null } | null;
   orderNumber: string;
   productionDate: string;
+  createdAt: string;
   startTime: string;
   endTime: string;
   material: string;
@@ -1307,7 +1308,13 @@ export default function ProduccionPage() {
                       className="h-4 w-4 cursor-pointer accent-[#27B1B8]"
                     />
                   </td>
-                  <td className="border border-[#E2E8F0] px-2 py-1.5">{fmtDateOnly(run.productionDate)}</td>
+                  <td className="whitespace-nowrap border border-[#E2E8F0] px-2 py-1.5">
+                    {fmtDateOnly(run.productionDate)}
+                    <span className="block text-[11px] text-[#94A3B8]">Cargado {fmtLoadedDate(run.createdAt)}</span>
+                    {loadLagDays(run.productionDate, run.createdAt) > 1 && (
+                      <span className="mt-0.5 inline-block rounded-full bg-[#FEF3C7] px-2 py-0.5 text-[10px] font-bold text-[#B45309]">Atrasado · {loadLagDays(run.productionDate, run.createdAt)} días</span>
+                    )}
+                  </td>
                   <td className="border border-[#E2E8F0] px-2 py-1.5 font-semibold">{run.orderNumber}</td>
                   <td className="border border-[#E2E8F0] px-2 py-1.5">{run.machine.code} · {run.machine.name}</td>
                   <td className="border border-[#E2E8F0] px-2 py-1.5">{run.machine.brand}</td>

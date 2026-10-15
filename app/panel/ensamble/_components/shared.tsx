@@ -1,4 +1,5 @@
 "use client";
+import { loadLagDays } from "@/lib/date";
 import { useState } from "react";
 import { inputCls, type Permission } from "../../_components/ops-ui";
 import { efficiencyTone } from "@/lib/production-tone";
@@ -31,11 +32,15 @@ export const SECTION_LABEL: Record<Section, string> = { ENSAMBLE: "Ensamble", EM
 export type Entry = {
   id: string; operatorId: string; workDate: string; startTime: string; endTime: string; section: Section;
   workOrderId: string | null; operationId: string; standardSeconds: number; quantity: number; sharedBy: number;
-  observations: string | null;
+  observations: string | null; createdAt: string;
   operator: { id: string; fullName: string };
   operation: { id: string; code: string; name: string; family: string };
   workOrder: { id: string; number: number; reference: string; productName: string; status: "OPEN" | "CLOSED"; quantity: number; producedQuantity: number | null } | null;
 };
+
+export function entryLagDays(e: { workDate: string; createdAt: string }) {
+  return loadLagDays(e.workDate, e.createdAt);
+}
 
 /** Minutos con un decimal ("26", "27,2"). */
 export function fmtMin(n: number) {

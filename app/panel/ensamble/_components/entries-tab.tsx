@@ -9,7 +9,7 @@ import { fmtDateOnly, fmtTimeOnly } from "@/lib/date";
 import { SimpleSelect } from "../../_components/simple-select";
 import { DateRange, Footer, Kpi, Modal, Section, Table, inputCls, labelCls, patchReq } from "../../_components/ops-ui";
 import { SkeletonTable } from "../../../components/skeleton";
-import { EfficiencyChip, EntrySpanHint, SECTION_LABEL, defaultRangeEnd, defaultRangeStart, fmtMin, fmtStdMinutes, jsonError, normalize, type Entry, type Notify, type Options } from "./shared";
+import { EfficiencyChip, EntrySpanHint, SECTION_LABEL, defaultRangeEnd, defaultRangeStart, entryLagDays, fmtMin, fmtStdMinutes, jsonError, normalize, type Entry, type Notify, type Options } from "./shared";
 import { EnsambleReport } from "./report";
 import { EntryFields, canModifyEntry, entryFormFromEntry, entryPayload, isEntryFormValid, type EntryFormState } from "./entry-form";
 
@@ -144,8 +144,13 @@ export function EntriesTab({ options, notify }: { options: Options; notify: Noti
           head={["Fecha", own ? null : "Operario", "Sección", "Horario", "ODT", "Operación", "To (min/und)", "Cant.", "Pers.", "Estándar", "Bloque", showActions ? "" : null]}
           rows={visible.map((e) => {
             const block = blocks.get(blockKey(e));
+            const lag = entryLagDays(e);
             return [
-              fmtDateOnly(e.workDate, { day: "2-digit", month: "short" }),
+              <span key="f" className="whitespace-nowrap">
+                {fmtDateOnly(e.workDate, { day: "2-digit", month: "short" })}
+                <span className="block text-[11px] text-[#94A3B8]">Cargado {new Date(e.createdAt).toLocaleDateString("es-CO", { day: "2-digit", month: "short", timeZone: "America/Bogota" })}</span>
+                {lag > 1 && <span className="mt-0.5 inline-block rounded-full bg-[#FEF3C7] px-2 py-0.5 text-[10px] font-bold text-[#B45309]">Atrasado · {lag} días</span>}
+              </span>,
               own ? null : e.operator.fullName,
               SECTION_LABEL[e.section],
               <span key="h" className="whitespace-nowrap">{fmtTimeOnly(e.startTime)}–{fmtTimeOnly(e.endTime)}</span>,

@@ -29,3 +29,15 @@ export function isSameMonthDateOnly(d: string | Date, ref: Date = new Date()) {
   const date = new Date(d);
   return date.getUTCMonth() === ref.getMonth() && date.getUTCFullYear() === ref.getFullYear();
 }
+
+/** Días entre la fecha de calendario trabajada y el día (Bogotá, UTC-5) en que se cargó el registro. */
+export function loadLagDays(workDate: string | Date, createdAt: string | Date) {
+  const loaded = new Date(new Date(createdAt).getTime() - 5 * 3600_000).toISOString().slice(0, 10);
+  const worked = new Date(workDate).toISOString().slice(0, 10);
+  return Math.round((Date.parse(loaded) - Date.parse(worked)) / 86_400_000);
+}
+
+/** "14 oct" del instante de carga, en hora Bogotá. */
+export function fmtLoadedDate(createdAt: string | Date) {
+  return new Date(createdAt).toLocaleDateString("es-CO", { day: "2-digit", month: "short", timeZone: "America/Bogota" });
+}
