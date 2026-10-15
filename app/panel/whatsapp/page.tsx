@@ -787,6 +787,31 @@ export default function WhatsappPanelPage() {
   const [changingBotState, setChangingBotState] = useState(false);
   const [showConversationMenu, setShowConversationMenu] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+  // Conveniencia por usuario: los filtros se pueden plegar y se recuerda la elección.
+  const [filtersOpen, setFiltersOpen] = useState(true);
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem("wa-filters-open") === "0") setFiltersOpen(false);
+    } catch {}
+  }, []);
+  // Mientras anima se recorta el contenido; ya abierto, no, para que los menús de los selectores no se corten.
+  const [filtersAnimating, setFiltersAnimating] = useState(false);
+  const toggleFilters = () => {
+    setFiltersAnimating(true);
+    setFiltersOpen((open) => {
+      try {
+        window.localStorage.setItem("wa-filters-open", open ? "0" : "1");
+      } catch {}
+      return !open;
+    });
+  };
+  const onFiltersTransitionEnd = (event: React.TransitionEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget && event.propertyName.startsWith("grid-template-rows")) setFiltersAnimating(false);
+  };
+  const collapsibleClass = `grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none ${
+    filtersOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+  }`;
+  const collapsibleInnerClass = `min-h-0 ${filtersOpen && !filtersAnimating ? "" : "overflow-hidden"}`;
   const [pendingLessons, setPendingLessons] = useState(0);
   const [incoming, setIncoming] = useState<{ id: string; name: string; text: string } | null>(null);
   // Última fecha de mensaje visto por conversación; null = aún sin sembrar (carga inicial / cambio de vista).
@@ -1536,28 +1561,40 @@ export default function WhatsappPanelPage() {
         >
           <div className={`bg-gradient-to-br ${showArchived ? ARCHIVED_HEADER_CLASS : FILTER_HEADER_CLASSES[conversationFilter]} px-4 pb-4 pt-5 text-white transition-colors duration-300`}>
             <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-2.5">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20">
-                  <MdWhatsapp size={26} />
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20">
+                  <MdWhatsapp size={28} />
                 </span>
-                <div className="min-w-0">
-                  <h1 className="truncate text-base font-bold leading-tight">WhatsApp</h1>
-                  <p className="text-[11px] leading-snug text-white/75">
-                    {showArchived ? (
-                      <span className="whitespace-nowrap"><span className="font-bold text-white">{conversations.length}</span> archivados</span>
-                    ) : (
-                      <>
-                        <span className="mr-2 whitespace-nowrap"><span className="font-bold text-white">{conversations.length}</span> chats</span>
-                        <span className="whitespace-nowrap"><span className="font-bold text-white">{activeCount}</span> abiertos</span>
-                      </>
-                    )}
-                  </p>
-                </div>
+                <h1 className="truncate text-lg font-bold leading-tight">WhatsApp</h1>
               </div>
-              <div className="flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                onClick={openNewChat}
+                className="flex h-11 shrink-0 items-center gap-2 rounded-2xl bg-white px-4 text-sm font-bold text-[#0E7C82] shadow-lg shadow-black/10 transition hover:scale-105"
+                aria-label="Nuevo chat"
+                title="Nuevo chat"
+              >
+                <MdAdd size={20} />
+                Nuevo chat
+              </button>
+            </div>
+
+            <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/15 pt-3">
+              <p className="min-w-0 text-xs text-white/75">
+                {showArchived ? (
+                  <span className="whitespace-nowrap"><span className="text-lg font-bold text-white">{conversations.length}</span> archivados</span>
+                ) : (
+                  <>
+                    <span className="whitespace-nowrap"><span className="text-lg font-bold text-white">{conversations.length}</span> chats</span>
+                    <span className="mx-2 text-white/40" aria-hidden="true">•</span>
+                    <span className="whitespace-nowrap"><span className="text-lg font-bold text-white">{activeCount}</span> abiertos</span>
+                  </>
+                )}
+              </p>
+              <div className="flex shrink-0 items-center gap-1.5">
                 <Link
                   href="/panel/whatsapp/remarketing"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-white transition hover:bg-white/25"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-white transition hover:bg-white/25"
                   aria-label="Remarketing IA"
                   title="Remarketing IA"
                 >
@@ -1567,7 +1604,7 @@ export default function WhatsappPanelPage() {
                   type="button"
                   onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
                   aria-pressed={selectMode}
-                  className={`flex h-9 w-9 items-center justify-center rounded-xl text-white transition ${selectMode ? "bg-white/35" : "bg-white/15 hover:bg-white/25"}`}
+                  className={`flex h-10 w-10 items-center justify-center rounded-xl text-white transition ${selectMode ? "bg-white/35" : "bg-white/15 hover:bg-white/25"}`}
                   aria-label="Seleccionar chats"
                   title="Seleccionar chats"
                 >
@@ -1579,7 +1616,7 @@ export default function WhatsappPanelPage() {
                     const rect = event.currentTarget.getBoundingClientRect();
                     setHeaderMenu({ top: rect.bottom + 8, right: Math.max(8, window.innerWidth - rect.right) });
                   }}
-                  className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-white transition hover:bg-white/25"
+                  className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-white transition hover:bg-white/25"
                   aria-label="Más opciones"
                   title="Más opciones"
                 >
@@ -1587,15 +1624,6 @@ export default function WhatsappPanelPage() {
                   {pendingLessons > 0 ? (
                     <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-[#F59E0B] ring-2 ring-[#0E7C82]" />
                   ) : null}
-                </button>
-                <button
-                  type="button"
-                  onClick={openNewChat}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#0E7C82] shadow-lg shadow-black/10 transition hover:scale-105"
-                  aria-label="Nuevo chat"
-                  title="Nuevo chat"
-                >
-                  <MdAdd size={22} />
                 </button>
               </div>
             </div>
@@ -1613,11 +1641,29 @@ export default function WhatsappPanelPage() {
               />
             </div>
 
-            <div className="relative mt-3">
-              <span className="absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-white/75">
+            <div className="relative mt-3 min-h-7">
+              <button
+                type="button"
+                onClick={toggleFilters}
+                aria-expanded={filtersOpen}
+                aria-label={filtersOpen ? "Ocultar filtros" : "Mostrar filtros"}
+                title={filtersOpen ? "Ocultar filtros" : "Mostrar filtros"}
+                className={`absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-lg text-white transition hover:bg-white/25 ${filtersOpen ? "bg-white/10" : "bg-white/25"}`}
+              >
                 <MdFilterList size={16} />
-              </span>
-              <div className="ml-9 grid grid-cols-3 gap-1.5">
+                {!filtersOpen && (showArchived || conversationFilter !== "ALL" || sellerFilter !== "ALL" || dateFilter !== "ALL") ? (
+                  <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[#F59E0B] ring-2 ring-[#0E7C82]" />
+                ) : null}
+              </button>
+              <p
+                aria-hidden={filtersOpen}
+                className={`pointer-events-none absolute left-9 top-0 flex h-7 items-center text-[11px] text-white/70 transition-opacity duration-300 motion-reduce:transition-none ${filtersOpen ? "opacity-0" : "opacity-100 delay-150"}`}
+              >
+                Filtros ocultos
+              </p>
+              <div className={`ml-9 ${collapsibleClass}`} onTransitionEnd={onFiltersTransitionEnd}>
+              <div className={collapsibleInnerClass} inert={!filtersOpen}>
+              <div className="grid grid-cols-3 gap-1.5">
               {CONVERSATION_FILTERS.map((filter) => (
                 <button
                   key={filter.value}
@@ -1657,9 +1703,13 @@ export default function WhatsappPanelPage() {
                 Archivados
               </button>
               </div>
+              </div>
+              </div>
             </div>
 
-            <div className="mt-2 grid grid-cols-2 gap-1.5">
+            <div className={collapsibleClass}>
+            <div className={collapsibleInnerClass} inert={!filtersOpen}>
+            <div className="grid grid-cols-2 gap-1.5 pt-2">
               <FilterDropdown
                 value={sellerFilter}
                 onChange={setSellerFilter}
@@ -1679,6 +1729,8 @@ export default function WhatsappPanelPage() {
                 options={DATE_FILTER_OPTIONS}
                 align="right"
               />
+            </div>
+            </div>
             </div>
           </div>
 
