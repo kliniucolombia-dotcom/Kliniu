@@ -2329,6 +2329,8 @@ model WatiLesson {
   conversationId String?
   reviewedById   String?
   reviewedAt     DateTime?
+  /// Asesor o superadmin que la propuso a mano; null si salió del análisis automático.
+  proposedById   String?
   createdAt      DateTime           @default(now())
 
   @@index([status, createdAt])

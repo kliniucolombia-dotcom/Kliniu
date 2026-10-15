@@ -17,7 +17,7 @@ const MAX_PROMPT_LESSONS = 30;
 const CONCURRENCY = 4;
 
 // Datos que solo pueden venir del catálogo / base legal, nunca de una lección.
-const FACTUAL_GUARD = /\$\s?\d|\d+\s?%|precio|valor|garant[ií]a|devoluci|retracto|stock|inventario|env[ií]o gratis|contra ?entrega|pol[ií]tica|t[eé]rminos y condiciones|legal|plazo|d[ií]as h[aá]biles/i;
+export const FACTUAL_GUARD = /\$\s?\d|\d+\s?%|precio|valor|garant[ií]a|devoluci|retracto|stock|inventario|env[ií]o gratis|contra ?entrega|pol[ií]tica|t[eé]rminos y condiciones|legal|plazo|d[ií]as h[aá]biles/i;
 // El audio ya se transcribe: lecciones sobre "no puedo leer audios" nacen de chats viejos y son falsas hoy.
 const STALE_AUDIO = /\b(audios?|notas? de voz)\b/i;
 const CORRECTION = /\b(no es asi|no es así|eso no|no te pregunt|no entendiste|ya te dije|te dije|no me sirve|estas mal|estás mal|incorrecto|no era eso)\b/i;
