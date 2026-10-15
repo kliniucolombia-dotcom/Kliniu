@@ -40,7 +40,7 @@ export default function AddToCartButton({
           ? "cursor-not-allowed border border-black/10 bg-[#f2f2f1] text-[#6b7280]"
           : added
           ? "border border-[#0C535B] bg-[#0C535B] text-white"
-          : "border border-[#27B1B8]/40 bg-[#EAF8F7] text-[#0C535B] hover:bg-[#27B1B8] hover:text-white hover:border-[#27B1B8]"
+          : "border border-[#27B1B8]/40 bg-[#EAF8F7] text-[#0C535B] hover:bg-[#14777D] hover:text-white hover:border-[#27B1B8]"
       }`}
     >
       {disabled ? (

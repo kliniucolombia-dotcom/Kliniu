@@ -58,7 +58,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
               <div className="flex gap-3">
                 <span
                   className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-                    opts.danger === false ? "bg-[#E6F7F8] text-[#27B1B8]" : "bg-[#FEE2E2] text-[#DC2626]"
+                    opts.danger === false ? "bg-[#E6F7F8] text-[#14777D]" : "bg-[#FEE2E2] text-[#DC2626]"
                   }`}
                 >
                   <MdWarningAmber size={22} />
@@ -81,7 +81,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
                   autoFocus
                   onClick={() => close(true)}
                   className={`flex-1 rounded-xl py-2.5 text-sm font-bold text-white hover:opacity-80 ${
-                    opts.danger === false ? "bg-[#27B1B8]" : "bg-[#DC2626]"
+                    opts.danger === false ? "bg-[#14777D]" : "bg-[#DC2626]"
                   }`}
                 >
                   {opts.confirmLabel ?? "Eliminar"}

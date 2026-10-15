@@ -9,7 +9,7 @@ export default function MetaPixel({ nonce }: { nonce?: string }) {
 
   return (
     <>
-      <Script id="meta-pixel-init" strategy="beforeInteractive" nonce={nonce}>
+      <Script id="meta-pixel-init" strategy="afterInteractive" nonce={nonce}>
         {`
           !function(f,b,e,v,n,t,s)
           {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -23,15 +23,6 @@ export default function MetaPixel({ nonce }: { nonce?: string }) {
           fbq('track', 'PageView');
         `}
       </Script>
-      <noscript>
-        <img
-          height="1"
-          width="1"
-          style={{ display: "none" }}
-          src={`https://www.facebook.com/tr?id=${PIXEL_ID}&ev=PageView&noscript=1`}
-          alt=""
-        />
-      </noscript>
     </>
   );
 }

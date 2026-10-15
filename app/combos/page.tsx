@@ -46,14 +46,14 @@ export default async function CombosPage() {
         )}
 
         <div className="mx-auto max-w-[1200px] px-4 py-10 sm:px-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#27B1B8]">Ahorra combinando</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#14777D]">Ahorra combinando</p>
           <h1 className="mt-1 text-3xl font-black text-[#0C535B] sm:text-4xl">Combos</h1>
           <p className="mt-2 max-w-xl text-sm text-[#555]">
             Soluciones armadas para tus espacios, a un mejor precio que comprando por separado.
           </p>
 
           {combosDb.length === 0 ? (
-            <p className="mt-10 text-sm text-[#8b8d91]">Sin combos disponibles por ahora.</p>
+            <p className="mt-10 text-sm text-[#5f6368]">Sin combos disponibles por ahora.</p>
           ) : (
             <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               {combosDb.map((combo) => (

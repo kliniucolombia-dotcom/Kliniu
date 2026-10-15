@@ -66,7 +66,7 @@ export default function VideoModal({ videos }: { videos: Video[] }) {
                   className="image-lift h-full w-full object-cover object-center"
                 />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/15 transition-colors group-hover:bg-black/25">
-                  <div className="pulse-ring flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-[#27B1B8] shadow-md transition-transform group-hover:scale-110 sm:h-12 sm:w-12">
+                  <div className="pulse-ring flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-[#14777D] shadow-md transition-transform group-hover:scale-110 sm:h-12 sm:w-12">
                     <svg viewBox="0 0 24 24" className="h-4 w-4 translate-x-0.5 sm:h-5 sm:w-5" fill="currentColor">
                       <polygon points="5 3 19 12 5 21 5 3" />
                     </svg>
@@ -75,7 +75,7 @@ export default function VideoModal({ videos }: { videos: Video[] }) {
               </div>
             ) : (
               <div className="flex aspect-square w-full shrink-0 items-center justify-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#27B1B8] text-[#27B1B8] sm:h-12 sm:w-12">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#27B1B8] text-[#14777D] sm:h-12 sm:w-12">
                   <svg viewBox="0 0 24 24" className="h-4 w-4 translate-x-0.5 sm:h-5 sm:w-5" fill="currentColor">
                     <polygon points="5 3 19 12 5 21 5 3" />
                   </svg>

@@ -120,7 +120,7 @@ export default function CarritoPage() {
       <section className="mx-auto max-w-[1440px] px-6 py-10">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-3xl font-extrabold tracking-tight text-[#27B1B8]">
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#1B8A90]">
             Carrito de compras
           </h1>
           {items.length > 0 && (
@@ -145,7 +145,7 @@ export default function CarritoPage() {
             <p className="text-lg text-[#6e7379]">Tu carrito está vacío.</p>
             <Link
               href="/categorias"
-              className="mt-6 inline-flex rounded-full bg-[#27B1B8] px-6 py-3 text-sm font-bold text-white hover:bg-[#1E969B] transition-colors"
+              className="mt-6 inline-flex rounded-full bg-[#14777D] px-6 py-3 text-sm font-bold text-white hover:bg-[#0C535B] transition-colors"
             >
               Explorar productos
             </Link>
@@ -195,10 +195,10 @@ export default function CarritoPage() {
                           )}
                           <p className="text-xs text-[#6e7379]">Código: {item.id.split("--")[0].toUpperCase()}</p>
                           <div className="mt-1 flex items-center gap-2">
-                            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-[#27B1B8]" fill="none" stroke="currentColor" strokeWidth="2">
+                            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-[#14777D]" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M5 12h14M12 5l7 7-7 7" />
                             </svg>
-                            <span className="text-[11px] text-[#555]">Envío estimado: 2 días hábiles</span>
+                            <span className="text-[11px] text-[#555]">Entrega estimada: 1 a 3 días hábiles en Bogotá y 3 a 8 en el resto del país</span>
                           </div>
                           {issue ? (
                             <span className="mt-1 inline-block rounded bg-[#fff4e5] px-1.5 py-0.5 text-[10px] font-semibold text-[#b5730a]">
@@ -218,7 +218,7 @@ export default function CarritoPage() {
                       <div className="pl-24 text-left md:pl-0 md:text-center">
                         <span className="block text-xs font-normal text-[#6e7379] md:hidden">Precio unitario</span>
                         {originalUnitario && (
-                          <span className="block text-xs text-[#aaa] line-through">{formatPrecio(originalUnitario)}</span>
+                          <span className="block text-xs text-[#5f6368] line-through">{formatPrecio(originalUnitario)}</span>
                         )}
                         <span className="font-bold text-[#0C535B]">{formatPrecio(unitario)}</span>
                         {originalUnitario && (
@@ -262,7 +262,7 @@ export default function CarritoPage() {
                       {/* Subtotal */}
                       <div className="text-right">
                         <span className="block text-xs font-normal text-[#6e7379] md:hidden">Subtotal</span>
-                        <span className="font-bold text-[#27B1B8]">{formatPrecio(subtotalItem)}</span>
+                        <span className="font-bold text-[#14777D]">{formatPrecio(subtotalItem)}</span>
                         {ahorro > 0 && (
                           <span className="mt-0.5 flex items-center justify-end gap-1 text-[11px] font-semibold text-[#2a8a5e]">
                             <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
@@ -279,7 +279,7 @@ export default function CarritoPage() {
               <div className="mt-4">
                 <Link
                   href="/categorias"
-                  className="inline-flex items-center gap-1.5 text-sm text-[#27B1B8] hover:underline"
+                  className="inline-flex items-center gap-1.5 text-sm text-[#14777D] hover:underline"
                 >
                   ← Seguir comprando
                 </Link>
@@ -318,7 +318,7 @@ export default function CarritoPage() {
                 <div className="flex flex-col gap-0.5 text-[#333]">
                   <div className="flex justify-between">
                     <span>Envío</span>
-                    <span className="font-semibold text-[#27B1B8]">Se calcula en el checkout</span>
+                    <span className="font-semibold text-[#14777D]">Se calcula en el checkout</span>
                   </div>
                   <span className="text-xs text-[#888]">Gratis en Bogotá · $12.000 resto del país</span>
                 </div>
@@ -328,7 +328,7 @@ export default function CarritoPage() {
 
               <div className="flex justify-between text-base">
                 <span className="font-bold text-[#111]">Total:</span>
-                <span className="text-2xl font-extrabold text-[#27B1B8]">{formatPrecio(total)}</span>
+                <span className="text-2xl font-extrabold text-[#1B8A90]">{formatPrecio(total)}</span>
               </div>
 
               {backorderItems.length > 0 && (
@@ -360,7 +360,7 @@ export default function CarritoPage() {
               </Link>
 
               <div className="mt-4 flex items-center gap-2 rounded-xl bg-[#f8fafa] px-4 py-3 text-xs text-[#555]">
-                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-[#27B1B8]" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-[#14777D]" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                   <polyline points="9 12 11 14 15 10" />
                 </svg>
@@ -374,7 +374,7 @@ export default function CarritoPage() {
       {/* Productos recomendados */}
       {recommended.length > 0 && (
         <section className="mx-auto max-w-[1440px] px-6 py-12">
-          <h2 className="mb-6 text-xl font-extrabold tracking-tight text-[#27B1B8]">
+          <h2 className="mb-6 text-xl font-extrabold tracking-tight text-[#1B8A90]">
             Productos recomendados para ti
           </h2>
           <ProductosCarousel products={recommended} />

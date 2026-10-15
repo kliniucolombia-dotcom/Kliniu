@@ -176,7 +176,7 @@ function OrderProgressTimeline({ order }: { order: AccountOrder }) {
 
   return (
     <div className="rounded-[1.2rem] border border-black/8 bg-white px-4 py-5">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8d91]">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5f6368]">
         Seguimiento del pedido
       </p>
       <div className="mt-5 overflow-x-auto">
@@ -184,7 +184,7 @@ function OrderProgressTimeline({ order }: { order: AccountOrder }) {
           <div className="absolute left-[12.5%] right-[12.5%] top-8">
             <span className="block h-[4px] rounded-full bg-black/10" />
             <span
-              className="absolute left-0 top-0 h-[4px] rounded-full bg-[#27B1B8] transition-all duration-300"
+              className="absolute left-0 top-0 h-[4px] rounded-full bg-[#14777D] transition-all duration-300"
               style={{
                 width:
                   activeStep < 0
@@ -207,18 +207,18 @@ function OrderProgressTimeline({ order }: { order: AccountOrder }) {
                   <span
                     className={`relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border ${
                       isCompleted
-                        ? "border-[#27B1B8] bg-[#27B1B8] text-white"
-                        : "border-black/10 bg-[#f8f8f7] text-[#8b8d91]"
+                        ? "border-[#27B1B8] bg-[#14777D] text-white"
+                        : "border-black/10 bg-[#f8f8f7] text-[#5f6368]"
                     } ${isCurrent ? "shadow-[0_10px_24px_rgba(39,177,184,0.2)]" : ""}`}
                   >
                     {step.icon}
                   </span>
                   <div className="mt-3">
-                    <p className={`text-sm font-semibold ${isCompleted ? "text-[#0C535B]" : "text-[#8b8d91]"}`}>
+                    <p className={`text-sm font-semibold ${isCompleted ? "text-[#0C535B]" : "text-[#5f6368]"}`}>
                       {step.label}
                     </p>
                     {isCurrent && (
-                      <p className="mt-1 text-xs font-medium uppercase tracking-[0.14em] text-[#27B1B8]">
+                      <p className="mt-1 text-xs font-medium uppercase tracking-[0.14em] text-[#14777D]">
                         Actual
                       </p>
                     )}
@@ -486,7 +486,7 @@ export default function AccountProfileForm({
           {user.company && (
             <p className="mt-0.5 text-sm text-[#6e7379]">{user.company}</p>
           )}
-          <p className="mt-1 text-xs text-[#8b8d91]">Cliente desde {memberSince}</p>
+          <p className="mt-1 text-xs text-[#5f6368]">Cliente desde {memberSince}</p>
         </div>
 
         <div className="mt-6 h-px bg-black/8" />
@@ -557,7 +557,7 @@ export default function AccountProfileForm({
             {/* Header */}
             <div>
               <h1 className="text-2xl font-extrabold tracking-tight text-[#111] lg:text-3xl">
-                Mi <span className="text-[#27B1B8]">cuenta</span>
+                Mi <span className="text-[#14777D]">cuenta</span>
               </h1>
               <p className="mt-2 text-sm text-[#6e7379]">
                 Revisa y gestiona tu información personal y de envío.
@@ -629,7 +629,7 @@ export default function AccountProfileForm({
 
                 {/* Resumen de cuenta */}
                 <div className="rounded-2xl border border-black/8 bg-white p-6 shadow-[0_4px_16px_rgba(15,23,42,0.05)]">
-                  <p className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-[#27B1B8]">Resumen de cuenta</p>
+                  <p className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-[#14777D]">Resumen de cuenta</p>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     {/* Info personal */}
                     <div className="flex items-start gap-3">
@@ -637,7 +637,7 @@ export default function AccountProfileForm({
                         <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#0C535B]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold text-[#8b8d91]">Cuenta</p>
+                        <p className="text-xs font-semibold text-[#5f6368]">Cuenta</p>
                         <p className="truncate text-sm font-semibold text-[#111]">{user.fullName}</p>
                         <p className="truncate text-xs text-[#6e7379]">{user.email}</p>
                       </div>
@@ -648,14 +648,14 @@ export default function AccountProfileForm({
                         <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#0C535B]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold text-[#8b8d91]">Dirección</p>
+                        <p className="text-xs font-semibold text-[#5f6368]">Dirección</p>
                         {user.addressLine1 ? (
                           <>
                             <p className="truncate text-sm font-semibold text-[#111]">{user.addressLine1}</p>
                             <p className="truncate text-xs text-[#6e7379]">{[user.city, user.department].filter(Boolean).join(", ")}</p>
                           </>
                         ) : (
-                          <p className="text-sm text-[#8b8d91]">Sin registrar</p>
+                          <p className="text-sm text-[#5f6368]">Sin registrar</p>
                         )}
                       </div>
                     </div>
@@ -665,8 +665,8 @@ export default function AccountProfileForm({
                         <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#0C535B]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold text-[#8b8d91]">Métodos de pago</p>
-                        <p className="text-sm text-[#8b8d91]">Próximamente</p>
+                        <p className="text-xs font-semibold text-[#5f6368]">Métodos de pago</p>
+                        <p className="text-sm text-[#5f6368]">Próximamente</p>
                       </div>
                     </div>
                   </div>
@@ -679,26 +679,26 @@ export default function AccountProfileForm({
                 <div className="grid flex-1 gap-4 sm:grid-cols-2">
                   {/* Estadísticas */}
                   <div className="rounded-2xl border border-black/8 bg-white p-6 shadow-[0_4px_16px_rgba(15,23,42,0.05)]">
-                    <p className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-[#27B1B8]">Estadísticas</p>
+                    <p className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-[#14777D]">Estadísticas</p>
                     <div className="grid grid-cols-3 gap-2">
                       <div className="rounded-xl bg-[#f6fdfd] px-2 py-3 text-center">
                         <p className="text-xl font-black text-[#0C535B]">{orders.length}</p>
-                        <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#8b8d91]">Pedidos</p>
+                        <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#5f6368]">Pedidos</p>
                       </div>
                       <div className="rounded-xl bg-[#f6fdfd] px-2 py-3 text-center">
                         <p className="text-xl font-black text-[#0C535B]">{activeShipments}</p>
-                        <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#8b8d91]">En proceso</p>
+                        <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#5f6368]">En proceso</p>
                       </div>
                       <div className="rounded-xl bg-[#f6fdfd] px-2 py-3 text-center">
                         <p className="text-xl font-black text-[#0C535B]">{deliveredOrders}</p>
-                        <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#8b8d91]">Entregados</p>
+                        <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#5f6368]">Entregados</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Actividad reciente */}
                   <div className="rounded-2xl border border-black/8 bg-white p-6 shadow-[0_4px_16px_rgba(15,23,42,0.05)]">
-                    <p className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-[#27B1B8]">Actividad reciente</p>
+                    <p className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-[#14777D]">Actividad reciente</p>
                     {orders.length > 0 ? (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between gap-2 rounded-xl bg-[#f6fdfd] px-3 py-2.5">
@@ -719,7 +719,7 @@ export default function AccountProfileForm({
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f0f0f0]">
                           <svg viewBox="0 0 24 24" className="h-5 w-5 text-[#bbb]" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
                         </div>
-                        <p className="text-xs text-[#8b8d91]">Sin pedidos aún</p>
+                        <p className="text-xs text-[#5f6368]">Sin pedidos aún</p>
                         <Link href="/categorias" className="text-xs font-bold text-[#0C535B] hover:underline">Explorar productos →</Link>
                       </div>
                     )}
@@ -758,7 +758,7 @@ export default function AccountProfileForm({
                       Ver productos
                     </Link>
                   </div>
-                  <p className="mt-2 text-xs text-[#3a7a80]">Dispensadores, insumos y más para tu negocio.</p>
+                  <p className="mt-2 text-xs text-[#2f6a70]">Dispensadores, insumos y más para tu negocio.</p>
                   <div className="mt-6 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-5 sm:overflow-visible sm:pb-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     {categoriasData.filter((cat) => cat.nombre !== "Outlet" && cat.nombre !== "Insumos/Repuesto").map((cat) => (
                       <Link
@@ -803,7 +803,7 @@ export default function AccountProfileForm({
                 Volver a mi cuenta
               </button>
               <h1 className="text-2xl font-extrabold tracking-tight text-[#111] lg:text-3xl">
-                Editar <span className="text-[#27B1B8]">información</span>
+                Editar <span className="text-[#14777D]">información</span>
               </h1>
               <p className="mt-1 text-sm text-[#6e7379]">
                 Actualiza tus datos personales, dirección y contraseña.
@@ -992,7 +992,7 @@ export default function AccountProfileForm({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full rounded-xl bg-[#27B1B8] px-4 py-3 font-semibold text-white transition-colors duration-200 hover:bg-[#1E969B] disabled:cursor-not-allowed disabled:opacity-70"
+                  className="w-full rounded-xl bg-[#14777D] px-4 py-3 font-semibold text-white transition-colors duration-200 hover:bg-[#0C535B] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {isSubmitting ? "Guardando cambios..." : "Actualizar cuenta"}
                 </button>
@@ -1009,7 +1009,7 @@ export default function AccountProfileForm({
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-extrabold tracking-tight text-[#111] lg:text-3xl">
-                  Tus últimos <span className="text-[#27B1B8]">pedidos</span>
+                  Tus últimos <span className="text-[#14777D]">pedidos</span>
                 </h1>
                 <p className="mt-1 text-sm text-[#6e7379]">
                   Revisa el estado y el detalle de cada compra.
@@ -1025,15 +1025,15 @@ export default function AccountProfileForm({
 
             <div className="grid gap-4 md:grid-cols-3">
               <div className="rounded-xl border border-black/8 bg-white px-5 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8d91]">Pedidos totales</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5f6368]">Pedidos totales</p>
                 <p className="mt-2 text-3xl font-bold tracking-[-0.04em] text-[#0C535B]">{orders.length}</p>
               </div>
               <div className="rounded-xl border border-black/8 bg-white px-5 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8d91]">En proceso</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5f6368]">En proceso</p>
                 <p className="mt-2 text-3xl font-bold tracking-[-0.04em] text-[#0C535B]">{activeShipments}</p>
               </div>
               <div className="rounded-xl border border-black/8 bg-white px-5 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8d91]">Entregados</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5f6368]">Entregados</p>
                 <p className="mt-2 text-3xl font-bold tracking-[-0.04em] text-[#0C535B]">{deliveredOrders}</p>
               </div>
             </div>
@@ -1045,7 +1045,7 @@ export default function AccountProfileForm({
                 </p>
                 <Link
                   href="/categorias"
-                  className="mt-4 inline-block rounded-xl bg-[#27B1B8] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1E969B]"
+                  className="mt-4 inline-block rounded-xl bg-[#14777D] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#0C535B]"
                 >
                   Ver productos
                 </Link>
@@ -1081,7 +1081,7 @@ export default function AccountProfileForm({
                               : "border-black/8 bg-white text-[#0C535B] hover:bg-[#f4f7f9]"
                           }`}
                         >
-                          <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] ${isSelected ? "text-white/70" : "text-[#8b8d91]"}`}>
+                          <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] ${isSelected ? "text-white/70" : "text-[#5f6368]"}`}>
                             Pedido
                           </p>
                           <p className="mt-2 truncate text-[1.3rem] font-semibold leading-tight">
@@ -1101,7 +1101,7 @@ export default function AccountProfileForm({
                               {getPaymentStatusLabel(order.paymentStatus)}
                             </span>
                           </div>
-                          <p className={`mt-4 text-base font-semibold ${isSelected ? "text-white" : "text-[#27B1B8]"}`}>
+                          <p className={`mt-4 text-base font-semibold ${isSelected ? "text-white" : "text-[#14777D]"}`}>
                             {formatCurrency(order.subtotal)}
                           </p>
                         </button>
@@ -1118,7 +1118,7 @@ export default function AccountProfileForm({
                     <div className="rounded-[1.75rem] border border-black/8 bg-white p-6 shadow-[0_14px_28px_rgba(15,23,42,0.05)]">
                       <div className="flex flex-wrap items-start justify-between gap-4">
                         <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8b8d91]">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#5f6368]">
                             Pedido seleccionado
                           </p>
                           <h3 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[#0C535B]">
@@ -1150,7 +1150,7 @@ export default function AccountProfileForm({
                         <div className="rounded-[1.4rem] border border-black/8 bg-[#fafaf9] p-5">
                           <div className="flex flex-wrap items-center justify-between gap-3">
                             <div>
-                              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8b8d91]">Resumen del pedido</p>
+                              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#5f6368]">Resumen del pedido</p>
                               <p className="mt-1 text-sm text-[#6e7379]">Productos incluidos en esta compra.</p>
                             </div>
                             <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#0C535B] shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
@@ -1163,14 +1163,14 @@ export default function AccountProfileForm({
                                 <div className="flex items-start justify-between gap-3">
                                   <div>
                                     <p className="text-sm font-semibold text-[#1f2328]">{item.name}</p>
-                                    <p className="mt-1.5 text-xs uppercase tracking-[0.18em] text-[#8b8d91]">Cantidad</p>
+                                    <p className="mt-1.5 text-xs uppercase tracking-[0.18em] text-[#5f6368]">Cantidad</p>
                                     <p className="mt-0.5 text-sm font-medium text-[#5d6167]">{item.quantity}</p>
                                   </div>
                                   <div className="text-right">
-                                    <p className="text-xs uppercase tracking-[0.18em] text-[#8b8d91]">Precio unidad</p>
+                                    <p className="text-xs uppercase tracking-[0.18em] text-[#5f6368]">Precio unidad</p>
                                     <p className="mt-0.5 text-sm font-semibold text-[#0C535B]">{formatCurrency(item.unitPrice)}</p>
-                                    <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[#8b8d91]">Subtotal</p>
-                                    <p className="mt-0.5 text-sm font-semibold text-[#27B1B8]">{formatCurrency(item.unitPrice * item.quantity)}</p>
+                                    <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[#5f6368]">Subtotal</p>
+                                    <p className="mt-0.5 text-sm font-semibold text-[#14777D]">{formatCurrency(item.unitPrice * item.quantity)}</p>
                                   </div>
                                 </div>
                               </div>
@@ -1180,19 +1180,19 @@ export default function AccountProfileForm({
 
                         <div className="grid gap-3 self-start">
                           <div className="rounded-[1.4rem] border border-black/8 bg-[#fafaf9] px-5 py-4">
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8d91]">Total del pedido</p>
-                            <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#27B1B8]">{formatCurrency(selectedOrder.subtotal)}</p>
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5f6368]">Total del pedido</p>
+                            <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#1B8A90]">{formatCurrency(selectedOrder.subtotal)}</p>
                           </div>
                           <div className="rounded-[1.4rem] border border-black/8 bg-[#fafaf9] px-5 py-4">
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8d91]">Transportadora</p>
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5f6368]">Transportadora</p>
                             <p className="mt-2 text-sm font-semibold text-[#0C535B]">{selectedOrder.carrier || "Por definir"}</p>
                           </div>
                           <div className="rounded-[1.4rem] border border-black/8 bg-[#fafaf9] px-5 py-4">
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8d91]">Guía</p>
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5f6368]">Guía</p>
                             <p className="mt-2 text-sm font-semibold text-[#0C535B]">{selectedOrder.trackingNumber || "Aún no asignada"}</p>
                           </div>
                           <div className="rounded-[1.4rem] border border-black/8 bg-[#fafaf9] px-5 py-4">
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8d91]">Fechas clave</p>
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5f6368]">Fechas clave</p>
                             <p className="mt-2 text-sm font-semibold text-[#0C535B]">Creado: {formatOrderDate(selectedOrder.createdAt)}</p>
                             <p className="mt-1.5 text-sm font-semibold text-[#0C535B]">
                               Enviado: {selectedOrder.shippedAt ? formatOrderDate(selectedOrder.shippedAt) : "Pendiente"}
@@ -1209,7 +1209,7 @@ export default function AccountProfileForm({
                       </div>
 
                       <div className="mt-4 rounded-[1.1rem] border border-black/8 bg-[#fafaf9] px-4 py-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8d91]">Dirección de entrega</p>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5f6368]">Dirección de entrega</p>
                         <p className="mt-2 text-sm leading-7 text-[#5d6167]">
                           {selectedOrder.department} · {selectedOrder.city} · {selectedOrder.addressLine1}
                           {selectedOrder.addressLine2 ? ` · ${selectedOrder.addressLine2}` : ""}
@@ -1218,7 +1218,7 @@ export default function AccountProfileForm({
 
                       {selectedOrder.adminNotes && (
                         <div className="mt-4 rounded-[1.1rem] border border-black/8 bg-[#fafaf9] px-4 py-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8d91]">Nota de envío</p>
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5f6368]">Nota de envío</p>
                           <p className="mt-2 text-sm leading-7 text-[#5d6167]">{selectedOrder.adminNotes}</p>
                         </div>
                       )}

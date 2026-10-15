@@ -53,7 +53,7 @@ function ResetPasswordForm() {
     <main className="flex min-h-[calc(100vh-88px)] items-center justify-center bg-white px-6 py-16">
       <div className="w-full max-w-md">
         <h1 className="text-3xl font-extrabold tracking-tight text-[#111]">
-          Restablece tu <span className="text-[#27B1B8]">contraseña</span>
+          Restablece tu <span className="text-[#14777D]">contraseña</span>
         </h1>
 
         {success ? (

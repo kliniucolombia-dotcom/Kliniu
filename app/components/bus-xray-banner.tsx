@@ -334,7 +334,7 @@ export default function BusXrayBanner() {
                   </div>
                 </div>
                 <div className="mt-4 h-[3px] w-full max-w-[320px] rounded-full bg-[#D8F1EE]">
-                  <div className="h-full w-24 rounded-full bg-[#27B1B8]" />
+                  <div className="h-full w-24 rounded-full bg-[#14777D]" />
                 </div>
               </div>
 
@@ -351,7 +351,7 @@ export default function BusXrayBanner() {
                 />
                 <button
                   type="submit"
-                  className="rounded-[8px] bg-[#27B1B8] px-4 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#1E969B]"
+                  className="rounded-[8px] bg-[#14777D] px-4 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#0C535B]"
                 >
                   Enviar
                 </button>

@@ -208,7 +208,7 @@ export default function ComboDetailClient({
               className="gap-1"
               price={combo.precioNumero}
               normalPrice={combo.precioNormal}
-              priceClassName="text-3xl font-extrabold text-[#27B1B8]"
+              priceClassName="text-3xl font-extrabold text-[#1B8A90]"
             />
 
             <div className="rounded-2xl border border-black/8 bg-[#f8f8f7] p-4">

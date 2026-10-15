@@ -154,7 +154,7 @@ export default function RegistroPage() {
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 lg:w-1/2 lg:h-full lg:overflow-y-auto">
         <section className="w-full max-w-md">
         <h1 className="text-4xl font-extrabold tracking-tight text-[#111]">
-          Crear tu <span className="text-[#27B1B8]">cuenta</span>
+          Crear tu <span className="text-[#14777D]">cuenta</span>
         </h1>
         <p className="mt-2 text-sm text-[#6e7379]">
           Crea tu cuenta y empieza a disfrutar una experiencia más ágil y organizada.
@@ -271,7 +271,7 @@ export default function RegistroPage() {
                 required
                 className="w-full rounded-xl border border-slate-200 px-4 py-3 pr-10 outline-none transition-colors duration-200 focus:border-[#27B1B8]"
               />
-              <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#aaa] hover:text-[#555]" aria-label={showPassword ? "Ocultar" : "Mostrar"}>
+              <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 text-[#5f6368] hover:text-[#555]" aria-label={showPassword ? "Ocultar" : "Mostrar"}>
                 {showPassword ? (
                   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                 ) : (
@@ -298,7 +298,7 @@ export default function RegistroPage() {
                 required
                 className="w-full rounded-xl border border-slate-200 px-4 py-3 pr-10 outline-none transition-colors duration-200 focus:border-[#27B1B8]"
               />
-              <button type="button" onClick={() => setShowConfirmPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#aaa] hover:text-[#555]" aria-label={showConfirmPassword ? "Ocultar" : "Mostrar"}>
+              <button type="button" onClick={() => setShowConfirmPassword((v) => !v)} className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 text-[#5f6368] hover:text-[#555]" aria-label={showConfirmPassword ? "Ocultar" : "Mostrar"}>
                 {showConfirmPassword ? (
                   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                 ) : (
@@ -410,12 +410,12 @@ export default function RegistroPage() {
               className="mt-1 h-4 w-4 shrink-0 accent-[#27B1B8]"
             />
             <span>
-              Acepto la{" "}
-              <Link href="/politicas/tratamiento-datos" target="_blank" className="font-semibold text-[#27B1B8] hover:underline">
-                Política de tratamiento de datos
+              Autorizo de forma expresa el tratamiento de mis datos personales conforme a la{" "}
+              <Link href="/politicas/habeas-data" target="_blank" className="font-semibold text-[#14777D] hover:underline">
+                Política de Habeas Data
               </Link>{" "}
-              y los{" "}
-              <Link href="/politicas/terminos-y-condiciones" target="_blank" className="font-semibold text-[#27B1B8] hover:underline">
+              y acepto los{" "}
+              <Link href="/politicas/terminos-y-condiciones" target="_blank" className="font-semibold text-[#14777D] hover:underline">
                 Términos y Condiciones
               </Link>
               .
@@ -426,7 +426,7 @@ export default function RegistroPage() {
             <button
               type="submit"
               disabled={isSubmitting || !acceptTerms}
-              className="w-full rounded-xl bg-[#27B1B8] px-4 py-3 font-semibold text-white transition-colors duration-200 hover:bg-[#1E969B] disabled:cursor-not-allowed disabled:opacity-70"
+              className="w-full rounded-xl bg-[#14777D] px-4 py-3 font-semibold text-white transition-colors duration-200 hover:bg-[#0C535B] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isSubmitting ? "Creando cuenta..." : "Crear cuenta"}
             </button>
@@ -435,7 +435,7 @@ export default function RegistroPage() {
 
         <p className="mt-5 text-center text-sm text-[#6e7379]">
           ¿Ya tienes cuenta?{" "}
-          <Link href="/login" className="font-bold text-[#27B1B8] hover:underline">
+          <Link href="/login" className="font-bold text-[#14777D] hover:underline">
             Iniciar sesión
           </Link>
         </p>

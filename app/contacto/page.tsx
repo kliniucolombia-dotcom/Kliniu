@@ -185,7 +185,7 @@ export default async function ContactoPage() {
               <h2 className="text-[32px] font-black leading-[0.95] tracking-tight text-[#0C535B] xl:text-[36px]">
                 Países donde
                 <br />
-                <span className="text-[#27B1B8]">operamos</span>
+                <span className="text-[#14777D]">operamos</span>
               </h2>
               <p className="mt-6 max-w-[270px] text-[17px] font-semibold leading-[1.25] text-black xl:text-[18px]">
                 Contamos con presencia y aliados estratégicos en distintos países de América para

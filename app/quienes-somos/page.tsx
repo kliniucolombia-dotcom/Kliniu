@@ -118,9 +118,9 @@ export default async function QuienesSomosPage() {
           <div>
             <h1 className="nosotros-title-pop text-3xl font-extrabold leading-tight tracking-tight text-[#111] sm:text-4xl md:text-5xl">
               Acerca de{" "}
-              <span className="text-[#27B1B8]">nosotros</span>
+              <span className="text-[#14777D]">nosotros</span>
             </h1>
-            <div className="mt-3 h-1 w-12 rounded-full bg-[#27B1B8]" />
+            <div className="mt-3 h-1 w-12 rounded-full bg-[#14777D]" />
             <p className="mt-5 text-sm leading-7 text-[#555] sm:text-base sm:leading-8">
               Somos Kliniu, una compañía colombiana dedicada a desarrollar y comercializar ideas de
               dispensadores y limpieza. Desarrollamos nuestras ideas haciéndolas realidad a través

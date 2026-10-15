@@ -20,15 +20,15 @@ export default function ComboPrice({
     <div className={`flex flex-col gap-0.5 ${className}`}>
       {hasSavings && (
         <div className="flex items-center gap-2">
-          <span className="text-xs text-[#8b8d91] line-through">{formatearMoneda(normalPrice)}</span>
-          <span className="rounded-md bg-[#DCFCE7] px-1.5 py-0.5 text-[10px] font-bold text-[#16A34A]">
+          <span className="text-xs text-[#5f6368] line-through">{formatearMoneda(normalPrice)}</span>
+          <span className="rounded-md bg-[#DCFCE7] px-1.5 py-0.5 text-[10px] font-bold text-[#15803D]">
             -{savingsPct.toFixed(0)}%
           </span>
         </div>
       )}
       <p className={priceClassName}>{formatearMoneda(price)}</p>
       {hasSavings && (
-        <p className="text-[11px] font-semibold text-[#16A34A]">Ahorras {formatearMoneda(savings)}</p>
+        <p className="text-[11px] font-semibold text-[#15803D]">Ahorras {formatearMoneda(savings)}</p>
       )}
     </div>
   );

@@ -128,7 +128,7 @@ export default function HoverCartControl({
               className={`inline-flex h-10 min-w-[124px] flex-1 items-center justify-center whitespace-nowrap rounded-full px-3.5 text-[13px] font-semibold text-white transition-colors duration-200 ${
                 added
                   ? "bg-[#0C535B]"
-                  : "bg-[#27B1B8] hover:bg-[#1E969B]"
+                  : "bg-[#14777D] hover:bg-[#0C535B]"
               }`}
             >
               {added ? "Agregado" : "Agregar al carrito"}

@@ -287,12 +287,12 @@ export default function OfferRoulette() {
         </div>
 
         <div className="flex min-h-0 flex-col justify-center pr-0 md:order-1 md:pr-4">
-          <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#27B1B8]">
+          <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#14777D]">
             Oferta sorpresa
           </p>
           <h2 className="mt-3 text-4xl font-black leading-[0.95] tracking-tight text-[#073F43] md:text-[44px]">
             Gira la ruleta
-            <span className="block text-[#27B1B8]">y gana</span>
+            <span className="block text-[#14777D]">y gana</span>
           </h2>
           <p className="mt-4 max-w-sm text-sm leading-6 text-[#607175]">
             Descubre tu beneficio de bienvenida para productos Kliniu.
@@ -306,7 +306,7 @@ export default function OfferRoulette() {
                 key={i}
                 className={`h-3 w-3 rounded-full transition-all duration-300 ${
                   i < attemptsLeft
-                    ? "bg-[#27B1B8] shadow-[0_0_6px_rgba(39,177,184,0.6)]"
+                    ? "bg-[#14777D] shadow-[0_0_6px_rgba(39,177,184,0.6)]"
                     : "bg-black/10"
                 }`}
               />
@@ -398,7 +398,7 @@ export default function OfferRoulette() {
               type="button"
               onClick={spinWheel}
               disabled={isSpinning || attemptsLeft === 0 || (!selectedPrize?.isBlank && !!selectedPrize)}
-              className="inline-flex flex-1 items-center justify-center rounded-full bg-[#27B1B8] px-6 py-3 text-sm font-black text-white shadow-[0_14px_30px_rgba(39,177,184,0.28)] transition-colors hover:bg-[#1E969B] disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex flex-1 items-center justify-center rounded-full bg-[#14777D] px-6 py-3 text-sm font-black text-white shadow-[0_14px_30px_rgba(39,177,184,0.28)] transition-colors hover:bg-[#0C535B] disabled:cursor-not-allowed disabled:opacity-40"
             >
               {isSpinning ? "Girando..." : attemptsLeft === 0 ? "Sin intentos" : selectedPrize?.isBlank ? "Girar otra vez" : selectedPrize ? "¡Ya ganaste!" : "Girar ruleta"}
             </button>

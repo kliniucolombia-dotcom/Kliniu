@@ -10,7 +10,6 @@ import AuthHistoryGuard from "./components/auth-history-guard";
 import ConditionalShell from "./components/conditional-shell";
 import { ConfirmProvider } from "./components/confirm-dialog";
 import CookieConsent from "./components/cookie-consent";
-import MetaPixel from "./components/meta-pixel";
 import { getProducts } from "@/lib/products";
 import { getSessionFromCookies } from "@/lib/auth";
 import { getUserById } from "@/lib/users";
@@ -141,7 +140,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           </SaleModeProvider>
         </ConfirmProvider>
         <SpeedInsights />
-        <MetaPixel nonce={nonce} />
         <CookieConsent nonce={nonce} />
       </body>
     </html>

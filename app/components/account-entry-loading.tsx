@@ -28,7 +28,7 @@ export default function AccountEntryLoading({
           </div>
         </div>
 
-        <p className="mt-8 text-[11px] font-semibold uppercase tracking-[0.34em] text-[#27B1B8]">
+        <p className="mt-8 text-[11px] font-semibold uppercase tracking-[0.34em] text-[#14777D]">
           Kliniu
         </p>
         <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-[#0C535B]">

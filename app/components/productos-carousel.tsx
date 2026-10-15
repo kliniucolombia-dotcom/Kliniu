@@ -116,7 +116,7 @@ export default function ProductosCarousel({
                 />
               </Link>
               <div className="flex flex-1 flex-col p-3">
-                <p className="h-5 line-clamp-1 text-[11px] text-[#999]">
+                <p className="h-5 line-clamp-1 text-[11px] text-[#5f6368]">
                   {p.descripcion}
                 </p>
                 <Link href={`/producto/${p.slug}`} className="mt-1.5 h-[54px] line-clamp-3 text-sm font-semibold leading-snug text-[#111]">
@@ -175,12 +175,16 @@ export default function ProductosCarousel({
               type="button"
               aria-label={`Ir al producto ${i + 1}`}
               onClick={() => scrollToIndex(i)}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                i === activeDot
-                  ? "w-5 bg-[#0C535B]"
-                  : "w-2 bg-[#0C535B]/25 hover:bg-[#0C535B]/50"
-              }`}
-            />
+              className="group flex h-6 min-w-6 items-center justify-center"
+            >
+              <span
+                className={`block h-2 rounded-full transition-all duration-300 ${
+                  i === activeDot
+                    ? "w-5 bg-[#0C535B]"
+                    : "w-2 bg-[#0C535B]/25 group-hover:bg-[#0C535B]/50"
+                }`}
+              />
+            </button>
           ))}
         </div>
       )}

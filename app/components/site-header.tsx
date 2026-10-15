@@ -199,7 +199,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
             <path d="M16 10a4 4 0 0 1-8 0" />
           </svg>
           {totalProducts > 0 && (
-            <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#27B1B8] px-1 text-[9px] font-bold text-white">
+            <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#14777D] px-1 text-[9px] font-bold text-white">
               {totalProducts}
             </span>
           )}
@@ -357,8 +357,8 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
                 href="/outlet"
                 className={`nav-animated-link rounded-lg px-3 py-2 text-sm font-black transition-colors ${
                   pathname === "/outlet"
-                    ? "nav-animated-link-active text-[#27B1B8]"
-                    : "text-[#27B1B8] hover:text-[#0C535B]"
+                    ? "nav-animated-link-active text-[#14777D]"
+                    : "text-[#14777D] hover:text-[#0C535B]"
                 }`}
               >
                 Outlet
@@ -547,7 +547,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
                     <path d="M16 10a4 4 0 0 1-8 0" />
                   </svg>
                   {totalProducts > 0 && (
-                    <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#27B1B8] px-1 text-[9px] font-bold text-white">
+                    <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#14777D] px-1 text-[9px] font-bold text-white">
                       {totalProducts}
                     </span>
                   )}
@@ -624,7 +624,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
                   aria-current={item.active ? "page" : undefined}
                   className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${
                     item.active
-                      ? "bg-[#e8f5f5] text-[#27B1B8] shadow-[inset_3px_0_0_#27B1B8]"
+                      ? "bg-[#e8f5f5] text-[#14777D] shadow-[inset_3px_0_0_#27B1B8]"
                       : "text-[#0C535B] hover:bg-[#f0fafa] hover:text-[#27B1B8]"
                   }`}
                 >
@@ -707,7 +707,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
               onClick={() => setMasAbierto(false)}
               className={`flex flex-col items-center gap-0.5 rounded-xl px-2 py-2 transition-colors ${
                 item.active
-                  ? "text-[#27B1B8]"
+                  ? "text-[#14777D]"
                   : "text-[#0C535B]/60 hover:text-[#0C535B]"
               }`}
             >
@@ -721,7 +721,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
             type="button"
             onClick={() => setMasAbierto((v) => !v)}
             className={`flex flex-col items-center gap-0.5 rounded-xl px-2 py-2 transition-colors ${
-              masAbierto ? "text-[#27B1B8]" : "text-[#0C535B]/60 hover:text-[#0C535B]"
+              masAbierto ? "text-[#14777D]" : "text-[#0C535B]/60 hover:text-[#0C535B]"
             }`}
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">

@@ -14,7 +14,7 @@ export default function EmailVerifyBanner({ email, verified }: { email: string; 
     if (result !== "1") return null;
     return (
       <div role="status" className="mb-6 flex items-center gap-3 rounded-2xl border border-[#27B1B8]/25 bg-[#EAF8F6] px-4 py-3 text-sm font-medium text-[#0C535B]">
-        <MdCheckCircle size={20} className="shrink-0 text-[#27B1B8]" />
+        <MdCheckCircle size={20} className="shrink-0 text-[#14777D]" />
         Tu correo quedó confirmado. Gracias.
       </div>
     );

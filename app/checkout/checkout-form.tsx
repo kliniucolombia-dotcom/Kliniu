@@ -88,6 +88,7 @@ export default function CheckoutForm({
   });
   const [useDifferentAddress, setUseDifferentAddress] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [acceptData, setAcceptData] = useState(false);
   const [inlineError, setInlineError] = useState("");
   const [toast, setToast] = useState<ToastState>(null);
   const [cityMenuOpen, setCityMenuOpen] = useState(false);
@@ -213,7 +214,7 @@ export default function CheckoutForm({
       <div className="mx-auto max-w-[1100px] px-4 py-8 sm:px-6 sm:py-10">
         {/* Back link */}
         <div className="mb-6 flex justify-end">
-          <Link href="/carrito" className="text-sm text-[#27B1B8] hover:underline">
+          <Link href="/carrito" className="text-sm text-[#14777D] hover:underline">
             ← Volver al carrito
           </Link>
         </div>
@@ -227,15 +228,15 @@ export default function CheckoutForm({
             <div key={step.n} className="flex shrink-0 items-center">
               <div className="flex flex-col items-center">
                 <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold transition-colors ${
-                  isDone ? "bg-[#0C535B] text-white" : isActive ? "bg-[#27B1B8] text-white" : "border-2 border-black/10 text-[#aaa]"
+                  isDone ? "bg-[#0C535B] text-white" : isActive ? "bg-[#14777D] text-white" : "border-2 border-black/10 text-[#5f6368]"
                 }`}>
                   {isDone ? "✓" : step.n}
                 </div>
                 <div className="mt-1 text-center">
-                  <p className={`text-[11px] font-bold sm:text-xs ${isDone ? "text-[#0C535B]" : isActive ? "text-[#27B1B8]" : "text-[#aaa]"}`}>
+                  <p className={`text-[11px] font-bold sm:text-xs ${isDone ? "text-[#14777D]" : isActive ? "text-[#0C535B]" : "text-[#5f6368]"}`}>
                     {step.label}
                   </p>
-                  <p className="hidden text-[10px] text-[#aaa] sm:block">{step.sub}</p>
+                  <p className="hidden text-[10px] text-[#5f6368] sm:block">{step.sub}</p>
                 </div>
               </div>
               {i < steps.length - 1 && (
@@ -265,7 +266,7 @@ export default function CheckoutForm({
                 </div>
                 <div>
                   <label htmlFor="company" className="mb-1.5 block text-sm font-medium text-[#333]">
-                    Empresa <span className="font-normal text-[#aaa]">(opcional)</span>
+                    Empresa <span className="font-normal text-[#5f6368]">(opcional)</span>
                   </label>
                   <input id="company" value={form.company} onChange={handleChange}
                     className="h-11 w-full rounded-xl border border-black/10 px-4 text-sm outline-none transition focus:border-[#27B1B8]" />
@@ -351,7 +352,7 @@ export default function CheckoutForm({
                 </div>
                 <div>
                   <label htmlFor="addressLine2" className="mb-1.5 block text-sm font-medium text-[#333]">
-                    Apartamento, oficina etc. <span className="font-normal text-[#aaa]">(opcional)</span>
+                    Apartamento, oficina etc. <span className="font-normal text-[#5f6368]">(opcional)</span>
                   </label>
                   <input id="addressLine2" value={form.addressLine2} onChange={handleChange}
                     placeholder="Apto, interior, piso..."
@@ -362,7 +363,7 @@ export default function CheckoutForm({
                   <div className="sm:col-span-2">
                     <label className="flex cursor-pointer items-center gap-2 text-sm text-[#555]">
                       <input type="checkbox" checked={useDifferentAddress} onChange={handleToggleDifferentAddress}
-                        className="h-4 w-4 rounded border-black/20 text-[#27B1B8] focus:ring-[#27B1B8]" />
+                        className="h-4 w-4 rounded border-black/20 text-[#14777D] focus:ring-[#27B1B8]" />
                       Guardar esta dirección para futuras compras
                     </label>
                   </div>
@@ -395,8 +396,29 @@ export default function CheckoutForm({
               </p>
             )}
 
+            <label className="flex items-start gap-3 text-sm leading-6 text-[#4b5158]">
+              <input
+                type="checkbox"
+                checked={acceptData}
+                onChange={(e) => setAcceptData(e.target.checked)}
+                required
+                className="mt-1 h-4 w-4 shrink-0 accent-[#27B1B8]"
+              />
+              <span>
+                Autorizo de forma expresa el tratamiento de mis datos personales conforme a la{" "}
+                <Link href="/politicas/habeas-data" target="_blank" className="font-semibold text-[#0C535B] hover:underline">
+                  Política de Habeas Data
+                </Link>{" "}
+                y acepto los{" "}
+                <Link href="/politicas/terminos-y-condiciones" target="_blank" className="font-semibold text-[#0C535B] hover:underline">
+                  Términos y Condiciones
+                </Link>
+                .
+              </span>
+            </label>
+
             <div>
-              <button type="submit" disabled={isSubmitting}
+              <button type="submit" disabled={isSubmitting || !acceptData}
                 className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#0C535B] text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -404,11 +426,9 @@ export default function CheckoutForm({
                 </svg>
                 {isSubmitting ? "Redirigiendo a Wompi..." : "Ir a pagar"}
               </button>
-              <p className="mt-3 text-center text-xs text-[#aaa]">
-                Al continuar, aceptas nuestros{" "}
-                <Link href="/politicas/terminos-y-condiciones" target="_blank" className="text-[#27B1B8] hover:underline">Términos y Condiciones</Link>
-                {" "}y la{" "}
-                <Link href="/politicas/privacidad" target="_blank" className="text-[#27B1B8] hover:underline">Política de privacidad</Link>.
+              <p className="mt-3 text-center text-xs text-[#5f6368]">
+                Autoridad de protección al consumidor:{" "}
+                <a href="https://www.sic.gov.co" target="_blank" rel="noreferrer" className="text-[#0C535B] hover:underline">SIC</a>.
               </p>
             </div>
           </form>
@@ -419,7 +439,7 @@ export default function CheckoutForm({
               <div className="grid grid-cols-2 gap-2">
                 {trustItems.map((t) => (
                   <div key={t.label} className="flex items-center gap-2 rounded-xl bg-white px-3 py-2">
-                    <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-[#27B1B8]" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-[#14777D]" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                     </svg>
                     <span className="whitespace-pre-line text-[10px] font-semibold leading-tight text-[#0C535B]">{t.label}</span>
@@ -430,7 +450,7 @@ export default function CheckoutForm({
 
             {/* Order mini-summary */}
             <div className="rounded-2xl border border-black/8 bg-white p-5">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#aaa]">Tu pedido</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-[#5f6368]">Tu pedido</p>
               <div className="mt-3 space-y-2">
                 {items.map((item) => (
                   <div key={item.id} className="flex items-center gap-2 text-sm">
@@ -444,21 +464,21 @@ export default function CheckoutForm({
                       <span className="block truncate text-[#111]">
                         {item.nombre}
                         {item.isCombo && (
-                          <span className="ml-1.5 rounded-full bg-[#DCFCE7] px-1.5 py-0.5 text-[9px] font-bold uppercase text-[#16A34A]">
+                          <span className="ml-1.5 rounded-full bg-[#DCFCE7] px-1.5 py-0.5 text-[9px] font-bold uppercase text-[#15803D]">
                             Combo
                           </span>
                         )}
                       </span>
                       {item.sku && (
-                        <span className="block truncate text-xs text-[#999]">Cód: {item.sku}</span>
+                        <span className="block truncate text-xs text-[#5f6368]">Cód: {item.sku}</span>
                       )}
                       {item.isCombo && item.comboItems && item.comboItems.length > 0 && (
-                        <span className="block truncate text-[10px] text-[#aaa]">
+                        <span className="block truncate text-[10px] text-[#5f6368]">
                           Incluye: {item.comboItems.map((ci) => `${ci.cantidad}× ${ci.nombre}`).join(", ")}
                         </span>
                       )}
                     </span>
-                    <span className="shrink-0 font-semibold text-[#27B1B8]">{item.precio}</span>
+                    <span className="shrink-0 font-semibold text-[#14777D]">{item.precio}</span>
                   </div>
                 ))}
               </div>
@@ -469,9 +489,19 @@ export default function CheckoutForm({
                     {formatShippingPrice(shipping.price)}
                   </span>
                 </div>
+                <div className="flex justify-between gap-4 text-xs text-[#5f6368]">
+                  <span>Entrega estimada</span>
+                  <span className="text-right">
+                    {!form.city
+                      ? "1 a 3 días hábiles en Bogotá; 3 a 8 en el resto del país"
+                      : /bogot/i.test(form.city)
+                        ? "1 a 3 días hábiles"
+                        : "3 a 8 días hábiles"}
+                  </span>
+                </div>
                 <div className="flex justify-between border-t border-black/8 pt-2 font-bold">
                   <span>Total</span>
-                  <span className="text-[#27B1B8]">{formatCurrency(subtotal + shipping.price)}</span>
+                  <span className="text-[#14777D]">{formatCurrency(subtotal + shipping.price)}</span>
                 </div>
               </div>
             </div>

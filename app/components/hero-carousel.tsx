@@ -66,14 +66,18 @@ function Dots({
           type="button"
           aria-label={`Ir al banner ${index + 1}`}
           onClick={() => onSelect(index)}
-          className={`h-2 rounded-full transition-all duration-300 ${
-            current === index
-              ? "pulse-ring w-8 bg-[#27B1B8]"
-              : light
-              ? "w-2 bg-white/60 hover:bg-white"
-              : "w-2 bg-black/25 hover:bg-black/40"
-          }`}
-        />
+          className="group flex h-6 min-w-6 items-center justify-center"
+        >
+          <span
+            className={`block h-2 rounded-full transition-all duration-300 ${
+              current === index
+                ? "pulse-ring w-8 bg-[#14777D]"
+                : light
+                ? "w-2 bg-white/60 group-hover:bg-white"
+                : "w-2 bg-black/25 group-hover:bg-black/40"
+            }`}
+          />
+        </button>
       ))}
     </div>
   );

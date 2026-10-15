@@ -70,8 +70,8 @@ function ShowcaseCard({
 
           <div className="absolute left-3 top-3 right-3 flex items-center justify-between gap-2">
             <span
-              className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white"
-              style={{ backgroundColor: item.accent }}
+              className="rounded-full border-2 bg-black/65 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white"
+              style={{ borderColor: item.accent }}
             >
               {item.platform}
             </span>
@@ -84,7 +84,7 @@ function ShowcaseCard({
 
           {isMain ? (
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#27B1B8] text-2xl text-white shadow-[0_18px_38px_rgba(237,132,53,0.34)]">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#14777D] text-2xl text-white shadow-[0_18px_38px_rgba(237,132,53,0.34)]">
                 ▶
               </div>
             </div>
@@ -99,7 +99,7 @@ function ShowcaseCard({
               >
                 {item.title}
               </p>
-              <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/56">
+              <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">
                 {formatDate(item.publishedAt)}
               </p>
             </div>
@@ -176,7 +176,7 @@ export default function MediaShowcase({ items }: MediaShowcaseProps) {
                   }}
                   className={`rounded-full px-5 py-3 text-sm font-semibold transition-all duration-200 ${
                     isActive
-                      ? "bg-[#27B1B8] text-white shadow-[0_16px_36px_rgba(237,132,53,0.28)]"
+                      ? "bg-[#14777D] text-white shadow-[0_16px_36px_rgba(237,132,53,0.28)]"
                       : "border border-white/10 bg-white/6 text-white/78 hover:bg-white hover:text-[#0C535B]"
                   }`}
                 >
@@ -192,7 +192,7 @@ export default function MediaShowcase({ items }: MediaShowcaseProps) {
             <span className="rounded-full border border-[#35C7C0]/18 bg-[#35C7C0]/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#A7D8D3]">
               {activePlatform}
             </span>
-            <span className="text-sm text-white/58">
+            <span className="text-sm text-white/75">
               {filteredItems.length > 0
                 ? `${filteredItems.length} publicaciones visibles`
                 : "Sin publicaciones por ahora"}
@@ -274,7 +274,7 @@ export default function MediaShowcase({ items }: MediaShowcaseProps) {
                 <h2 className="mt-3 text-xl font-semibold leading-[1.08] tracking-[-0.04em] text-white">
                   {activeItem.title}
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-white/58">
+                <p className="mt-2 text-sm leading-6 text-white/75">
                   {activeItem.description}
                 </p>
 
@@ -283,7 +283,7 @@ export default function MediaShowcase({ items }: MediaShowcaseProps) {
                     href={activeItem.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-full bg-[#27B1B8] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#1E969B]"
+                    className="rounded-full bg-[#14777D] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#0C535B]"
                   >
                     Ver publicación
                   </Link>

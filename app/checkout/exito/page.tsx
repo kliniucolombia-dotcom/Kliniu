@@ -53,7 +53,7 @@ export default async function CheckoutSuccessPage({
         <PaymentStatusPoller orderId={params.pedido} />
       )}
       <section className="w-full max-w-2xl rounded-[2rem] bg-white p-8 text-center shadow-lg shadow-black/10 md:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#27B1B8]">
+        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#14777D]">
           {paymentConfirmed ? "Pago confirmado" : paymentFailed ? "Pago rechazado" : "Estamos verificando tu pago"}
         </p>
         <h1 className="mt-3 text-3xl font-bold text-[#0C535B] md:text-4xl">
@@ -73,7 +73,7 @@ export default async function CheckoutSuccessPage({
 
         {params.pedido && (
           <div className="mt-8 rounded-[1.4rem] border border-black/8 bg-[#fafaf9] px-5 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#8b8d91]">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#5f6368]">
               Código de pedido
             </p>
             <p className="mt-2 text-lg font-semibold text-[#0C535B]">{params.pedido}</p>
@@ -83,7 +83,7 @@ export default async function CheckoutSuccessPage({
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
             href="/mi-cuenta"
-            className="rounded-full bg-[#27B1B8] px-6 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#1E969B]"
+            className="rounded-full bg-[#14777D] px-6 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#0C535B]"
           >
             Ver mis pedidos
           </Link>

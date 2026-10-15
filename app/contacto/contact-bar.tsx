@@ -16,7 +16,7 @@ export default function ContactBar({ items }: { items: ContactItem[] }) {
           rel={item.href.startsWith("http") ? "noreferrer" : undefined}
           className={`${item.href.includes("wa.me") ? "btn-whatsapp " : ""}interactive-lift flex flex-col items-center gap-2 px-4 py-5 text-center transition-colors hover:bg-[#f0f8f8]`}
         >
-          <span className="text-[#27B1B8]">{item.icon}</span>
+          <span className="text-[#14777D]">{item.icon}</span>
           <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6e7379]">
             {item.label}
           </span>

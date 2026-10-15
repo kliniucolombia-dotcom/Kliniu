@@ -26,10 +26,10 @@ export default function ServicioDeReparacionPage() {
 
         <div className="relative mx-auto max-w-[1440px] px-5 pb-12 pt-12 sm:px-6 sm:pb-14 sm:pt-14 lg:px-8 lg:pb-14 lg:pt-16">
           <div className="mx-auto max-w-[430px] text-left lg:ml-[8%] lg:max-w-[620px]">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#27B1B8] sm:text-xs">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#14777D] sm:text-xs">
               Soporte especializado
             </p>
-            <h1 className="mt-3 text-[3.2rem] font-semibold leading-[0.96] tracking-[-0.06em] text-[#27B1B8] sm:mt-4 sm:text-5xl lg:max-w-[12ch] lg:text-[4rem] lg:leading-[0.94]">
+            <h1 className="mt-3 text-[3.2rem] font-semibold leading-[0.96] tracking-[-0.06em] text-[#1B8A90] sm:mt-4 sm:text-5xl lg:max-w-[12ch] lg:text-[4rem] lg:leading-[0.94]">
               Servicio de reparacion
             </h1>
 
@@ -43,7 +43,7 @@ export default function ServicioDeReparacionPage() {
               <div className="mt-8">
                 <Link
                   href="/contacto"
-                  className="inline-flex h-14 items-center justify-center rounded-full bg-[#27B1B8] px-8 text-base font-semibold text-white transition-colors duration-200 hover:bg-[#1E969B] sm:text-lg"
+                  className="inline-flex h-14 items-center justify-center rounded-full bg-[#14777D] px-8 text-base font-semibold text-white transition-colors duration-200 hover:bg-[#0C535B] sm:text-lg"
                 >
                   Agenda tu cita
                 </Link>

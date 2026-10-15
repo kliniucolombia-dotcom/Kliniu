@@ -86,7 +86,7 @@ function DropdownFiltro({
       >
         {label}
         {activos.length > 0 && (
-          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#27B1B8] text-[9px] font-bold text-white">
+          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#14777D] text-[9px] font-bold text-white">
             {activos.length}
           </span>
         )}
@@ -162,7 +162,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
     >
       {/* Badge */}
       {producto.destacado && (
-        <span className="absolute left-3 top-3 z-10 rounded-lg bg-[#f5a623] px-2.5 py-1 text-[10px] font-bold text-white">
+        <span className="absolute left-3 top-3 z-10 rounded-lg bg-[#B45309] px-2.5 py-1 text-[10px] font-bold text-white">
           Más vendido
         </span>
       )}
@@ -212,7 +212,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
                 }}
                 onMouseEnter={() => setHoveredColor(v.color)}
                 onMouseLeave={() => setHoveredColor(null)}
-                className={`h-5 w-5 rounded-full border transition-transform duration-150 hover:scale-125 ${
+                className={`h-6 w-6 rounded-full border transition-transform duration-150 hover:scale-125 ${
                   activeColor === v.color ? "border-[#27B1B8] scale-125" : "border-black/30"
                 }`}
                 style={{ background: v.color, boxShadow: "inset 0 0 0 1.5px rgba(0,0,0,0.22)" }}
@@ -232,7 +232,7 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
           <Link
             href={`/producto/${producto.slug}`}
             onClick={(event) => event.stopPropagation()}
-            className="shine-sweep flex-1 rounded-full border border-[#27B1B8] px-3 py-2 text-center text-xs font-semibold text-[#27B1B8] transition-colors hover:bg-[#27B1B8] hover:text-white"
+            className="shine-sweep flex-1 rounded-full border border-[#27B1B8] px-3 py-2 text-center text-xs font-semibold text-[#14777D] transition-colors hover:bg-[#14777D] hover:text-white"
           >
             Ver detalle
           </Link>
@@ -574,7 +574,7 @@ function InsumosRepuestosPage({
               <p className="text-[clamp(28px,8vw,42px)] font-black leading-[1.05] text-[#073F43]">
                 Insumos
               </p>
-              <p className="text-[clamp(28px,8vw,42px)] font-black leading-[1.05] text-[#27B1B8]">
+              <p className="text-[clamp(28px,8vw,42px)] font-black leading-[1.05] text-[#14777D]">
                 y repuestos
               </p>
             </div>
@@ -601,7 +601,7 @@ function InsumosRepuestosPage({
               </svg>
               Filtros
               {hayFiltros && (
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#27B1B8] text-[9px] font-bold text-white">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#14777D] text-[9px] font-bold text-white">
                   {Object.values(filtros).flat().length}
                 </span>
               )}
@@ -659,7 +659,7 @@ function InsumosRepuestosPage({
                 }}
                 className={`flex h-9 min-w-[2.25rem] items-center justify-center rounded-full px-3 text-sm font-medium transition-colors ${
                   pagina === p
-                    ? "bg-[#27B1B8] text-white"
+                    ? "bg-[#14777D] text-white"
                     : "border border-black/10 bg-white text-[#5d6167] hover:border-[#27B1B8]/50 hover:text-[#27B1B8]"
                 }`}
               >
@@ -903,7 +903,7 @@ export default function CategoriasPage({
           <h1 className={`text-2xl font-extrabold leading-tight tracking-tight sm:text-4xl md:text-5xl ${dark ? "text-[#0a0f14]" : "text-white"}`}>
             {tituloLinea1}
             <br />
-            {tituloLinea2}<span className="text-[#27B1B8]">{tituloDestacado}</span>
+            {tituloLinea2}<span className="text-[#14777D]">{tituloDestacado}</span>
           </h1>
           <p className={`mt-2 max-w-md text-xs leading-5 sm:mt-3 sm:text-sm sm:leading-6 ${dark ? "text-[#3a4a4b]" : "text-white/70"}`}>
             {catMetaBanner.bannerCopy}
@@ -938,7 +938,7 @@ export default function CategoriasPage({
       {/* ── Products ── */}
       <section className="home-reveal mx-auto max-w-[1440px] px-4 pb-12 pt-8 sm:px-6 sm:pb-16 sm:pt-10">
         {/* Section heading */}
-        <h2 className="mb-6 text-xl font-bold text-[#27B1B8]">
+        <h2 className="mb-6 text-xl font-bold text-[#1B8A90]">
           {headingCategoria[categoriaActiva ?? ""] ?? `Explora ${categoriaActiva ?? "el catálogo"}`}
         </h2>
 
@@ -955,7 +955,7 @@ export default function CategoriasPage({
               </svg>
               Filtros
               {hayFiltros && (
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#27B1B8] text-[9px] font-bold text-white">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#14777D] text-[9px] font-bold text-white">
                   {Object.values(filtros).flat().length}
                 </span>
               )}
@@ -1009,7 +1009,7 @@ export default function CategoriasPage({
                 onClick={() => { setPagina(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                 className={`flex h-9 min-w-[2.25rem] items-center justify-center rounded-full px-3 text-sm font-medium transition-colors ${
                   pagina === p
-                    ? "bg-[#27B1B8] text-white"
+                    ? "bg-[#14777D] text-white"
                     : "border border-black/10 bg-white text-[#5d6167] hover:border-[#27B1B8]/50 hover:text-[#27B1B8]"
                 }`}
               >
@@ -1065,7 +1065,7 @@ export default function CategoriasPage({
                       const title = catMeta.comoElegirTituloCompleto ?? "¿Cómo elegir el producto ideal?";
                       const parts = title.split("KLINIU");
                       return parts.length === 2 ? (
-                        <>{parts[0]}<span className="text-[#27B1B8]">KLINIU</span>{parts[1]}</>
+                        <>{parts[0]}<span className="text-[#14777D]">KLINIU</span>{parts[1]}</>
                       ) : title;
                     })()}
                   </h2>
@@ -1087,7 +1087,7 @@ export default function CategoriasPage({
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={factor.imagen} alt="" className="h-8 w-8 shrink-0 object-contain brightness-0 invert sm:h-9 sm:w-9" />
                       ) : (
-                        <svg viewBox="0 0 24 24" className="h-8 w-8 shrink-0 text-[#27B1B8] sm:h-6 sm:w-6" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <svg viewBox="0 0 24 24" className="h-8 w-8 shrink-0 text-[#14777D] sm:h-6 sm:w-6" fill="none" stroke="currentColor" strokeWidth="1.5">
                           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                           <circle cx="9" cy="7" r="4"/>
                           <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
@@ -1154,7 +1154,7 @@ export default function CategoriasPage({
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={factor.imagen} alt="" className="h-10 w-10 object-contain sm:h-14 sm:w-14" />
                       ) : (
-                        <svg viewBox="0 0 24 24" className="h-10 w-10 text-[#27B1B8] sm:h-14 sm:w-14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <svg viewBox="0 0 24 24" className="h-10 w-10 text-[#14777D] sm:h-14 sm:w-14" fill="none" stroke="currentColor" strokeWidth="1.5">
                           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                           <circle cx="9" cy="7" r="4"/>
                           <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>

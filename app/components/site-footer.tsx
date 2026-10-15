@@ -91,6 +91,12 @@ export default function SiteFooter() {
             />
           </div>
         </div>
+        <p className="mt-12 border-t border-white/20 pt-6 text-center text-[13px] leading-relaxed text-white/80">
+          KLINIU S.A.S. · NIT 901.484.436 · Avenida 28 #34-43, Bogotá D.C. · ventas@kliniu.com ·{" "}
+          <a href="https://www.sic.gov.co" target="_blank" rel="noreferrer" className="underline hover:text-white">
+            Superintendencia de Industria y Comercio
+          </a>
+        </p>
       </div>
     </footer>
   );

@@ -181,7 +181,7 @@ export default async function PuntosPage() {
               <div className="motion-card interactive-lift rounded-2xl bg-white p-5 shadow-sm">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#888]">Compra acumulada este mes</p>
                 <p className="mt-1 text-3xl font-black text-[#6B21A8]">{fmt(kData.monthlySpend)}</p>
-                <p className="mt-1 text-xs text-[#999]">
+                <p className="mt-1 text-xs text-[#5f6368]">
                   {kData.currentTier === "NONE"
                     ? `Necesitas ${fmt(2_000_000 - kData.monthlySpend)} más para Silver`
                     : `Categoría este mes: ${kData.currentTier}`}
@@ -192,7 +192,7 @@ export default async function PuntosPage() {
                 <p className="mt-1 text-3xl font-black" style={{ color: userTierData?.color ?? "#888" }}>
                   {kData.currentTier === "NONE" ? "Sin categoría" : kData.currentTier}
                 </p>
-                <p className="mt-1 text-xs text-[#999]">
+                <p className="mt-1 text-xs text-[#5f6368]">
                   {userTierData ? `Bono: ${userTierData.bonusPercent}% en producto KLINIU®` : "Compra desde $2.000.000 para ganar bono"}
                 </p>
               </div>
@@ -266,17 +266,17 @@ export default async function PuntosPage() {
 
                   {/* Info */}
                   <div className="px-5 py-6 text-center">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#999]">Compra mensual</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#5f6368]">Compra mensual</p>
                     <p className="mt-1 text-sm font-black text-[#1A1A1A]">
                       {tier.max === Infinity ? `${fmt(tier.min)} o más` : `${fmt(tier.min)} – ${fmt(tier.max)}`}
                     </p>
 
                     <div className="my-4 flex flex-col items-center">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-[#aaa]">Bono recompra</p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f6368]">Bono recompra</p>
                       <p className="mt-1 font-black leading-none" style={{ fontSize: "clamp(2.8rem,6vw,3.8rem)", color: cfg?.label }}>
                         {tier.bonusPercent}%
                       </p>
-                      <p className="mt-1 text-xs font-semibold text-[#aaa]">en producto KLINIU®</p>
+                      <p className="mt-1 text-xs font-semibold text-[#5f6368]">en producto KLINIU®</p>
                     </div>
 
                     <div className="puntos-gradient-run rounded-xl px-3 py-2 text-xs font-semibold" style={{ background: cfg?.gradientStyle, color: "#fff" }}>
@@ -297,7 +297,7 @@ export default async function PuntosPage() {
         <div className="relative mx-auto max-w-[1200px]">
           {/* Encabezado centrado */}
           <div className="mb-12 text-center">
-            <div className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold uppercase tracking-widest text-[#7C3AED]" style={{ background: "rgba(124,58,237,0.10)" }}>
+            <div className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold uppercase tracking-widest text-[#6D28D9]" style={{ background: "rgba(124,58,237,0.10)" }}>
               Así funciona el programa
             </div>
             <h2 className="mt-4 text-4xl font-black text-[#1A1A1A]">Todo lo que necesitas saber</h2>

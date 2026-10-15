@@ -159,7 +159,7 @@ export default function QuoteModal({ open, onClose, productoId, productoNombre, 
 
     // Preguntas de envío
     if (/(envío|envio|despacho|demora|entrega|llega|shipping)/.test(lower)) {
-      return { text: `Hacemos envíos a todo Colombia 🇨🇴 El tiempo de entrega es de **2 a 5 días hábiles** dependiendo del destino.\n\n¿Cuántas unidades te cotizo?` };
+      return { text: `Hacemos envíos a todo Colombia 🇨🇴 El tiempo estimado de entrega es de **1 a 3 días hábiles en Bogotá y de 3 a 8 en el resto del país**.\n\n¿Cuántas unidades te cotizo?` };
     }
 
     // Despedidas

@@ -23,8 +23,8 @@ function renderMarkdown(text: string): ReactNode {
         const isInternal = href.startsWith("/") || href.includes("kliniu.com");
         const path = isInternal ? href.replace(/^https?:\/\/[^/]+/, "") : href;
         parts.push(isInternal
-          ? <Link key={m.index} href={path} className="text-[#27B1B8] underline">{m[2]}</Link>
-          : <a key={m.index} href={href} target="_blank" rel="noopener noreferrer" className="text-[#27B1B8] underline">{m[2]}</a>
+          ? <Link key={m.index} href={path} className="text-[#14777D] underline">{m[2]}</Link>
+          : <a key={m.index} href={href} target="_blank" rel="noopener noreferrer" className="text-[#14777D] underline">{m[2]}</a>
         );
       }
       last = regex.lastIndex;
@@ -351,7 +351,7 @@ export default function SupportChat() {
                         />
                       </div>
                       <div className="rounded-[1.25rem] border border-black/8 bg-white px-4 py-3 text-sm leading-6 text-[#243342] shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-                        <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#27B1B8]">
+                        <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#14777D]">
                           Kliniu
                         </p>
                         <div className="whitespace-pre-line">{renderMarkdown(message.content)}</div>
@@ -398,9 +398,9 @@ export default function SupportChat() {
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <p className="text-xs font-semibold leading-snug text-[#0C535B]">{product.nombre}</p>
-                                  <p className="mt-0.5 text-xs font-bold text-[#27B1B8]">{product.precio}</p>
+                                  <p className="mt-0.5 text-xs font-bold text-[#14777D]">{product.precio}</p>
                                 </div>
-                                <svg className="h-4 w-4 shrink-0 text-[#27B1B8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                                <svg className="h-4 w-4 shrink-0 text-[#14777D]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                                   <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                               </Link>
@@ -453,7 +453,7 @@ export default function SupportChat() {
               <button
                 type="submit"
                 disabled={isSending || input.trim().length === 0}
-                className="rounded-[1.1rem] bg-[#27B1B8] px-4 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#1E969B] disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-[1.1rem] bg-[#14777D] px-4 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#0C535B] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Enviar
               </button>

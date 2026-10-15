@@ -43,7 +43,7 @@ export default function ComboCard({ combo, className = "" }: { combo: ComboCardD
   return (
     <div className={`interactive-lift relative flex flex-col overflow-hidden rounded-2xl border border-black/8 bg-white ${className}`}>
       {combo.destacado && (
-        <span className="absolute left-3 top-3 z-10 rounded-lg bg-[#f5a623] px-2.5 py-1 text-[10px] font-bold text-white">
+        <span className="absolute left-3 top-3 z-10 rounded-lg bg-[#B45309] px-2.5 py-1 text-[10px] font-bold text-white">
           Más vendido
         </span>
       )}
@@ -67,7 +67,7 @@ export default function ComboCard({ combo, className = "" }: { combo: ComboCardD
             ))}
           </ul>
           {extraItems > 0 && (
-            <p className="mt-2 text-xs font-semibold text-[#F07826]">+{extraItems} productos más</p>
+            <p className="mt-2 text-xs font-semibold text-[#C2410C]">+{extraItems} productos más</p>
           )}
         </div>
 

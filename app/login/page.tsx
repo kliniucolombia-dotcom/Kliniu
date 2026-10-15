@@ -334,7 +334,7 @@ export default function LoginPage() {
       {showAdminPinModal && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#0f172a]/45 px-6 backdrop-blur-[2px]">
           <div className="w-full max-w-md rounded-[1.8rem] border border-black/8 bg-white p-7 shadow-[0_30px_80px_rgba(15,23,42,0.28)]">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#27B1B8]">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#14777D]">
               Validación extra
             </p>
             <h2 className="mt-3 text-2xl font-bold text-[#0C535B]">
@@ -379,7 +379,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting || !pendingAdminUserId}
-                  className="flex-1 rounded-xl bg-[#27B1B8] px-4 py-3 font-semibold text-white transition-colors duration-200 hover:bg-[#1E969B] disabled:cursor-not-allowed disabled:opacity-70"
+                  className="flex-1 rounded-xl bg-[#14777D] px-4 py-3 font-semibold text-white transition-colors duration-200 hover:bg-[#0C535B] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {isSubmitting ? "Validando..." : "Confirmar PIN"}
                 </button>
@@ -402,7 +402,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowForgotModal(false)}
-                  className="mt-6 w-full rounded-xl bg-[#27B1B8] px-4 py-3 font-semibold text-white transition-colors duration-200 hover:bg-[#1E969B]"
+                  className="mt-6 w-full rounded-xl bg-[#14777D] px-4 py-3 font-semibold text-white transition-colors duration-200 hover:bg-[#0C535B]"
                 >
                   Cerrar
                 </button>
@@ -447,7 +447,7 @@ export default function LoginPage() {
                     <button
                       type="submit"
                       disabled={forgotSubmitting}
-                      className="flex-1 rounded-xl bg-[#27B1B8] px-4 py-3 font-semibold text-white transition-colors duration-200 hover:bg-[#1E969B] disabled:cursor-not-allowed disabled:opacity-70"
+                      className="flex-1 rounded-xl bg-[#14777D] px-4 py-3 font-semibold text-white transition-colors duration-200 hover:bg-[#0C535B] disabled:cursor-not-allowed disabled:opacity-70"
                     >
                       {forgotSubmitting ? "Enviando..." : "Enviar enlace"}
                     </button>
@@ -492,7 +492,7 @@ export default function LoginPage() {
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 lg:w-1/2 lg:h-full lg:overflow-y-auto">
         <div className="w-full max-w-md">
           <h1 className="text-4xl font-extrabold tracking-tight text-[#111]">
-            Accede a tu <span className="text-[#27B1B8]">cuenta</span>
+            Accede a tu <span className="text-[#14777D]">cuenta</span>
           </h1>
           <p className="mt-2 text-sm text-[#6e7379]">
             Todo lo que necesitas para gestionar tu experiencia KLINIU.
@@ -537,7 +537,7 @@ export default function LoginPage() {
                     invalidFields.includes("email") ? "border-[#27B1B8] bg-[#EFFAFA]" : "border-black/10"
                   }`}
                 />
-                <svg viewBox="0 0 24 24" className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#aaa]" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <svg viewBox="0 0 24 24" className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5f6368]" fill="none" stroke="currentColor" strokeWidth="1.8">
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                   <polyline points="22,6 12,13 2,6" />
                 </svg>
@@ -557,7 +557,7 @@ export default function LoginPage() {
                     setForgotError("");
                     setShowForgotModal(true);
                   }}
-                  className="text-xs text-[#27B1B8] hover:underline"
+                  className="text-xs text-[#14777D] hover:underline"
                 >
                   ¿Olvidaste tu contraseña?
                 </button>
@@ -576,7 +576,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#aaa] hover:text-[#555]"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 text-[#5f6368] hover:text-[#555]"
                   aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                 >
                   {showPassword ? (
@@ -609,7 +609,7 @@ export default function LoginPage() {
 
           <p className="mt-5 text-center text-sm text-[#6e7379]">
             ¿No tienes cuenta?{" "}
-            <Link href="/registro" className="font-bold text-[#27B1B8] hover:underline">
+            <Link href="/registro" className="font-bold text-[#14777D] hover:underline">
               Crear una cuenta
             </Link>
           </p>

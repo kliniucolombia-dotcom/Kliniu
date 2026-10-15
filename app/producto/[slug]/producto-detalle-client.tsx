@@ -654,7 +654,7 @@ export default function ProductoDetalleClient() {
           <p className="mt-3 text-[#6e7379]">Este producto ya no existe o no está disponible.</p>
           <Link
             href="/categorias"
-            className="mt-8 inline-flex rounded-full bg-[#27B1B8] px-6 py-3 text-sm font-bold text-white hover:bg-[#1E969B]"
+            className="mt-8 inline-flex rounded-full bg-[#14777D] px-6 py-3 text-sm font-bold text-white hover:bg-[#0C535B]"
           >
             Ver catálogo
           </Link>
@@ -712,13 +712,13 @@ export default function ProductoDetalleClient() {
             <div className="px-7 pb-7 pt-4 text-center">
               <p className="text-xl font-black text-[#111]">¡Te sale más barato en combo!</p>
               <p className="mt-2 text-sm text-[#6e7379]">
-                Selecciona <strong className="text-[#F07826]">× 12 und</strong> o más y ahorra hasta un{" "}
-                <strong className="text-[#F07826]">10%</strong> en tu compra.
+                Selecciona <strong className="text-[#C2410C]">× 12 und</strong> o más y ahorra hasta un{" "}
+                <strong className="text-[#C2410C]">10%</strong> en tu compra.
               </p>
               <button
                 type="button"
                 onClick={() => setShowComboTip(false)}
-                className="mt-5 w-full rounded-full bg-[#27B1B8] py-3 text-sm font-bold text-white transition-colors hover:bg-[#1e9aa0]"
+                className="mt-5 w-full rounded-full bg-[#14777D] py-3 text-sm font-bold text-white transition-colors hover:bg-[#1e9aa0]"
               >
                 ¡Entendido!
               </button>
@@ -780,7 +780,7 @@ export default function ProductoDetalleClient() {
                 <p className="mt-1.5 text-xs text-[#6e7379]">
                   Código: <span className="font-medium text-[#444]">{codigoMostrado}</span>
                   {codigoConSello && (
-                    <span className="ml-1 text-[#9aa0a6]">
+                    <span className="ml-1 text-[#5f6368]">
                       ({sinSello ? "sin sello" : "con sello"})
                     </span>
                   )}
@@ -790,15 +790,15 @@ export default function ProductoDetalleClient() {
 
             {/* Price */}
             <div>
-              <p className="text-3xl font-extrabold text-[#27B1B8]">
+              <p className="text-3xl font-extrabold text-[#1B8A90]">
                 {(volumePricing.hasDiscount || varianteSuffix !== "") ? volumePricing.unitPriceLabel : precioEfectivo}
-                {volumePricing.hasDiscount && <span className="ml-1 text-base font-semibold text-[#27B1B8]/70">c/u</span>}
+                {volumePricing.hasDiscount && <span className="ml-1 text-base font-semibold text-[#14777D]/70">c/u</span>}
               </p>
               {volumePricing.hasDiscount && (
-                <p className="mt-0.5 text-sm text-[#aaa] line-through">{precioEfectivo}</p>
+                <p className="mt-0.5 text-sm text-[#5f6368] line-through">{precioEfectivo}</p>
               )}
               {!volumePricing.hasDiscount && precioAnteriorEfectivo && (
-                <p className="mt-1 text-sm text-[#aaa] line-through">{precioAnteriorEfectivo}</p>
+                <p className="mt-1 text-sm text-[#5f6368] line-through">{precioAnteriorEfectivo}</p>
               )}
             </div>
 
@@ -867,7 +867,7 @@ export default function ProductoDetalleClient() {
                       onClick={() => { setTipoActivo(i); setVariantFocus("tipo"); }}
                       className={`rounded-full border px-4 py-1.5 text-xs font-semibold transition-all duration-150 ${
                         tipoActivo === i
-                          ? "border-[#27B1B8] bg-[#27B1B8] text-white shadow-sm"
+                          ? "border-[#27B1B8] bg-[#14777D] text-white shadow-sm"
                           : "border-black/12 bg-white text-[#444] hover:border-[#27B1B8]/60 hover:text-[#27B1B8]"
                       }`}
                     >
@@ -892,7 +892,7 @@ export default function ProductoDetalleClient() {
                     className={`relative rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-150 ${
                       esUnidad
                         ? "border-[#F07826] bg-[#F07826] text-white shadow-sm"
-                        : "border-black/12 bg-white text-[#444] hover:border-[#F07826]/60 hover:text-[#F07826]"
+                        : "border-black/12 bg-white text-[#444] hover:border-[#F07826]/60 hover:text-[#C2410C]"
                     }`}
                   >
                     Unidad
@@ -919,7 +919,7 @@ export default function ProductoDetalleClient() {
                       className={`relative rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-150 ${
                         isActive
                           ? "border-[#F07826] bg-[#F07826] text-white shadow-sm"
-                          : "border-black/12 bg-white text-[#444] hover:border-[#F07826]/60 hover:text-[#F07826]"
+                          : "border-black/12 bg-white text-[#444] hover:border-[#F07826]/60 hover:text-[#C2410C]"
                       }`}
                     >
                       {pack.label}
@@ -931,7 +931,7 @@ export default function ProductoDetalleClient() {
               {/* Compra al por mayor: más de 100 und */}
               <WhatsAppAsesor
                 message={`Hola, quiero comprar más de 100 unidades de "${producto.nombre}"`}
-                className="flex w-fit items-center gap-1.5 text-xs font-semibold text-[#128C7E] hover:underline"
+                className="flex w-fit items-center gap-1.5 text-xs font-semibold text-[#0F7A6E] hover:underline"
               >
                 <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill="currentColor"><path d="M20.5 3.5A11.8 11.8 0 0 0 12 0C5.4 0 0 5.4 0 12c0 2.1.5 4.1 1.6 5.9L0 24l6.3-1.6c1.7.9 3.7 1.4 5.7 1.4 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.5zM12 21.8c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A9.7 9.7 0 0 1 2.2 12c0-5.4 4.4-9.8 9.8-9.8 2.6 0 5.1 1 6.9 2.9a9.7 9.7 0 0 1 2.9 6.9c0 5.4-4.4 9.8-9.8 9.8zm5.4-7.3c-.3-.1-1.7-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.5-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5 0-.1-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1.1 2.8 1.2 3c.1.2 2.2 3.4 5.4 4.7.7.3 1.3.5 1.8.7.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3z"/></svg>
                 ¿Más de 100 und? Contacta a un asesor
@@ -963,7 +963,7 @@ export default function ProductoDetalleClient() {
               {/* Resumen de precio */}
               {volumePricing.hasDiscount && (
                 <div className="flex items-center gap-3 rounded-xl bg-[#FFF3E8] px-4 py-3">
-                  <span className="text-base font-bold text-[#F07826] sm:text-lg">{volumePricing.tier.pct}% OFF</span>
+                  <span className="text-base font-bold text-[#C2410C] sm:text-lg">{volumePricing.tier.pct}% OFF</span>
                   <span className="text-sm text-[#6e7379]">·</span>
                   <span className="text-sm font-semibold text-[#111] sm:text-base">Total {volumePricing.totalLabel}</span>
                 </div>
@@ -1026,7 +1026,7 @@ export default function ProductoDetalleClient() {
               {producto.categoria === "Hoteles y Restaurantes" && (
                 <WhatsAppAsesor
                   message={`Hola, quiero personalizar mi compra de "${producto.nombre}" (tampografía / logo de mi empresa)`}
-                  className="flex min-h-[50px] w-full items-center justify-center gap-2 rounded-full border border-[#25D366] px-4 py-2.5 text-center text-[13px] font-bold leading-tight text-[#128C7E] transition-colors hover:bg-[#25D366]/10 sm:text-sm"
+                  className="flex min-h-[50px] w-full items-center justify-center gap-2 rounded-full border border-[#25D366] px-4 py-2.5 text-center text-[13px] font-bold leading-tight text-[#0F7A6E] transition-colors hover:bg-[#25D366]/10 sm:text-sm"
                 >
                   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><path d="M20.5 3.5A11.8 11.8 0 0 0 12 0C5.4 0 0 5.4 0 12c0 2.1.5 4.1 1.6 5.9L0 24l6.3-1.6c1.7.9 3.7 1.4 5.7 1.4 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.5zM12 21.8c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A9.7 9.7 0 0 1 2.2 12c0-5.4 4.4-9.8 9.8-9.8 2.6 0 5.1 1 6.9 2.9a9.7 9.7 0 0 1 2.9 6.9c0 5.4-4.4 9.8-9.8 9.8zm5.4-7.3c-.3-.1-1.7-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.5-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5 0-.1-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1.1 2.8 1.2 3c.1.2 2.2 3.4 5.4 4.7.7.3 1.3.5 1.8.7.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3z"/></svg>
                   Personaliza tu compra
@@ -1038,7 +1038,7 @@ export default function ProductoDetalleClient() {
             <div className="flex divide-x divide-black/8 overflow-hidden rounded-2xl border border-black/8 bg-[#f8fafa] w-1/2">
               {trustBadges.map((b) => (
                 <div key={b.label} className="flex flex-1 items-center gap-2.5 px-4 py-3">
-                  <span className="shrink-0 text-[#27B1B8]">{b.icon}</span>
+                  <span className="shrink-0 text-[#14777D]">{b.icon}</span>
                   <div>
                     <p className="text-[11px] font-bold leading-tight text-[#0C535B]">{b.label}</p>
                     <p className="text-[10px] leading-tight text-[#6e7379]">{b.sub}</p>
@@ -1051,7 +1051,7 @@ export default function ProductoDetalleClient() {
             <div className="grid gap-0 border-t border-black/8 pt-5 md:grid-cols-2">
               <div className="space-y-4 border-b border-black/8 pb-6 pr-0 text-sm leading-7 md:border-b-0 md:border-r md:pb-0 md:pr-8">
                 <div>
-                  <p className="mb-1 font-bold text-[#F07826]">Descripción</p>
+                  <p className="mb-1 font-bold text-[#C2410C]">Descripción</p>
                   <p className="text-[#333]">
                     {producto.descripcion ||
                       `${producto.nombre} es un producto de la línea ${producto.categoria} de Kliniu, diseñado para ofrecer higiene profesional en espacios de alto tráfico.`}
@@ -1059,25 +1059,25 @@ export default function ProductoDetalleClient() {
                 </div>
                 {fichaTecnica.find((r) => r.etiqueta === "Material") && (
                   <div>
-                    <p className="mb-1 font-bold text-[#F07826]">Materiales</p>
+                    <p className="mb-1 font-bold text-[#C2410C]">Materiales</p>
                     <p className="text-[#333]">Fabricado en {fichaTecnica.find((r) => r.etiqueta === "Material")?.valor}.</p>
                   </div>
                 )}
                 {fichaTecnica.find((r) => r.etiqueta === "Baterías") && (
                   <div>
-                    <p className="mb-1 font-bold text-[#F07826]">Baterías</p>
+                    <p className="mb-1 font-bold text-[#C2410C]">Baterías</p>
                     <p className="text-[#333]">{fichaTecnica.find((r) => r.etiqueta === "Baterías")?.valor}</p>
                   </div>
                 )}
                 {fichaTecnica.find((r) => r.etiqueta === "Instalación") && (
                   <div>
-                    <p className="mb-1 font-bold text-[#F07826]">Instalación</p>
+                    <p className="mb-1 font-bold text-[#C2410C]">Instalación</p>
                     <p className="text-[#333]">{fichaTecnica.find((r) => r.etiqueta === "Instalación")?.valor}</p>
                   </div>
                 )}
                 {producto.aplicacion && (
                   <div>
-                    <p className="mb-1 font-bold text-[#F07826]">Especificaciones</p>
+                    <p className="mb-1 font-bold text-[#C2410C]">Especificaciones</p>
                     <p className="text-[#333]">{producto.aplicacion}</p>
                   </div>
                 )}
@@ -1085,7 +1085,7 @@ export default function ProductoDetalleClient() {
               <div className="space-y-4 pt-6 text-sm leading-7 md:pl-8 md:pt-0">
                 {fichaTecnica.some((r) => ["Alto", "Ancho", "Profundidad", "Peso", "Capacidad"].includes(r.etiqueta)) && (
                   <div>
-                    <p className="mb-1 font-bold text-[#F07826]">Medidas</p>
+                    <p className="mb-1 font-bold text-[#C2410C]">Medidas</p>
                     <div className="text-[#333]">
                       {fichaTecnica.filter((r) => ["Alto", "Ancho"].includes(r.etiqueta)).length >= 2 && (
                         <p>Alto {fichaTecnica.find((r) => r.etiqueta === "Alto")?.valor} x ancho {fichaTecnica.find((r) => r.etiqueta === "Ancho")?.valor}</p>
@@ -1104,7 +1104,7 @@ export default function ProductoDetalleClient() {
                 )}
                 {producto.compatibilidad && producto.compatibilidad.length > 0 && (
                   <div>
-                    <p className="mb-1 font-bold text-[#F07826]">Incluye</p>
+                    <p className="mb-1 font-bold text-[#C2410C]">Incluye</p>
                     <ul className="space-y-0.5 text-[#333]">
                       {producto.compatibilidad.map((c) => (
                         <li key={c}>{c}</li>
@@ -1114,7 +1114,7 @@ export default function ProductoDetalleClient() {
                 )}
                 {fichaTecnica.find((r) => r.etiqueta === "Fuente de poder") && (
                   <div>
-                    <p className="mb-1 font-bold text-[#F07826]">Fuente de poder</p>
+                    <p className="mb-1 font-bold text-[#C2410C]">Fuente de poder</p>
                     <p className="text-[#333]">{fichaTecnica.find((r) => r.etiqueta === "Fuente de poder")?.valor}</p>
                   </div>
                 )}
@@ -1122,7 +1122,7 @@ export default function ProductoDetalleClient() {
                   .filter((r) => !["Alto", "Ancho", "Profundidad", "Peso", "Capacidad", "Material", "Baterías", "Instalación", "Fuente de poder", "Categoría", "Marca", "Disponibilidad", "Garantía", "Aplicación"].includes(r.etiqueta))
                   .map((r) => (
                     <div key={r.etiqueta}>
-                      <p className="mb-1 font-bold text-[#F07826]">{r.etiqueta}</p>
+                      <p className="mb-1 font-bold text-[#C2410C]">{r.etiqueta}</p>
                       <p className="text-[#333]">{r.valor}</p>
                     </div>
                   ))}
@@ -1145,7 +1145,7 @@ export default function ProductoDetalleClient() {
       {/* ── Related products ── */}
       {relacionados.length > 0 && (
         <section className="mx-auto max-w-[1440px] px-6 py-14">
-          <h2 className="mb-6 text-2xl font-extrabold tracking-tight text-[#27B1B8]">
+          <h2 className="mb-6 text-2xl font-extrabold tracking-tight text-[#1B8A90]">
             Productos relacionados
           </h2>
           <ProductosCarousel products={relacionados} />

@@ -18,7 +18,7 @@ export default function NotFound() {
           className="h-auto w-[220px] drop-shadow-[0_18px_30px_rgba(12,83,91,0.2)]"
         />
 
-        <div className="mt-2 text-[112px] font-extrabold leading-none tracking-tight text-[#27B1B8]">
+        <div className="mt-2 text-[112px] font-extrabold leading-none tracking-tight text-[#14777D]">
           404
         </div>
 

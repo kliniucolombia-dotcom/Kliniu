@@ -171,7 +171,7 @@ export default async function MisPuntosPage() {
               <div className="rounded-2xl border border-[#E0E0E0] bg-white p-5">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#888]">Bono recompra</p>
                 <p className="mt-1 text-lg font-bold text-[#888]">Sin bono disponible</p>
-                <p className="mt-1 text-xs text-[#999]">
+                <p className="mt-1 text-xs text-[#5f6368]">
                   Tu bono del mes de {prevMonthName} se asignará al cierre del mes según la categoría alcanzada.
                 </p>
                 {lastMonthSpend > 0 && (
@@ -188,7 +188,7 @@ export default async function MisPuntosPage() {
                 <h3 className="font-bold text-[#1A1A1A]">Compras de {currentMonthName}</h3>
               </div>
               {orders.length === 0 ? (
-                <div className="p-10 text-center text-sm text-[#999]">
+                <div className="p-10 text-center text-sm text-[#5f6368]">
                   Aún no tienes compras este mes.
                   <br />
                   <Link href="/categorias" className="mt-2 inline-block font-semibold text-[#0C6060] hover:underline">
@@ -206,7 +206,7 @@ export default async function MisPuntosPage() {
                         <p className="text-sm font-semibold text-[#1A1A1A]">
                           Pedido #{order.id.slice(-6).toUpperCase()}
                         </p>
-                        <p className="text-xs text-[#999]">
+                        <p className="text-xs text-[#5f6368]">
                           {new Date(order.createdAt).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}
                           {" · "}
                           <span className={order.paymentStatus === "PAID" ? "text-green-600" : "text-[#FF6B00]"}>
@@ -259,7 +259,7 @@ export default async function MisPuntosPage() {
                         <p className="text-sm font-bold" style={{ color: isActive ? tier.color : "#333" }}>
                           {tier.label}
                         </p>
-                        <p className="text-[10px] text-[#999]">
+                        <p className="text-[10px] text-[#5f6368]">
                           {tier.max === Infinity
                             ? `${fmt(tier.min)}+`
                             : `${fmt(tier.min)} – ${fmt(tier.max)}`}

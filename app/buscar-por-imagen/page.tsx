@@ -17,7 +17,7 @@ export default async function BuscarPorImagenPage() {
     return (
       <main className="min-h-[calc(100vh-90px)] bg-[#f5f6f8] px-6 py-16">
         <div className="mx-auto max-w-5xl rounded-[2rem] border border-black/8 bg-white p-10 text-center shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#8b8d91]">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#5f6368]">
             Buscar por imagen
           </p>
           <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em] text-[#0C535B]">
@@ -34,7 +34,7 @@ export default async function BuscarPorImagenPage() {
         <section className="overflow-hidden rounded-[2rem] border border-black/8 bg-white shadow-[0_28px_70px_rgba(15,23,42,0.1)]">
           <div className="border-b border-black/6 px-6 py-6 md:px-10 md:py-8">
             <div className="flex flex-wrap items-center gap-3">
-              <span className="rounded-full bg-[#fff3e8] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#c36517]">
+              <span className="rounded-full bg-[#fff3e8] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9A3412]">
                 Próxima función
               </span>
               <span className="rounded-full border border-black/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6d737a]">
@@ -55,12 +55,12 @@ export default async function BuscarPorImagenPage() {
               </div>
 
               <div className="rounded-[1.6rem] bg-[#0C535B] p-5 text-white shadow-[0_18px_40px_rgba(22,56,79,0.18)]">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/58">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/75">
                   Flujo simple
                 </p>
                 <div className="mt-4 grid gap-3 md:grid-cols-3">
                   <div className="rounded-[1.1rem] border border-white/12 bg-white/8 p-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/75">
                       1. Subir
                     </p>
                     <p className="mt-2 text-sm text-white/84">
@@ -68,7 +68,7 @@ export default async function BuscarPorImagenPage() {
                     </p>
                   </div>
                   <div className="rounded-[1.1rem] border border-white/12 bg-white/8 p-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/75">
                       2. Detectar
                     </p>
                     <p className="mt-2 text-sm text-white/84">
@@ -76,7 +76,7 @@ export default async function BuscarPorImagenPage() {
                     </p>
                   </div>
                   <div className="rounded-[1.1rem] border border-white/12 bg-white/8 p-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/75">
                       3. Sugerir
                     </p>
                     <p className="mt-2 text-sm text-white/84">
@@ -92,7 +92,7 @@ export default async function BuscarPorImagenPage() {
             <div className="rounded-[1.6rem] bg-[#0C535B] p-5 text-white">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/58">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/75">
                     Imagen de referencia
                   </p>
                   <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-white">
@@ -142,7 +142,7 @@ export default async function BuscarPorImagenPage() {
             </div>
 
             <div className="rounded-[1.6rem] border border-black/8 bg-[#fbfbfa] p-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#8b8d91]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#5f6368]">
                 Vista del cliente
               </p>
               <h2 className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-[#0C535B]">
@@ -179,7 +179,7 @@ export default async function BuscarPorImagenPage() {
                   </div>
                   <button
                     type="button"
-                    className="rounded-full bg-[#27B1B8] px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#1E969B]"
+                    className="rounded-full bg-[#14777D] px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#0C535B]"
                   >
                     Elegir imagen
                   </button>
@@ -199,7 +199,7 @@ export default async function BuscarPorImagenPage() {
                     <p className="truncate text-2xl font-semibold tracking-[-0.04em] text-[#1f2328]">
                       {selectedProduct.nombre}
                     </p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[#8b8d91]">
+                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[#5f6368]">
                       {selectedProduct.categoria}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
@@ -212,7 +212,7 @@ export default async function BuscarPorImagenPage() {
                     </div>
                   </div>
                   <div className="text-left md:text-right">
-                    <p className="text-3xl font-semibold tracking-[-0.05em] text-[#27B1B8]">
+                    <p className="text-3xl font-semibold tracking-[-0.05em] text-[#1B8A90]">
                       {selectedProduct.precio}
                     </p>
                     <button

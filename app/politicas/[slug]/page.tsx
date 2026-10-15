@@ -15,7 +15,7 @@ const policies = {
       },
       {
         heading: "Derecho a la Eliminación de Datos",
-        body: "En cualquier momento, usted puede solicitar la eliminación de sus datos de nuestras bases, escribiendo al correo info@kliniu.com e incluyendo su nombre completo y el motivo de su solicitud. Procesaremos su solicitud en el menor tiempo posible.",
+        body: "En cualquier momento, usted puede solicitar la eliminación de sus datos de nuestras bases, escribiendo al correo ventas@kliniu.com e incluyendo su nombre completo y el motivo de su solicitud. Procesaremos su solicitud en el menor tiempo posible.",
       },
       {
         heading: "Protección Legal",
@@ -31,7 +31,7 @@ const policies = {
       },
       {
         heading: "Trámites y Contacto",
-        body: "Para gestionar cualquier tipo de garantía, cambio o devolución, puede comunicarse con nuestro Centro de Atención al Cliente:\n\nColombia: Tel: +57(1) 3682434 / +57 3226556454 — Dirección: Av. 28 No. 3443, Barrio La Soledad, Bogotá.\nHonduras: +504 31852275\nRepública Dominicana: +1 (809) 8507005\nNicaragua: +505 82508359\n\nTambién puede escribirnos a: info@kliniu.com",
+        body: "Para gestionar cualquier tipo de garantía, cambio o devolución, puede comunicarse con nuestro Centro de Atención al Cliente:\n\nColombia: Tel: +57(1) 3682434 / +57 3226556454 — Dirección: Av. 28 No. 3443, Barrio La Soledad, Bogotá.\nHonduras: +504 31852275\nRepública Dominicana: +1 (809) 8507005\nNicaragua: +505 82508359\n\nTambién puede escribirnos a: ventas@kliniu.com",
       },
       {
         heading: "1. Garantía por Defectos de Fabricación",
@@ -155,7 +155,7 @@ const policies = {
     sections: [
       {
         heading: "1. Identificación del comerciante",
-        body: "Razón social: KLINIU S.A.S.\nDomicilio: Avenida 28 #34-43, Bogotá D.C., Colombia.\nCorreo electrónico: info@kliniu.com\nTeléfonos: 601 3682434 / 312 5860921\nHorario de atención: lunes a viernes, 8:00 a.m. – 5:00 p.m.\nKLINIU S.A.S. es una sociedad comercial constituida bajo las leyes de la República de Colombia y responsable de la operación de este sitio.",
+        body: "Razón social: KLINIU S.A.S.\nNIT: 901.484.436\nDomicilio: Avenida 28 #34-43, Bogotá D.C., Colombia.\nCorreo electrónico: ventas@kliniu.com\nTeléfonos: 601 3682434 / 312 5860921\nHorario de atención: lunes a viernes, 8:00 a.m. – 5:00 p.m.\nKLINIU S.A.S. es una sociedad comercial constituida bajo las leyes de la República de Colombia y responsable de la operación de este sitio.",
       },
       {
         heading: "2. Objeto y aceptación",
@@ -238,7 +238,7 @@ const policies = {
       },
       {
         heading: "7. Contacto",
-        body: "Para dudas sobre esta política escribe a info@kliniu.com. El tratamiento de los datos personales recolectados mediante cookies se rige por nuestra Política de Tratamiento de Datos Personales.",
+        body: "Para dudas sobre esta política escribe a ventas@kliniu.com. El tratamiento de los datos personales recolectados mediante cookies se rige por nuestra Política de Tratamiento de Datos Personales.",
       },
     ],
   },
@@ -253,7 +253,7 @@ const policies = {
       },
       {
         heading: "2. Cómo ejercer el retracto",
-        body: "Envía tu solicitud a info@kliniu.com indicando número de pedido, nombre completo, documento de identidad y la manifestación expresa de que deseas retractarte. Recibirás las instrucciones de devolución. El producto debe regresar nuevo, sin uso, con empaques, etiquetas, manuales y accesorios originales completos.",
+        body: "Envía tu solicitud a ventas@kliniu.com indicando número de pedido, nombre completo, documento de identidad y la manifestación expresa de que deseas retractarte. Recibirás las instrucciones de devolución. El producto debe regresar nuevo, sin uso, con empaques, etiquetas, manuales y accesorios originales completos.",
       },
       {
         heading: "3. Costos y reembolso",
@@ -269,7 +269,7 @@ const policies = {
       },
       {
         heading: "6. Cómo solicitar la reversión",
-        body: "Dentro de los cinco (5) días hábiles siguientes a que tengas conocimiento del hecho, debes presentar la queja a KLINIU S.A.S. en info@kliniu.com y, simultáneamente, solicitar la reversión ante el emisor de tu medio de pago (banco o entidad emisora de la tarjeta). Debes devolver el producto cuando aplique. Cumplidos los requisitos, la reversión se hará efectiva dentro de los quince (15) días hábiles siguientes.",
+        body: "Dentro de los cinco (5) días hábiles siguientes a que tengas conocimiento del hecho, debes presentar la queja a KLINIU S.A.S. en ventas@kliniu.com y, simultáneamente, solicitar la reversión ante el emisor de tu medio de pago (banco o entidad emisora de la tarjeta). Debes devolver el producto cuando aplique. Cumplidos los requisitos, la reversión se hará efectiva dentro de los quince (15) días hábiles siguientes.",
       },
       {
         heading: "7. Reversión gestionada por la pasarela",
@@ -288,7 +288,7 @@ const policies = {
     sections: [
       {
         heading: "1. Canales habilitados",
-        body: "Correo electrónico: info@kliniu.com (canal oficial para radicar PQRS).\nTeléfonos: 601 3682434 / 312 5860921\nWhatsApp comercial: disponible desde el sitio web.\nPresencial: Avenida 28 #34-43, Bogotá D.C.\nHorario: lunes a viernes, 8:00 a.m. – 5:00 p.m.",
+        body: "Correo electrónico: ventas@kliniu.com (canal oficial para radicar PQRS).\nTeléfonos: 601 3682434 / 312 5860921\nWhatsApp comercial: disponible desde el sitio web.\nPresencial: Avenida 28 #34-43, Bogotá D.C.\nHorario: lunes a viernes, 8:00 a.m. – 5:00 p.m.",
       },
       {
         heading: "2. Información que debes incluir",
@@ -343,7 +343,7 @@ const policies = {
       },
       {
         heading: "7. Faltantes o inconsistencias",
-        body: "Si detectas faltantes o productos distintos a los solicitados, notifícalo a info@kliniu.com dentro de los cinco (5) días hábiles siguientes a la entrega, adjuntando fotografías del producto y del empaque. Se dará trámite conforme a la política de PQRS y al Manual de Garantía.",
+        body: "Si detectas faltantes o productos distintos a los solicitados, notifícalo a ventas@kliniu.com dentro de los cinco (5) días hábiles siguientes a la entrega, adjuntando fotografías del producto y del empaque. Se dará trámite conforme a la política de PQRS y al Manual de Garantía.",
       },
     ],
   },
@@ -354,7 +354,7 @@ const policies = {
     sections: [
       {
         heading: "1. Responsable del tratamiento",
-        body: "KLINIU S.A.S., con domicilio en Avenida 28 #34-43, Bogotá D.C., Colombia. Correo para el ejercicio de derechos: info@kliniu.com. Teléfonos: 601 3682434 / 312 5860921.",
+        body: "KLINIU S.A.S., NIT 901.484.436, con domicilio en Avenida 28 #34-43, Bogotá D.C., Colombia. Correo para el ejercicio de derechos: ventas@kliniu.com. Teléfonos: 601 3682434 / 312 5860921.",
       },
       {
         heading: "2. Autorización del titular",
@@ -366,11 +366,11 @@ const policies = {
       },
       {
         heading: "4. Procedimiento de consulta",
-        body: "Envía tu consulta a info@kliniu.com con el asunto \"Consulta Habeas Data\", indicando nombre completo, documento de identidad, datos de contacto y la descripción de lo que deseas conocer. La consulta se atenderá en un término máximo de diez (10) días hábiles, prorrogable hasta por cinco (5) días hábiles más, informándote los motivos de la prórroga.",
+        body: "Envía tu consulta a ventas@kliniu.com con el asunto \"Consulta Habeas Data\", indicando nombre completo, documento de identidad, datos de contacto y la descripción de lo que deseas conocer. La consulta se atenderá en un término máximo de diez (10) días hábiles, prorrogable hasta por cinco (5) días hábiles más, informándote los motivos de la prórroga.",
       },
       {
         heading: "5. Procedimiento de reclamo, corrección, supresión o revocatoria",
-        body: "Envía tu reclamo a info@kliniu.com con el asunto \"Reclamo Habeas Data\", identificando al titular, describiendo los hechos, indicando la solicitud concreta (corrección, actualización, supresión o revocatoria) y adjuntando los documentos de soporte. Si el reclamo está incompleto, se te requerirá dentro de los cinco (5) días siguientes para subsanarlo; transcurridos dos (2) meses sin respuesta, se entenderá desistido. El reclamo se atenderá en un término máximo de quince (15) días hábiles, prorrogable por ocho (8) días hábiles más.",
+        body: "Envía tu reclamo a ventas@kliniu.com con el asunto \"Reclamo Habeas Data\", identificando al titular, describiendo los hechos, indicando la solicitud concreta (corrección, actualización, supresión o revocatoria) y adjuntando los documentos de soporte. Si el reclamo está incompleto, se te requerirá dentro de los cinco (5) días siguientes para subsanarlo; transcurridos dos (2) meses sin respuesta, se entenderá desistido. El reclamo se atenderá en un término máximo de quince (15) días hábiles, prorrogable por ocho (8) días hábiles más.",
       },
       {
         heading: "6. Límites a la supresión y revocatoria",
@@ -453,7 +453,7 @@ export default async function PoliticaPage({
           <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-[#27B1B8]/20 bg-[#e8f5f5] p-6">
             <div className="min-w-0 flex-1">
               <p className="font-black text-[#0C535B]">¿Necesitas ayuda con esta política?</p>
-              <p className="mt-1 text-sm text-[#3a7a80]">
+              <p className="mt-1 text-sm text-[#2f6a70]">
                 Nuestro equipo comercial puede revisar tu caso y orientarte.
               </p>
             </div>
