@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import {
   MdAdd, MdClose, MdDelete, MdChatBubbleOutline, MdAttachFile, MdSearch,
   MdCheckCircle, MdRadioButtonUnchecked, MdViewKanban, MdViewList, MdCalendarMonth,
-  MdInsertChart, MdMoreHoriz, MdChevronLeft, MdChevronRight, MdFlag, MdPersonOutline, MdStickyNote2,
+  MdInsertChart, MdEvent, MdMoreHoriz, MdChevronLeft, MdChevronRight, MdFlag, MdPersonOutline, MdStickyNote2,
 } from "react-icons/md";
 import { SimpleSelect } from "../_components/simple-select";
 import { useConfirm } from "@/app/components/confirm-dialog";
@@ -99,6 +99,22 @@ function isoDay(d: Date) {
 function dueKey(iso: string | null) {
   if (!iso) return null;
   return new Date(new Date(iso).getTime() - 5 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+/** Franja de fecha de la tarjeta: texto relativo (Bogotá) y tono según vencimiento. */
+function dueStrip(t: { dueDate: string; status: Status }) {
+  const day = (iso: string) => {
+    const part = (type: string) => new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", weekday: "short", day: "numeric", month: "short" }).formatToParts(new Date(iso)).find((x) => x.type === type)?.value.replace(".", "") ?? "";
+    return `${part("weekday")} ${part("day")} ${part("month")}`;
+  };
+  const todayKey = new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10);
+  const diff = Math.round((Date.parse(dueKey(t.dueDate)!) - Date.parse(todayKey)) / 86400_000);
+  const label = day(t.dueDate);
+  if (t.status === "COMPLETED") return { text: `Fecha límite ${label}`, cls: "bg-[#F1F5F9] text-[#64748B]" };
+  if (diff < 0) return { text: `Vencida · ${label} · hace ${-diff} ${diff === -1 ? "día" : "días"}`, cls: "bg-[#B91C1C] text-white" };
+  if (diff === 0) return { text: `Vence hoy · ${label}`, cls: "bg-[#FEF3C7] text-[#92400E]" };
+  if (diff === 1) return { text: `Vence mañana · ${label}`, cls: "bg-[#EAF8F7] text-[#0C535B]" };
+  return { text: `Vence ${label} · en ${diff} días`, cls: "bg-[#EAF8F7] text-[#0C535B]" };
 }
 
 function Avatar({ user, size = 24 }: { user: UserLite; size?: number }) {
@@ -359,36 +375,52 @@ function TaskCard({ task: t, draggable, dragging, onDragStart, onDragEnd, onOpen
 }) {
   const overdue = isOverdue(t);
   const p = PRIORITY[t.priority];
+  const strip = t.dueDate ? dueStrip({ dueDate: t.dueDate, status: t.status }) : null;
+  const firstFile = t.attachments[0];
   return (
     <div
       draggable={draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onClick={onOpen}
-      className={`cursor-pointer rounded-xl border border-[#E2E8F0] bg-white p-3 shadow-sm transition hover:shadow-md ${dragging ? "opacity-40" : ""}`}
+      className={`cursor-pointer overflow-hidden rounded-xl border bg-white shadow-sm transition hover:shadow-md ${overdue ? "border-[#FECACA]" : "border-[#E2E8F0]"} ${dragging ? "opacity-40" : ""}`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <p className={`text-sm font-bold leading-snug ${t.status === "COMPLETED" ? "text-[#94A3B8] line-through" : "text-[#1A1A1A]"}`}>{t.title}</p>
-        <MdMoreHoriz size={16} className="mt-0.5 shrink-0 text-[#CBD5E1]" />
-      </div>
-      {t.description && <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[#64748B]">{t.description}</p>}
-      <div className="mt-2 flex flex-wrap items-center gap-1">
-        {t.labels.map((l) => <LabelChip key={l} label={l} />)}
-        <span className={`flex items-center gap-1 rounded-md bg-[#F8FAFC] px-1.5 py-0.5 text-[10px] font-bold ${p.text}`}><MdFlag size={11} />{p.label}</span>
-      </div>      {t.checklist.length > 0 && <div className="mt-2"><ChecklistBar items={t.checklist} /></div>}
-      <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-[#F1F5F9] pt-2.5">
-        <div className="flex min-w-0 items-center gap-1.5">
-          {t.assignees.length > 0 ? (
-            <>
-              <div className="flex -space-x-2">{t.assignees.slice(0, 3).map((a) => <Avatar key={a.user.id} user={a.user} size={22} />)}</div>
-              <span className="truncate text-[11px] font-semibold text-[#64748B]">{t.assignees[0].user.fullName.split(" ")[0]}</span>
-            </>
-          ) : <span className="flex items-center gap-1 text-[11px] text-[#CBD5E1]"><MdPersonOutline size={13} />Sin asignar</span>}
+      {strip && (
+        <div className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold ${strip.cls}`}>
+          <MdEvent size={14} className="shrink-0" />
+          <span className="truncate">{strip.text}</span>
         </div>
-        <div className="flex shrink-0 items-center gap-2.5 text-[11px] text-[#94A3B8]">
-          {t.dueDate && <span className={`font-semibold ${overdue ? "text-[#DC2626]" : ""}`}>📅 {fmtDay(t.dueDate)}</span>}
-          {t._count.comments > 0 && <span className="flex items-center gap-0.5"><MdChatBubbleOutline size={13} />{t._count.comments}</span>}
-          {t.attachments.length > 0 && <span className="flex items-center gap-0.5"><MdAttachFile size={13} />{t.attachments.length}</span>}
+      )}
+      <div className="p-3">
+        <div className="flex items-start justify-between gap-2">
+          <p className={`text-sm font-bold leading-snug ${t.status === "COMPLETED" ? "text-[#94A3B8] line-through" : "text-[#1A1A1A]"}`}>{t.title}</p>
+          <MdMoreHoriz size={16} className="mt-0.5 shrink-0 text-[#CBD5E1]" />
+        </div>
+        {t.description && <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[#64748B]">{t.description}</p>}
+        <div className="mt-2 flex flex-wrap items-center gap-1">
+          {t.labels.map((l) => <LabelChip key={l} label={l} />)}
+          <span className={`flex items-center gap-1 rounded-md bg-[#F8FAFC] px-1.5 py-0.5 text-[10px] font-bold ${p.text}`}><MdFlag size={11} />{p.label}</span>
+        </div>
+        {t.checklist.length > 0 && <div className="mt-2"><ChecklistBar items={t.checklist} /></div>}
+        {firstFile && (
+          <div className="mt-2.5 flex items-center gap-2 rounded-lg border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-2.5 py-1.5">
+            <MdAttachFile size={15} className="shrink-0 text-[#3730A3]" />
+            <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-[#334155]">{firstFile.name}</span>
+            {t.attachments.length > 1 && <span className="shrink-0 rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[10px] font-extrabold text-[#3730A3]">+{t.attachments.length - 1} más</span>}
+          </div>
+        )}
+        <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-[#F1F5F9] pt-2.5">
+          <div className="flex min-w-0 items-center gap-1.5">
+            {t.assignees.length > 0 ? (
+              <>
+                <div className="flex -space-x-2">{t.assignees.slice(0, 3).map((a) => <Avatar key={a.user.id} user={a.user} size={22} />)}</div>
+                <span className="truncate text-[11px] font-semibold text-[#64748B]">{t.assignees[0].user.fullName.split(" ")[0]}</span>
+              </>
+            ) : <span className="flex items-center gap-1 text-[11px] text-[#CBD5E1]"><MdPersonOutline size={13} />Sin asignar</span>}
+          </div>
+          {t._count.comments > 0 && (
+            <span className="flex shrink-0 items-center gap-0.5 text-[11px] text-[#94A3B8]"><MdChatBubbleOutline size={13} />{t._count.comments}</span>
+          )}
         </div>
       </div>
     </div>
@@ -629,8 +661,8 @@ function TaskDrawer({
   const toggleAssignee = (id: string) => setAssigneeIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
-      <div className="flex h-full w-full max-w-[460px] flex-col bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div className="flex max-h-[90vh] w-full max-w-[672px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-[#E2E8F0] px-5 py-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-wide text-[#94A3B8]">{editing ? "Tarea" : "Nueva tarea"}</p>
