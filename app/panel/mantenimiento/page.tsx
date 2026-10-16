@@ -488,23 +488,32 @@ function OrderModal({ equipment, technicians, molds, onClose, onDone, onError, m
 
 function CompleteModal({ order, openedAt, onClose, onDone, onError, markLocalWrite }: ModalProps & { order: Order; openedAt: number; markLocalWrite: () => void }) {
   const elapsed = order.startedAt ? Math.max(0, Math.round((openedAt - new Date(order.startedAt).getTime()) / 60000)) : 0;
-  const [resolution, setResolution] = useState("");
-  const [downtime, setDowntime] = useState(String(elapsed));
-  const [signedByName, setSignedByName] = useState("");
-  const [signature, setSignature] = useState<string | null>(null);
-  const [executorName, setExecutorName] = useState(order.assignedTo?.fullName ?? "");
-  const [executorSignature, setExecutorSignature] = useState<string | null>(null);
+  const [resolution, setResolution] = useState(order.resolution ?? "");
+  const [downtime, setDowntime] = useState(String(order.downtimeMinutes ?? elapsed));
+  const [signedByName, setSignedByName] = useState(order.signedByName ?? "");
+  const [signature, setSignature] = useState<string | null>(order.signatureData);
+  const [executorName, setExecutorName] = useState(order.executorName ?? order.assignedTo?.fullName ?? "");
+  const [executorSignature, setExecutorSignature] = useState<string | null>(order.executorSignatureData);
   const [attachments, setAttachments] = useState<Attachment[]>(order.attachments ?? []);
   const [submitting, setSubmitting] = useState(false);
-  const submit = async () => {
+  const send = async (action: "complete" | "draft") => {
     setSubmitting(true);
     markLocalWrite();
-    const res = await patchReq(`/api/panel/mantenimiento/ordenes/${order.id}`, { action: "complete", resolution, downtimeMinutes: Number(downtime), signedByName, signatureData: signature, executorName, executorSignatureData: executorSignature, attachments });
+    const res = await patchReq(`/api/panel/mantenimiento/ordenes/${order.id}`, { action, resolution, downtimeMinutes: Number(downtime), signedByName, signatureData: signature, executorName, executorSignatureData: executorSignature, attachments });
     setSubmitting(false);
-    if (res.ok) onDone(`Orden ${order.number} completada`); else onError(res.error!);
+    if (res.ok) onDone(action === "draft" ? `Borrador de ${order.number} guardado` : `Orden ${order.number} completada`); else onError(res.error!);
   };
+  const ready = resolution.trim() && Number(downtime) >= 0 && signedByName.trim() && signature && executorName.trim() && executorSignature;
   return (
-    <Modal title={`Completar ${order.number}`} onClose={onClose} footer={<Footer onClose={onClose} onSubmit={submit} submitting={submitting} disabled={!resolution.trim() || Number(downtime) < 0 || !signedByName.trim() || !signature || !executorName.trim() || !executorSignature} />}>
+    <Modal title={`Completar ${order.number}`} onClose={onClose} footer={
+      <div className="flex w-full flex-col gap-2">
+        <div className="flex gap-2">
+          <button onClick={onClose} className="flex-1 rounded-xl border border-[#E2E8F0] py-2.5 text-sm font-bold text-[#64748B] hover:bg-[#F8FAFC]">Cancelar</button>
+          <button onClick={() => send("complete")} disabled={!ready || submitting} className="flex-1 rounded-xl bg-[#27B1B8] py-2.5 text-sm font-bold text-white hover:opacity-80 disabled:opacity-50">{submitting ? "Guardando…" : "Confirmar"}</button>
+        </div>
+        <button onClick={() => send("draft")} disabled={submitting} className="w-full rounded-xl border border-[#27B1B8] py-2.5 text-sm font-bold text-[#0C535B] hover:bg-[#F0FDFA] disabled:opacity-50">Guardar borrador</button>
+      </div>
+    }>
       <p className="text-sm text-[#64748B]">{order.equipment.name} · {order.description}</p>
       <div><label className={labelCls}>Resolución / trabajo realizado</label><textarea value={resolution} onChange={(e) => setResolution(e.target.value)} rows={3} className={inputCls} /></div>
       <div>
@@ -514,9 +523,9 @@ function CompleteModal({ order, openedAt, onClose, onDone, onError, markLocalWri
       </div>
       <div><label className={labelCls}>Fotos o archivos del trabajo (opcional)</label><AttachmentsField value={attachments} onChange={setAttachments} folder="ordenes" onError={onError} /></div>
       <div><label className={labelCls}>Técnico que ejecutó</label><input value={executorName} onChange={(e) => setExecutorName(e.target.value)} maxLength={120} className={inputCls} /></div>
-      <div><label className={labelCls}>Firma del técnico</label><SignaturePad onChange={setExecutorSignature} /></div>
+      <div><label className={labelCls}>Firma del técnico</label><SignaturePad onChange={setExecutorSignature} initial={order.executorSignatureData} /></div>
       <div><label className={labelCls}>Nombre de quien recibe</label><input value={signedByName} onChange={(e) => setSignedByName(e.target.value)} maxLength={120} className={inputCls} /></div>
-      <div><label className={labelCls}>Firma de conformidad</label><SignaturePad onChange={setSignature} /></div>
+      <div><label className={labelCls}>Firma de conformidad</label><SignaturePad onChange={setSignature} initial={order.signatureData} /></div>
     </Modal>
   );
 }
@@ -657,14 +666,14 @@ function HistoryModal({ equipment, onClose }: { equipment: Equipment; onClose: (
               <p className="mt-1 text-[#64748B]">{o.description}</p>
               {o.attachments?.length > 0 && <div className="mt-2"><AttachmentPreview items={o.attachments} /></div>}
               {o.resolution && <p className="mt-1 text-xs text-[#15803D]"><b>Resolución:</b> {o.resolution}</p>}
-              {o.executorSignatureData && (
+              {o.status === "DONE" && o.executorSignatureData && (
                 <div className="mt-2 flex items-center gap-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={o.executorSignatureData} alt={`Firma de ${o.executorName ?? "técnico"}`} className="h-12 rounded border border-[#E2E8F0] bg-white" />
                   <span className="text-xs text-[#64748B]">Ejecutó: <b>{o.executorName}</b></span>
                 </div>
               )}
-              {o.signatureData ? (
+              {o.status !== "DONE" ? null : o.signatureData ? (
                 <div className="mt-2 flex items-center gap-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={o.signatureData} alt={`Firma de ${o.signedByName ?? "quien recibe"}`} className="h-12 rounded border border-[#E2E8F0] bg-white" />

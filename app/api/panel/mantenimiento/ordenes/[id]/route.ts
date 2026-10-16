@@ -1,5 +1,5 @@
 import { requirePermission, getEffectivePermission } from "@/lib/permissions";
-import { cancelOrder, completeOrder, startOrder, updateOrder } from "@/lib/maintenance";
+import { cancelOrder, completeOrder, saveOrderDraft, startOrder, updateOrder } from "@/lib/maintenance";
 import { normalizeAttachments } from "@/lib/maintenance-upload";
 import { createNotification } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
@@ -12,7 +12,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = (await request.json()) as {
-    action?: "start" | "complete" | "cancel";
+    action?: "start" | "complete" | "cancel" | "draft";
     resolution?: string;
     downtimeMinutes?: number;
     signatureData?: string;
@@ -27,7 +27,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   // Quien solo ve puede iniciar/completar únicamente las órdenes que tiene asignadas.
   if (!(await getEffectivePermission(access.user, "MODULE_MANTENIMIENTO")).canEdit) {
-    const own = body.action === "start" || body.action === "complete"
+    const own = body.action === "start" || body.action === "complete" || body.action === "draft"
       ? await prisma?.maintenanceOrder.findFirst({ where: { id, assignedToId: access.user.id }, select: { id: true } })
       : null;
     if (!own) return Response.json({ error: "No autorizado" }, { status: 403 });
@@ -41,6 +41,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
     if (body.action === "cancel") {
       const order = await cancelOrder(id);
+      broadcastPanelUpdate("maintenance").catch(() => {});
+      return Response.json({ order });
+    }
+    if (body.action === "draft") {
+      const png = (v?: string | null) => (v && v.startsWith("data:image/png;base64,") && v.length <= 300_000 ? v : null);
+      const order = await saveOrderDraft(id, {
+        resolution: body.resolution,
+        downtimeMinutes: typeof body.downtimeMinutes === "number" && body.downtimeMinutes >= 0 ? Math.round(body.downtimeMinutes) : undefined,
+        signatureData: png(body.signatureData),
+        signedByName: body.signedByName?.slice(0, 120),
+        executorSignatureData: png(body.executorSignatureData),
+        executorName: body.executorName?.slice(0, 120),
+        attachments: normalizeAttachments(body.attachments),
+      });
       broadcastPanelUpdate("maintenance").catch(() => {});
       return Response.json({ order });
     }

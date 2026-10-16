@@ -4,7 +4,7 @@ import { MdClear } from "react-icons/md";
 
 // Canvas de firma con puntero (mouse, touch y lápiz). `onChange` recibe el PNG como
 // data URL, o null si el lienzo está vacío.
-export function SignaturePad({ onChange }: { onChange: (dataUrl: string | null) => void }) {
+export function SignaturePad({ onChange, initial }: { onChange: (dataUrl: string | null) => void; initial?: string | null }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
 
@@ -15,6 +15,13 @@ export function SignaturePad({ onChange }: { onChange: (dataUrl: string | null) 
     ctx.lineWidth = 2.5;
     ctx.lineCap = "round";
     ctx.strokeStyle = "#0F172A";
+    // Borrador guardado: repinta la firma previa.
+    if (initial) {
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      img.src = initial;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const point = (e: React.PointerEvent<HTMLCanvasElement>) => {

@@ -195,6 +195,25 @@ export async function completeOrder(id: string, data: { resolution: string; down
   });
 }
 
+// Borrador de cierre: guarda resolución y firmas sin completar; la orden sigue IN_PROGRESS.
+export async function saveOrderDraft(id: string, data: { resolution?: string; downtimeMinutes?: number; signatureData?: string | null; signedByName?: string; executorSignatureData?: string | null; executorName?: string; attachments?: MaintenanceAttachment[] }) {
+  const db = requirePrisma();
+  const changed = await db.maintenanceOrder.updateMany({
+    where: { id, status: "IN_PROGRESS" },
+    data: {
+      resolution: data.resolution?.trim() || null,
+      downtimeMinutes: data.downtimeMinutes,
+      signatureData: data.signatureData ?? null,
+      signedByName: data.signedByName?.trim() || null,
+      executorSignatureData: data.executorSignatureData ?? null,
+      executorName: data.executorName?.trim() || null,
+      attachments: data.attachments,
+    },
+  });
+  if (changed.count !== 1) throw new Error("INVALID_TRANSITION");
+  return db.maintenanceOrder.findUniqueOrThrow({ where: { id } });
+}
+
 export async function cancelOrder(id: string) {
   const db = requirePrisma();
   return db.$transaction(async (tx) => {
