@@ -42,13 +42,14 @@ function buildCsp(nonce: string) {
   const devEval = process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${devEval} https://va.vercel-scripts.com https://www.googletagmanager.com https://www.googleadservices.com https://connect.facebook.net`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${devEval} https://va.vercel-scripts.com https://www.googletagmanager.com https://www.googleadservices.com https://connect.facebook.net https://maps.googleapis.com`,
     "style-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://fonts.googleapis.com",
-    `img-src 'self' data: blob: https://*.supabase.co https://www.facebook.com ${GOOGLE_TAG_HOSTS} https://www.google.com.co https://ssl.gstatic.com https://www.gstatic.com https://fonts.gstatic.com`,
+    `img-src 'self' data: blob: https://*.supabase.co https://www.facebook.com ${GOOGLE_TAG_HOSTS} https://www.google.com.co https://ssl.gstatic.com https://www.gstatic.com https://fonts.gstatic.com https://maps.googleapis.com https://*.gstatic.com https://*.googleapis.com`,
     "media-src 'self' blob: https://*.supabase.co",
     "font-src 'self' data: https://fonts.gstatic.com",
-    `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.analytics.google.com https://www.facebook.com https://connect.facebook.net ${META_GATEWAY_HOSTS} ${GOOGLE_TAG_HOSTS}`,
+    `connect-src 'self' https://maps.googleapis.com https://*.supabase.co wss://*.supabase.co https://*.analytics.google.com https://www.facebook.com https://connect.facebook.net ${META_GATEWAY_HOSTS} ${GOOGLE_TAG_HOSTS}`,
     "frame-src 'self' https://www.youtube.com https://www.googletagmanager.com https://td.doubleclick.net https://www.facebook.com",
+    "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",
     "frame-ancestors 'self'",

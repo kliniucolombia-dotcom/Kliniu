@@ -209,6 +209,8 @@ model Order {
   wompiTransactionId String?
   paymentExpiresAt   DateTime?
   deliveryRouteId    String?
+  lat                Float?
+  lng                Float?
   deliveryRoute      DeliveryRoute? @relation(fields: [deliveryRouteId], references: [id])
   assignedSeller     User?          @relation("AssignedOrders", fields: [assignedSellerId], references: [id])
   user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
