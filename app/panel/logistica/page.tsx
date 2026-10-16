@@ -6,8 +6,9 @@ import {
   MdAssignment, MdClose, MdDelete, MdCheckCircle, MdPerson, MdRoute,
   MdCalendarMonth, MdChevronLeft, MdChevronRight, MdPlace,
   MdBuild, MdControlCamera, MdVerticalAlignCenter, MdSecurity, MdInventory2,
-  MdElectricBolt, MdLocalGasStation, MdCable, MdLuggage, MdRemoveRedEye, MdWarningAmber,
+  MdElectricBolt, MdLocalGasStation, MdCable, MdLuggage, MdRemoveRedEye, MdWarningAmber, MdMap,
 } from "react-icons/md";
+import { RouteMap } from "./route-map";
 import { SimpleSelect } from "../_components/simple-select";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
@@ -270,6 +271,7 @@ export default function LogisticaPanel() {
   const router = useRouter();
   const confirm = useConfirm();
   const [tab, setTab] = useState<Tab>("rutas");
+  const [mapRoutes, setMapRoutes] = useState<Set<string>>(new Set());
   const [from, setFrom] = useState(todayBogota(-14));
   const [to, setTo] = useState(todayBogota(14));
   const [data, setData] = useState<Data | null>(null);
@@ -450,6 +452,12 @@ export default function LogisticaPanel() {
                         </div>
                       )}
                     </div>
+                    {r.orders.length > 0 && (
+                      <button className={`${btnGhost} mt-3`} onClick={() => setMapRoutes((m) => { const n = new Set(m); if (n.has(r.id)) n.delete(r.id); else n.add(r.id); return n; })}>
+                        <MdMap size={16} />{mapRoutes.has(r.id) ? "Ocultar mapa" : "Ver mapa"}
+                      </button>
+                    )}
+                    {mapRoutes.has(r.id) && <RouteMap routeId={r.id} />}
                     {r.orders.length > 0 && (
                       <div className="mt-3 overflow-x-auto">
                         <table className="w-full min-w-[560px] text-xs">
