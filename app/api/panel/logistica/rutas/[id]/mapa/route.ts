@@ -17,10 +17,13 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
 
   // Geocodifica solo los que no tienen coordenadas y las guarda (caché en la fila).
   // ponytail: si se edita la dirección del pedido, las coordenadas no se recalculan.
+  // Tope por petición para acotar el costo de Google; el resto se geocodifica en la siguiente vista.
+  // ponytail: los fallos no se cachean, se reintentan en cada vista (agregar geocodeFailed si molesta el costo).
+  let budget = 25;
   const stops = await Promise.all(
     orders.map(async (o) => {
       let { lat, lng } = o;
-      if (lat == null || lng == null) {
+      if ((lat == null || lng == null) && budget-- > 0) {
         const g = await geocodeAddress({ address: o.addressLine1, city: o.city, department: o.department });
         if (g) {
           lat = g.lat;
