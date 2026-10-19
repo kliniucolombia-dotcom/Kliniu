@@ -57,8 +57,8 @@ const DEFAULT_CONFIG: RemarketingConfig = {
   shippingIncludedRule: "",
   cashOnDelivery: true,
 };
-const WHATSAPP_WINDOW_MS = 24 * 60 * 60 * 1000;
-const WINDOW_SAFETY_MS = 10 * 60 * 1000;
+export const WHATSAPP_WINDOW_MS = 24 * 60 * 60 * 1000;
+export const WINDOW_SAFETY_MS = 10 * 60 * 1000;
 const BLOCKED_STAGES: WatiCommercialStage[] = ["CHECKOUT", "CLOSED", "LOST"];
 const COMMERCIAL_STAGES: WatiCommercialStage[] = [
   "DISCOVERY", "PRODUCT_SHOWN", "PRICE_SHOWN", "QUANTITY_REQUESTED", "QUOTE_SENT",

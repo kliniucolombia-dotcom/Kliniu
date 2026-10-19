@@ -6,6 +6,9 @@ import type {
   VehicleType,
 } from "@/generated/prisma/client";
 import { parseBogotaCivilDate } from "@/lib/operations-validation";
+import { randomBytes } from "node:crypto";
+import { geocodeAddress } from "@/lib/geocode";
+import { haversineKm, routeAlerts, summarizeRoute, type RouteAlert } from "@/lib/tracking";
 
 function requirePrisma() {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
@@ -34,7 +37,29 @@ const orderSelect = {
   totalItems: true,
   subtotal: true,
   createdAt: true,
+  stopOrder: true,
+  lat: true,
+  lng: true,
+  enRouteNotifiedAt: true,
+  nearNotifiedAt: true,
+  deliveryAttempts: {
+    orderBy: { recordedAt: "desc" },
+    take: 1,
+    select: { id: true, outcome: true, reason: true, note: true, photoPath: true, accuracy: true, distanceM: true, recordedAt: true },
+  },
 } as const;
+
+// Motivos de entrega fallida (código -> etiqueta). El conductor solo manda el código.
+export const FAIL_REASONS = {
+  CLIENTE_AUSENTE: "Cliente ausente",
+  DIRECCION_INCORRECTA: "Dirección incorrecta",
+  RECHAZADO: "Pedido rechazado",
+  SIN_ACCESO: "Sin acceso",
+  OTRO: "Otro",
+} as const;
+export type FailReason = keyof typeof FAIL_REASONS;
+
+export const STOP_ORDER_BY = [{ stopOrder: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }] as const;
 
 export async function listDrivers() {
   return requirePrisma().driver.findMany({ orderBy: [{ active: "desc" }, { fullName: "asc" }] });
@@ -213,16 +238,29 @@ export async function deleteCustomer(id: string) {
 }
 
 export async function listRoutes(from: string, to: string) {
-  return requirePrisma().deliveryRoute.findMany({
+  const db = requirePrisma();
+  const routes = await db.deliveryRoute.findMany({
     where: { date: { gte: parseBogotaDate(from), lte: endOfBogotaDay(to) } },
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     include: {
       vehicle: true,
       driver: true,
       createdBy: { select: { fullName: true } },
-      orders: { select: orderSelect, orderBy: { createdAt: "asc" } },
+      orders: { select: orderSelect, orderBy: [...STOP_ORDER_BY] },
     },
   });
+  // Alertas solo para rutas en curso: últimas posiciones (≈15 min) + paradas pendientes.
+  const now = new Date();
+  return Promise.all(
+    routes.map(async (r) => {
+      if (r.status !== "IN_PROGRESS") return { ...r, alerts: [] as RouteAlert[], lastPositionAt: null as Date | null };
+      const recent = (
+        await db.vehiclePosition.findMany({ where: { routeId: r.id }, orderBy: { recordedAt: "desc" }, take: 60, select: { lat: true, lng: true, recordedAt: true } })
+      ).reverse();
+      const pending = r.orders.filter((o) => o.shippingStatus !== "DELIVERED" && o.shippingStatus !== "CANCELLED" && o.deliveryAttempts.length === 0);
+      return { ...r, alerts: routeAlerts(recent, pending, r.startedAt, now), lastPositionAt: recent.length ? recent[recent.length - 1].recordedAt : null };
+    }),
+  );
 }
 
 export async function listAssignableOrders() {
@@ -258,43 +296,151 @@ export async function createRoute(input: {
       },
     });
     if (input.orderIds.length > 0) {
-      await tx.order.updateMany({
-        where: { id: { in: input.orderIds }, deliveryRouteId: null },
-        data: { deliveryRouteId: route.id },
-      });
+      await assignWithStopOrder(tx, route.id, input.orderIds, 0);
     }
     return route;
   });
 }
 
+const POSITION_RETENTION_DAYS = 90;
+
 export async function updateRoute(
   id: string,
   data: { status?: DeliveryRouteStatus; notes?: string | null; vehicleId?: string; driverId?: string; date?: string },
 ) {
-  return requirePrisma().deliveryRoute.update({
+  const db = requirePrisma();
+  const now = new Date();
+  const finishing = data.status === "DONE";
+
+  // Al finalizar se guarda el resumen (km, duración) una sola vez: el reporte no recalcula miles de posiciones.
+  let summary: ReturnType<typeof summarizeRoute> | undefined;
+  if (finishing) {
+    const [positions, current] = await Promise.all([
+      db.vehiclePosition.findMany({ where: { routeId: id }, orderBy: { recordedAt: "asc" }, select: { lat: true, lng: true, accuracy: true, recordedAt: true }, take: 5000 }),
+      db.deliveryRoute.findUnique({ where: { id }, select: { startedAt: true } }),
+    ]);
+    summary = summarizeRoute(positions, current?.startedAt ?? null, now);
+  }
+
+  const route = await db.deliveryRoute.update({
     where: { id },
-    data: { ...data, date: data.date ? parseBogotaDate(data.date) : undefined },
+    data: {
+      ...data,
+      date: data.date ? parseBogotaDate(data.date) : undefined,
+      // Un viaje = una ruta: inicio al pasar a EN CURSO, fin al FINALIZAR.
+      ...(data.status === "IN_PROGRESS" && { startedAt: now, finishedAt: null, distanceKm: null, durationMin: null }),
+      ...(finishing && { finishedAt: now, ...summary }),
+    },
   });
+
+  // Retención: posiciones crudas de rutas finalizadas hace más de 90 días (el resumen queda).
+  // ponytail: limpieza oportunista al finalizar rutas; si no se finalizan rutas no corre (mover a cron cuando exista).
+  if (finishing) {
+    const cutoff = new Date(now.getTime() - POSITION_RETENTION_DAYS * 86_400_000);
+    await db.vehiclePosition.deleteMany({ where: { route: { finishedAt: { lt: cutoff } } } }).catch(() => {});
+  }
+  return route;
+}
+
+type Tx = Parameters<Parameters<ReturnType<typeof requirePrisma>["$transaction"]>[0]>[0];
+
+// Asigna pedidos libres a la ruta numerando las paradas a partir de `start` (en el orden recibido).
+async function assignWithStopOrder(tx: Tx, routeId: string, orderIds: string[], start: number) {
+  const free = await tx.order.findMany({ where: { id: { in: orderIds }, deliveryRouteId: null }, select: { id: true } });
+  const freeIds = new Set(free.map((o) => o.id));
+  let n = start;
+  for (const id of orderIds) {
+    if (!freeIds.has(id)) continue;
+    await tx.order.update({ where: { id }, data: { deliveryRouteId: routeId, stopOrder: ++n } });
+  }
 }
 
 export async function addOrdersToRoute(routeId: string, orderIds: string[]) {
-  return requirePrisma().order.updateMany({
-    where: { id: { in: orderIds }, deliveryRouteId: null },
-    data: { deliveryRouteId: routeId },
+  return requirePrisma().$transaction(async (tx) => {
+    const last = await tx.order.aggregate({ where: { deliveryRouteId: routeId }, _max: { stopOrder: true } });
+    await assignWithStopOrder(tx, routeId, orderIds, last._max.stopOrder ?? 0);
   });
 }
 
 export async function removeOrderFromRoute(routeId: string, orderId: string) {
   return requirePrisma().order.updateMany({
     where: { id: orderId, deliveryRouteId: routeId },
-    data: { deliveryRouteId: null },
+    data: { deliveryRouteId: null, stopOrder: null },
+  });
+}
+
+// Reordena las paradas: `orderIds` es el orden completo deseado (solo cuentan pedidos de la ruta).
+export async function setStopOrder(routeId: string, orderIds: string[]) {
+  return requirePrisma().$transaction(async (tx) => {
+    const inRoute = new Set((await tx.order.findMany({ where: { deliveryRouteId: routeId }, select: { id: true } })).map((o) => o.id));
+    let n = 0;
+    for (const id of orderIds) {
+      if (!inRoute.has(id)) continue;
+      await tx.order.update({ where: { id }, data: { stopOrder: ++n } });
+    }
+  });
+}
+
+type DeliveryInput = {
+  routeId: string;
+  orderId: string;
+  outcome: "DELIVERED" | "FAILED";
+  reason?: FailReason;
+  note?: string;
+  photoPath?: string;
+  lat?: number | null;
+  lng?: number | null;
+  accuracy?: number | null;
+  idempotencyKey: string;
+};
+
+// Registra un intento de entrega. Idempotente por `idempotencyKey` (reintentos no duplican).
+// Si es DELIVERED solo toca shippingStatus/deliveredAt: updateOrderShipping borraría carrier, tracking y notas.
+export async function recordDelivery(input: DeliveryInput) {
+  const db = requirePrisma();
+  const prior = await db.deliveryAttempt.findUnique({ where: { idempotencyKey: input.idempotencyKey } });
+  if (prior) return { attempt: prior, duplicate: true as const };
+
+  return db.$transaction(async (tx) => {
+    const order = await tx.order.findFirst({
+      where: { id: input.orderId, deliveryRouteId: input.routeId },
+      select: { shippingStatus: true, lat: true, lng: true },
+    });
+    if (!order) throw new Error("ORDER_NOT_IN_ROUTE");
+    if (order.shippingStatus === "DELIVERED") throw new Error("ALREADY_DELIVERED");
+    if (order.shippingStatus === "CANCELLED") throw new Error("ORDER_CANCELLED");
+
+    const distanceM =
+      input.lat != null && input.lng != null && order.lat != null && order.lng != null
+        ? Math.round(haversineKm({ lat: input.lat, lng: input.lng }, { lat: order.lat, lng: order.lng }) * 1000)
+        : null;
+
+    const attempt = await tx.deliveryAttempt.create({
+      data: {
+        orderId: input.orderId,
+        routeId: input.routeId,
+        outcome: input.outcome,
+        reason: input.reason ?? null,
+        note: input.note ?? null,
+        photoPath: input.photoPath ?? null,
+        lat: input.lat ?? null,
+        lng: input.lng ?? null,
+        accuracy: input.accuracy ?? null,
+        distanceM,
+        idempotencyKey: input.idempotencyKey,
+      },
+    });
+    if (input.outcome === "DELIVERED") {
+      await tx.order.update({ where: { id: input.orderId }, data: { shippingStatus: "DELIVERED", deliveredAt: new Date() } });
+    }
+    return { attempt, duplicate: false as const };
   });
 }
 
 export async function deleteRoute(id: string) {
   const db = requirePrisma();
   return db.$transaction(async (tx) => {
-    await tx.order.updateMany({ where: { deliveryRouteId: id }, data: { deliveryRouteId: null } });
+    await tx.order.updateMany({ where: { deliveryRouteId: id }, data: { deliveryRouteId: null, stopOrder: null } });
     return tx.deliveryRoute.delete({ where: { id } });
   });
 }
@@ -400,5 +546,127 @@ export async function getLogisticsKpis(from: string, to: string) {
     costTotal,
     costByVehicle: costByVehicle.map((c) => ({ vehicleId: c.vehicleId, amount: c._sum.amount ?? 0 })),
     openIncidents,
+  };
+}
+
+// Geocodifica los pedidos de la ruta que aún no tienen coordenadas y las guarda (caché en la fila).
+// Tope por llamada para acotar el costo de Google; el resto se geocodifica en la siguiente.
+// ponytail: si se edita la dirección del pedido, las coordenadas no se recalculan.
+// ponytail: los fallos no se cachean, se reintentan en cada llamada (agregar geocodeFailed si molesta el costo).
+export async function geocodePendingOrders(routeId: string, budget: number) {
+  const db = requirePrisma();
+  const orders = await db.order.findMany({
+    where: { deliveryRouteId: routeId },
+    select: { id: true, customerName: true, department: true, city: true, addressLine1: true, lat: true, lng: true },
+    orderBy: [...STOP_ORDER_BY],
+  });
+  return Promise.all(
+    orders.map(async (o) => {
+      let { lat, lng } = o;
+      if ((lat == null || lng == null) && budget-- > 0) {
+        const g = await geocodeAddress({ address: o.addressLine1, city: o.city, department: o.department });
+        if (g) {
+          lat = g.lat;
+          lng = g.lng;
+          await db.order.update({ where: { id: o.id }, data: { lat, lng } });
+        }
+      }
+      return { id: o.id, name: o.customerName, address: `${o.addressLine1}, ${o.city}`, lat, lng };
+    }),
+  );
+}
+
+// Token propio del pedido para el enlace del cliente (el de la ruta expondría las demás paradas).
+export async function ensureOrderTrackToken(orderId: string) {
+  const db = requirePrisma();
+  const order = await db.order.findUnique({ where: { id: orderId }, select: { trackToken: true } });
+  if (order?.trackToken) return order.trackToken;
+  const token = randomBytes(24).toString("base64url");
+  await db.order.update({ where: { id: orderId }, data: { trackToken: token } });
+  return token;
+}
+
+const bogotaMonth = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "America/Bogota" }).slice(0, 7);
+const round1 = (n: number) => Math.round(n * 10) / 10;
+
+/**
+ * Reporte de flota sobre rutas FINALIZADAS del rango. Los km salen solo de rutas con GPS (`distanceKm` no nulo);
+ * `coverage` dice cuántas rutas lo tienen, y costo/km es null cuando no hay km (no se inventa un número).
+ */
+export async function getFleetReport(from: string, to: string) {
+  const db = requirePrisma();
+  const range = { gte: parseBogotaDate(from), lte: endOfBogotaDay(to) };
+  const routes = await db.deliveryRoute.findMany({
+    where: { status: "DONE", date: range },
+    select: { id: true, date: true, vehicleId: true, driverId: true, distanceKm: true, durationMin: true, vehicle: { select: { plate: true, type: true } }, driver: { select: { fullName: true } } },
+  });
+  const routeIds = routes.map((r) => r.id);
+  const [delivered, failedAttempts, costs] = await Promise.all([
+    db.order.groupBy({ by: ["deliveryRouteId"], where: { deliveryRouteId: { in: routeIds }, shippingStatus: "DELIVERED" }, _count: { _all: true } }),
+    db.deliveryAttempt.findMany({ where: { routeId: { in: routeIds }, outcome: "FAILED" }, select: { routeId: true, reason: true } }),
+    db.transportCost.findMany({ where: { date: range }, select: { vehicleId: true, date: true, category: true, amount: true, vehicle: { select: { plate: true, type: true } } } }),
+  ]);
+  const deliveredBy = new Map(delivered.map((d) => [d.deliveryRouteId, d._count._all]));
+  const failedBy = new Map<string, number>();
+  const failReasons = new Map<string, number>();
+  for (const a of failedAttempts) {
+    failedBy.set(a.routeId, (failedBy.get(a.routeId) ?? 0) + 1);
+    const key = a.reason ?? "OTRO";
+    failReasons.set(key, (failReasons.get(key) ?? 0) + 1);
+  }
+
+  const vehicles = new Map<string, { vehicleId: string; plate: string; type: string; routes: number; deliveries: number; failed: number; km: number; gpsRoutes: number; minutes: number; cost: number; costByCategory: Record<string, number> }>();
+  const drivers = new Map<string, { driverId: string; name: string; routes: number; deliveries: number; failed: number; km: number }>();
+  const months = new Map<string, { month: string; routes: number; km: number; cost: number }>();
+  const vehicleRow = (id: string, plate: string, type: string) => {
+    if (!vehicles.has(id)) vehicles.set(id, { vehicleId: id, plate, type, routes: 0, deliveries: 0, failed: 0, km: 0, gpsRoutes: 0, minutes: 0, cost: 0, costByCategory: {} });
+    return vehicles.get(id)!;
+  };
+  const monthRow = (m: string) => {
+    if (!months.has(m)) months.set(m, { month: m, routes: 0, km: 0, cost: 0 });
+    return months.get(m)!;
+  };
+
+  for (const r of routes) {
+    const v = vehicleRow(r.vehicleId, r.vehicle.plate, r.vehicle.type);
+    const d = drivers.get(r.driverId) ?? { driverId: r.driverId, name: r.driver.fullName, routes: 0, deliveries: 0, failed: 0, km: 0 };
+    const ok = deliveredBy.get(r.id) ?? 0;
+    const bad = failedBy.get(r.id) ?? 0;
+    v.routes++; v.deliveries += ok; v.failed += bad; v.minutes += r.durationMin ?? 0;
+    d.routes++; d.deliveries += ok; d.failed += bad;
+    if (r.distanceKm != null) { v.km += r.distanceKm; v.gpsRoutes++; d.km += r.distanceKm; }
+    drivers.set(r.driverId, d);
+    const m = monthRow(bogotaMonth(r.date));
+    m.routes++; m.km += r.distanceKm ?? 0;
+  }
+  for (const c of costs) {
+    const v = vehicleRow(c.vehicleId, c.vehicle.plate, c.vehicle.type);
+    v.cost += c.amount;
+    v.costByCategory[c.category] = (v.costByCategory[c.category] ?? 0) + c.amount;
+    monthRow(bogotaMonth(c.date)).cost += c.amount;
+  }
+
+  const vehicleList = [...vehicles.values()].map((v) => ({ ...v, km: round1(v.km), hours: round1(v.minutes / 60), costPerKm: v.km > 0 ? Math.round(v.cost / v.km) : null })).sort((a, b) => a.plate.localeCompare(b.plate));
+  const driverList = [...drivers.values()].map((d) => ({ ...d, km: round1(d.km), successRate: d.deliveries + d.failed > 0 ? Math.round((d.deliveries / (d.deliveries + d.failed)) * 100) : null })).sort((a, b) => a.name.localeCompare(b.name));
+  const totalKm = round1(vehicleList.reduce((a, v) => a + v.km, 0));
+  const totalCost = vehicleList.reduce((a, v) => a + v.cost, 0);
+  const deliveries = vehicleList.reduce((a, v) => a + v.deliveries, 0);
+  const failed = vehicleList.reduce((a, v) => a + v.failed, 0);
+  return {
+    totals: {
+      routes: routes.length,
+      km: totalKm,
+      hours: round1(vehicleList.reduce((a, v) => a + v.minutes, 0) / 60),
+      deliveries,
+      failed,
+      successRate: deliveries + failed > 0 ? Math.round((deliveries / (deliveries + failed)) * 100) : null,
+      cost: totalCost,
+      costPerKm: totalKm > 0 ? Math.round(totalCost / totalKm) : null,
+    },
+    coverage: { gpsRoutes: routes.filter((r) => r.distanceKm != null).length, routes: routes.length },
+    vehicles: vehicleList,
+    drivers: driverList,
+    months: [...months.values()].map((m) => ({ ...m, km: round1(m.km) })).sort((a, b) => a.month.localeCompare(b.month)),
+    failReasons: [...failReasons.entries()].map(([reason, count]) => ({ reason, count })).sort((a, b) => b.count - a.count),
   };
 }

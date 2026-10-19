@@ -58,7 +58,7 @@ export default async function RootLayout({
   const requestHeaders = await headers();
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
   const pathname = requestHeaders.get("x-pathname") ?? "";
-  const isAuthOnlyRoute = pathname.startsWith("/login") || pathname.startsWith("/registro");
+  const isAuthOnlyRoute = pathname.startsWith("/login") || pathname.startsWith("/registro") || pathname.startsWith("/conductor") || pathname.startsWith("/seguimiento");
 
   const [initialProducts, session, initialSaleMode] = await Promise.all([
     isAuthOnlyRoute ? Promise.resolve([]) : getProducts(),

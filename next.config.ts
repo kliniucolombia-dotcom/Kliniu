@@ -31,6 +31,11 @@ const nextConfig: NextConfig = {
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
         ],
       },
+      {
+        // La página del conductor comparte su ubicación; el resto del sitio la sigue bloqueando.
+        source: "/conductor/:path*",
+        headers: [{ key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self)" }],
+      },
     ];
   },
 };

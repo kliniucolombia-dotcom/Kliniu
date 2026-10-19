@@ -6,7 +6,7 @@ import {
   MdAssignment, MdClose, MdDelete, MdCheckCircle, MdPerson, MdRoute,
   MdCalendarMonth, MdChevronLeft, MdChevronRight, MdPlace,
   MdBuild, MdControlCamera, MdVerticalAlignCenter, MdSecurity, MdInventory2,
-  MdElectricBolt, MdLocalGasStation, MdCable, MdLuggage, MdRemoveRedEye, MdWarningAmber, MdMap,
+  MdElectricBolt, MdLocalGasStation, MdCable, MdLuggage, MdRemoveRedEye, MdWarningAmber, MdMap, MdLink, MdArrowUpward, MdArrowDownward, MdPhotoCamera, MdCancel, MdBarChart, MdSignalWifiOff, MdPauseCircle, MdFileDownload,
 } from "react-icons/md";
 import { RouteMap } from "./route-map";
 import { SimpleSelect } from "../_components/simple-select";
@@ -139,6 +139,13 @@ type OrderLite = {
   totalItems: number;
   subtotal: number;
   createdAt: string;
+  stopOrder?: number | null;
+  enRouteNotifiedAt?: string | null;
+  nearNotifiedAt?: string | null;
+  deliveryAttempts?: { id: string; outcome: "DELIVERED" | "FAILED"; reason: string | null; note: string | null; photoPath: string | null; accuracy: number | null; distanceM: number | null; recordedAt: string }[];
+};
+const FAIL_LABEL: Record<string, string> = {
+  CLIENTE_AUSENTE: "Cliente ausente", DIRECCION_INCORRECTA: "Dirección incorrecta", RECHAZADO: "Pedido rechazado", SIN_ACCESO: "Sin acceso", OTRO: "Otro",
 };
 type Route = {
   id: string;
@@ -149,7 +156,20 @@ type Route = {
   driver: Driver;
   createdBy: { fullName: string };
   orders: OrderLite[];
+  distanceKm?: number | null;
+  durationMin?: number | null;
+  alerts?: { kind: "NO_SIGNAL" | "STOPPED"; sinceMin: number }[];
+  lastPositionAt?: string | null;
 };
+type FleetReport = {
+  totals: { routes: number; km: number; hours: number; deliveries: number; failed: number; successRate: number | null; cost: number; costPerKm: number | null };
+  coverage: { gpsRoutes: number; routes: number };
+  vehicles: { vehicleId: string; plate: string; type: string; routes: number; deliveries: number; failed: number; km: number; hours: number; cost: number; costPerKm: number | null; gpsRoutes: number }[];
+  drivers: { driverId: string; name: string; routes: number; deliveries: number; failed: number; successRate: number | null; km: number }[];
+  months: { month: string; routes: number; km: number; cost: number }[];
+  failReasons: { reason: string; count: number }[];
+};
+const fmtDur = (min: number) => (min >= 60 ? `${Math.floor(min / 60)} h ${min % 60} min` : `${min} min`);
 type Customer = { id: string; name: string; phone: string | null; address: string; city: string; source: "manual" | "orders" };
 type CostCategory = "COMBUSTIBLE" | "MANTENIMIENTO" | "PEAJES" | "OTRO";
 type Cost = { id: string; date: string; category: CostCategory; amount: number; notes: string | null; vehicle: Vehicle; createdBy: { fullName: string } };
@@ -193,7 +213,7 @@ type Data = {
   permission: Permission;
 };
 
-type Tab = "rutas" | "calendario" | "costos" | "novedades" | "flota" | "checklist" | "clientes" | "informes";
+type Tab = "rutas" | "calendario" | "costos" | "novedades" | "flota" | "checklist" | "clientes" | "reportes" | "informes";
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: "rutas", label: "Rutas", icon: <MdRoute size={16} /> },
   { key: "calendario", label: "Calendario", icon: <MdCalendarMonth size={16} /> },
@@ -202,8 +222,33 @@ const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: "flota", label: "Flota", icon: <MdDirectionsCar size={16} /> },
   { key: "checklist", label: "Checklist F21", icon: <MdCheckCircle size={16} /> },
   { key: "clientes", label: "Clientes", icon: <MdPerson size={16} /> },
+  { key: "reportes", label: "Reportes", icon: <MdBarChart size={16} /> },
   { key: "informes", label: "Informes", icon: <MdAssignment size={16} /> },
 ];
+
+function exportFleetCsv(f: FleetReport, from: string, to: string) {
+  const q = (v: string | number | null) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const lines: (string | number | null)[][] = [
+    ["Reporte de flota", `${from} a ${to}`],
+    ["Rutas finalizadas", f.coverage.routes, "Rutas con GPS", f.coverage.gpsRoutes],
+    [],
+    ["Vehículo", "Rutas", "Entregas", "Fallidas", "Km (GPS)", "Horas", "Costo", "Costo por km"],
+    ...f.vehicles.map((v) => [v.plate, v.routes, v.deliveries, v.failed, v.gpsRoutes > 0 ? v.km : "Sin GPS", v.hours, v.cost, v.costPerKm ?? "Sin datos"]),
+    [],
+    ["Conductor", "Rutas", "Entregas", "Fallidas", "% éxito", "Km (GPS)"],
+    ...f.drivers.map((d) => [d.name, d.routes, d.deliveries, d.failed, d.successRate ?? "Sin datos", d.km > 0 ? d.km : "Sin GPS"]),
+    [],
+    ["Motivo de fallo", "Cantidad"],
+    ...f.failReasons.map((r) => [FAIL_LABEL[r.reason] ?? r.reason, r.count]),
+  ];
+  // BOM para que Excel respete las tildes.
+  const csv = "\uFEFF" + lines.map((l) => l.map(q).join(",")).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+  a.download = `reporte-flota-${from}-a-${to}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
 
 const ROUTE_STATUS: Record<RouteStatus, { label: string; cls: string }> = {
   PLANNED: { label: "Planificada", cls: "bg-[#FEF9C3] text-[#854D0E]" },
@@ -276,6 +321,7 @@ export default function LogisticaPanel() {
   const [to, setTo] = useState(todayBogota(14));
   const [data, setData] = useState<Data | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
+  const [fleet, setFleet] = useState<FleetReport | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
@@ -284,6 +330,7 @@ export default function LogisticaPanel() {
   const [modal, setModal] = useState<
     | { kind: "route"; date?: string }
     | { kind: "assign"; route: Route }
+    | { kind: "photo"; attemptId: string; title: string }
     | { kind: "cost" }
     | { kind: "incident" }
     | { kind: "vehicle" }
@@ -321,6 +368,11 @@ export default function LogisticaPanel() {
     if (rr.ok) setReports((await rr.json()).reports);
   }, []);
 
+  const loadFleet = useCallback(async () => {
+    const rf = await fetch(`/api/panel/logistica/reportes?from=${from}&to=${to}`);
+    if (rf.ok) setFleet(await rf.json());
+  }, [from, to]);
+
   const loadCustomers = useCallback(async () => {
     const rc = await fetch("/api/panel/logistica/clientes");
     if (rc.ok) setCustomers((await rc.json()).customers);
@@ -329,14 +381,24 @@ export default function LogisticaPanel() {
   useEffect(() => {
     if (tab === "informes") void loadReports();
     if (tab === "clientes") void loadCustomers();
-  }, [tab, loadReports, loadCustomers]);
+    if (tab === "reportes") void loadFleet();
+  }, [tab, loadReports, loadCustomers, loadFleet]);
 
   const { markLocalWrite } = useRealtimeRefresh(["logistics"], () => {
     load();
     if (tab === "informes") loadReports();
     if (tab === "clientes") loadCustomers();
     if (tab === "checklist") loadChecklist();
+    if (tab === "reportes") loadFleet();
   });
+
+  // "Sin señal" no genera evento: mientras haya una ruta en curso se vuelve a leer cada 60 s (pestaña visible).
+  const hasRouteInProgress = data?.routes.some((r) => r.status === "IN_PROGRESS") ?? false;
+  useEffect(() => {
+    if (!hasRouteInProgress) return;
+    const t = setInterval(() => { if (document.visibilityState === "visible") void load(); }, 60_000);
+    return () => clearInterval(t);
+  }, [hasRouteInProgress, load]);
 
   useEffect(() => {
     const task = window.setTimeout(() => void load(), 0);
@@ -369,10 +431,27 @@ export default function LogisticaPanel() {
   };
   const fail = (msg: string) => setAlert({ type: "err", msg });
 
+  async function copyDriverLink(routeId: string) {
+    const r = await fetch(`/api/panel/logistica/rutas/${routeId}/enlace`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+    if (!r.ok) { fail((await r.json()).error ?? "Error"); return; }
+    const { token } = await r.json();
+    const link = `${window.location.origin}/conductor/${token}`;
+    try { await navigator.clipboard.writeText(link); setAlert({ type: "ok", msg: "Enlace del conductor copiado" }); }
+    catch { setAlert({ type: "ok", msg: link }); }
+  }
+
   async function patch(url: string, body: unknown, okMsg: string) {
     markLocalWrite();
     const r = await fetch(url, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (r.ok) { setAlert({ type: "ok", msg: okMsg }); load(); } else fail((await r.json()).error ?? "Error");
+  }
+  // Mueve una parada una posición y guarda el orden completo de la ruta.
+  async function moveStop(route: Route, idx: number, dir: -1 | 1) {
+    const ids = route.orders.map((o) => o.id);
+    const j = idx + dir;
+    if (j < 0 || j >= ids.length) return;
+    [ids[idx], ids[j]] = [ids[j], ids[idx]];
+    await patch(`/api/panel/logistica/rutas/${route.id}`, { stopOrder: ids }, "Orden de paradas actualizado");
   }
   async function del(url: string, okMsg: string) {
     markLocalWrite();
@@ -405,11 +484,12 @@ export default function LogisticaPanel() {
       )}
 
       {data && (
-        <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
           <Kpi icon={<MdRoute size={18} />} label="Rutas finalizadas" value={`${data.kpis.routesDone} / ${data.kpis.routesTotal}`} color="#27B1B8" />
           <Kpi icon={<MdLocalShipping size={18} />} label="Pedidos entregados" value={`${data.kpis.ordersDelivered} / ${data.kpis.ordersTotal}`} color="#7C6CE0" />
           <Kpi icon={<MdAttachMoney size={18} />} label="Costo transporte" value={COP.format(data.kpis.costTotal)} color="#F0A73C" />
           <Kpi icon={<MdReportProblem size={18} />} label="Novedades abiertas" value={String(data.kpis.openIncidents)} color="#DC2626" />
+          <Kpi icon={<MdSignalWifiOff size={18} />} label="Alertas de rutas en curso" value={String(data.routes.reduce((n, r) => n + (r.alerts?.length ?? 0), 0))} color="#B45309" />
         </div>
       )}
 
@@ -438,8 +518,29 @@ export default function LogisticaPanel() {
                           <span className="inline-flex items-center gap-1">{(() => { const Icon = VEHICLE_TYPE_ICON[r.vehicle.type]; return <Icon size={14} />; })()}{vehicleLabel(r.vehicle)}</span>
                           <span className="inline-flex items-center gap-1"><MdPerson size={14} />{r.driver.fullName}</span>
                           <span>{r.orders.length} pedido{r.orders.length === 1 ? "" : "s"}</span>
+                          {r.orders.some((o) => o.deliveryAttempts?.length || o.shippingStatus === "DELIVERED") && (() => {
+                            const ok = r.orders.filter((o) => o.shippingStatus === "DELIVERED").length;
+                            const failed = r.orders.filter((o) => o.shippingStatus !== "DELIVERED" && o.deliveryAttempts?.[0]?.outcome === "FAILED").length;
+                            return <span>{ok} entregado{ok === 1 ? "" : "s"} · {failed} fallido{failed === 1 ? "" : "s"} · {r.orders.length - ok - failed} pendiente{r.orders.length - ok - failed === 1 ? "" : "s"}</span>;
+                          })()}
                         </p>
                         {r.notes && <p className="mt-1 text-xs text-[#94A3B8]">{r.notes}</p>}
+                        {r.status === "IN_PROGRESS" && (r.alerts?.length ?? 0) > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {r.alerts!.map((a) => (
+                              <span key={a.kind} className="inline-flex items-center gap-1 rounded-full bg-[#FEF3C7] px-2.5 py-1 text-[11px] font-bold text-[#92400E]">
+                                {a.kind === "NO_SIGNAL" ? <MdSignalWifiOff size={14} /> : <MdPauseCircle size={14} />}
+                                {a.kind === "NO_SIGNAL" ? `Sin señal desde hace ${fmtDur(a.sinceMin)}` : `Detenido hace ${fmtDur(a.sinceMin)}`}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {r.status === "DONE" && (
+                          <p className="mt-1 text-xs text-[#475569]">
+                            {r.distanceKm != null ? <>Recorrido <b>{r.distanceKm} km</b></> : "Sin datos de GPS"}
+                            {r.durationMin != null && <> · Duración <b>{fmtDur(r.durationMin)}</b></>}
+                          </p>
+                        )}
                       </div>
                       {perm.canEdit && (
                         <div className="flex flex-wrap gap-2">
@@ -452,31 +553,61 @@ export default function LogisticaPanel() {
                         </div>
                       )}
                     </div>
+                    {perm.canEdit && r.status !== "DONE" && (
+                      <button className={`${btnGhost} mt-3 mr-2`} onClick={() => copyDriverLink(r.id)}>
+                        <MdLink size={16} />Enlace conductor
+                      </button>
+                    )}
                     {r.orders.length > 0 && (
                       <button className={`${btnGhost} mt-3`} onClick={() => setMapRoutes((m) => { const n = new Set(m); if (n.has(r.id)) n.delete(r.id); else n.add(r.id); return n; })}>
                         <MdMap size={16} />{mapRoutes.has(r.id) ? "Ocultar mapa" : "Ver mapa"}
                       </button>
                     )}
-                    {mapRoutes.has(r.id) && <RouteMap routeId={r.id} />}
+                    {mapRoutes.has(r.id) && <RouteMap routeId={r.id} inProgress={r.status === "IN_PROGRESS"} finished={r.status === "DONE"} />}
                     {r.orders.length > 0 && (
                       <div className="mt-3 overflow-x-auto">
                         <table className="w-full min-w-[560px] text-xs">
                           <thead className="text-left font-bold uppercase tracking-wide text-[#94A3B8]">
-                            <tr><th className="py-1.5 pr-3">Cliente</th><th className="py-1.5 pr-3">Ciudad</th><th className="py-1.5 pr-3">Dirección</th><th className="py-1.5 pr-3">Ítems</th><th className="py-1.5 pr-3">Estado</th>{perm.canEdit && r.status !== "DONE" && <th />}</tr>
+                            <tr>{perm.canEdit && r.status !== "DONE" && <th className="py-1.5 pr-2">#</th>}<th className="py-1.5 pr-3">Cliente</th><th className="py-1.5 pr-3">Ciudad</th><th className="py-1.5 pr-3">Dirección</th><th className="py-1.5 pr-3">Ítems</th><th className="py-1.5 pr-3">Estado</th><th className="py-1.5 pr-3">Entrega</th>{perm.canEdit && r.status !== "DONE" && <th />}</tr>
                           </thead>
                           <tbody>
-                            {r.orders.map((o) => (
+                            {r.orders.map((o, idx) => {
+                              const att = o.deliveryAttempts?.[0];
+                              const far = att && ((att.distanceM ?? 0) > 300 || (att.accuracy ?? 0) > 100);
+                              return (
                               <tr key={o.id} className="border-t border-[#F1F5F9]">
+                                {perm.canEdit && r.status !== "DONE" && (
+                                  <td className="py-1.5 pr-2 whitespace-nowrap text-[#64748B]">
+                                    <span className="mr-1 font-bold">{idx + 1}</span>
+                                    <button className="align-middle disabled:opacity-30" disabled={idx === 0} onClick={() => moveStop(r, idx, -1)} aria-label="Subir parada"><MdArrowUpward size={14} /></button>
+                                    <button className="align-middle disabled:opacity-30" disabled={idx === r.orders.length - 1} onClick={() => moveStop(r, idx, 1)} aria-label="Bajar parada"><MdArrowDownward size={14} /></button>
+                                  </td>
+                                )}
                                 <td className="py-1.5 pr-3 font-semibold text-[#1A1A1A]">{o.customerName}<span className="block text-[10px] font-normal text-[#94A3B8]">{o.customerPhone}</span></td>
                                 <td className="py-1.5 pr-3 text-[#64748B]">{o.city}</td>
                                 <td className="py-1.5 pr-3 text-[#64748B]">{o.addressLine1}</td>
                                 <td className="py-1.5 pr-3">{o.totalItems}</td>
                                 <td className="py-1.5 pr-3">{SHIPPING_LABEL[o.shippingStatus]}</td>
+                                <td className="py-1.5 pr-3">
+                                  {o.shippingStatus === "DELIVERED" ? (
+                                    <span className="inline-flex items-center gap-1 font-bold text-[#047857]"><MdCheckCircle size={14} />Entregado{att?.recordedAt ? ` · ${new Date(att.recordedAt).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}` : ""}</span>
+                                  ) : att?.outcome === "FAILED" ? (
+                                    <span className="inline-flex items-center gap-1 font-bold text-[#B45309]"><MdCancel size={14} />{FAIL_LABEL[att.reason ?? ""] ?? "No entregado"}</span>
+                                  ) : <span className="text-[#94A3B8]">Pendiente</span>}
+                                  {att?.photoPath && <button className="ml-2 inline-flex items-center gap-1 align-middle text-[#27B1B8] hover:underline" onClick={() => setModal({ kind: "photo", attemptId: att.id, title: o.customerName })}><MdPhotoCamera size={14} />Ver foto</button>}
+                                  {far && <span className="mt-0.5 flex items-center gap-1 text-[10px] text-[#B45309]"><MdWarningAmber size={12} />{(att.distanceM ?? 0) > 300 ? `A ${Math.round(att.distanceM ?? 0)} m de la dirección` : "GPS impreciso"}</span>}
+                                  {att?.note && <span className="mt-0.5 block text-[10px] text-[#64748B]">{att.note}</span>}
+                                  {(o.enRouteNotifiedAt || o.nearNotifiedAt) && (() => {
+                                    const t = (d: string) => new Date(d).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
+                                    return <span className="mt-0.5 block text-[10px] text-[#94A3B8]">Avisado: {[o.enRouteNotifiedAt && `en camino ${t(o.enRouteNotifiedAt)}`, o.nearNotifiedAt && `cerca ${t(o.nearNotifiedAt)}`].filter(Boolean).join(" · ")}</span>;
+                                  })()}
+                                </td>
                                 {perm.canEdit && r.status !== "DONE" && (
                                   <td className="py-1.5 text-right"><button className="text-[#94A3B8] hover:text-[#DC2626]" onClick={() => patch(`/api/panel/logistica/rutas/${r.id}`, { removeOrderId: o.id }, "Pedido quitado de la ruta")} aria-label="Quitar pedido"><MdClose size={14} /></button></td>
                                 )}
                               </tr>
-                            ))}
+                              );
+                            })}
                           </tbody>
                         </table>
                       </div>
@@ -625,6 +756,68 @@ export default function LogisticaPanel() {
             </Section>
           )}
 
+          {tab === "reportes" && (
+            <Section
+              title="Reportes de flota"
+              action={fleet && fleet.totals.routes + fleet.vehicles.length > 0 && <button className={btnGhost} onClick={() => exportFleetCsv(fleet, from, to)}><MdFileDownload size={16} />Exportar CSV</button>}
+            >
+              {!fleet ? <SkeletonTable /> : (
+                <div className="space-y-5">
+                  <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    <Kpi icon={<MdRoute size={18} />} label="Km recorridos (GPS)" value={fleet.coverage.gpsRoutes > 0 ? `${fleet.totals.km} km` : "Sin datos"} color="#27B1B8" />
+                    <Kpi icon={<MdBarChart size={18} />} label="Horas en ruta" value={fleet.totals.routes > 0 ? `${fleet.totals.hours} h` : "Sin datos"} color="#7C6CE0" />
+                    <Kpi icon={<MdCheckCircle size={18} />} label="Entregas exitosas" value={fleet.totals.successRate != null ? `${fleet.totals.successRate}%` : "Sin datos"} color="#16A34A" />
+                    <Kpi icon={<MdAttachMoney size={18} />} label="Costo por km" value={fleet.totals.costPerKm != null ? COP.format(fleet.totals.costPerKm) : "Sin datos"} color="#F0A73C" />
+                  </div>
+                  <p className="text-xs text-[#64748B]">
+                    Rutas finalizadas en el período: <b>{fleet.coverage.routes}</b>. Km con GPS en <b>{fleet.coverage.gpsRoutes}</b> de {fleet.coverage.routes}; el costo por km usa solo esos km, por eso puede verse más alto si hay rutas sin GPS.
+                  </p>
+
+                  <div>
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#94A3B8]">Por vehículo</p>
+                    <Table
+                      head={["Vehículo", "Rutas", "Entregas", "Fallidas", "Km (GPS)", "Horas", "Costo", "Costo / km"]}
+                      rows={fleet.vehicles.map((v) => [
+                        <b key="p">{v.plate}</b>, v.routes, v.deliveries, v.failed,
+                        v.gpsRoutes > 0 ? v.km : "Sin GPS", v.routes > 0 ? v.hours : "—", COP.format(v.cost), v.costPerKm != null ? COP.format(v.costPerKm) : "Sin datos",
+                      ])}
+                      empty="Sin rutas finalizadas ni costos en este período."
+                    />
+                  </div>
+
+                  <div>
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#94A3B8]">Por conductor</p>
+                    <Table
+                      head={["Conductor", "Rutas", "Entregas", "Fallidas", "% éxito", "Km (GPS)"]}
+                      rows={fleet.drivers.map((d) => [<b key="n">{d.name}</b>, d.routes, d.deliveries, d.failed, d.successRate != null ? `${d.successRate}%` : "Sin datos", d.km > 0 ? d.km : "Sin GPS"])}
+                      empty="Sin rutas finalizadas en este período."
+                    />
+                  </div>
+
+                  {fleet.months.length > 1 && (
+                    <div>
+                      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#94A3B8]">Por mes</p>
+                      <Table
+                        head={["Mes", "Rutas", "Km (GPS)", "Costo"]}
+                        rows={fleet.months.map((m) => [m.month, m.routes, m.km, COP.format(m.cost)])}
+                        empty=""
+                      />
+                    </div>
+                  )}
+
+                  {fleet.failReasons.length > 0 && (
+                    <div>
+                      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#94A3B8]">Entregas fallidas por motivo</p>
+                      <div className="flex flex-wrap gap-2">
+                        {fleet.failReasons.map((f) => <span key={f.reason} className="rounded-full bg-[#FEF3C7] px-3 py-1 text-xs font-bold text-[#92400E]">{FAIL_LABEL[f.reason] ?? f.reason}: {f.count}</span>)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </Section>
+          )}
+
           {tab === "informes" && (
             <Section
               title="Informes quincenales al Jefe de Operaciones"
@@ -660,6 +853,12 @@ export default function LogisticaPanel() {
       )}
       {modal?.kind === "assign" && data && (
         <AssignModal route={modal.route} orders={data.assignableOrders} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />
+      )}
+      {modal?.kind === "photo" && (
+        <Modal title={`Foto de entrega · ${modal.title}`} onClose={() => setModal(null)} wide>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`/api/panel/logistica/entregas/${modal.attemptId}/foto`} alt={`Foto de entrega de ${modal.title}`} className="mx-auto max-h-[60vh] rounded-xl object-contain" />
+        </Modal>
       )}
       {modal?.kind === "cost" && <CostModal vehicles={activeVehicles} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />}
       {modal?.kind === "incident" && <IncidentModal vehicles={activeVehicles} drivers={activeDrivers} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />}

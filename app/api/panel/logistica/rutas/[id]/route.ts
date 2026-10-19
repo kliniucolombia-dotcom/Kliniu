@@ -1,9 +1,11 @@
+import { after } from "next/server";
 import { requirePermission } from "@/lib/permissions";
-import { addOrdersToRoute, deleteRoute, removeOrderFromRoute, updateRoute } from "@/lib/logistics";
+import { addOrdersToRoute, deleteRoute, removeOrderFromRoute, setStopOrder, updateRoute } from "@/lib/logistics";
 import { createNotification } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import type { DeliveryRouteStatus } from "@/generated/prisma/client";
 import { broadcastPanelUpdate } from "@/lib/realtime";
+import { notifyRouteStarted } from "@/lib/delivery-notify";
 
 const STATUSES: DeliveryRouteStatus[] = ["PLANNED", "IN_PROGRESS", "DONE"];
 
@@ -20,6 +22,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     date?: string;
     addOrderIds?: string[];
     removeOrderId?: string;
+    stopOrder?: string[];
   };
 
   if (body.status && !STATUSES.includes(body.status)) {
@@ -28,6 +31,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   if (body.addOrderIds?.length) await addOrdersToRoute(id, body.addOrderIds);
   if (body.removeOrderId) await removeOrderFromRoute(id, body.removeOrderId);
+  if (Array.isArray(body.stopOrder) && body.stopOrder.every((x) => typeof x === "string")) await setStopOrder(id, body.stopOrder);
 
   const previous = body.driverId
     ? await prisma?.deliveryRoute.findUnique({ where: { id }, select: { driverId: true } })
@@ -41,6 +45,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     date: body.date,
   });
   broadcastPanelUpdate("logistics").catch(() => {});
+  if (body.status === "IN_PROGRESS") after(() => notifyRouteStarted(id));
 
   if (body.driverId && body.driverId !== previous?.driverId) {
     const driver = await prisma?.driver.findUnique({ where: { id: body.driverId }, select: { fullName: true } });

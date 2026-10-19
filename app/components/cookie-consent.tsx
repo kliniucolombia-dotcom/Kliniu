@@ -28,8 +28,8 @@ export default function CookieConsent({ nonce }: { nonce?: string }) {
     updateConsent(value === "accepted");
   };
 
-  // Rutas de impresión/PDF: no deben mostrar banners ni cargar analítica.
-  if (pathname.startsWith("/imprimir")) return null;
+  // Impresión/PDF y página del conductor (herramienta operativa): sin banners ni analítica.
+  if (pathname.startsWith("/imprimir") || pathname.startsWith("/conductor") || pathname.startsWith("/seguimiento")) return null;
 
   return (
     <>

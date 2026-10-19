@@ -12,7 +12,7 @@ type Props = {
 
 export default function ConditionalShell({ currentUser, children }: Props) {
   const pathname = usePathname();
-  const isPanelRoute = pathname.startsWith("/panel") || pathname.startsWith("/empaque") || pathname.startsWith("/imprimir") || pathname.startsWith("/empleado");
+  const isPanelRoute = pathname.startsWith("/panel") || pathname.startsWith("/empaque") || pathname.startsWith("/imprimir") || pathname.startsWith("/empleado") || pathname.startsWith("/conductor") || pathname.startsWith("/seguimiento");
   // En las pantallas de autenticación el chat no aporta y su montaje dispara una
   // consulta de vendedores contra la BD que retrasa la llegada a /login.
   const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/registro");
