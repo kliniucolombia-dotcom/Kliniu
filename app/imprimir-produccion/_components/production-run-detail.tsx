@@ -93,7 +93,7 @@ export function ProductionRunDetail({ run }: { run: ProductionRunDetailData }) {
       <div className="mt-5 grid grid-cols-2 gap-4">
         <PrintSection title="Información de producción">
           <PrintRow label="Producto">{productName}</PrintRow>
-          <PrintRow label="Material">{run.material}</PrintRow>
+          <PrintRow label="Material">{run.materialQuantityKg != null ? `${run.material} · ${run.materialQuantityKg.toLocaleString("es-CO")} kg` : run.material}</PrintRow>
           <PrintRow label="Ciclo">{`${run.cycle} ${cycleUnitLabel(run.cycleUnit)}`}</PrintRow>
           <PrintRow label="Cavidades">{run.cavities ?? 1}</PrintRow>
           <PrintRow label="Producción esperada">{efficiency.expectedPieces.toLocaleString("es-CO")} piezas</PrintRow>
@@ -109,6 +109,7 @@ export function ProductionRunDetail({ run }: { run: ProductionRunDetailData }) {
         <PrintSection title="Control de calidad">
           <PrintRow label="Cantidad dañada">{run.damaged.toLocaleString("es-CO")}</PrintRow>
           <PrintRow label="No conformes">{run.nonConforming.toLocaleString("es-CO")}</PrintRow>
+          <PrintRow label="Máquina detenida">{run.downtimeMinutes > 0 ? `${run.downtimeMinutes.toLocaleString("es-CO")} min` : "Sin paradas"}</PrintRow>
           <PrintRow label="Prueba de acople">
             <span className={run.couplingStatus === "completed" ? "text-[#15803D]" : undefined}>{coupling}</span>
           </PrintRow>

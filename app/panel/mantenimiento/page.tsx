@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   MdAdd, MdBuild, MdPrecisionManufacturing, MdInventory, MdRequestQuote, MdAssignment,
-  MdPlayArrow, MdCheckCircle, MdCancel, MdHistory, MdWarningAmber, MdTimerOff, MdRemove, MdEdit,
+  MdPlayArrow, MdCheckCircle, MdCancel, MdHistory, MdWarningAmber, MdTimerOff, MdRemove, MdEdit, MdVisibility, MdAttachFile,
 } from "react-icons/md";
 import { SimpleSelect } from "../_components/simple-select";
 import { SignaturePad } from "./signature-pad";
@@ -104,7 +104,7 @@ function fmtMinutes(min: number) {
 
 function AttachmentPreview({ items, large }: { items: Attachment[]; large?: boolean }) {
   if (!items.length) return null;
-  const box = large ? "h-24 w-24" : "h-14 w-14";
+  const box = large ? "h-40 w-40" : "h-14 w-14";
   return (
     <div className="flex flex-wrap items-center gap-2">
       {items.map((a, i) => a.isImage ? (
@@ -113,7 +113,7 @@ function AttachmentPreview({ items, large }: { items: Attachment[]; large?: bool
           <img src={a.url} alt={a.name} className={`${box} rounded-lg border border-[#E2E8F0] object-cover`} />
         </a>
       ) : (
-        <a key={`${a.url}-${i}`} href={a.url} target="_blank" rel="noopener noreferrer" className={btnGhost}>📎 {a.name}</a>
+        <a key={`${a.url}-${i}`} href={a.url} target="_blank" rel="noopener noreferrer" className={btnGhost}><MdAttachFile size={14} />{a.name}</a>
       ))}
     </div>
   );
@@ -183,6 +183,7 @@ export default function MantenimientoPanel() {
     | { kind: "complete"; order: Order; openedAt: number }
     | { kind: "equipment"; equipment?: Equipment }
     | { kind: "history"; equipment: Equipment }
+    | { kind: "orderDetail"; order: Order }
     | { kind: "item"; item?: Item }
     | { kind: "adjust"; item: Item; sign: 1 | -1 }
     | { kind: "quote" }
@@ -276,11 +277,13 @@ export default function MantenimientoPanel() {
               </Section>
               <Section title={`Historial del período (${closedOrders.length})`}>
                 <Table
-                  head={["Orden", "Equipo", "Tipo", "Prioridad", "Estado", "Reportada", "Completada", "Tiempo muerto", "Resolución"]}
+                  head={["Orden", "Equipo", "Tipo", "Prioridad", "Estado", "Reportada", "Completada", "Tiempo muerto", "Resolución", ""]}
+                  onRowClick={(i) => setModal({ kind: "orderDetail", order: closedOrders[i] })}
                   rows={closedOrders.map((o) => [
                     <b key="n">{o.number}</b>, `${o.equipment.name} (${o.equipment.code})`, o.type === "PREVENTIVE" ? "Preventivo" : "Correctivo",
                     <Badge key="p" {...PRIORITY[o.priority]} />, <Badge key="s" {...ORDER_STATUS[o.status]} />,
                     fmtDateTime(o.reportedAt), o.completedAt ? fmtDateTime(o.completedAt) : "—", o.downtimeMinutes != null ? fmtMinutes(o.downtimeMinutes) : "—", o.resolution ?? "—",
+                    <button key="d" className={btnGhost}><MdVisibility size={16} />Ver detalle</button>,
                   ])}
                   empty="Sin órdenes cerradas en este período."
                 />
@@ -416,6 +419,7 @@ export default function MantenimientoPanel() {
       {modal?.kind === "complete" && <CompleteModal order={modal.order} openedAt={modal.openedAt} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />}
       {modal?.kind === "equipment" && data && <EquipmentModal equipment={modal.equipment} machines={data.machines} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />}
       {modal?.kind === "history" && <HistoryModal equipment={modal.equipment} onClose={() => setModal(null)} />}
+      {modal?.kind === "orderDetail" && <OrderDetailModal order={modal.order} onClose={() => setModal(null)} />}
       {modal?.kind === "item" && <ItemModal item={modal.item} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />}
       {modal?.kind === "adjust" && <AdjustModal item={modal.item} sign={modal.sign} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />}
       {modal?.kind === "quote" && data && <QuoteModal orders={openOrders} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />}
@@ -624,6 +628,66 @@ function EquipmentModal({ equipment, machines, onClose, onDone, onError, markLoc
           {attachmentUrl && <button type="button" className={btnGhost} onClick={() => { setAttachmentUrl(null); setAttachmentName(null); }}>Quitar</button>}
         </div>
       </div>
+    </Modal>
+  );
+}
+
+function OrderDetailModal({ order: o, onClose }: { order: Order; onClose: () => void }) {
+  return (
+    <Modal title={`Orden ${o.number}`} onClose={onClose} wide>
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge {...ORDER_STATUS[o.status]} />
+        <Badge {...PRIORITY[o.priority]} />
+        <Badge label={o.type === "PREVENTIVE" ? "Preventivo" : "Correctivo"} cls={o.type === "PREVENTIVE" ? "bg-[#E0F2FE] text-[#0369A1]" : "bg-[#FFEDD5] text-[#C2410C]"} />
+      </div>
+      <p className="text-sm font-semibold text-[#1A1A1A]">{o.equipment.name} <span className="text-xs font-normal text-[#94A3B8]">({o.equipment.code} · {EQ_TYPE[o.equipment.type]})</span></p>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <Stat label="Reportada" value={fmtDateTime(o.reportedAt)} />
+        <Stat label="Reportó" value={o.reportedBy.fullName} />
+        <Stat label="Asignada a" value={o.assignedTo?.fullName ?? "—"} />
+        <Stat label="Inició" value={o.startedAt ? fmtDateTime(o.startedAt) : "—"} />
+        <Stat label="Completada" value={o.completedAt ? fmtDateTime(o.completedAt) : "—"} />
+        <Stat label="Tiempo muerto" value={o.downtimeMinutes != null ? fmtMinutes(o.downtimeMinutes) : "—"} />
+      </div>
+      <div>
+        <p className={labelCls}>Descripción</p>
+        <p className="whitespace-pre-wrap text-sm text-[#1A1A1A]">{o.description}</p>
+      </div>
+      {o.resolution && (
+        <div>
+          <p className={labelCls}>Resolución</p>
+          <p className="whitespace-pre-wrap text-sm text-[#15803D]">{o.resolution}</p>
+        </div>
+      )}
+      <div>
+        <p className={labelCls}>Fotos y archivos ({o.attachments?.length ?? 0})</p>
+        {o.attachments?.length > 0 ? <AttachmentPreview items={o.attachments} large /> : <p className="text-sm text-[#94A3B8]">Sin archivos adjuntos.</p>}
+      </div>
+      {o.status === "DONE" && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <p className={labelCls}>Firma del técnico</p>
+            {o.executorSignatureData ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={o.executorSignatureData} alt={`Firma de ${o.executorName ?? "técnico"}`} className="h-20 rounded border border-[#E2E8F0] bg-white" />
+                <p className="mt-1 text-xs text-[#64748B]">Ejecutó: <b>{o.executorName}</b></p>
+              </>
+            ) : <p className="text-sm text-[#94A3B8]">Sin firma</p>}
+          </div>
+          <div>
+            <p className={labelCls}>Firma de conformidad</p>
+            {o.signatureData ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={o.signatureData} alt={`Firma de ${o.signedByName ?? "quien recibe"}`} className="h-20 rounded border border-[#E2E8F0] bg-white" />
+                <p className="mt-1 text-xs text-[#64748B]">Recibió: <b>{o.signedByName}</b>{o.signedAt && ` · ${fmtDateTime(o.signedAt)}`}</p>
+              </>
+            ) : <p className="text-sm text-[#94A3B8]">Sin firma</p>}
+          </div>
+        </div>
+      )}
+      {o.quotes.length > 0 && <p className="text-xs text-[#64748B]">Cotizaciones vinculadas: {o.quotes.length}</p>}
     </Modal>
   );
 }

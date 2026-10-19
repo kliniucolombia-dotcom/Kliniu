@@ -33,6 +33,8 @@ export async function POST(request: Request) {
     produced?: number; damaged?: number; nonConforming?: number;
     couplingTest?: string | null; couplingStatus?: string | null; couplingTime?: string | null;
     observations?: string | null;
+    downtimeMinutes?: number;
+    materialQuantityKg?: number | null;
   };
 
   if (!body.machineId || !body.operatorId || !body.orderNumber?.trim() || !body.productionDate || !body.startTime || !body.endTime) {
@@ -110,6 +112,8 @@ export async function POST(request: Request) {
       couplingStatus,
       couplingTime: body.couplingTime ?? null,
       observations: body.observations,
+      downtimeMinutes: body.downtimeMinutes,
+      materialQuantityKg: body.materialQuantityKg,
     });
     broadcastPanelUpdate("production").catch(() => {});
 

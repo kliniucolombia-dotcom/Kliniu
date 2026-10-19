@@ -1159,6 +1159,8 @@ export type ProductionRunWriteData = {
   couplingStatus?: CouplingStatus | null;
   couplingTime?: string | null;
   observations?: string | null;
+  downtimeMinutes?: number;
+  materialQuantityKg?: number | null;
 };
 
 const ZONE_LABELS = ["A", "B", "C", "D", "E", "F"];
@@ -1220,6 +1222,8 @@ export async function createProductionRun(data: ProductionRunWriteData) {
       couplingStatus: data.couplingStatus ?? null,
       couplingTime: data.couplingTime?.trim() || null,
       observations: data.observations?.trim() || null,
+      downtimeMinutes: sanitizeProductionNumber(data.downtimeMinutes ?? 0, { min: 0, integer: true }),
+      materialQuantityKg: data.materialQuantityKg != null ? sanitizeProductionNumber(data.materialQuantityKg, { min: 0 }) : null,
     },
   });
 }
@@ -1266,6 +1270,8 @@ export async function updateProductionRun(id: string, data: Partial<ProductionRu
       ...(data.couplingStatus !== undefined ? { couplingStatus: data.couplingStatus } : {}),
       ...(data.couplingTime !== undefined ? { couplingTime: data.couplingTime?.trim() || null } : {}),
       ...(data.observations !== undefined ? { observations: data.observations?.trim() || null } : {}),
+      ...(data.downtimeMinutes !== undefined ? { downtimeMinutes: sanitizeProductionNumber(data.downtimeMinutes, { min: 0, integer: true }) } : {}),
+      ...(data.materialQuantityKg !== undefined ? { materialQuantityKg: data.materialQuantityKg != null ? sanitizeProductionNumber(data.materialQuantityKg, { min: 0 }) : null } : {}),
     },
   });
 }

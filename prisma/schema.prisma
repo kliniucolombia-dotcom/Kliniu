@@ -496,6 +496,12 @@ model ProductionRun {
 
   observations String?
 
+  // Minutos que la máquina estuvo detenida durante la corrida.
+  downtimeMinutes Int @default(0)
+
+  // Kilos de material entregados a la máquina para la corrida.
+  materialQuantityKg Float?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -64,8 +64,9 @@ export default async function ProductionHistoryPrintPage({ searchParams }: { sea
       damaged: acc.damaged + run.damaged,
       nonConforming: acc.nonConforming + run.nonConforming,
       good: acc.good + run.summary.goodPieces,
+      downtime: acc.downtime + run.downtimeMinutes,
     }),
-    { produced: 0, damaged: 0, nonConforming: 0, good: 0 },
+    { produced: 0, damaged: 0, nonConforming: 0, good: 0, downtime: 0 },
   );
   const quality = totals.produced > 0 ? (totals.good / totals.produced) * 100 : 0;
 
@@ -110,7 +111,7 @@ export default async function ProductionHistoryPrintPage({ searchParams }: { sea
       <table className="mt-5 w-full border-collapse text-xs">
         <thead>
           <tr className="bg-[#F8FAFC]">
-            {["Fecha", "N° Orden", "Máquina", "Marca", "Operario", "Producto", "Producidas", "Dañadas", "No conf.", "Buenas", "% Calidad"].map((h) => (
+            {["Fecha", "N° Orden", "Máquina", "Marca", "Operario", "Producto", "Producidas", "Dañadas", "No conf.", "Buenas", "% Calidad", "Detenida (min)"].map((h) => (
               <th key={h} className="border border-[#E2E8F0] px-2 py-2 text-left text-[9px] font-bold uppercase tracking-widest text-[#64748B]">
                 {h}
               </th>
@@ -131,11 +132,12 @@ export default async function ProductionHistoryPrintPage({ searchParams }: { sea
               <td className="border border-[#E2E8F0] px-2 py-1.5 text-right">{run.nonConforming.toLocaleString("es-CO")}</td>
               <td className="border border-[#E2E8F0] px-2 py-1.5 text-right font-bold">{run.summary.goodPieces.toLocaleString("es-CO")}</td>
               <td className="border border-[#E2E8F0] px-2 py-1.5 text-right font-bold">{run.summary.qualityPercentage.toFixed(2)}%</td>
+              <td className="border border-[#E2E8F0] px-2 py-1.5 text-right">{run.downtimeMinutes.toLocaleString("es-CO")}</td>
             </tr>
           ))}
           {filtered.length === 0 && (
             <tr>
-              <td colSpan={11} className="border border-[#E2E8F0] px-2 py-8 text-center text-sm text-[#94A3B8]">
+              <td colSpan={12} className="border border-[#E2E8F0] px-2 py-8 text-center text-sm text-[#94A3B8]">
                 Sin recorridas para los filtros seleccionados
               </td>
             </tr>
@@ -150,6 +152,7 @@ export default async function ProductionHistoryPrintPage({ searchParams }: { sea
               <td className="border border-[#E2E8F0] px-2 py-2 text-right">{totals.nonConforming.toLocaleString("es-CO")}</td>
               <td className="border border-[#E2E8F0] px-2 py-2 text-right">{totals.good.toLocaleString("es-CO")}</td>
               <td className="border border-[#E2E8F0] px-2 py-2 text-right">{quality.toFixed(2)}%</td>
+              <td className="border border-[#E2E8F0] px-2 py-2 text-right">{totals.downtime.toLocaleString("es-CO")}</td>
             </tr>
           </tfoot>
         )}
