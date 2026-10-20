@@ -1,15 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
-import { MdPlayArrow, MdPause, MdDirectionsCar, MdTwoWheeler, MdAirportShuttle, MdLocalShipping } from "react-icons/md";
+import { MdPlayArrow, MdPause } from "react-icons/md";
+import { vehicleIcon, stopIcon, stopColor, type GMaps, type StopResult } from "./map-icons";
 
 type Live = { track: { lat: number; lng: number }[]; last: { lat: number; lng: number; speed: number | null; recordedAt: string } | null; distanceKm: number; startedAt: string | null; finishedAt: string | null };
 type Replay = { points: { lat: number; lng: number; speed: number | null; recordedAt: string }[]; deliveries: { outcome: "DELIVERED" | "FAILED"; reason: string | null; lat: number | null; lng: number | null; recordedAt: string; name: string }[] };
-type Stop = { id: string; name: string; address: string; lat: number | null; lng: number | null };
-
-type GMaps = { maps: any }; // eslint-disable-line @typescript-eslint/no-explicit-any
+type Stop = { id: string; name: string; address: string; lat: number | null; lng: number | null; result: StopResult };
 
 let loader: Promise<GMaps> | null = null;
 export function loadGoogle(): Promise<GMaps> {
@@ -24,16 +21,6 @@ export function loadGoogle(): Promise<GMaps> {
     document.head.appendChild(s);
   });
   return loader;
-}
-
-const VEHICLE_ICON = { CAMIONETA: MdDirectionsCar, MOTO: MdTwoWheeler, FURGON: MdAirportShuttle, CAMION: MdLocalShipping };
-
-// Marcador redondo con el ícono del tipo de vehículo (los mismos íconos de las tarjetas del panel).
-function vehicleIcon(google: GMaps, type: string, color: string) {
-  const Icon = VEHICLE_ICON[type as keyof typeof VEHICLE_ICON] ?? MdLocalShipping;
-  const glyph = renderToStaticMarkup(createElement(Icon, { size: 22, color: "#fff" }));
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44"><circle cx="22" cy="22" r="20" fill="${color}" stroke="#fff" stroke-width="3"/><g transform="translate(11 11)">${glyph}</g></svg>`;
-  return { url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`, scaledSize: new google.maps.Size(44, 44), anchor: new google.maps.Point(22, 22) };
 }
 
 function fmtDuration(from: string, to: string | null) {
@@ -84,9 +71,14 @@ export function RouteMap({ routeId, vehicleType, inProgress, finished = false }:
         const map = new google.maps.Map(ref.current, { center: { lat: 4.711, lng: -74.0721 }, zoom: 11, mapTypeControl: false, streetViewControl: false });
         const bounds = new google.maps.LatLngBounds();
         const info = new google.maps.InfoWindow();
-        located.forEach((s, i) => {
+        // Paradas numeradas por su orden en la ruta y coloreadas por estado (ver map-icons).
+        const stopMarkers = new Map<string, { marker: any; n: number }>(); // eslint-disable-line @typescript-eslint/no-explicit-any
+        const nextId = located.find((s) => !s.result)?.id;
+        located.forEach((s) => {
           const pos = { lat: s.lat as number, lng: s.lng as number };
-          const marker = new google.maps.Marker({ position: pos, map, label: String(i + 1), title: s.name });
+          const n = stops.indexOf(s) + 1;
+          const marker = new google.maps.Marker({ position: pos, map, title: s.name, icon: stopIcon(google, n, stopColor(s.result, s.id === nextId)) });
+          stopMarkers.set(s.id, { marker, n });
           marker.addListener("click", () => {
             const div = document.createElement("div");
             const b = document.createElement("strong");
@@ -127,7 +119,14 @@ export function RouteMap({ routeId, vehicleType, inProgress, finished = false }:
         if (inProgress) {
           timer = setInterval(async () => {
             const r = await fetch(`/api/panel/logistica/rutas/${routeId}/mapa?live=1`).then((x) => x.json()).catch(() => null);
-            if (r?.live && !cancelled) { setLive(r.live); place(r.live); }
+            if (r?.live && !cancelled) {
+              setLive(r.live);
+              place(r.live);
+              // Colores de las paradas al día sin recargar el mapa.
+              const res: { id: string; result: StopResult }[] = r.stops ?? [];
+              const next = res.find((x) => !x.result && stopMarkers.has(x.id))?.id;
+              res.forEach((x) => { const m = stopMarkers.get(x.id); if (m) m.marker.setIcon(stopIcon(google, m.n, stopColor(x.result, x.id === next))); });
+            }
           }, 15000);
         }
         if (located.length > 1) {
@@ -175,6 +174,11 @@ export function RouteMap({ routeId, vehicleType, inProgress, finished = false }:
           </span>
         </div>
       )}
+      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#64748B]" aria-label="Leyenda del mapa">
+        {([["#16A34A", "Entregada"], ["#D97706", "No entregada"], ["#27B1B8", "Próxima"], ["#64748B", "Pendiente"]] as const).map(([c, l]) => (
+          <span key={l} className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: c }} />{l}</span>
+        ))}
+      </p>
       {live && live.startedAt && (
         <p className="mt-2 text-xs text-[#475569]">
           Recorrido: <b>{live.distanceKm} km</b> · Duración: <b>{fmtDuration(live.startedAt, live.finishedAt)}</b>

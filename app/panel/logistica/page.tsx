@@ -6,9 +6,10 @@ import {
   MdAssignment, MdClose, MdDelete, MdCheckCircle, MdPerson, MdRoute,
   MdCalendarMonth, MdChevronLeft, MdChevronRight, MdPlace,
   MdBuild, MdControlCamera, MdVerticalAlignCenter, MdSecurity, MdInventory2,
-  MdElectricBolt, MdLocalGasStation, MdCable, MdLuggage, MdRemoveRedEye, MdWarningAmber, MdMap, MdLink, MdArrowUpward, MdArrowDownward, MdPhotoCamera, MdCancel, MdBarChart, MdSignalWifiOff, MdPauseCircle, MdFileDownload,
+  MdElectricBolt, MdLocalGasStation, MdCable, MdLuggage, MdRemoveRedEye, MdWarningAmber, MdMap, MdLink, MdArrowUpward, MdArrowDownward, MdPhotoCamera, MdCancel, MdBarChart, MdMyLocation, MdSignalWifiOff, MdPauseCircle, MdFileDownload,
 } from "react-icons/md";
 import { RouteMap } from "./route-map";
+import { LiveFleet } from "./live-fleet";
 import { RouteProgress } from "@/app/components/route-progress";
 import { SimpleSelect } from "../_components/simple-select";
 import { useConfirm } from "@/app/components/confirm-dialog";
@@ -217,9 +218,10 @@ type Data = {
   permission: Permission;
 };
 
-type Tab = "rutas" | "calendario" | "costos" | "novedades" | "flota" | "checklist" | "clientes" | "reportes" | "informes";
+type Tab = "rutas" | "envivo" | "calendario" | "costos" | "novedades" | "flota" | "checklist" | "clientes" | "reportes" | "informes";
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: "rutas", label: "Rutas", icon: <MdRoute size={16} /> },
+  { key: "envivo", label: "En vivo", icon: <MdMyLocation size={16} /> },
   { key: "calendario", label: "Calendario", icon: <MdCalendarMonth size={16} /> },
   { key: "costos", label: "Costos", icon: <MdAttachMoney size={16} /> },
   { key: "novedades", label: "Novedades", icon: <MdReportProblem size={16} /> },
@@ -503,6 +505,8 @@ export default function LogisticaPanel() {
         <SkeletonTable />
       ) : (
         <>
+          {tab === "envivo" && <LiveFleet />}
+
           {tab === "rutas" && (
             <Section
               title="Rutas de distribución"

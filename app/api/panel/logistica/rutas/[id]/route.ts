@@ -29,7 +29,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return Response.json({ error: "Estado inválido" }, { status: 400 });
   }
 
-  if (body.addOrderIds?.length) await addOrdersToRoute(id, body.addOrderIds);
+  if (body.addOrderIds?.length) {
+    await addOrdersToRoute(id, body.addOrderIds);
+    // Ruta ya en curso: se geocodifica el pedido nuevo y se avisa "En camino" solo a los que aún no lo recibieron.
+    const current = await prisma?.deliveryRoute.findUnique({ where: { id }, select: { status: true } });
+    if (current?.status === "IN_PROGRESS") after(() => notifyRouteStarted(id));
+  }
   if (body.removeOrderId) await removeOrderFromRoute(id, body.removeOrderId);
   if (Array.isArray(body.stopOrder) && body.stopOrder.every((x) => typeof x === "string")) await setStopOrder(id, body.stopOrder);
 

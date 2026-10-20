@@ -590,7 +590,10 @@ export async function geocodePendingOrders(routeId: string, budget: number) {
   const db = requirePrisma();
   const orders = await db.order.findMany({
     where: { deliveryRouteId: routeId },
-    select: { id: true, customerName: true, department: true, city: true, addressLine1: true, lat: true, lng: true },
+    select: {
+      id: true, customerName: true, department: true, city: true, addressLine1: true, lat: true, lng: true, shippingStatus: true,
+      deliveryAttempts: { orderBy: { recordedAt: "desc" }, take: 1, select: { outcome: true } },
+    },
     orderBy: [...STOP_ORDER_BY],
   });
   return Promise.all(
@@ -604,7 +607,53 @@ export async function geocodePendingOrders(routeId: string, budget: number) {
           await db.order.update({ where: { id: o.id }, data: { lat, lng } });
         }
       }
-      return { id: o.id, name: o.customerName, address: `${o.addressLine1}, ${o.city}`, lat, lng };
+      return { id: o.id, name: o.customerName, address: `${o.addressLine1}, ${o.city}`, lat, lng, result: stopResult(o) };
+    }),
+  );
+}
+
+// Resultado de una parada: una entrega hecha por otra vía (panel) también cuenta como entregada.
+export const stopResult = (o: { shippingStatus: string; deliveryAttempts: { outcome: "DELIVERED" | "FAILED" }[] }): "DELIVERED" | "FAILED" | null =>
+  o.shippingStatus === "DELIVERED" ? "DELIVERED" : (o.deliveryAttempts[0]?.outcome ?? null);
+
+// Rutas en curso con su última posición y paradas: alimenta el mapa en vivo del panel (torre de control).
+export async function listLiveRoutes() {
+  const db = requirePrisma();
+  const routes = await db.deliveryRoute.findMany({
+    where: { status: "IN_PROGRESS" },
+    orderBy: { startedAt: "asc" },
+    select: {
+      id: true,
+      startedAt: true,
+      vehicle: { select: { plate: true, type: true } },
+      driver: { select: { fullName: true } },
+      orders: {
+        select: {
+          id: true, customerName: true, addressLine1: true, city: true, lat: true, lng: true, shippingStatus: true,
+          deliveryAttempts: { orderBy: { recordedAt: "desc" }, take: 1, select: { outcome: true } },
+        },
+        orderBy: [...STOP_ORDER_BY],
+      },
+    },
+  });
+  const now = new Date();
+  return Promise.all(
+    routes.map(async (r) => {
+      const recent = (
+        await db.vehiclePosition.findMany({ where: { routeId: r.id }, orderBy: { recordedAt: "desc" }, take: 60, select: { lat: true, lng: true, recordedAt: true } })
+      ).reverse();
+      const stops = r.orders.map((o) => ({ id: o.id, name: o.customerName, address: `${o.addressLine1}, ${o.city}`, lat: o.lat, lng: o.lng, result: stopResult(o), cancelled: o.shippingStatus === "CANCELLED" }));
+      const pending = stops.filter((s) => !s.result && !s.cancelled);
+      return {
+        id: r.id,
+        startedAt: r.startedAt,
+        plate: r.vehicle.plate,
+        type: r.vehicle.type,
+        driver: r.driver.fullName,
+        stops,
+        last: recent.length ? recent[recent.length - 1] : null,
+        alerts: routeAlerts(recent, pending, r.startedAt, now),
+      };
     }),
   );
 }

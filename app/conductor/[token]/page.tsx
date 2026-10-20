@@ -92,7 +92,8 @@ export default function ConductorPage({ params }: { params: Promise<{ token: str
     const t = window.setInterval(() => setNowMs(Date.now()), 5000);
     return () => { window.clearTimeout(t0); window.clearInterval(t); };
   }, []);
-  const showNotice = (text: string) => { setNotice(text); window.setTimeout(() => setNotice(null), 8000); };
+  const showNotice = useCallback((text: string) => { setNotice(text); window.setTimeout(() => setNotice(null), 8000); }, []);
+  const knownStops = useRef<string[] | null>(null);
   useEffect(() => { const t = window.setTimeout(() => setIsApp(nativeApp() != null), 0); return () => window.clearTimeout(t); }, []);
 
   // Sin señal el fetch rechaza: se conserva lo último que se vio (y el service worker sirve la copia guardada).
@@ -102,13 +103,29 @@ export default function ConductorPage({ params }: { params: Promise<{ token: str
     const json = await res.json().catch(() => ({}));
     if (!res.ok) setError(json.error ?? "Enlace inválido");
     else {
+      // La oficina puede agregar o quitar paradas con la ruta en curso: se avisa y el teléfono vibra.
+      const ids: string[] = (json.stops ?? []).map((s: { id: string }) => s.id);
+      const prev = knownStops.current;
+      knownStops.current = ids;
+      if (prev) {
+        const added = ids.filter((i) => !prev.includes(i)).length;
+        if (added > 0) { showNotice(`La oficina agregó ${added} parada${added === 1 ? "" : "s"} a tu ruta.`); navigator.vibrate?.(300); }
+        else if (prev.some((i) => !ids.includes(i))) showNotice("La oficina quitó una parada de tu ruta.");
+      }
       setInfo(json);
       // Al abrir la app desde el ícono, /conductor vuelve a esta ruta.
       try { localStorage.setItem("kliniu_conductor_last", token); } catch { /* nada */ }
     }
-  }, [token]);
+  }, [token, showNotice]);
 
   useEffect(() => { void load(); }, [load]);
+
+  // Con la ruta en curso se relee cada 20 s (solo con la pantalla visible) para ver paradas nuevas sin recargar.
+  useEffect(() => {
+    if (info?.status !== "IN_PROGRESS") return;
+    const t = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 20_000);
+    return () => window.clearInterval(t);
+  }, [info?.status, load]);
 
   const refreshPending = useCallback(async () => {
     const p = await pendingCount(token).catch(() => null);
