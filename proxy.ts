@@ -72,6 +72,7 @@ const PROTECTED_PREFIXES = [
   "/empleado",
   "/imprimir-cotizacion",
   "/imprimir-produccion",
+  "/imprimir-logistica",
   "/nomina/desprendible",
 ];
 

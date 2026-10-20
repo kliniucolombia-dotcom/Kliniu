@@ -29,6 +29,15 @@ export async function uploadDeliveryPhoto(file: File, routeId: string, orderId: 
   return path;
 }
 
+/** Foto de entrega como data URL (para incrustarla en el comprobante PDF sin exponer una URL del bucket). */
+export async function deliveryPhotoDataUrl(path: string) {
+  const supabase = createSupabaseStorageClient();
+  if (!supabase) return null;
+  const { data, error } = await supabase.storage.from(DELIVERY_BUCKET).download(path);
+  if (error || !data) return null;
+  return `data:image/webp;base64,${Buffer.from(await data.arrayBuffer()).toString("base64")}`;
+}
+
 export async function deleteDeliveryPhoto(path: string) {
   await createSupabaseStorageClient()?.storage.from(DELIVERY_BUCKET).remove([path]).catch(() => {});
 }

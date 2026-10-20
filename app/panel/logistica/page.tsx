@@ -6,7 +6,7 @@ import {
   MdAssignment, MdClose, MdDelete, MdCheckCircle, MdPerson, MdRoute,
   MdCalendarMonth, MdChevronLeft, MdChevronRight, MdPlace,
   MdBuild, MdControlCamera, MdVerticalAlignCenter, MdSecurity, MdInventory2,
-  MdElectricBolt, MdLocalGasStation, MdCable, MdLuggage, MdRemoveRedEye, MdWarningAmber, MdMap, MdLink, MdArrowUpward, MdArrowDownward, MdPhotoCamera, MdCancel, MdBarChart, MdMyLocation, MdSignalWifiOff, MdPauseCircle, MdFileDownload,
+  MdElectricBolt, MdLocalGasStation, MdCable, MdLuggage, MdRemoveRedEye, MdWarningAmber, MdMap, MdLink, MdArrowUpward, MdArrowDownward, MdPhotoCamera, MdCancel, MdBarChart, MdAltRoute, MdPictureAsPdf, MdMyLocation, MdSignalWifiOff, MdPauseCircle, MdFileDownload,
 } from "react-icons/md";
 import { RouteMap } from "./route-map";
 import { LiveFleet } from "./live-fleet";
@@ -165,10 +165,10 @@ type Route = {
   lastPositionAt?: string | null;
 };
 type FleetReport = {
-  totals: { routes: number; km: number; hours: number; deliveries: number; failed: number; successRate: number | null; cost: number; costPerKm: number | null };
+  totals: { routes: number; km: number; hours: number; deliveries: number; failed: number; successRate: number | null; cost: number; costPerKm: number | null; firstTryRate: number | null; costPerDelivery: number | null; minPerStop: number | null; deliveriesPerRoute: number | null };
   coverage: { gpsRoutes: number; routes: number };
-  vehicles: { vehicleId: string; plate: string; type: string; routes: number; deliveries: number; failed: number; km: number; hours: number; cost: number; costPerKm: number | null; gpsRoutes: number }[];
-  drivers: { driverId: string; name: string; routes: number; deliveries: number; failed: number; successRate: number | null; km: number }[];
+  vehicles: { vehicleId: string; plate: string; type: string; routes: number; deliveries: number; failed: number; km: number; hours: number; cost: number; costPerKm: number | null; costPerDelivery: number | null; minPerStop: number | null; gpsRoutes: number }[];
+  drivers: { driverId: string; name: string; routes: number; deliveries: number; failed: number; successRate: number | null; km: number; minPerStop: number | null }[];
   months: { month: string; routes: number; km: number; cost: number }[];
   failReasons: { reason: string; count: number }[];
 };
@@ -238,11 +238,13 @@ function exportFleetCsv(f: FleetReport, from: string, to: string) {
     ["Reporte de flota", `${from} a ${to}`],
     ["Rutas finalizadas", f.coverage.routes, "Rutas con GPS", f.coverage.gpsRoutes],
     [],
-    ["Vehículo", "Rutas", "Entregas", "Fallidas", "Km (GPS)", "Horas", "Costo", "Costo por km"],
-    ...f.vehicles.map((v) => [v.plate, v.routes, v.deliveries, v.failed, v.gpsRoutes > 0 ? v.km : "Sin GPS", v.hours, v.cost, v.costPerKm ?? "Sin datos"]),
+    ["Éxito a la primera %", f.totals.firstTryRate ?? "Sin datos", "Costo por entrega", f.totals.costPerDelivery ?? "Sin datos", "Min por parada", f.totals.minPerStop ?? "Sin datos", "Entregas por ruta", f.totals.deliveriesPerRoute ?? "Sin datos"],
     [],
-    ["Conductor", "Rutas", "Entregas", "Fallidas", "% éxito", "Km (GPS)"],
-    ...f.drivers.map((d) => [d.name, d.routes, d.deliveries, d.failed, d.successRate ?? "Sin datos", d.km > 0 ? d.km : "Sin GPS"]),
+    ["Vehículo", "Rutas", "Entregas", "Fallidas", "Km (GPS)", "Horas", "Costo", "Costo por km", "Costo por entrega", "Min por parada"],
+    ...f.vehicles.map((v) => [v.plate, v.routes, v.deliveries, v.failed, v.gpsRoutes > 0 ? v.km : "Sin GPS", v.hours, v.cost, v.costPerKm ?? "Sin datos", v.costPerDelivery ?? "Sin datos", v.minPerStop ?? "Sin datos"]),
+    [],
+    ["Conductor", "Rutas", "Entregas", "Fallidas", "% éxito", "Km (GPS)", "Min por parada"],
+    ...f.drivers.map((d) => [d.name, d.routes, d.deliveries, d.failed, d.successRate ?? "Sin datos", d.km > 0 ? d.km : "Sin GPS", d.minPerStop ?? "Sin datos"]),
     [],
     ["Motivo de fallo", "Cantidad"],
     ...f.failReasons.map((r) => [FAIL_LABEL[r.reason] ?? r.reason, r.count]),
@@ -336,6 +338,7 @@ export default function LogisticaPanel() {
   const [modal, setModal] = useState<
     | { kind: "route"; date?: string }
     | { kind: "assign"; route: Route }
+    | { kind: "optimize"; route: Route }
     | { kind: "photo"; attemptId: string; title: string }
     | { kind: "cost" }
     | { kind: "incident" }
@@ -564,6 +567,7 @@ export default function LogisticaPanel() {
                           {r.status === "PLANNED" && <button className={btnGhost} onClick={() => patch(`/api/panel/logistica/rutas/${r.id}`, { status: "IN_PROGRESS" }, "Ruta iniciada")}>Iniciar</button>}
                           {r.status === "IN_PROGRESS" && <button className={btnPrimary} onClick={() => patch(`/api/panel/logistica/rutas/${r.id}`, { status: "DONE" }, "Ruta finalizada")}><MdCheckCircle size={16} />Finalizar</button>}
                           {r.status !== "DONE" && <button className={btnGhost} onClick={() => setModal({ kind: "assign", route: r })}><MdAdd size={16} />Pedidos</button>}
+                          {r.status !== "DONE" && perm.canEdit && r.orders.length >= 2 && <button className={btnGhost} onClick={() => setModal({ kind: "optimize", route: r })}><MdAltRoute size={16} />Optimizar orden</button>}
                           {perm.canDelete && r.status === "PLANNED" && (
                             <button className="inline-flex items-center rounded-xl border border-[#FEE2E2] px-2.5 py-2 text-[#DC2626] hover:bg-[#FEF2F2]" onClick={() => del(`/api/panel/logistica/rutas/${r.id}`, "Ruta eliminada")} aria-label="Eliminar ruta"><MdDelete size={16} /></button>
                           )}
@@ -612,6 +616,7 @@ export default function LogisticaPanel() {
                                     <span className="inline-flex items-center gap-1 font-bold text-[#B45309]"><MdCancel size={14} />{FAIL_LABEL[att.reason ?? ""] ?? "No entregado"}</span>
                                   ) : <span className="text-[#94A3B8]">Pendiente</span>}
                                   {att?.photoPath && <button className="ml-2 inline-flex items-center gap-1 align-middle text-[#27B1B8] hover:underline" onClick={() => setModal({ kind: "photo", attemptId: att.id, title: o.customerName })}><MdPhotoCamera size={14} />Ver foto</button>}
+                                  {o.shippingStatus === "DELIVERED" && att?.outcome === "DELIVERED" && <a className="ml-2 inline-flex items-center gap-1 align-middle text-[#27B1B8] hover:underline" href={`/api/panel/logistica/entregas/${att.id}/comprobante`} target="_blank" rel="noreferrer"><MdPictureAsPdf size={14} />Comprobante</a>}
                                   {far && <span className="mt-0.5 flex items-center gap-1 text-[10px] text-[#B45309]"><MdWarningAmber size={12} />{(att.distanceM ?? 0) > 300 ? `A ${Math.round(att.distanceM ?? 0)} m de la dirección` : "GPS impreciso"}</span>}
                                   {att?.note && <span className="mt-0.5 block text-[10px] text-[#64748B]">{att.note}</span>}
                                   {(o.enRouteNotifiedAt || o.nearNotifiedAt) && (() => {
@@ -787,6 +792,12 @@ export default function LogisticaPanel() {
                     <Kpi icon={<MdCheckCircle size={18} />} label="Entregas exitosas" value={fleet.totals.successRate != null ? `${fleet.totals.successRate}%` : "Sin datos"} color="#16A34A" />
                     <Kpi icon={<MdAttachMoney size={18} />} label="Costo por km" value={fleet.totals.costPerKm != null ? COP.format(fleet.totals.costPerKm) : "Sin datos"} color="#F0A73C" />
                   </div>
+                  <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    <Kpi icon={<MdCheckCircle size={18} />} label="Éxito a la primera" value={fleet.totals.firstTryRate != null ? `${fleet.totals.firstTryRate}%` : "Sin datos"} color="#0C535B" />
+                    <Kpi icon={<MdAttachMoney size={18} />} label="Costo por entrega" value={fleet.totals.costPerDelivery != null ? COP.format(fleet.totals.costPerDelivery) : "Sin datos"} color="#F0A73C" />
+                    <Kpi icon={<MdBarChart size={18} />} label="Min por parada" value={fleet.totals.minPerStop != null ? `${fleet.totals.minPerStop} min` : "Sin datos"} color="#7C6CE0" />
+                    <Kpi icon={<MdRoute size={18} />} label="Entregas por ruta" value={fleet.totals.deliveriesPerRoute != null ? String(fleet.totals.deliveriesPerRoute) : "Sin datos"} color="#27B1B8" />
+                  </div>
                   <p className="text-xs text-[#64748B]">
                     Rutas finalizadas en el período: <b>{fleet.coverage.routes}</b>. Km con GPS en <b>{fleet.coverage.gpsRoutes}</b> de {fleet.coverage.routes}; el costo por km usa solo esos km, por eso puede verse más alto si hay rutas sin GPS.
                   </p>
@@ -794,10 +805,11 @@ export default function LogisticaPanel() {
                   <div>
                     <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#94A3B8]">Por vehículo</p>
                     <Table
-                      head={["Vehículo", "Rutas", "Entregas", "Fallidas", "Km (GPS)", "Horas", "Costo", "Costo / km"]}
+                      head={["Vehículo", "Rutas", "Entregas", "Fallidas", "Km (GPS)", "Horas", "Costo", "Costo / km", "Costo / entrega", "Min / parada"]}
                       rows={fleet.vehicles.map((v) => [
                         <b key="p">{v.plate}</b>, v.routes, v.deliveries, v.failed,
                         v.gpsRoutes > 0 ? v.km : "Sin GPS", v.routes > 0 ? v.hours : "—", COP.format(v.cost), v.costPerKm != null ? COP.format(v.costPerKm) : "Sin datos",
+                        v.costPerDelivery != null ? COP.format(v.costPerDelivery) : "Sin datos", v.minPerStop ?? "Sin datos",
                       ])}
                       empty="Sin rutas finalizadas ni costos en este período."
                     />
@@ -806,8 +818,8 @@ export default function LogisticaPanel() {
                   <div>
                     <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#94A3B8]">Por conductor</p>
                     <Table
-                      head={["Conductor", "Rutas", "Entregas", "Fallidas", "% éxito", "Km (GPS)"]}
-                      rows={fleet.drivers.map((d) => [<b key="n">{d.name}</b>, d.routes, d.deliveries, d.failed, d.successRate != null ? `${d.successRate}%` : "Sin datos", d.km > 0 ? d.km : "Sin GPS"])}
+                      head={["Conductor", "Rutas", "Entregas", "Fallidas", "% éxito", "Km (GPS)", "Min / parada"]}
+                      rows={fleet.drivers.map((d) => [<b key="n">{d.name}</b>, d.routes, d.deliveries, d.failed, d.successRate != null ? `${d.successRate}%` : "Sin datos", d.km > 0 ? d.km : "Sin GPS", d.minPerStop ?? "Sin datos"])}
                       empty="Sin rutas finalizadas en este período."
                     />
                   </div>
@@ -871,6 +883,9 @@ export default function LogisticaPanel() {
       )}
       {modal?.kind === "assign" && data && (
         <AssignModal route={modal.route} orders={data.assignableOrders} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />
+      )}
+      {modal?.kind === "optimize" && (
+        <OptimizeModal route={modal.route} onClose={() => setModal(null)} onDone={done} onError={fail} markLocalWrite={markLocalWrite} />
       )}
       {modal?.kind === "photo" && (
         <Modal title={`Foto de entrega · ${modal.title}`} onClose={() => setModal(null)} wide>
@@ -1161,6 +1176,70 @@ function RouteModal({ initialDate, vehicles, drivers, orders, onClose, onDone, o
       <div><label className={labelCls}>Conductor</label><SimpleSelect value={driverId} options={drivers.map((d) => ({ value: d.id, label: d.fullName }))} onChange={setDriverId} /></div>
       <OrderPicker orders={orders} selected={selected} onToggle={toggle} />
       <div><label className={labelCls}>Notas (opcional)</label><input value={notes} onChange={(e) => setNotes(e.target.value)} className={inputCls} placeholder="Zona, horario, observaciones…" /></div>
+    </Modal>
+  );
+}
+
+type OptimizeResult = {
+  originLabel: string;
+  before: { km: number; min: number };
+  after: { km: number; min: number };
+  changed: boolean;
+  order: { id: string; name: string; address: string; located: boolean; done: boolean }[];
+};
+
+// Vista previa del orden óptimo (Google Routes): muestra el ahorro y solo guarda al confirmar.
+function OptimizeModal({ route, onClose, onDone, onError, markLocalWrite }: ModalProps & { route: Route; markLocalWrite: () => void }) {
+  const [res, setRes] = useState<OptimizeResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/panel/logistica/rutas/${route.id}/optimizar`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
+      .then(async (r) => { const j = await r.json().catch(() => ({})); if (!alive) return; if (r.ok) setRes(j); else setError(j.error ?? "No se pudo optimizar"); })
+      .catch(() => alive && setError("Sin conexión"));
+    return () => { alive = false; };
+  }, [route.id]);
+
+  const apply = async () => {
+    if (!res) return;
+    setSaving(true);
+    markLocalWrite();
+    const r = await fetch(`/api/panel/logistica/rutas/${route.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ stopOrder: res.order.map((o) => o.id) }) });
+    setSaving(false);
+    if (r.ok) onDone("Orden de paradas optimizado"); else onError((await r.json().catch(() => ({}))).error ?? "Error");
+  };
+
+  const saveKm = res ? Math.round((res.before.km - res.after.km) * 10) / 10 : 0;
+  const saveMin = res ? res.before.min - res.after.min : 0;
+  const better = !!res && res.changed && (saveKm > 0 || saveMin > 0);
+  return (
+    <Modal title="Optimizar orden de paradas" onClose={onClose} wide footer={<>
+      <button onClick={onClose} className="flex-1 rounded-xl border border-[#E2E8F0] py-2.5 text-sm font-bold text-[#64748B] hover:bg-[#F8FAFC]">Cancelar</button>
+      <button onClick={apply} disabled={!better || saving} className="flex-1 rounded-xl bg-[#27B1B8] py-2.5 text-sm font-bold text-white hover:opacity-80 disabled:opacity-50">{saving ? "Guardando…" : "Aplicar este orden"}</button>
+    </>}>
+      {!res && !error && <p className="text-sm text-[#64748B]">Calculando la mejor ruta con Google…</p>}
+      {error && <p className="rounded-xl bg-[#FEF2F2] px-3 py-2 text-xs text-[#DC2626]">{error}</p>}
+      {res && (
+        <>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <Stat label="Orden actual" value={`${res.before.km} km · ${fmtDur(res.before.min)}`} />
+            <Stat label="Orden optimizado" value={`${res.after.km} km · ${fmtDur(res.after.min)}`} />
+          </div>
+          <p className={`rounded-xl px-3 py-2 text-xs font-bold ${better ? "bg-[#ECFDF5] text-[#047857]" : "bg-[#F1F5F9] text-[#475569]"}`}>
+            {better ? `Ahorro estimado: ${saveKm} km y ${fmtDur(Math.max(0, saveMin))} (sin tráfico, ida y vuelta).` : "El orden actual ya es el mejor que encontró Google."}
+          </p>
+          <p className="text-[11px] text-[#94A3B8]">Punto de salida: {res.originLabel}. Las paradas ya atendidas quedan arriba y las que no tienen ubicación, al final.</p>
+          <ol className="space-y-1 text-sm">
+            {res.order.map((o, i) => (
+              <li key={o.id} className={`flex gap-2 ${o.done ? "text-[#94A3B8]" : "text-[#1A1A1A]"}`}>
+                <span className="w-5 shrink-0 text-right font-bold">{i + 1}.</span>
+                <span className="min-w-0">{o.name}<span className="block truncate text-[11px] text-[#94A3B8]">{o.address}{o.done ? " · atendida" : !o.located ? " · sin ubicar" : ""}</span></span>
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
     </Modal>
   );
 }

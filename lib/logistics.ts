@@ -683,12 +683,16 @@ export async function getFleetReport(from: string, to: string) {
     select: { id: true, date: true, vehicleId: true, driverId: true, distanceKm: true, durationMin: true, vehicle: { select: { plate: true, type: true } }, driver: { select: { fullName: true } } },
   });
   const routeIds = routes.map((r) => r.id);
-  const [delivered, failedAttempts, costs] = await Promise.all([
-    db.order.groupBy({ by: ["deliveryRouteId"], where: { deliveryRouteId: { in: routeIds }, shippingStatus: "DELIVERED" }, _count: { _all: true } }),
-    db.deliveryAttempt.findMany({ where: { routeId: { in: routeIds }, outcome: "FAILED" }, select: { routeId: true, reason: true } }),
+  const [deliveredOrders, failedAttempts, costs] = await Promise.all([
+    db.order.findMany({ where: { deliveryRouteId: { in: routeIds }, shippingStatus: "DELIVERED" }, select: { id: true, deliveryRouteId: true } }),
+    db.deliveryAttempt.findMany({ where: { routeId: { in: routeIds }, outcome: "FAILED" }, select: { routeId: true, orderId: true, reason: true } }),
     db.transportCost.findMany({ where: { date: range }, select: { vehicleId: true, date: true, category: true, amount: true, vehicle: { select: { plate: true, type: true } } } }),
   ]);
-  const deliveredBy = new Map(delivered.map((d) => [d.deliveryRouteId, d._count._all]));
+  const deliveredBy = new Map<string, number>();
+  for (const o of deliveredOrders) if (o.deliveryRouteId) deliveredBy.set(o.deliveryRouteId, (deliveredBy.get(o.deliveryRouteId) ?? 0) + 1);
+  // "A la primera": entregado sin ningún intento fallido previo.
+  const failedOrderIds = new Set(failedAttempts.map((a) => a.orderId));
+  const firstTry = deliveredOrders.filter((o) => !failedOrderIds.has(o.id)).length;
   const failedBy = new Map<string, number>();
   const failReasons = new Map<string, number>();
   for (const a of failedAttempts) {
@@ -697,11 +701,11 @@ export async function getFleetReport(from: string, to: string) {
     failReasons.set(key, (failReasons.get(key) ?? 0) + 1);
   }
 
-  const vehicles = new Map<string, { vehicleId: string; plate: string; type: string; routes: number; deliveries: number; failed: number; km: number; gpsRoutes: number; minutes: number; cost: number; costByCategory: Record<string, number> }>();
-  const drivers = new Map<string, { driverId: string; name: string; routes: number; deliveries: number; failed: number; km: number }>();
+  const vehicles = new Map<string, { vehicleId: string; plate: string; type: string; routes: number; deliveries: number; failed: number; km: number; gpsRoutes: number; minutes: number; timedMin: number; timedStops: number; cost: number; costByCategory: Record<string, number> }>();
+  const drivers = new Map<string, { driverId: string; name: string; routes: number; deliveries: number; failed: number; km: number; timedMin: number; timedStops: number }>();
   const months = new Map<string, { month: string; routes: number; km: number; cost: number }>();
   const vehicleRow = (id: string, plate: string, type: string) => {
-    if (!vehicles.has(id)) vehicles.set(id, { vehicleId: id, plate, type, routes: 0, deliveries: 0, failed: 0, km: 0, gpsRoutes: 0, minutes: 0, cost: 0, costByCategory: {} });
+    if (!vehicles.has(id)) vehicles.set(id, { vehicleId: id, plate, type, routes: 0, deliveries: 0, failed: 0, km: 0, gpsRoutes: 0, minutes: 0, timedMin: 0, timedStops: 0, cost: 0, costByCategory: {} });
     return vehicles.get(id)!;
   };
   const monthRow = (m: string) => {
@@ -711,11 +715,13 @@ export async function getFleetReport(from: string, to: string) {
 
   for (const r of routes) {
     const v = vehicleRow(r.vehicleId, r.vehicle.plate, r.vehicle.type);
-    const d = drivers.get(r.driverId) ?? { driverId: r.driverId, name: r.driver.fullName, routes: 0, deliveries: 0, failed: 0, km: 0 };
+    const d = drivers.get(r.driverId) ?? { driverId: r.driverId, name: r.driver.fullName, routes: 0, deliveries: 0, failed: 0, km: 0, timedMin: 0, timedStops: 0 };
     const ok = deliveredBy.get(r.id) ?? 0;
     const bad = failedBy.get(r.id) ?? 0;
     v.routes++; v.deliveries += ok; v.failed += bad; v.minutes += r.durationMin ?? 0;
     d.routes++; d.deliveries += ok; d.failed += bad;
+    // Minutos por parada: solo rutas con duración registrada y al menos una parada atendida (nunca se inventa 0).
+    if (r.durationMin != null && ok + bad > 0) { v.timedMin += r.durationMin; v.timedStops += ok + bad; d.timedMin += r.durationMin; d.timedStops += ok + bad; }
     if (r.distanceKm != null) { v.km += r.distanceKm; v.gpsRoutes++; d.km += r.distanceKm; }
     drivers.set(r.driverId, d);
     const m = monthRow(bogotaMonth(r.date));
@@ -728,8 +734,9 @@ export async function getFleetReport(from: string, to: string) {
     monthRow(bogotaMonth(c.date)).cost += c.amount;
   }
 
-  const vehicleList = [...vehicles.values()].map((v) => ({ ...v, km: round1(v.km), hours: round1(v.minutes / 60), costPerKm: v.km > 0 ? Math.round(v.cost / v.km) : null })).sort((a, b) => a.plate.localeCompare(b.plate));
-  const driverList = [...drivers.values()].map((d) => ({ ...d, km: round1(d.km), successRate: d.deliveries + d.failed > 0 ? Math.round((d.deliveries / (d.deliveries + d.failed)) * 100) : null })).sort((a, b) => a.name.localeCompare(b.name));
+  const perStop = (min: number, stops: number) => (stops > 0 ? round1(min / stops) : null);
+  const vehicleList = [...vehicles.values()].map((v) => ({ ...v, km: round1(v.km), hours: round1(v.minutes / 60), costPerKm: v.km > 0 ? Math.round(v.cost / v.km) : null, costPerDelivery: v.deliveries > 0 ? Math.round(v.cost / v.deliveries) : null, minPerStop: perStop(v.timedMin, v.timedStops) })).sort((a, b) => a.plate.localeCompare(b.plate));
+  const driverList = [...drivers.values()].map((d) => ({ ...d, km: round1(d.km), successRate: d.deliveries + d.failed > 0 ? Math.round((d.deliveries / (d.deliveries + d.failed)) * 100) : null, minPerStop: perStop(d.timedMin, d.timedStops) })).sort((a, b) => a.name.localeCompare(b.name));
   const totalKm = round1(vehicleList.reduce((a, v) => a + v.km, 0));
   const totalCost = vehicleList.reduce((a, v) => a + v.cost, 0);
   const deliveries = vehicleList.reduce((a, v) => a + v.deliveries, 0);
@@ -744,6 +751,10 @@ export async function getFleetReport(from: string, to: string) {
       successRate: deliveries + failed > 0 ? Math.round((deliveries / (deliveries + failed)) * 100) : null,
       cost: totalCost,
       costPerKm: totalKm > 0 ? Math.round(totalCost / totalKm) : null,
+      firstTryRate: deliveries > 0 ? Math.round((firstTry / deliveries) * 100) : null,
+      costPerDelivery: deliveries > 0 ? Math.round(totalCost / deliveries) : null,
+      minPerStop: perStop(vehicleList.reduce((a, v) => a + v.timedMin, 0), vehicleList.reduce((a, v) => a + v.timedStops, 0)),
+      deliveriesPerRoute: routes.length > 0 ? round1(deliveries / routes.length) : null,
     },
     coverage: { gpsRoutes: routes.filter((r) => r.distanceKm != null).length, routes: routes.length },
     vehicles: vehicleList,

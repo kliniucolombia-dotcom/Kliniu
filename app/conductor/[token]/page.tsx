@@ -111,6 +111,7 @@ export default function ConductorPage({ params }: { params: Promise<{ token: str
         const added = ids.filter((i) => !prev.includes(i)).length;
         if (added > 0) { showNotice(`La oficina agregó ${added} parada${added === 1 ? "" : "s"} a tu ruta.`); navigator.vibrate?.(300); }
         else if (prev.some((i) => !ids.includes(i))) showNotice("La oficina quitó una parada de tu ruta.");
+        else if (prev.join() !== ids.join()) showNotice("La oficina cambió el orden de tus paradas.");
       }
       setInfo(json);
       // Al abrir la app desde el ícono, /conductor vuelve a esta ruta.

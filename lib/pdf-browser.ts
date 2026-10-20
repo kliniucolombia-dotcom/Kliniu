@@ -8,7 +8,8 @@ const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTI
 
 export async function launchPdfBrowser() {
   if (!isServerless) {
-    return chromium.launch({ headless: true });
+    // Sin el Chromium de Playwright instalado (típico en local) se usa el Chrome del sistema.
+    return chromium.launch({ headless: true }).catch(() => chromium.launch({ headless: true, channel: "chrome" }));
   }
 
   return chromium.launch({
