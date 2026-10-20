@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { STOP_ORDER_BY } from "@/lib/logistics";
+import { STOP_ORDER_BY, bogotaToday, checklistTemplateFor, parseBogotaDate, DRIVER_INCIDENT_TYPES } from "@/lib/logistics";
 
 // Público por token: solo expone lo que el conductor necesita ver.
 export async function GET(_req: Request, { params }: { params: Promise<{ token: string }> }) {
@@ -11,7 +11,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
       status: true,
       startedAt: true,
       driver: { select: { fullName: true } },
-      vehicle: { select: { plate: true } },
+      vehicle: { select: { id: true, plate: true, type: true } },
       orders: {
         select: {
           id: true,
@@ -29,7 +29,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
     },
   });
   if (!route) return Response.json({ error: "Enlace inválido" }, { status: 404 });
+  // Checklist pre-operacional del día: si ya existe para este vehículo no se vuelve a pedir.
+  const done = !!(await prisma.vehicleChecklistEntry.findUnique({
+    where: { vehicleId_date: { vehicleId: route.vehicle.id, date: parseBogotaDate(bogotaToday()) } },
+    select: { id: true },
+  }));
   return Response.json({
+    checklist: { done, items: checklistTemplateFor(route.vehicle.type) },
+    incidentTypes: DRIVER_INCIDENT_TYPES,
     status: route.status,
     startedAt: route.startedAt,
     driver: route.driver.fullName,

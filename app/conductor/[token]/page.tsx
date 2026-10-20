@@ -1,12 +1,17 @@
 "use client";
 
 import { use, useCallback, useEffect, useRef, useState } from "react";
-import { MdGpsFixed, MdGpsOff, MdSettings, MdBatteryAlert, MdPlace, MdLocalShipping, MdCheckCircle, MdCancel, MdPhoneInTalk, MdNavigation, MdPhotoCamera, MdClose, MdCloudOff, MdWarningAmber } from "react-icons/md";
+import { MdGpsFixed, MdGpsOff, MdSettings, MdBatteryAlert, MdPlace, MdLocalShipping, MdCheckCircle, MdCancel, MdPhoneInTalk, MdNavigation, MdPhotoCamera, MdClose, MdCloudOff, MdWarningAmber, MdChecklist, MdReportProblem, MdChat } from "react-icons/md";
 import { RouteProgress } from "@/app/components/route-progress";
 import { enqueueDelivery, enqueuePosition, flush, pendingCount } from "./outbox";
+import { compressPhoto } from "./photo";
+import { ChecklistSheet, IncidentSheet, type ChecklistItem } from "./sheets";
 
 type Stop = { id: string; name: string; phone: string; address: string; lat: number | null; lng: number | null; result: "DELIVERED" | "FAILED" | null; reason: string | null };
-type Info = { status: "PLANNED" | "IN_PROGRESS" | "DONE"; startedAt: string | null; driver: string; plate: string; stops: Stop[] };
+type Info = {
+  status: "PLANNED" | "IN_PROGRESS" | "DONE"; startedAt: string | null; driver: string; plate: string; stops: Stop[];
+  checklist?: { done: boolean; items: ChecklistItem[] }; incidentTypes?: Record<string, string>;
+};
 
 const REASONS: Record<string, string> = {
   CLIENTE_AUSENTE: "Cliente ausente",
@@ -16,23 +21,27 @@ const REASONS: Record<string, string> = {
   OTRO: "Otro",
 };
 
-// Reduce la foto antes de subirla: el celular entrega 5-12 MB y Vercel corta el body en 4,5 MB.
-async function compressPhoto(file: File): Promise<File> {
-  try {
-    const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
-    const scale = Math.min(1, 1280 / Math.max(bmp.width, bmp.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(bmp.width * scale);
-    canvas.height = Math.round(bmp.height * scale);
-    canvas.getContext("2d")?.drawImage(bmp, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.8));
-    if (blob) return new File([blob], "entrega.jpg", { type: "image/jpeg" });
-  } catch { /* formato que el navegador no decodifica: se sube tal cual si es liviano */ }
-  if (file.size > 4 * 1024 * 1024) throw new Error("No se pudo preparar la foto. Intenta tomarla de nuevo.");
-  return file;
-}
-
 const SEND_EVERY_MS = 15_000;
+
+// Teléfono colombiano de 10 dígitos -> wa.me con el 57; si ya trae indicativo se respeta.
+const waLink = (phone: string, text: string) => {
+  const d = phone.replace(/\D/g, "");
+  return d.length < 10 ? null : `https://wa.me/${d.length === 10 ? `57${d}` : d}?text=${encodeURIComponent(text)}`;
+};
+const chip = "inline-flex items-center gap-1 rounded-lg border border-[#E2E8F0] px-3 py-2 text-xs font-bold text-[#475569]";
+
+// Ambos enlaces abren la app instalada y, si no la hay, la web de Maps/Waze.
+function NavLinks({ s }: { s: Stop }) {
+  const hasPos = s.lat != null && s.lng != null;
+  const q = encodeURIComponent(s.address);
+  return (
+    <>
+      {([["Google Maps", `https://www.google.com/maps/dir/?api=1&destination=${hasPos ? `${s.lat},${s.lng}` : q}`], ["Waze", `https://waze.com/ul?${hasPos ? `ll=${s.lat},${s.lng}` : `q=${q}`}&navigate=yes`]] as const).map(([label, href]) => (
+        <a key={label} className={chip} target="_blank" rel="noreferrer" href={href}><MdNavigation size={16} />{label}</a>
+      ))}
+    </>
+  );
+}
 
 // En la app Android (Capacitor) la ubicación la manda un servicio nativo en primer plano (notificación fija, como WhatsApp)
 // directo al servidor: sigue con la pantalla bloqueada o con Waze al frente. El puente lo inyecta la app en la página;
@@ -74,6 +83,16 @@ export default function ConductorPage({ params }: { params: Promise<{ token: str
   const [pauseNotice, setPauseNotice] = useState<string | null>(null);
   const [isApp, setIsApp] = useState(false);
   const [batteryOk, setBatteryOk] = useState(true);
+  const [showChecklist, setShowChecklist] = useState(false);
+  const [showIncident, setShowIncident] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [nowMs, setNowMs] = useState(0);
+  useEffect(() => {
+    const t0 = window.setTimeout(() => setNowMs(Date.now()), 0);
+    const t = window.setInterval(() => setNowMs(Date.now()), 5000);
+    return () => { window.clearTimeout(t0); window.clearInterval(t); };
+  }, []);
+  const showNotice = (text: string) => { setNotice(text); window.setTimeout(() => setNotice(null), 8000); };
   useEffect(() => { const t = window.setTimeout(() => setIsApp(nativeApp() != null), 0); return () => window.clearTimeout(t); }, []);
 
   // Sin señal el fetch rechaza: se conserva lo último que se vio (y el service worker sirve la copia guardada).
@@ -322,13 +341,59 @@ export default function ConductorPage({ params }: { params: Promise<{ token: str
         <p className="text-sm text-[#64748B]">Vehículo {info.plate}</p>
       </div>
 
+      {notice && <p className="mt-3 rounded-2xl border border-[#A7F3D0] bg-[#ECFDF5] px-4 py-3 text-xs font-semibold text-[#047857]" role="status">{notice}</p>}
+
       {canShare && <div className="mt-3"><RouteProgress startedAt={info.startedAt} attended={attended} total={info.stops.length} /></div>}
+
+      {info.checklist && !info.checklist.done && info.status !== "DONE" && (
+        <div className="mt-3 rounded-2xl border border-[#FDE68A] bg-[#FFFBEB] p-4">
+          <p className="flex items-center gap-2 text-sm font-bold text-[#92400E]"><MdChecklist size={18} />Checklist del vehículo pendiente</p>
+          <p className="mt-1 text-xs text-[#92400E]">Revisa el vehículo antes de salir. Toma 2 minutos.</p>
+          <button onClick={() => setShowChecklist(true)} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#27B1B8] px-4 py-3 text-sm font-bold text-white"><MdChecklist size={18} />Hacer checklist</button>
+        </div>
+      )}
+
+      {canShare && activeId && (() => {
+        const s = info.stops.find((x) => x.id === activeId)!;
+        const n = info.stops.indexOf(s) + 1;
+        const hi = waLink(s.phone, `Hola ${s.name}, soy ${info.driver} de KLINIU. Voy en camino con tu pedido.`);
+        const out = waLink(s.phone, `Hola ${s.name}, soy ${info.driver} de KLINIU. Ya estoy afuera con tu pedido.`);
+        return (
+          <div className="mt-3 rounded-2xl border-2 border-[#27B1B8] bg-white p-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-[#0C535B]">Próxima parada · {n} de {info.stops.length}</p>
+            <p className="mt-1 text-lg font-black text-[#1A1A1A]">{s.name}</p>
+            <p className="flex items-start gap-1 text-sm text-[#475569]"><MdPlace size={18} className="mt-0.5 shrink-0 text-[#27B1B8]" />{s.address}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <NavLinks s={s} />
+              {s.phone && <a className={chip} href={`tel:${s.phone}`}><MdPhoneInTalk size={16} />Llamar</a>}
+              {hi && <a className={chip} target="_blank" rel="noreferrer" href={hi}><MdChat size={16} />Voy en camino</a>}
+              {out && <a className={chip} target="_blank" rel="noreferrer" href={out}><MdChat size={16} />Estoy afuera</a>}
+            </div>
+            {queued.has(s.id)
+              ? <p className="mt-3 flex items-center gap-1 text-xs font-bold text-[#92400E]"><MdCloudOff size={16} />Guardado, enviando...</p>
+              : (
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <button onClick={() => openSheet(s, "DELIVERED")} className="inline-flex items-center justify-center gap-1 rounded-xl bg-[#27B1B8] px-3 py-3 text-sm font-bold text-white"><MdCheckCircle size={18} />Entregado</button>
+                  <button onClick={() => openSheet(s, "FAILED")} className="inline-flex items-center justify-center gap-1 rounded-xl border border-[#FDE68A] px-3 py-3 text-sm font-bold text-[#B45309]"><MdCancel size={18} />No entregado</button>
+                </div>
+              )}
+          </div>
+        );
+      })()}
 
       <div className="mt-3 rounded-2xl border border-[#E2E8F0] bg-white p-4">
         {sharing ? (
           <>
             <p className="flex items-center gap-2 text-sm font-bold text-[#0C535B]"><MdGpsFixed size={18} />Compartiendo ubicación</p>
-            <p className="mt-1 text-xs text-[#64748B]" data-tick={tick}>{lastSent ? `Último envío ${lastSent.toLocaleTimeString("es-CO")} (hace ${Math.max(0, Math.round((Date.now() - lastSent.getTime()) / 60000))} min)` : "Esperando primera lectura..."}</p>
+            {(() => {
+              const ago = lastSent && nowMs ? Math.max(0, Math.round((nowMs - lastSent.getTime()) / 1000)) : null;
+              const mins = ago != null ? Math.round(ago / 60) : 0;
+              const [tone, text] = ago == null ? ["bg-[#FFFBEB] text-[#92400E]", "Esperando primera lectura..."]
+                : ago < 60 ? ["bg-[#ECFDF5] text-[#047857]", `Enviando ubicación · hace ${ago} s`]
+                : ago < 180 ? ["bg-[#FFFBEB] text-[#92400E]", `Última ubicación enviada hace ${mins} min`]
+                : ["bg-[#FEF2F2] text-[#DC2626]", `Sin envíos hace ${mins} min. Revisa que el GPS y los datos estén activos.`];
+              return <p className={`mt-2 rounded-lg px-3 py-2 text-xs font-bold ${tone}`} data-tick={tick} role="status">{text}</p>;
+            })()}
             {isApp ? (
               <div className="mt-3 rounded-xl bg-[#F1F5F9] px-3 py-2 text-xs text-[#475569]">
                 <p className="flex items-center gap-1.5 font-bold text-[#0C535B]"><MdBatteryAlert size={16} />Para que no se corte</p>
@@ -388,19 +453,9 @@ export default function ConductorPage({ params }: { params: Promise<{ token: str
                 {queued.has(s.id) && !s.result && <p className="mt-2 flex items-center gap-1 text-xs font-bold text-[#92400E]"><MdCloudOff size={16} />Guardado, enviando...</p>}
                 {s.result === "DELIVERED" && <p className="mt-2 flex items-center gap-1 text-xs font-bold text-[#047857]"><MdCheckCircle size={16} />Entregado</p>}
                 {s.result === "FAILED" && <p className="mt-2 flex items-center gap-1 text-xs font-bold text-[#B45309]"><MdCancel size={16} />No entregado{s.reason ? ` · ${REASONS[s.reason] ?? s.reason}` : ""}</p>}
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {(() => {
-                    // Ambos enlaces abren la app instalada y, si no la hay, la web de Maps/Waze.
-                    const hasPos = s.lat != null && s.lng != null;
-                    const q = encodeURIComponent(s.address);
-                    const maps = `https://www.google.com/maps/dir/?api=1&destination=${hasPos ? `${s.lat},${s.lng}` : q}`;
-                    const waze = `https://waze.com/ul?${hasPos ? `ll=${s.lat},${s.lng}` : `q=${q}`}&navigate=yes`;
-                    return [["Google Maps", maps], ["Waze", waze]].map(([label, href]) => (
-                      <a key={label} className="inline-flex items-center gap-1 rounded-lg border border-[#E2E8F0] px-3 py-2 text-xs font-bold text-[#475569]" target="_blank" rel="noreferrer" href={href}>
-                        <MdNavigation size={16} />{label}
-                      </a>
-                    ));
-                  })()}
+                {active && <p className="mt-2 text-xs font-bold text-[#0C535B]">Próxima parada: usa los botones de arriba.</p>}
+                {!active && <div className="mt-2 flex flex-wrap gap-2">
+                  <NavLinks s={s} />
                   {s.phone && <a className="inline-flex items-center gap-1 rounded-lg border border-[#E2E8F0] px-3 py-2 text-xs font-bold text-[#475569]" href={`tel:${s.phone}`}><MdPhoneInTalk size={16} />Llamar</a>}
                   {canShare && s.result !== "DELIVERED" && !queued.has(s.id) && (
                     <>
@@ -408,13 +463,26 @@ export default function ConductorPage({ params }: { params: Promise<{ token: str
                       {s.result !== "FAILED" && <button onClick={() => openSheet(s, "FAILED")} className="inline-flex items-center gap-1 rounded-lg border border-[#FDE68A] px-3 py-2 text-xs font-bold text-[#B45309]"><MdCancel size={16} />No entregado</button>}
                     </>
                   )}
-                </div>
+                </div>}
               </li>
             );
           })}
           {info.stops.length === 0 && <li className="text-xs text-[#94A3B8]">Sin paradas asignadas.</li>}
         </ol>
       </div>
+
+      {info.status !== "DONE" && info.incidentTypes && (
+        <button onClick={() => setShowIncident(true)} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#E2E8F0] bg-white px-4 py-3 text-sm font-bold text-[#475569]"><MdReportProblem size={18} />Reportar novedad</button>
+      )}
+
+      {showChecklist && info.checklist && (
+        <ChecklistSheet token={token} items={info.checklist.items} onClose={() => setShowChecklist(false)}
+          onDone={(bad) => { setShowChecklist(false); showNotice(bad > 0 ? `Checklist enviado. Marcaste ${bad} ítem${bad === 1 ? "" : "s"} en Mal: avisa a la oficina.` : "Checklist enviado. Buen viaje."); void load(); }} />
+      )}
+      {showIncident && info.incidentTypes && (
+        <IncidentSheet token={token} types={info.incidentTypes} onClose={() => setShowIncident(false)}
+          onDone={() => { setShowIncident(false); showNotice("Novedad enviada. La oficina la verá en el panel."); }} />
+      )}
 
       {sheet && (
         <div className="fixed inset-0 z-50 flex items-end bg-black/40" role="dialog" aria-modal="true" aria-label={sheet.mode === "DELIVERED" ? "Confirmar entrega" : "Entrega fallida"}>

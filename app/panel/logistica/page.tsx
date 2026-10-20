@@ -182,6 +182,8 @@ type Incident = {
   description: string;
   correctiveAction: string | null;
   status: "OPEN" | "RESOLVED";
+  photoPath: string | null;
+  fromDriverApp: boolean;
   vehicle: Vehicle | null;
   driver: Driver | null;
   createdBy: { fullName: string };
@@ -682,8 +684,9 @@ export default function LogisticaPanel() {
                           <p className="font-black text-[#1A1A1A]">{i.type}</p>
                           <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${i.status === "OPEN" ? "bg-[#FEE2E2] text-[#DC2626]" : "bg-[#DCFCE7] text-[#15803D]"}`}>{i.status === "OPEN" ? "Abierta" : "Resuelta"}</span>
                         </div>
-                        <p className="mt-1 text-xs text-[#64748B]">{fmtDate(i.date)}{i.vehicle ? ` · ${vehicleLabel(i.vehicle)}` : ""}{i.driver ? ` · ${i.driver.fullName}` : ""} · {i.createdBy.fullName}</p>
+                        <p className="mt-1 text-xs text-[#64748B]">{fmtDate(i.date)}{i.vehicle ? ` · ${vehicleLabel(i.vehicle)}` : ""}{i.driver ? ` · ${i.driver.fullName}` : ""} · {i.fromDriverApp ? "Reportada por el conductor desde la app" : i.createdBy.fullName}</p>
                         <p className="mt-2 text-sm text-[#1A1A1A]">{i.description}</p>
+                        {i.photoPath && <a href={`/api/panel/logistica/novedades/${i.id}/foto`} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#0C535B] underline">Ver foto</a>}
                         {i.correctiveAction && <p className="mt-1 text-xs text-[#15803D]"><b>Acción correctiva:</b> {i.correctiveAction}</p>}
                       </div>
                       {perm.canEdit && i.status === "OPEN" && (

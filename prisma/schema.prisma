@@ -1924,6 +1924,8 @@ model TransportIncident {
   description      String
   correctiveAction String?
   status           TransportIncidentStatus @default(OPEN)
+  photoPath        String?
+  fromDriverApp    Boolean                 @default(false)
   createdById      String
   createdAt        DateTime                @default(now())
   updatedAt        DateTime                @updatedAt

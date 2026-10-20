@@ -20,6 +20,9 @@ export function parseBogotaDate(value: string): Date {
   return parseBogotaCivilDate(value);
 }
 
+// Hoy en Bogotá como "YYYY-MM-DD".
+export const bogotaToday = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+
 export function endOfBogotaDay(value: string): Date {
   return new Date(`${value}T23:59:59.999-05:00`);
 }
@@ -507,6 +510,36 @@ export async function createIncident(input: {
     include: {
       driver: { select: { fullName: true } },
       vehicle: { select: { plate: true } },
+    },
+  });
+}
+
+// Novedades que el conductor reporta desde su enlace (sin cuenta): tipo de una lista fija.
+export const DRIVER_INCIDENT_TYPES = {
+  LLANTA: "Llanta ponchada",
+  FALLA_MECANICA: "Falla mecánica",
+  ACCIDENTE: "Accidente",
+  TRAFICO: "Tráfico o vía bloqueada",
+  MERCANCIA: "Mercancía dañada",
+  OTRO: "Otro",
+} as const;
+export type DriverIncidentType = keyof typeof DRIVER_INCIDENT_TYPES;
+
+// Sin usuario: queda a nombre de quien creó la ruta (createdById es obligatorio) y marcada fromDriverApp.
+export async function createDriverIncident(input: { routeId: string; type: DriverIncidentType; description?: string; photoPath?: string }) {
+  const db = requirePrisma();
+  const route = await db.deliveryRoute.findUnique({ where: { id: input.routeId }, select: { vehicleId: true, driverId: true, createdById: true } });
+  if (!route) throw new Error("ROUTE_NOT_FOUND");
+  return db.transportIncident.create({
+    data: {
+      vehicleId: route.vehicleId,
+      driverId: route.driverId,
+      date: parseBogotaDate(bogotaToday()),
+      type: DRIVER_INCIDENT_TYPES[input.type],
+      description: input.description?.trim() || "Sin detalle",
+      photoPath: input.photoPath ?? null,
+      fromDriverApp: true,
+      createdById: route.createdById,
     },
   });
 }
