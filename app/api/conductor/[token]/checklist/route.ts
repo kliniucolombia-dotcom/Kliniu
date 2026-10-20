@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { broadcastPanelUpdate } from "@/lib/realtime";
-import { bogotaToday, checklistTemplateFor, upsertChecklistEntry } from "@/lib/logistics";
+import { bogotaToday, checklistTemplateFor, parseBogotaDate } from "@/lib/logistics";
 
 // Público por token: checklist pre-operacional F21 del día, hecho desde el celular antes de salir.
 export async function POST(request: Request, { params }: { params: Promise<{ token: string }> }) {
@@ -30,15 +30,25 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
   const initials = typeof body?.initials === "string" ? body.initials.trim().slice(0, 10) : undefined;
   const notes = typeof body?.notes === "string" ? body.notes.trim().slice(0, 500) : undefined;
 
-  await upsertChecklistEntry({
-    vehicleId: route.vehicle.id,
-    driverId: route.driverId,
-    date: bogotaToday(),
-    items,
-    initials,
-    notes,
-    userId: route.createdById, // sin cuenta: se registra a nombre de quien creó la ruta; el conductor queda en driverId
-  });
+  // Solo crear: un enlace público nunca sobrescribe un checklist ya registrado (por otro conductor o desde el panel).
+  // El índice único vehicleId+date cubre la carrera entre dos envíos simultáneos.
+  try {
+    await prisma.vehicleChecklistEntry.create({
+      data: {
+        vehicleId: route.vehicle.id,
+        driverId: route.driverId,
+        date: parseBogotaDate(bogotaToday()),
+        items,
+        initials: initials || null,
+        notes: notes || null,
+        createdById: route.createdById, // sin cuenta: a nombre de quien creó la ruta; el conductor queda en driverId
+      },
+    });
+  } catch (e) {
+    if ((e as { code?: string }).code === "P2002") return Response.json({ error: "El checklist de hoy ya fue registrado para este vehículo" }, { status: 409 });
+    console.error("DRIVER_CHECKLIST_FAILED", e instanceof Error ? e.message : "");
+    return Response.json({ error: "No se pudo guardar el checklist" }, { status: 500 });
+  }
   broadcastPanelUpdate("logistics").catch(() => {});
   return Response.json({ ok: true, bad: Object.values(items).filter((v) => v === "M").length });
 }
