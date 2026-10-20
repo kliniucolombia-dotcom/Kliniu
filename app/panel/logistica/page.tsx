@@ -9,6 +9,7 @@ import {
   MdElectricBolt, MdLocalGasStation, MdCable, MdLuggage, MdRemoveRedEye, MdWarningAmber, MdMap, MdLink, MdArrowUpward, MdArrowDownward, MdPhotoCamera, MdCancel, MdBarChart, MdSignalWifiOff, MdPauseCircle, MdFileDownload,
 } from "react-icons/md";
 import { RouteMap } from "./route-map";
+import { RouteProgress } from "@/app/components/route-progress";
 import { SimpleSelect } from "../_components/simple-select";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
@@ -158,6 +159,7 @@ type Route = {
   orders: OrderLite[];
   distanceKm?: number | null;
   durationMin?: number | null;
+  startedAt?: string | null;
   alerts?: { kind: "NO_SIGNAL" | "STOPPED"; sinceMin: number }[];
   lastPositionAt?: string | null;
 };
@@ -525,6 +527,15 @@ export default function LogisticaPanel() {
                           })()}
                         </p>
                         {r.notes && <p className="mt-1 text-xs text-[#94A3B8]">{r.notes}</p>}
+                        {r.status === "IN_PROGRESS" && r.startedAt && (
+                          <div className="mt-2 max-w-md">
+                            <RouteProgress
+                              startedAt={r.startedAt}
+                              attended={r.orders.filter((o) => o.shippingStatus === "DELIVERED" || o.deliveryAttempts?.length).length}
+                              total={r.orders.length}
+                            />
+                          </div>
+                        )}
                         {r.status === "IN_PROGRESS" && (r.alerts?.length ?? 0) > 0 && (
                           <div className="mt-2 flex flex-wrap gap-2">
                             {r.alerts!.map((a) => (
@@ -563,7 +574,7 @@ export default function LogisticaPanel() {
                         <MdMap size={16} />{mapRoutes.has(r.id) ? "Ocultar mapa" : "Ver mapa"}
                       </button>
                     )}
-                    {mapRoutes.has(r.id) && <RouteMap routeId={r.id} inProgress={r.status === "IN_PROGRESS"} finished={r.status === "DONE"} />}
+                    {mapRoutes.has(r.id) && <RouteMap routeId={r.id} vehicleType={r.vehicle.type} inProgress={r.status === "IN_PROGRESS"} finished={r.status === "DONE"} />}
                     {r.orders.length > 0 && (
                       <div className="mt-3 overflow-x-auto">
                         <table className="w-full min-w-[560px] text-xs">

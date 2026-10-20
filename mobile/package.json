@@ -1,0 +1,13 @@
+{
+  "name": "kliniu-conductor",
+  "private": true,
+  "version": "1.0.0",
+  "description": "App Android del conductor: envuelve /conductor/[token] y agrega ubicación en segundo plano",
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/core": "^8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.3"
+  }
+}

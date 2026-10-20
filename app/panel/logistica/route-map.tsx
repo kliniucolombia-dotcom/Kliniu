@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MdPlayArrow, MdPause } from "react-icons/md";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { MdPlayArrow, MdPause, MdDirectionsCar, MdTwoWheeler, MdAirportShuttle, MdLocalShipping } from "react-icons/md";
 
 type Live = { track: { lat: number; lng: number }[]; last: { lat: number; lng: number; speed: number | null; recordedAt: string } | null; distanceKm: number; startedAt: string | null; finishedAt: string | null };
 type Replay = { points: { lat: number; lng: number; speed: number | null; recordedAt: string }[]; deliveries: { outcome: "DELIVERED" | "FAILED"; reason: string | null; lat: number | null; lng: number | null; recordedAt: string; name: string }[] };
@@ -24,12 +26,22 @@ export function loadGoogle(): Promise<GMaps> {
   return loader;
 }
 
+const VEHICLE_ICON = { CAMIONETA: MdDirectionsCar, MOTO: MdTwoWheeler, FURGON: MdAirportShuttle, CAMION: MdLocalShipping };
+
+// Marcador redondo con el ícono del tipo de vehículo (los mismos íconos de las tarjetas del panel).
+function vehicleIcon(google: GMaps, type: string, color: string) {
+  const Icon = VEHICLE_ICON[type as keyof typeof VEHICLE_ICON] ?? MdLocalShipping;
+  const glyph = renderToStaticMarkup(createElement(Icon, { size: 22, color: "#fff" }));
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44"><circle cx="22" cy="22" r="20" fill="${color}" stroke="#fff" stroke-width="3"/><g transform="translate(11 11)">${glyph}</g></svg>`;
+  return { url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`, scaledSize: new google.maps.Size(44, 44), anchor: new google.maps.Point(22, 22) };
+}
+
 function fmtDuration(from: string, to: string | null) {
   const mins = Math.max(0, Math.round(((to ? new Date(to).getTime() : Date.now()) - new Date(from).getTime()) / 60000));
   return mins >= 60 ? `${Math.floor(mins / 60)} h ${mins % 60} min` : `${mins} min`;
 }
 
-export function RouteMap({ routeId, inProgress, finished = false }: { routeId: string; inProgress: boolean; finished?: boolean }) {
+export function RouteMap({ routeId, vehicleType, inProgress, finished = false }: { routeId: string; vehicleType: string; inProgress: boolean; finished?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [missing, setMissing] = useState<Stop[]>([]);
@@ -89,7 +101,7 @@ export function RouteMap({ routeId, inProgress, finished = false }: { routeId: s
         });
         setLive(res.live);
         const trail = new google.maps.Polyline({ map, path: res.live.track, strokeColor: "#F97316", strokeOpacity: 0.9, strokeWeight: 4 });
-        const car = new google.maps.Marker({ map, title: "Vehículo", zIndex: 999, icon: { path: google.maps.SymbolPath.CIRCLE, scale: 9, fillColor: "#F97316", fillOpacity: 1, strokeColor: "#fff", strokeWeight: 3 } });
+        const car = new google.maps.Marker({ map, title: "Vehículo", zIndex: 999, icon: vehicleIcon(google, vehicleType, "#F97316") });
         const place = (l: Live) => {
           trail.setPath(l.track);
           if (l.last) { car.setPosition({ lat: l.last.lat, lng: l.last.lng }); car.setVisible(true); } else car.setVisible(false);
@@ -101,7 +113,7 @@ export function RouteMap({ routeId, inProgress, finished = false }: { routeId: s
           const rp: Replay | null = await fetch(`/api/panel/logistica/rutas/${routeId}/mapa?replay=1`).then((x) => x.json()).catch(() => null);
           if (rp?.points?.length && !cancelled) {
             car.setVisible(false);
-            const mover = new google.maps.Marker({ map, zIndex: 998, title: "Reproducción", position: rp.points[0], icon: { path: google.maps.SymbolPath.CIRCLE, scale: 9, fillColor: "#2563EB", fillOpacity: 1, strokeColor: "#fff", strokeWeight: 3 } });
+            const mover = new google.maps.Marker({ map, zIndex: 998, title: "Reproducción", position: rp.points[0], icon: vehicleIcon(google, vehicleType, "#2563EB") });
             moveReplay.current = (i) => rp.points[i] && mover.setPosition({ lat: rp.points[i].lat, lng: rp.points[i].lng });
             const hhmm = (d: string) => new Date(d).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
             rp.deliveries.forEach((d) => {
@@ -134,7 +146,7 @@ export function RouteMap({ routeId, inProgress, finished = false }: { routeId: s
       }
     })();
     return () => { cancelled = true; if (timer) clearInterval(timer); };
-  }, [routeId, inProgress, finished]);
+  }, [routeId, vehicleType, inProgress, finished]);
 
   if (error) return <p className="mt-3 rounded-xl bg-[#FEF2F2] px-3 py-2 text-xs text-[#DC2626]">{error}</p>;
   return (

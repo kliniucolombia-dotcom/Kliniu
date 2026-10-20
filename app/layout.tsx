@@ -80,6 +80,8 @@ export default async function RootLayout({
       lang="es"
       className={`${figtree.variable} h-full antialiased`}
       data-scroll-behavior="smooth"
+      // La app Android del conductor (Capacitor) inyecta --safe-area-inset-* en el style antes de hidratar.
+      suppressHydrationWarning
     >
       <head>
         {/* Consent Mode v2: todo denegado por defecto, antes de GTM; se concede si ya aceptó cookies. */}

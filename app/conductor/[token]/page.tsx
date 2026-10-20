@@ -1,11 +1,12 @@
 "use client";
 
 import { use, useCallback, useEffect, useRef, useState } from "react";
-import { MdGpsFixed, MdGpsOff, MdPlace, MdLocalShipping, MdCheckCircle, MdCancel, MdPhoneInTalk, MdNavigation, MdPhotoCamera, MdClose, MdCloudOff, MdWarningAmber } from "react-icons/md";
+import { MdGpsFixed, MdGpsOff, MdSettings, MdBatteryAlert, MdPlace, MdLocalShipping, MdCheckCircle, MdCancel, MdPhoneInTalk, MdNavigation, MdPhotoCamera, MdClose, MdCloudOff, MdWarningAmber } from "react-icons/md";
+import { RouteProgress } from "@/app/components/route-progress";
 import { enqueueDelivery, enqueuePosition, flush, pendingCount } from "./outbox";
 
 type Stop = { id: string; name: string; phone: string; address: string; lat: number | null; lng: number | null; result: "DELIVERED" | "FAILED" | null; reason: string | null };
-type Info = { status: "PLANNED" | "IN_PROGRESS" | "DONE"; driver: string; plate: string; stops: Stop[] };
+type Info = { status: "PLANNED" | "IN_PROGRESS" | "DONE"; startedAt: string | null; driver: string; plate: string; stops: Stop[] };
 
 const REASONS: Record<string, string> = {
   CLIENTE_AUSENTE: "Cliente ausente",
@@ -33,6 +34,19 @@ async function compressPhoto(file: File): Promise<File> {
 
 const SEND_EVERY_MS = 15_000;
 
+// En la app Android (Capacitor) la ubicación la manda un servicio nativo en primer plano (notificación fija, como WhatsApp)
+// directo al servidor: sigue con la pantalla bloqueada o con Waze al frente. El puente lo inyecta la app en la página;
+// en el navegador normal no existe y se usa navigator.geolocation.
+type NativeBridge = { isNativePlatform?: () => boolean; nativePromise: (plugin: string, method: string, options?: object) => Promise<unknown> };
+type NativeStatus = { running: boolean; lastSentAt: number; lastFixAt: number; lat: number; lng: number; accuracy: number; pending: number; error: string | null; routeStopped: boolean; batteryUnrestricted: boolean };
+const nativeApp = () => {
+  const cap = (window as unknown as { Capacitor?: NativeBridge }).Capacitor;
+  return cap?.isNativePlatform?.() ? cap : null;
+};
+const tracking = (method: string, options?: object) => nativeApp()?.nativePromise("ConductorTracking", method, options);
+const openAppSettings = () => { void tracking("openSettings")?.catch(() => {}); };
+const allowBackground = () => { void tracking("allowBackground")?.catch(() => {}); };
+
 export default function ConductorPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
   const [info, setInfo] = useState<Info | null>(null);
@@ -40,7 +54,7 @@ export default function ConductorPage({ params }: { params: Promise<{ token: str
   const [sharing, setSharing] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [lastSent, setLastSent] = useState<Date | null>(null);
-  const watchId = useRef<number | null>(null);
+  const watchId = useRef<number | "native" | null>(null);
   const lastPostAt = useRef(0);
   const wakeLock = useRef<{ release: () => Promise<void> } | null>(null);
   const lastPos = useRef<{ lat: number; lng: number; accuracy: number } | null>(null);
@@ -58,6 +72,9 @@ export default function ConductorPage({ params }: { params: Promise<{ token: str
   const [online, setOnline] = useState(true);
   const [tick, setTick] = useState(0);
   const [pauseNotice, setPauseNotice] = useState<string | null>(null);
+  const [isApp, setIsApp] = useState(false);
+  const [batteryOk, setBatteryOk] = useState(true);
+  useEffect(() => { const t = window.setTimeout(() => setIsApp(nativeApp() != null), 0); return () => window.clearTimeout(t); }, []);
 
   // Sin señal el fetch rechaza: se conserva lo último que se vio (y el service worker sirve la copia guardada).
   const load = useCallback(async () => {
@@ -65,7 +82,11 @@ export default function ConductorPage({ params }: { params: Promise<{ token: str
     if (!res) return;
     const json = await res.json().catch(() => ({}));
     if (!res.ok) setError(json.error ?? "Enlace inválido");
-    else setInfo(json);
+    else {
+      setInfo(json);
+      // Al abrir la app desde el ícono, /conductor vuelve a esta ruta.
+      try { localStorage.setItem("kliniu_conductor_last", token); } catch { /* nada */ }
+    }
   }, [token]);
 
   useEffect(() => { void load(); }, [load]);
@@ -82,13 +103,19 @@ export default function ConductorPage({ params }: { params: Promise<{ token: str
     try { if (on) localStorage.setItem(flagKey, "1"); else localStorage.removeItem(flagKey); } catch { /* sin almacenamiento: solo no se reanuda solo */ }
   }, [flagKey]);
 
-  const stop = useCallback(() => {
-    if (watchId.current != null) navigator.geolocation.clearWatch(watchId.current);
+  const clearWatch = useCallback(() => {
+    const id = watchId.current;
     watchId.current = null;
+    if (id === "native") void tracking("stop")?.catch(() => {});
+    else if (typeof id === "number") navigator.geolocation.clearWatch(id);
+  }, []);
+
+  const stop = useCallback(() => {
+    clearWatch();
     wakeLock.current?.release().catch(() => {});
     wakeLock.current = null;
     setSharing(false);
-  }, []);
+  }, [clearWatch]);
 
   useEffect(() => stop, [stop]);
 
@@ -128,19 +155,30 @@ export default function ConductorPage({ params }: { params: Promise<{ token: str
   }, []);
 
   const beginWatch = useCallback(() => {
-    if (watchId.current != null) navigator.geolocation.clearWatch(watchId.current);
+    clearWatch();
+    // speed en m/s; time en ms del GPS.
+    const onFix = (lat: number, lng: number, accuracy: number, speed: number | null, time: number) => {
+      lastFixAt.current = Date.now();
+      lastPos.current = { lat, lng, accuracy };
+      if (Date.now() - lastPostAt.current < SEND_EVERY_MS) return;
+      lastPostAt.current = Date.now();
+      // Cada lectura entra a la cola con la hora del GPS; así un corte de señal no pierde recorrido.
+      void enqueuePosition(token, { lat, lng, accuracy, speed: speed != null ? speed * 3.6 : null, recordedAt: time || Date.now() })
+        .then(() => syncNow()).catch(() => setMsg("No se pudo guardar la ubicación en el teléfono."));
+    };
+    if (nativeApp()) {
+      watchId.current = "native";
+      tracking("start", { token })?.then((r) => {
+        if (!(r as { notifications?: boolean }).notifications) setMsg("Activa las notificaciones de KLINIU Conductor para ver el aviso fijo; sin él el teléfono puede cerrar el seguimiento.");
+      }).catch((e: { code?: string }) => {
+        if (e?.code === "NOT_AUTHORIZED") setMsg("Sin permiso de ubicación. Permite la ubicación a KLINIU Conductor y vuelve a intentar.");
+        else setMsg("No se pudo iniciar el seguimiento.");
+        setFlag(false); stop();
+      });
+      return;
+    }
     watchId.current = navigator.geolocation.watchPosition(
-      (p) => {
-        lastFixAt.current = Date.now();
-        lastPos.current = { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy };
-        if (Date.now() - lastPostAt.current < SEND_EVERY_MS) return;
-        lastPostAt.current = Date.now();
-        // Cada lectura entra a la cola con la hora del GPS; así un corte de señal no pierde recorrido.
-        void enqueuePosition(token, {
-          lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy,
-          speed: p.coords.speed != null ? p.coords.speed * 3.6 : null, recordedAt: p.timestamp || Date.now(),
-        }).then(() => syncNow()).catch(() => setMsg("No se pudo guardar la ubicación en el teléfono."));
-      },
+      (p) => onFix(p.coords.latitude, p.coords.longitude, p.coords.accuracy, p.coords.speed, p.timestamp),
       (e) => {
         if (e.code === e.PERMISSION_DENIED) { setMsg("Permiso de ubicación denegado. Actívalo en el navegador (en iPhone: Ajustes > Safari > Ubicación)."); setFlag(false); stop(); return; }
         // Timeout / posición no disponible (vehículo quieto, túnel): el watch sigue vivo y reintenta solo.
@@ -148,14 +186,32 @@ export default function ConductorPage({ params }: { params: Promise<{ token: str
       },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 },
     );
-  }, [token, syncNow, stop, setFlag]);
+  }, [token, syncNow, stop, setFlag, clearWatch]);
+
+  // En la app el servicio nativo envía solo; aquí se lee su estado para mostrarlo y para la posición de las entregas.
+  useEffect(() => {
+    if (!sharing || !nativeApp()) return;
+    const poll = async () => {
+      const st = (await tracking("status")?.catch(() => null)) as NativeStatus | null | undefined;
+      if (!st) return;
+      if (st.lastSentAt) setLastSent(new Date(st.lastSentAt));
+      if (st.lastFixAt) { lastFixAt.current = st.lastFixAt; lastPos.current = { lat: st.lat, lng: st.lng, accuracy: st.accuracy }; }
+      setPendingPositions(st.pending);
+      setBatteryOk(st.batteryUnrestricted);
+      if (st.routeStopped) { setMsg("La ruta no está en curso."); setFlag(false); stop(); }
+    };
+    const t = window.setInterval(() => { void poll(); }, 5000);
+    const t0 = window.setTimeout(() => { void poll(); }, 1500);
+    return () => { window.clearInterval(t); window.clearTimeout(t0); };
+  }, [sharing, stop, setFlag]);
 
   // Al volver a la pantalla: se suelta el wake lock al ocultarse, y el GPS puede quedar colgado tras una pausa.
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState !== "visible") return;
       void syncNow();
-      if (!sharing) return;
+      // En la app el GPS nativo no se pausa: no hace falta reiniciarlo ni mantener la pantalla encendida.
+      if (!sharing || nativeApp()) return;
       requestWakeLock();
       const gapMin = lastFixAt.current ? Math.round((Date.now() - lastFixAt.current) / 60000) : 0;
       if (gapMin >= 1) {
@@ -170,8 +226,8 @@ export default function ConductorPage({ params }: { params: Promise<{ token: str
 
   const start = async () => {
     setMsg(null);
-    if (!("geolocation" in navigator)) return setMsg("Este dispositivo no permite compartir ubicación.");
-    requestWakeLock();
+    if (!nativeApp() && !("geolocation" in navigator)) return setMsg("Este dispositivo no permite compartir ubicación.");
+    if (!nativeApp()) requestWakeLock();
     lastFixAt.current = Date.now();
     beginWatch();
     setSharing(true);
@@ -266,12 +322,23 @@ export default function ConductorPage({ params }: { params: Promise<{ token: str
         <p className="text-sm text-[#64748B]">Vehículo {info.plate}</p>
       </div>
 
+      {canShare && <div className="mt-3"><RouteProgress startedAt={info.startedAt} attended={attended} total={info.stops.length} /></div>}
+
       <div className="mt-3 rounded-2xl border border-[#E2E8F0] bg-white p-4">
         {sharing ? (
           <>
             <p className="flex items-center gap-2 text-sm font-bold text-[#0C535B]"><MdGpsFixed size={18} />Compartiendo ubicación</p>
             <p className="mt-1 text-xs text-[#64748B]" data-tick={tick}>{lastSent ? `Último envío ${lastSent.toLocaleTimeString("es-CO")} (hace ${Math.max(0, Math.round((Date.now() - lastSent.getTime()) / 60000))} min)` : "Esperando primera lectura..."}</p>
-            <p className="mt-1 text-xs text-[#64748B]">Mantén esta pantalla encendida y esta pestaña al frente. Si bloqueas el teléfono o abres otra app, el seguimiento se pausa.</p>
+            {isApp ? (
+              <div className="mt-3 rounded-xl bg-[#F1F5F9] px-3 py-2 text-xs text-[#475569]">
+                <p className="flex items-center gap-1.5 font-bold text-[#0C535B]"><MdBatteryAlert size={16} />Para que no se corte</p>
+                <p className="mt-1">Puedes bloquear el teléfono o usar Waze. {batteryOk ? "Si el ahorro de batería cierra la app, entra a Ajustes > Batería y elige \"Sin restricciones\"." : "Toca el botón y permite que la app siga en segundo plano: sin eso el teléfono puede cerrar el seguimiento."}</p>
+                {!batteryOk && <button onClick={allowBackground} className="mt-2 mr-2 inline-flex items-center gap-1.5 rounded-lg bg-[#27B1B8] px-3 py-1.5 font-bold text-white"><MdBatteryAlert size={15} />Permitir en segundo plano</button>}
+                <button onClick={openAppSettings} className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-[#CBD5E1] bg-white px-3 py-1.5 font-bold text-[#0C535B]"><MdSettings size={15} />Abrir ajustes de la app</button>
+              </div>
+            ) : (
+              <p className="mt-1 text-xs text-[#64748B]">Mantén esta pantalla encendida y esta pestaña al frente. Si bloqueas el teléfono o abres otra app, el seguimiento se pausa.</p>
+            )}
             <button onClick={() => { setFlag(false); stop(); }} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#E2E8F0] px-4 py-3 text-sm font-bold text-[#475569]"><MdGpsOff size={18} />Dejar de compartir</button>
           </>
         ) : (
@@ -283,6 +350,7 @@ export default function ConductorPage({ params }: { params: Promise<{ token: str
           </>
         )}
         {msg && <p className="mt-3 rounded-xl bg-[#FEF2F2] px-3 py-2 text-xs text-[#DC2626]">{msg}</p>}
+        {msg && isApp && !sharing && <button onClick={openAppSettings} className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-[#E2E8F0] px-3 py-1.5 text-xs font-bold text-[#0C535B]"><MdSettings size={15} />Abrir ajustes de la app</button>}
       </div>
 
       {(!online || pendingPositions > 0 || queued.size > 0) && (
@@ -321,10 +389,18 @@ export default function ConductorPage({ params }: { params: Promise<{ token: str
                 {s.result === "DELIVERED" && <p className="mt-2 flex items-center gap-1 text-xs font-bold text-[#047857]"><MdCheckCircle size={16} />Entregado</p>}
                 {s.result === "FAILED" && <p className="mt-2 flex items-center gap-1 text-xs font-bold text-[#B45309]"><MdCancel size={16} />No entregado{s.reason ? ` · ${REASONS[s.reason] ?? s.reason}` : ""}</p>}
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <a className="inline-flex items-center gap-1 rounded-lg border border-[#E2E8F0] px-3 py-2 text-xs font-bold text-[#475569]" target="_blank" rel="noreferrer"
-                    href={s.lat != null && s.lng != null ? `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}` : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.address)}`}>
-                    <MdNavigation size={16} />Navegar
-                  </a>
+                  {(() => {
+                    // Ambos enlaces abren la app instalada y, si no la hay, la web de Maps/Waze.
+                    const hasPos = s.lat != null && s.lng != null;
+                    const q = encodeURIComponent(s.address);
+                    const maps = `https://www.google.com/maps/dir/?api=1&destination=${hasPos ? `${s.lat},${s.lng}` : q}`;
+                    const waze = `https://waze.com/ul?${hasPos ? `ll=${s.lat},${s.lng}` : `q=${q}`}&navigate=yes`;
+                    return [["Google Maps", maps], ["Waze", waze]].map(([label, href]) => (
+                      <a key={label} className="inline-flex items-center gap-1 rounded-lg border border-[#E2E8F0] px-3 py-2 text-xs font-bold text-[#475569]" target="_blank" rel="noreferrer" href={href}>
+                        <MdNavigation size={16} />{label}
+                      </a>
+                    ));
+                  })()}
                   {s.phone && <a className="inline-flex items-center gap-1 rounded-lg border border-[#E2E8F0] px-3 py-2 text-xs font-bold text-[#475569]" href={`tel:${s.phone}`}><MdPhoneInTalk size={16} />Llamar</a>}
                   {canShare && s.result !== "DELIVERED" && !queued.has(s.id) && (
                     <>

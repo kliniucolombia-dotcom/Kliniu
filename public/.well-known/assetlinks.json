@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "co.kliniu.conductor",
+      "sha256_cert_fingerprints": ["75:C5:A7:40:D8:5E:7B:A6:DA:4E:67:1B:80:BD:1D:44:33:B3:EF:22:5F:7E:EF:9F:35:CB:96:20:AD:86:16:3C"]
+    }
+  }
+]

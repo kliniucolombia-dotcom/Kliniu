@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">KLINIU Conductor</string>
+    <string name="title_activity_main">KLINIU Conductor</string>
+    <string name="package_name">co.kliniu.conductor</string>
+    <string name="custom_url_scheme">co.kliniu.conductor</string>
+</resources>

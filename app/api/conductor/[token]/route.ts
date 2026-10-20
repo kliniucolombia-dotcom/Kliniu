@@ -9,6 +9,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
     where: { trackToken: token },
     select: {
       status: true,
+      startedAt: true,
       driver: { select: { fullName: true } },
       vehicle: { select: { plate: true } },
       orders: {
@@ -30,6 +31,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
   if (!route) return Response.json({ error: "Enlace inválido" }, { status: 404 });
   return Response.json({
     status: route.status,
+    startedAt: route.startedAt,
     driver: route.driver.fullName,
     plate: route.vehicle.plate,
     stops: route.orders.map((o) => {
