@@ -46,17 +46,6 @@ import { SkeletonPanelPage } from "../../components/skeleton";
 const MAX_NUM = 999_999_999;
 const MANUAL_PRODUCT = "__manual__";
 const PAGE_SIZE = 10;
-const MATERIALS = [
-  "ABS NEGRO",
-  "ABS BLANCO",
-  "ABS NATURAL",
-  "11H01A",
-  "11H01-R2",
-  "CRISTAL",
-  "POLICARBONATO",
-  "P.P BAJA",
-  "ALTO IMPACTO",
-];
 
 type CycleUnit = "seconds" | "minutes";
 type TemperatureType = "simple" | "zones";
@@ -241,6 +230,11 @@ export default function ProduccionPage() {
   const [role, setRole] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [canEditRuns, setCanEditRuns] = useState(false);
+  const [materials, setMaterials] = useState<string[]>([]);
+  const [canAddMaterial, setCanAddMaterial] = useState(false);
+  const [newMaterial, setNewMaterial] = useState<string | null>(null);
+  const [materialError, setMaterialError] = useState("");
+  const [savingMaterial, setSavingMaterial] = useState(false);
   const [canDeleteRuns, setCanDeleteRuns] = useState(false);
   // Id de la corrida que se está corrigiendo; null = formulario de registro nuevo.
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -267,8 +261,9 @@ export default function ProduccionPage() {
       fetch("/api/panel/production-operators").then((r) => r.json()),
       fetch("/api/panel/products?minimal=1").then((r) => r.json()),
       fetch("/api/panel/permissions").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch("/api/panel/production-materials").then((r) => (r.ok ? r.json() : null)).catch(() => null),
     ])
-      .then(([m, ops, prods, perms]) => {
+      .then(([m, ops, prods, perms, mats]) => {
         if (cancelled) return;
         setMachines(Array.isArray(m.machines) ? m.machines : []);
         setOperators(Array.isArray(ops) ? ops : []);
@@ -277,6 +272,8 @@ export default function ProduccionPage() {
         setEmail(perms?.email ?? "");
         setCanEditRuns(!!perms?.permissions?.MODULE_PRODUCCION?.canEdit);
         setCanDeleteRuns(!!perms?.permissions?.MODULE_PRODUCCION?.canDelete);
+        setMaterials(Array.isArray(mats?.materials) ? mats.materials : []);
+        setCanAddMaterial(!!mats?.canAdd);
       })
       .finally(() => {
         if (!cancelled) loadRuns().finally(() => setLoading(false));
@@ -286,6 +283,26 @@ export default function ProduccionPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const addMaterial = async () => {
+    if (!newMaterial?.trim()) return setMaterialError("Escribe el nombre del material.");
+    setSavingMaterial(true);
+    setMaterialError("");
+    try {
+      const res = await fetch("/api/panel/production-materials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newMaterial }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) return setMaterialError(data?.error ?? "No se pudo agregar el material.");
+      setMaterials(data.materials);
+      set("material", data.name);
+      setNewMaterial(null);
+    } finally {
+      setSavingMaterial(false);
+    }
+  };
 
   const selectedMachine = machines.find((m) => m.id === form.machineId);
 
@@ -555,6 +572,41 @@ export default function ProduccionPage() {
   // Corregir necesita el formulario, que el jefe de operaciones no ve.
   const showEditRun = canEditRuns && !isOpsJefe;
   const showActionsColumn = canViewActions || showEditRun || canDeleteRuns;
+
+  const materialAdder = (
+    <>
+      {canAddMaterial && newMaterial === null && (
+        <button
+          type="button"
+          onClick={() => { setNewMaterial(""); setMaterialError(""); }}
+          className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-[#0C535B] hover:underline"
+        >
+          <MdAdd className="h-4 w-4" aria-hidden /> Nuevo material
+        </button>
+      )}
+      {canAddMaterial && newMaterial !== null && (
+        <div className="mt-2 flex gap-2">
+          <input
+            autoFocus
+            value={newMaterial}
+            onChange={(e) => setNewMaterial(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addMaterial(); } if (e.key === "Escape") setNewMaterial(null); }}
+            placeholder="Ej. Silicona dureza 70"
+            aria-label="Nombre del nuevo material"
+            maxLength={60}
+            className={inputClass}
+          />
+          <button type="button" onClick={addMaterial} disabled={savingMaterial} className="shrink-0 rounded-xl bg-[#27B1B8] px-3 text-xs font-semibold text-white disabled:opacity-60">
+            {savingMaterial ? "Guardando…" : "Agregar"}
+          </button>
+          <button type="button" onClick={() => setNewMaterial(null)} aria-label="Cancelar" className="shrink-0 rounded-xl border border-[#E2E8F0] px-2 text-[#64748B]">
+            <MdClose className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
+      )}
+      {materialError && <p className={errorClass}>{materialError}</p>}
+    </>
+  );
 
   const historyColumns = [
     "Fecha",
@@ -844,11 +896,12 @@ export default function ProduccionPage() {
                   options={[
                     { value: "", label: "— Seleccionar —" },
                     // Corridas viejas guardaron texto libre: se conserva al corregirlas.
-                    ...(form.material && !MATERIALS.includes(form.material) ? [form.material] : []).map((m) => ({ value: m, label: m })),
-                    ...MATERIALS.map((m) => ({ value: m, label: m })),
+                    ...(form.material && !materials.includes(form.material) ? [form.material] : []).map((m) => ({ value: m, label: m })),
+                    ...materials.map((m) => ({ value: m, label: m })),
                   ]}
                   onChange={(v) => set("material", v)}
                 />
+                {materialAdder}
                 {show(!form.material.trim()) && <p className={errorClass}>Selecciona el material.</p>}
               </div>
               <div>
@@ -1228,6 +1281,18 @@ export default function ProduccionPage() {
       </div>
       )}
 
+      {isOpsJefe && canAddMaterial && (
+        <div className="mb-6 rounded-2xl border border-[#E2E8F0] bg-white p-6">
+          <h2 className="text-base font-black text-[#1A1A1A]">Materiales</h2>
+          <p className="mt-0.5 text-sm text-[#64748B]">Lista que ven los operarios al registrar una corrida.</p>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {materials.map((m) => (
+              <span key={m} className="rounded-full bg-[#F1F5F9] px-2.5 py-1 text-xs font-semibold text-[#334155]">{m}</span>
+            ))}
+          </div>
+          <div className="mt-2 max-w-md">{materialAdder}</div>
+        </div>
+      )}
       {/* Historial de recorridas */}
       <div className={`rounded-2xl border border-[#E2E8F0] bg-white p-6 ${isOpsJefe ? "" : "mt-8"}`}>
         <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
