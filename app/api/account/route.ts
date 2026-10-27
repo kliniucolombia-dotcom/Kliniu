@@ -1,7 +1,7 @@
 import { clearSessionCookie, getSessionFromCookies, setSessionCookie } from "@/lib/auth";
 import { anonymizeCustomerAccount, getUserById, updateUserProfile } from "@/lib/users";
 import { sendVerificationEmail } from "@/lib/email-verification";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { logAudit } from "@/lib/audit";
 
 export async function GET() {
@@ -105,6 +105,18 @@ export async function PATCH(request: Request) {
       email: user.email,
       role: user.role,
     });
+
+    if (body.newPassword?.trim() || user.email !== session.email) {
+      await logAudit({
+        actorId: user.id,
+        actorEmail: user.email,
+        action: body.newPassword?.trim() ? "auth.password_changed" : "auth.email_changed",
+        entity: "user",
+        entityId: user.id,
+        meta: user.email !== session.email ? { previousEmail: session.email } : undefined,
+        ip: getClientIp(request),
+      });
+    }
 
     // Mismo tope que el reenvío manual (verify-email): cambiar el correo en bucle
     // no puede usarse para mandar correos a direcciones ajenas.

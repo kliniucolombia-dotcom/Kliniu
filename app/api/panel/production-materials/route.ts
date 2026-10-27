@@ -1,6 +1,8 @@
 import { requirePermission } from "@/lib/permissions";
 import { isSuperAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
+import { logAudit } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
 
 // Lista editable de materiales de Inyección, guardada en AppConfig.
 const KEY = "production_materials";
@@ -58,6 +60,15 @@ export async function POST(req: Request) {
     where: { key: KEY },
     create: { key: KEY, value: JSON.stringify(next) },
     update: { value: JSON.stringify(next) },
+  });
+  await logAudit({
+    actorId: access.user.id,
+    actorEmail: access.user.email,
+    action: "appconfig.production_materials",
+    entity: "appConfig",
+    entityId: KEY,
+    meta: { added: name },
+    ip: getClientIp(req),
   });
   return Response.json({ materials: next, name });
 }

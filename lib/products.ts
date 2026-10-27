@@ -17,6 +17,7 @@ import {
 } from "@/app/data/catalog";
 import { supabaseDb } from "@/lib/supabase-db";
 import { prisma } from "@/lib/prisma";
+import { logAudit } from "@/lib/audit";
 import { INSUMO_PACK_TIERS_BY_SKU, NO_UNIT_SALE_SKUS, parsePriceValue } from "@/lib/volume-discounts";
 import { getWarehouseByKey, setWarehouseStockAbsolute, WAREHOUSE_KEYS } from "@/lib/warehouses";
 
@@ -441,7 +442,53 @@ export async function getFeaturedProducts() {
   return [...bestsellers, ...onlyFeatured, ...rest].slice(0, 5);
 }
 
-export async function createProduct(input: ProductMutationInput, actorUserId: string) {
+/** Quién hizo el cambio, para la bitácora. Sin actor no se registra nada. */
+export type AuditActor = { id: string; email: string; ip?: string | null };
+
+// Campos cortos: la bitácora guarda valor anterior y nuevo.
+const AUDIT_SCALAR_KEYS = [
+  "name", "brand", "sku", "slug", "category", "price", "previousPrice", "stock",
+  "minimumStock", "availability", "isOutlet", "outletExpiresAt", "image", "videoUrl",
+] as const;
+// Campos largos: solo se anota que cambiaron.
+const AUDIT_BULKY_KEYS = [
+  "description", "application", "warranty", "compatibility", "alternativeReferences",
+  "galleryImages", "technicalSpecs", "colorVariants", "presentationVariants",
+] as const;
+
+function auditProduct(
+  actor: AuditActor | undefined,
+  action: string,
+  product: { id: string; name: string; slug: string },
+  before?: Record<string, unknown>,
+  after?: Record<string, unknown>,
+) {
+  if (!actor) return Promise.resolve();
+  const changes: Record<string, { from: unknown; to: unknown }> = {};
+  const alsoChanged: string[] = [];
+  if (before && after) {
+    for (const key of AUDIT_SCALAR_KEYS) {
+      if (JSON.stringify(before[key]) !== JSON.stringify(after[key])) {
+        changes[key] = { from: before[key] ?? null, to: after[key] ?? null };
+      }
+    }
+    for (const key of AUDIT_BULKY_KEYS) {
+      if (JSON.stringify(before[key]) !== JSON.stringify(after[key])) alsoChanged.push(key);
+    }
+    if (!Object.keys(changes).length && !alsoChanged.length) return Promise.resolve();
+  }
+  return logAudit({
+    actorId: actor.id,
+    actorEmail: actor.email,
+    action,
+    entity: "product",
+    entityId: product.id,
+    meta: { name: product.name, slug: product.slug, ...(before ? { changes, alsoChanged } : {}) },
+    ip: actor.ip,
+  });
+}
+
+export async function createProduct(input: ProductMutationInput, actorUserId: string, actor?: AuditActor) {
   if (!supabaseDb) {
     throw new Error("DATABASE_NOT_CONFIGURED");
   }
@@ -548,10 +595,17 @@ export async function createProduct(input: ProductMutationInput, actorUserId: st
     note: "Inventario inicial del producto",
   });
 
+  await auditProduct(actor, "product.create", created as ProductRecord);
+
   return toStoreProduct(created as ProductRecord);
 }
 
-export async function updateProduct(slug: string, input: ProductMutationInput, actorUserId: string) {
+export async function updateProduct(
+  slug: string,
+  input: ProductMutationInput,
+  actorUserId: string,
+  actor?: AuditActor,
+) {
   if (!supabaseDb) {
     throw new Error("DATABASE_NOT_CONFIGURED");
   }
@@ -687,6 +741,14 @@ export async function updateProduct(slug: string, input: ProductMutationInput, a
     note: "Ajuste manual desde el panel admin",
   });
 
+  await auditProduct(
+    actor,
+    "product.update",
+    updated as ProductRecord,
+    existingRecord as unknown as Record<string, unknown>,
+    updated as Record<string, unknown>,
+  );
+
   return toStoreProduct(updated as ProductRecord);
 }
 
@@ -701,6 +763,7 @@ export async function updateOutletProductPricing(
   slug: string,
   input: Pick<ProductMutationInput, "precioValor" | "precioAnteriorValor" | "stock" | "stockMinimo">,
   actorUserId: string,
+  actor?: AuditActor,
 ) {
   if (!supabaseDb) {
     throw new Error("DATABASE_NOT_CONFIGURED");
@@ -748,12 +811,13 @@ export async function updateOutletProductPricing(
       stockMinimo: input.stockMinimo,
     },
     actorUserId,
+    actor,
   );
 }
 
 const OUTLET_DURATION_DAYS = 15;
 
-export async function setProductOutletFlag(slug: string, isOutlet: boolean) {
+export async function setProductOutletFlag(slug: string, isOutlet: boolean, actor?: AuditActor) {
   if (!supabaseDb) {
     throw new Error("DATABASE_NOT_CONFIGURED");
   }
@@ -775,11 +839,13 @@ export async function setProductOutletFlag(slug: string, isOutlet: boolean) {
     throw new Error(error?.message || "Error al actualizar Outlet");
   }
 
+  await auditProduct(actor, isOutlet ? "product.outlet_add" : "product.outlet_remove", updated as ProductRecord);
+
   return toStoreProduct(updated as ProductRecord);
 }
 
 /** Extiende el contador de Outlet desde hoy (no acumula sobre el vencimiento anterior). */
-export async function extendProductOutlet(slug: string, days = OUTLET_DURATION_DAYS) {
+export async function extendProductOutlet(slug: string, days = OUTLET_DURATION_DAYS, actor?: AuditActor) {
   if (!supabaseDb) {
     throw new Error("DATABASE_NOT_CONFIGURED");
   }
@@ -797,13 +863,22 @@ export async function extendProductOutlet(slug: string, days = OUTLET_DURATION_D
     throw new Error(error?.message || "Error al extender Outlet");
   }
 
+  await auditProduct(actor, "product.outlet_extend", updated as ProductRecord);
+
   return toStoreProduct(updated as ProductRecord);
 }
 
-export async function deleteProduct(slug: string) {
+export async function deleteProduct(slug: string, actor?: AuditActor) {
   if (!supabaseDb) {
     throw new Error("DATABASE_NOT_CONFIGURED");
   }
+
+  // Se lee antes de borrar para que la bitácora recuerde qué producto era.
+  const { data: existing } = await supabaseDb
+    .from("Product")
+    .select("id, name, slug")
+    .eq("slug", slug)
+    .maybeSingle();
 
   const { error } = await supabaseDb
     .from("Product")
@@ -813,6 +888,8 @@ export async function deleteProduct(slug: string) {
   if (error) {
     throw new Error(error.message);
   }
+
+  if (existing) await auditProduct(actor, "product.delete", existing as ProductRecord);
 }
 
 export async function adjustProductInventory(

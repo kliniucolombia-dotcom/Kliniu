@@ -36,6 +36,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "INVALID_MODE" }, { status: 400 });
   }
 
+  const from = await getSaleMode();
   await setSaleMode(mode as SaleMode);
   await logAudit({
     actorId: actor.id,
@@ -43,7 +44,7 @@ export async function POST(req: Request) {
     action: "appconfig.sale_mode",
     entity: "appConfig",
     entityId: "sale_mode",
-    meta: { mode },
+    meta: { from, mode },
     ip: getClientIp(req),
   });
   return Response.json({ mode });

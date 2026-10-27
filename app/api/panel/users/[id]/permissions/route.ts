@@ -49,6 +49,19 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     return Response.json({ error: "permissions requerido" }, { status: 400 });
   }
 
+  // Lo que el usuario podía hacer antes (override o por defecto), para anotar solo lo que cambia.
+  const FLAGS = ["canView", "canCreate", "canEdit", "canDelete"] as const;
+  const changes: Record<string, { from: Record<string, boolean>; to: Record<string, boolean> }> = {};
+  for (const p of body.permissions) {
+    const prev = await getEffectivePermission(targetUser, p.module);
+    if (FLAGS.some((f) => prev[f] !== p[f])) {
+      changes[p.module] = {
+        from: Object.fromEntries(FLAGS.map((f) => [f, prev[f]])),
+        to: Object.fromEntries(FLAGS.map((f) => [f, p[f]])),
+      };
+    }
+  }
+
   await Promise.all(
     body.permissions.map((p) =>
       prisma!.userPermission.upsert({
@@ -80,7 +93,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     action: "user.permissions_update",
     entity: "user",
     entityId: id,
-    meta: { modules: body.permissions.map((p) => p.module) },
+    meta: { target: targetUser.email, changes },
     ip: getClientIp(request),
   });
   return Response.json({ ok: true });

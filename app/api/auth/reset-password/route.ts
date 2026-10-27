@@ -2,6 +2,7 @@ import { readResetPasswordToken } from "@/lib/auth";
 import { resetUserPassword } from "@/lib/users";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { logAudit } from "@/lib/audit";
 
 export async function POST(request: Request) {
   try {
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
     const owner = prisma
       ? await prisma.user.findUnique({
           where: { id: payload.userId },
-          select: { passwordChangedAt: true },
+          select: { email: true, passwordChangedAt: true },
         })
       : null;
     if (
@@ -59,6 +60,14 @@ export async function POST(request: Request) {
     }
 
     await resetUserPassword(payload.userId, password);
+    await logAudit({
+      actorId: payload.userId,
+      actorEmail: owner.email,
+      action: "auth.password_reset_email",
+      entity: "user",
+      entityId: payload.userId,
+      ip,
+    });
 
     return Response.json({ message: "Contraseña actualizada. Ya puedes iniciar sesión." });
   } catch (error) {

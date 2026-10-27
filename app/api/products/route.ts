@@ -1,5 +1,6 @@
 import { createProduct, getProducts } from "@/lib/products";
 import { requireAnyPermission, requirePermission } from "@/lib/permissions";
+import { getClientIp } from "@/lib/rate-limit";
 
 function getProductErrorResponse(
   error: unknown,
@@ -55,7 +56,11 @@ export async function POST(request: Request) {
       : await requirePermission("MODULE_PRODUCTOS", "create");
     if (!access.ok) throw new Error(access.status === 401 ? "UNAUTHORIZED" : "FORBIDDEN");
 
-    const product = await createProduct(body, access.user.id);
+    const product = await createProduct(body, access.user.id, {
+      id: access.user.id,
+      email: access.user.email,
+      ip: getClientIp(request),
+    });
 
     return Response.json({ product }, { status: 201 });
   } catch (error) {

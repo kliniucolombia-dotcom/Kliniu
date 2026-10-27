@@ -9,7 +9,7 @@ import {
   MdApartment, MdAccessTime, MdBeachAccess, MdRemoveCircleOutline, MdSwapHoriz, MdHandshake,
   MdCreditCard, MdHelpOutline, MdGroup, MdWarehouse, MdArticle, MdSmartToy, MdShoppingCart,
   MdInventory, MdExtension, MdConfirmationNumber, MdChat, MdVideocam, MdFolder,
-  MdLocalShipping, MdBuild, MdCalendarMonth, MdChecklist, MdPublic,
+  MdLocalShipping, MdBuild, MdCalendarMonth, MdChecklist, MdPublic, MdHistory,
 } from "react-icons/md";
 import { ConfirmProvider, useConfirm } from "@/app/components/confirm-dialog";
 import AccountEntryLoading from "@/app/components/account-entry-loading";
@@ -174,6 +174,7 @@ const NAV: NavItem[] = [
       { href: "/panel/usuarios", label: "Usuarios", module: "MODULE_USUARIOS", icon: <MdPeople size={17} /> },
       { href: "/panel/configuracion/modo-venta", label: "Modo de Venta", module: "MODULE_USUARIOS", icon: <MdShoppingCart size={17} />, superAdminOnly: true },
       { href: "/panel/configuracion/whatsapp-paises", label: "WhatsApp por País", module: "MODULE_USUARIOS", icon: <MdPublic size={17} />, superAdminOnly: true },
+      { href: "/panel/bitacora", label: "Bitácora", module: "MODULE_USUARIOS", icon: <MdHistory size={17} />, superAdminOnly: true },
     ],
   },
 ];

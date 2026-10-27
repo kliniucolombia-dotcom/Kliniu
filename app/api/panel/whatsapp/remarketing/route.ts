@@ -6,6 +6,8 @@ import {
   type RemarketingConfig,
 } from "@/lib/wati-followup";
 import { getProducts } from "@/lib/products";
+import { logAudit } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
   const access = await requirePermission("MODULE_WHATSAPP", "view");
@@ -66,6 +68,20 @@ export async function PUT(request: Request) {
 
   const config = validate(await request.json().catch(() => null));
   if (!config) return Response.json({ error: "Configuración inválida." }, { status: 400 });
+  const before = await getRemarketingConfig();
   await saveRemarketingConfig(config);
+  // Solo se anotan los apartados que cambiaron; el contenido va en la tabla AppConfig.
+  const changedKeys = (Object.keys(config) as (keyof RemarketingConfig)[]).filter(
+    (k) => JSON.stringify(before[k]) !== JSON.stringify(config[k]),
+  );
+  await logAudit({
+    actorId: access.user.id,
+    actorEmail: access.user.email,
+    action: "appconfig.wati_remarketing",
+    entity: "appConfig",
+    entityId: "wati_remarketing",
+    meta: { changedKeys },
+    ip: getClientIp(request),
+  });
   return Response.json({ ok: true });
 }

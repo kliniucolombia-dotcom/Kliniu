@@ -384,6 +384,9 @@ export default function UsuariosPage() {
   const [fullNameValue, setFullNameValue] = useState("");
   const [whatsappValue, setWhatsappValue] = useState("");
   const [passwordTarget, setPasswordTarget] = useState<UserRow | null>(null);
+  const [confirmPasswordValue, setConfirmPasswordValue] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordValue, setPasswordValue] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
 
@@ -510,14 +513,32 @@ export default function UsuariosPage() {
   const editPassword = (u: UserRow) => {
     setPasswordTarget(u);
     setPasswordValue("");
+    setConfirmPasswordValue("");
+    setPasswordError(null);
     setShowNewPassword(false);
   };
 
-  const confirmEditPassword = () => {
-    if (!passwordTarget) return;
+  const confirmEditPassword = async () => {
+    if (!passwordTarget || passwordSaving) return;
     const value = passwordValue.trim();
-    if (value) updateUser(passwordTarget.id, { newPassword: value }, "Contraseña actualizada correctamente");
-    setPasswordTarget(null);
+    if (!value || !confirmPasswordValue) return;
+    setPasswordSaving(true);
+    setPasswordError(null);
+    const res = await fetch(`/api/panel/users/${passwordTarget.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ newPassword: value, confirmPassword: confirmPasswordValue }),
+    });
+    setPasswordSaving(false);
+    if (res.ok) {
+      setPasswordTarget(null);
+      setConfirmPasswordValue("");
+      loadUsers();
+      showToast("Contraseña actualizada correctamente");
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setPasswordError(data.error ?? "No fue posible cambiar la contraseña.");
+    }
   };
 
   const confirmDeleteUser = async (force = false) => {
@@ -900,7 +921,7 @@ export default function UsuariosPage() {
                     <button onClick={() => editEmail(u)} aria-label="Editar datos del usuario" title="Datos" className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-xs font-bold hover:bg-[#F1F5F9] hover:text-[#27B1B8] md:px-2">
                       <IconPencil /> <span className="hidden md:inline">Datos</span>
                     </button>
-                    <button onClick={() => editPassword(u)} aria-label="Cambiar contraseña" title="Clave" className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-xs font-bold hover:bg-[#F1F5F9] hover:text-[#27B1B8] md:px-2">
+                    <button disabled={u.id === currentUserId} onClick={() => editPassword(u)} aria-label="Cambiar contraseña" title={u.id === currentUserId ? "Tu contraseña se cambia desde Mi cuenta" : "Clave"} className="disabled:cursor-not-allowed disabled:text-[#CBD5E1] disabled:hover:bg-transparent flex items-center gap-1.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-xs font-bold hover:bg-[#F1F5F9] hover:text-[#27B1B8] md:px-2">
                       <IconKey /> <span className="hidden md:inline">Clave</span>
                     </button>
                     <span className="mx-1 h-4 w-px shrink-0 bg-[#E2E8F0]" />
@@ -1237,6 +1258,9 @@ export default function UsuariosPage() {
                 <p className="text-xs text-[#94A3B8]">{passwordTarget.email}</p>
               </div>
             </div>
+            <p className="mb-3 rounded-lg bg-[#FFF7ED] px-3 py-2 text-xs text-[#9A3412]">
+              Vas a cambiar la contraseña de <strong>{passwordTarget.fullName}</strong>. Se le avisará por correo.
+            </p>
             <label className="mb-1 block text-xs font-semibold text-[#64748B]">Nueva contraseña</label>
             <div className="relative">
               <input
@@ -1264,12 +1288,22 @@ export default function UsuariosPage() {
                 )}
               </button>
             </div>
+            <label className="mb-1 mt-3 block text-xs font-semibold text-[#64748B]">Tu contraseña (para confirmar que eres tú)</label>
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={confirmPasswordValue}
+              onChange={(e) => setConfirmPasswordValue(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && confirmEditPassword()}
+              className="w-full rounded-lg border border-[#E2E8F0] px-3 py-2 text-sm focus:border-[#27B1B8] focus:outline-none"
+            />
+            {passwordError && <p className="mt-2 text-xs font-semibold text-red-600">{passwordError}</p>}
             <div className="mt-5 flex justify-end gap-2">
               <button onClick={() => setPasswordTarget(null)} className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-xs font-bold text-[#64748B]">
                 Cancelar
               </button>
-              <button onClick={confirmEditPassword} disabled={!passwordValue.trim()} className="rounded-lg bg-[#27B1B8] px-3 py-2 text-xs font-bold text-white disabled:opacity-50">
-                Guardar
+              <button onClick={confirmEditPassword} disabled={!passwordValue.trim() || !confirmPasswordValue || passwordSaving} className="rounded-lg bg-[#27B1B8] px-3 py-2 text-xs font-bold text-white disabled:opacity-50">
+                {passwordSaving ? "Guardando…" : "Cambiar contraseña"}
               </button>
             </div>
           </div>

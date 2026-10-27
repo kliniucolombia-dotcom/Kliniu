@@ -1,9 +1,10 @@
 import { authenticateUser } from "@/lib/users";
 import { checkAdminPin, setSessionCookie } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
-import { logAudit } from "@/lib/audit";
+import { auditLoginFailure, auditNewLoginIp, logAudit } from "@/lib/audit";
 
 export async function POST(request: Request) {
+  let attemptedEmail = "";
   try {
     const body = (await request.json()) as {
       email?: string;
@@ -12,6 +13,7 @@ export async function POST(request: Request) {
     };
 
     const email = body.email?.trim() || "";
+    attemptedEmail = email;
     const password = body.password || "";
     const adminPin = body.adminPin?.trim() || "";
 
@@ -72,6 +74,8 @@ export async function POST(request: Request) {
       );
     }
 
+    await auditNewLoginIp(user, getClientIp(request));
+
     await setSessionCookie({
       userId: user.id,
       email: user.email,
@@ -92,6 +96,9 @@ export async function POST(request: Request) {
       message: "Acceso administrador correcto.",
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "INVALID_CREDENTIALS") {
+      await auditLoginFailure(attemptedEmail, getClientIp(request), "invalid_credentials");
+    }
     const message =
       error instanceof Error && error.message === "INVALID_CREDENTIALS"
         ? "Correo o contraseña incorrectos."

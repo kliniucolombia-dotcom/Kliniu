@@ -1,5 +1,5 @@
 import { requireSuperAdmin } from "@/lib/admin";
-import { setCountryWhatsapp, WHATSAPP_COUNTRIES, type CountryWhatsapp } from "@/lib/country-whatsapp";
+import { getCountryWhatsapp, setCountryWhatsapp, WHATSAPP_COUNTRIES, type CountryWhatsapp } from "@/lib/country-whatsapp";
 import { logAudit } from "@/lib/audit";
 import { getClientIp } from "@/lib/rate-limit";
 
@@ -28,6 +28,7 @@ export async function POST(req: Request) {
     value[code] = raw;
   }
 
+  const from = await getCountryWhatsapp();
   await setCountryWhatsapp(value);
   await logAudit({
     actorId: actor.id,
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
     action: "appconfig.whatsapp_por_pais",
     entity: "appConfig",
     entityId: "whatsapp_por_pais",
-    meta: value,
+    meta: { from, to: value },
     ip: getClientIp(req),
   });
   return Response.json(value);

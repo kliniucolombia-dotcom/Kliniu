@@ -3,6 +3,8 @@ import { getProductsForPanel, setProductActive, updateProductPrice, updateProduc
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { apiHandler } from "@/lib/api-handler";
+import { logAudit } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
 
 export const GET = apiHandler(async (request: Request) => {
   // El panel de Outlet y el formulario de Producción se alimentan de esta misma
@@ -57,6 +59,20 @@ export const PATCH = apiHandler(async (request: Request) => {
       .map((p) => ({ label: p.label.trim(), qty: Math.round(p.qty), totalPrice: Math.round(p.totalPrice) }));
     await updateProductPackPrices(body.productId, cleaned);
   }
+  await logAudit({
+    actorId: access.user.id,
+    actorEmail: access.user.email,
+    action: "product.panel_update",
+    entity: "product",
+    entityId: body.productId,
+    meta: {
+      newPrice: body.newPrice,
+      active: body.active,
+      packPrices: body.packPrices ? body.packPrices.length : undefined,
+      note: body.note,
+    },
+    ip: getClientIp(request),
+  });
   await broadcastPanelUpdate("products");
   return Response.json({ ok: true });
 });
