@@ -27,6 +27,8 @@ import {
   MdVerifiedUser,
   MdChatBubbleOutline,
   MdDownload,
+  MdEdit,
+  MdDeleteOutline,
 } from "react-icons/md";
 import { buildProductionSummary, calcProductionEfficiency, type ProductionRunInput } from "@/lib/production-calculator";
 import {
@@ -37,6 +39,7 @@ import {
 import { fmtDateOnly, fmtLoadedDate, fmtTimeOnly, loadLagDays } from "@/lib/date";
 import { efficiencyTone } from "@/lib/production-tone";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
+import { useConfirm } from "@/app/components/confirm-dialog";
 import { SimpleSelect } from "../_components/simple-select";
 import { SkeletonPanelPage } from "../../components/skeleton";
 
@@ -83,6 +86,8 @@ type RunListItem = {
   couplingStatus: string | null;
   couplingTime: string | null;
   observations: string | null;
+  downtimeMinutes: number;
+  materialQuantityKg: number | null;
   summary: { goodPieces: number; qualityPercentage: number };
 };
 
@@ -112,6 +117,8 @@ type FormState = {
   couplingStatus: "" | CouplingStatus;
   couplingTime: string;
   observations: string;
+  downtimeMinutes: string;
+  materialQuantityKg: string;
 };
 
 function todayBogota() {
@@ -147,6 +154,8 @@ const emptyForm = (): FormState => ({
   couplingStatus: "",
   couplingTime: "",
   observations: "",
+  downtimeMinutes: "",
+  materialQuantityKg: "",
 });
 
 function parseNum(value: string): number {
@@ -220,6 +229,16 @@ export default function ProduccionPage() {
   const [page, setPage] = useState(1);
   const [role, setRole] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+  const [canEditRuns, setCanEditRuns] = useState(false);
+  const [materials, setMaterials] = useState<string[]>([]);
+  const [canAddMaterial, setCanAddMaterial] = useState(false);
+  const [newMaterial, setNewMaterial] = useState<string | null>(null);
+  const [materialError, setMaterialError] = useState("");
+  const [savingMaterial, setSavingMaterial] = useState(false);
+  const [canDeleteRuns, setCanDeleteRuns] = useState(false);
+  // Id de la corrida que se está corrigiendo; null = formulario de registro nuevo.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const confirm = useConfirm();
   const [pdfLoading, setPdfLoading] = useState(false);
   const [detailPdfLoading, setDetailPdfLoading] = useState(false);
   const [runPdfLoadingId, setRunPdfLoadingId] = useState<string | null>(null);
@@ -242,14 +261,19 @@ export default function ProduccionPage() {
       fetch("/api/panel/production-operators").then((r) => r.json()),
       fetch("/api/panel/products?minimal=1").then((r) => r.json()),
       fetch("/api/panel/permissions").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch("/api/panel/production-materials").then((r) => (r.ok ? r.json() : null)).catch(() => null),
     ])
-      .then(([m, ops, prods, perms]) => {
+      .then(([m, ops, prods, perms, mats]) => {
         if (cancelled) return;
         setMachines(Array.isArray(m.machines) ? m.machines : []);
         setOperators(Array.isArray(ops) ? ops : []);
         setProducts(Array.isArray(prods) ? prods : []);
         setRole(perms?.role ?? "");
         setEmail(perms?.email ?? "");
+        setCanEditRuns(!!perms?.permissions?.MODULE_PRODUCCION?.canEdit);
+        setCanDeleteRuns(!!perms?.permissions?.MODULE_PRODUCCION?.canDelete);
+        setMaterials(Array.isArray(mats?.materials) ? mats.materials : []);
+        setCanAddMaterial(!!mats?.canAdd);
       })
       .finally(() => {
         if (!cancelled) loadRuns().finally(() => setLoading(false));
@@ -260,6 +284,26 @@ export default function ProduccionPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const addMaterial = async () => {
+    if (!newMaterial?.trim()) return setMaterialError("Escribe el nombre del material.");
+    setSavingMaterial(true);
+    setMaterialError("");
+    try {
+      const res = await fetch("/api/panel/production-materials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newMaterial }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) return setMaterialError(data?.error ?? "No se pudo agregar el material.");
+      setMaterials(data.materials);
+      set("material", data.name);
+      setNewMaterial(null);
+    } finally {
+      setSavingMaterial(false);
+    }
+  };
+
   const selectedMachine = machines.find((m) => m.id === form.machineId);
 
   const set = <K extends keyof FormState>(field: K, value: FormState[K]) =>
@@ -267,6 +311,7 @@ export default function ProduccionPage() {
 
   // Autollena las cavidades con las de la última corrida del mismo producto.
   useEffect(() => {
+    if (editingId) return;
     const name = form.manualProductName.trim().toLowerCase();
     const same = runs.filter((r) =>
       form.productId === MANUAL_PRODUCT ? name !== "" && r.manualProductName?.trim().toLowerCase() === name : form.productId !== "" && r.product?.id === form.productId,
@@ -351,8 +396,8 @@ export default function ProduccionPage() {
     setAlert(null);
     try {
       markLocalWrite();
-      const r = await fetch("/api/panel/production-runs", {
-        method: "POST",
+      const r = await fetch(editingId ? `/api/panel/production-runs/${editingId}` : "/api/panel/production-runs", {
+        method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           machineId: form.machineId,
@@ -390,16 +435,19 @@ export default function ProduccionPage() {
                 ? "N/A"
                 : null,
           observations: form.observations || null,
+          downtimeMinutes: sanitize(form.downtimeMinutes, true),
+          materialQuantityKg: form.materialQuantityKg === "" ? null : sanitize(form.materialQuantityKg),
         }),
       });
       const d = await r.json();
       if (!r.ok) {
-        setAlert({ type: "err", msg: d.error ?? "No se pudo registrar la corrida" });
+        setAlert({ type: "err", msg: d.error ?? (editingId ? "No se pudo guardar la corrección" : "No se pudo registrar la corrida") });
         return;
       }
       setForm(emptyForm());
       setSubmitted(false);
-      setAlert({ type: "ok", msg: "Producción registrada correctamente." });
+      setAlert({ type: "ok", msg: editingId ? "Corrida corregida correctamente." : "Producción registrada correctamente." });
+      setEditingId(null);
       await loadRuns();
     } finally {
       setSaving(false);
@@ -410,6 +458,72 @@ export default function ProduccionPage() {
     setForm(emptyForm());
     setSubmitted(false);
     setAlert(null);
+    setEditingId(null);
+  };
+
+  // Carga la corrida en el formulario para corregirla. Las horas se guardan como
+  // "hora de pared" en UTC (ver submit), por eso se leen del ISO sin convertir.
+  const startEdit = (run: RunListItem) => {
+    const zones = run.temperatureType === "zones" && run.temperatureZones?.length
+      ? run.temperatureZones.map((z) => ({ label: z.label, value: String(z.value) }))
+      : emptyForm().zones;
+    setEditingId(run.id);
+    setSubmitted(false);
+    setAlert(null);
+    setForm({
+      machineId: run.machine.id,
+      operatorId: run.operator.id,
+      productId: run.product ? run.product.id : run.manualProductName ? MANUAL_PRODUCT : "",
+      manualProductName: run.manualProductName ?? "",
+      orderNumber: run.orderNumber,
+      productionDate: run.productionDate.slice(0, 10),
+      startTime: run.startTime.slice(11, 16),
+      endTime: run.endTime.slice(11, 16),
+      material: run.material,
+      injectionWeight: String(run.injectionWeight),
+      pieceWeight: String(run.pieceWeight),
+      cycleValue: String(run.cycle),
+      cycleUnit: run.cycleUnit === "minutes" ? "minutes" : "seconds",
+      cavities: String(run.cavities ?? 1),
+      temperatureType: run.temperatureType === "zones" ? "zones" : "simple",
+      temperature: run.temperatureType === "zones" ? "" : String(run.temperature),
+      zones,
+      pigmentQuantity: run.pigmentQuantity == null ? "" : String(run.pigmentQuantity),
+      pigmentColor: run.pigmentColor ?? "",
+      produced: String(run.produced),
+      damaged: String(run.damaged),
+      nonConforming: String(run.nonConforming),
+      couplingStatus: run.couplingStatus === "completed" || run.couplingStatus === "na" ? run.couplingStatus : "",
+      couplingTime: run.couplingTime ?? "",
+      observations: run.observations ?? "",
+      downtimeMinutes: run.downtimeMinutes ? String(run.downtimeMinutes) : "",
+      materialQuantityKg: run.materialQuantityKg == null ? "" : String(run.materialQuantityKg),
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const deleteRun = async (run: RunListItem) => {
+    const ok = await confirm({
+      title: "Eliminar corrida",
+      message: `Se eliminará la corrida N° ${run.orderNumber} (${run.machine.name}, ${fmtDateOnly(run.productionDate)}). Esta acción no se puede deshacer.`,
+      confirmLabel: "Eliminar",
+      danger: true,
+    });
+    if (!ok) return;
+    markLocalWrite();
+    const r = await fetch(`/api/panel/production-runs/${run.id}`, { method: "DELETE" });
+    if (!r.ok) {
+      setAlert({ type: "err", msg: "No se pudo eliminar la corrida." });
+      return;
+    }
+    if (editingId === run.id) reset();
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(run.id);
+      return next;
+    });
+    setAlert({ type: "ok", msg: "Corrida eliminada." });
+    await loadRuns();
   };
 
   const manualProducts = useMemo(
@@ -455,6 +569,44 @@ export default function ProduccionPage() {
   // la columna de acciones con el detalle de cada recorrida.
   const canViewActions =
     role === "SUPERADMIN" || email?.toLowerCase() === "jefeoperaciones@kliniu.com";
+  // Corregir necesita el formulario, que el jefe de operaciones no ve.
+  const showEditRun = canEditRuns && !isOpsJefe;
+  const showActionsColumn = canViewActions || showEditRun || canDeleteRuns;
+
+  const materialAdder = (
+    <>
+      {canAddMaterial && newMaterial === null && (
+        <button
+          type="button"
+          onClick={() => { setNewMaterial(""); setMaterialError(""); }}
+          className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-[#0C535B] hover:underline"
+        >
+          <MdAdd className="h-4 w-4" aria-hidden /> Nuevo material
+        </button>
+      )}
+      {canAddMaterial && newMaterial !== null && (
+        <div className="mt-2 flex gap-2">
+          <input
+            autoFocus
+            value={newMaterial}
+            onChange={(e) => setNewMaterial(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addMaterial(); } if (e.key === "Escape") setNewMaterial(null); }}
+            placeholder="Ej. Silicona dureza 70"
+            aria-label="Nombre del nuevo material"
+            maxLength={60}
+            className={inputClass}
+          />
+          <button type="button" onClick={addMaterial} disabled={savingMaterial} className="shrink-0 rounded-xl bg-[#27B1B8] px-3 text-xs font-semibold text-white disabled:opacity-60">
+            {savingMaterial ? "Guardando…" : "Agregar"}
+          </button>
+          <button type="button" onClick={() => setNewMaterial(null)} aria-label="Cancelar" className="shrink-0 rounded-xl border border-[#E2E8F0] px-2 text-[#64748B]">
+            <MdClose className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
+      )}
+      {materialError && <p className={errorClass}>{materialError}</p>}
+    </>
+  );
 
   const historyColumns = [
     "Fecha",
@@ -468,6 +620,7 @@ export default function ProduccionPage() {
     "No conf.",
     "Buenas",
     "% Calidad",
+    "Detenida (min)",
   ];
 
   const historyStats = useMemo(() => {
@@ -607,6 +760,12 @@ export default function ProduccionPage() {
         </div>
       )}
 
+      {editingId && (
+        <div className="mb-5 rounded-xl border border-[#27B1B8] bg-[#F0FAFA] px-4 py-3 text-sm font-semibold text-[#0C535B]">
+          Corrigiendo la corrida N° {form.orderNumber || "—"}. Guarda los cambios o cancela para volver al registro nuevo.
+        </div>
+      )}
+
       {!isOpsJefe && (
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
@@ -668,7 +827,7 @@ export default function ProduccionPage() {
                   className={timesInvalid ? inputErrClass : inputClass}
                 />
               </div>
-              <div className="col-span-full">
+              <div className="col-span-full sm:col-span-1 lg:col-span-2">
                 <label className={labelClass}>N° Orden de inyección <Req /></label>
                 <input
                   value={form.orderNumber}
@@ -677,6 +836,18 @@ export default function ProduccionPage() {
                   className={show(!form.orderNumber.trim()) ? inputErrClass : inputClass}
                 />
                 {show(!form.orderNumber.trim()) && <p className={errorClass}>Ingresa el N° de orden de inyección.</p>}
+              </div>
+              <div>
+                <label className={labelClass}>Máquina detenida (min)</label>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  value={form.downtimeMinutes}
+                  onChange={(e) => set("downtimeMinutes", e.target.value)}
+                  placeholder="0"
+                  className={inputClass}
+                />
               </div>
               {timesInvalid && (
                 <p className="col-span-full text-xs font-semibold text-[#DC2626]">
@@ -718,15 +889,33 @@ export default function ProduccionPage() {
                   {show(!form.manualProductName.trim()) && <p className={errorClass}>Escribe el nombre del producto.</p>}
                 </div>
               )}
-              <div className="col-span-full">
+              <div className="col-span-full sm:col-span-1 lg:col-span-2">
                 <label className={labelClass}>Material <Req /></label>
-                <input
+                <SimpleSelect
                   value={form.material}
-                  onChange={(e) => set("material", e.target.value)}
-                  placeholder="Referencia, tipo y cantidad entregada (ej. PP Negro – 25 kg)"
-                  className={show(!form.material.trim()) ? inputErrClass : inputClass}
+                  options={[
+                    { value: "", label: "— Seleccionar —" },
+                    // Corridas viejas guardaron texto libre: se conserva al corregirlas.
+                    ...(form.material && !materials.includes(form.material) ? [form.material] : []).map((m) => ({ value: m, label: m })),
+                    ...materials.map((m) => ({ value: m, label: m })),
+                  ]}
+                  onChange={(v) => set("material", v)}
                 />
-                {show(!form.material.trim()) && <p className={errorClass}>Indica el material y la cantidad entregada.</p>}
+                {materialAdder}
+                {show(!form.material.trim()) && <p className={errorClass}>Selecciona el material.</p>}
+              </div>
+              <div>
+                <label className={labelClass}>Cantidad entregada (kg) <span className="font-normal text-[#94A3B8]">(opcional)</span></label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step="any"
+                  value={form.materialQuantityKg}
+                  onChange={(e) => set("materialQuantityKg", e.target.value)}
+                  placeholder="Ej. 25"
+                  className={inputClass}
+                />
               </div>
               <div>
                 <label className={labelClass}>Peso de inyección (g) <Req /></label>
@@ -1012,14 +1201,14 @@ export default function ProduccionPage() {
               disabled={saving}
               className="rounded-xl bg-[#27B1B8] px-5 py-2.5 text-sm font-black text-white shadow-[0_2px_8px_rgba(39,177,184,0.3)] transition-all hover:bg-[#1F9AA0] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {saving ? "Registrando…" : "Registrar producción"}
+              {saving ? (editingId ? "Guardando…" : "Registrando…") : editingId ? "Guardar cambios" : "Registrar producción"}
             </button>
             <button
               onClick={reset}
               disabled={saving}
               className="rounded-xl border border-[#E2E8F0] bg-white px-5 py-2.5 text-sm font-bold text-[#64748B] hover:bg-[#F8FAFC] disabled:opacity-50"
             >
-              Limpiar
+              {editingId ? "Cancelar edición" : "Limpiar"}
             </button>
           </div>
         </div>
@@ -1092,6 +1281,18 @@ export default function ProduccionPage() {
       </div>
       )}
 
+      {isOpsJefe && canAddMaterial && (
+        <div className="mb-6 rounded-2xl border border-[#E2E8F0] bg-white p-6">
+          <h2 className="text-base font-black text-[#1A1A1A]">Materiales</h2>
+          <p className="mt-0.5 text-sm text-[#64748B]">Lista que ven los operarios al registrar una corrida.</p>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {materials.map((m) => (
+              <span key={m} className="rounded-full bg-[#F1F5F9] px-2.5 py-1 text-xs font-semibold text-[#334155]">{m}</span>
+            ))}
+          </div>
+          <div className="mt-2 max-w-md">{materialAdder}</div>
+        </div>
+      )}
       {/* Historial de recorridas */}
       <div className={`rounded-2xl border border-[#E2E8F0] bg-white p-6 ${isOpsJefe ? "" : "mt-8"}`}>
         <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
@@ -1289,7 +1490,7 @@ export default function ProduccionPage() {
                     className="h-4 w-4 cursor-pointer accent-[#27B1B8]"
                   />
                 </th>
-                {(canViewActions ? [...historyColumns, "Acciones"] : historyColumns).map((h) => (
+                {(showActionsColumn ? [...historyColumns, "Acciones"] : historyColumns).map((h) => (
                   <th key={h} className="border border-[#E2E8F0] px-2 py-2 text-left text-[10px] font-bold uppercase tracking-widest text-[#94A3B8]">
                     {h}
                   </th>
@@ -1325,9 +1526,11 @@ export default function ProduccionPage() {
                   <td className="border border-[#E2E8F0] px-2 py-1.5 text-right">{run.nonConforming}</td>
                   <td className="border border-[#E2E8F0] px-2 py-1.5 text-right font-bold text-[#0C6060]">{run.summary.goodPieces}</td>
                   <td className="border border-[#E2E8F0] px-2 py-1.5 text-right font-bold text-[#27B1B8]">{fmtPct(run.summary.qualityPercentage)}</td>
-                  {canViewActions && (
+                  <td className="border border-[#E2E8F0] px-2 py-1.5 text-right">{run.downtimeMinutes}</td>
+                  {showActionsColumn && (
                     <td className="border border-[#E2E8F0] px-2 py-1.5">
                       <div className="flex items-center gap-1.5">
+                        {canViewActions && (<>
                         <button
                           onClick={() => setDetail(run)}
                           className="rounded-lg border border-[#E2E8F0] px-2.5 py-1 text-xs font-bold text-[#475569] hover:bg-[#F1F5F9]"
@@ -1343,6 +1546,27 @@ export default function ProduccionPage() {
                         >
                           <MdDownload size={15} />
                         </button>
+                        </>)}
+                        {showEditRun && (
+                          <button
+                            onClick={() => startEdit(run)}
+                            title="Corregir corrida"
+                            aria-label="Corregir corrida"
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[#E2E8F0] bg-white text-[#475569] transition-colors hover:bg-[#F1F5F9]"
+                          >
+                            <MdEdit size={15} />
+                          </button>
+                        )}
+                        {canDeleteRuns && (
+                          <button
+                            onClick={() => deleteRun(run)}
+                            title="Eliminar corrida"
+                            aria-label="Eliminar corrida"
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[#FECACA] bg-[#FEF2F2] text-[#DC2626] transition-colors hover:bg-[#FEE2E2]"
+                          >
+                            <MdDeleteOutline size={15} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   )}
@@ -1350,7 +1574,7 @@ export default function ProduccionPage() {
               ))}
               {filteredRuns.length === 0 && (
                 <tr>
-                  <td colSpan={canViewActions ? 13 : 12} className="border border-[#E2E8F0] px-2 py-6 text-center text-sm text-[#94A3B8]">
+                  <td colSpan={showActionsColumn ? 14 : 13} className="border border-[#E2E8F0] px-2 py-6 text-center text-sm text-[#94A3B8]">
                     Sin recorridas registradas todavía
                   </td>
                 </tr>
@@ -1592,7 +1816,7 @@ function DetailModal({ run, onClose }: { run: RunListItem; onClose: () => void }
         <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
           <SectionCard icon={<MdInventory2 size={16} />} title="Información de producción">
             <InfoRow label="Producto">{productLabel(run)}</InfoRow>
-            <InfoRow label="Material">{run.material}</InfoRow>
+            <InfoRow label="Material">{run.materialQuantityKg != null ? `${run.material} · ${run.materialQuantityKg.toLocaleString("es-CO")} kg` : run.material}</InfoRow>
             <InfoRow label="Ciclo">{cycleLabel}</InfoRow>
             <InfoRow label="Cavidades">{run.cavities ?? 1}</InfoRow>
             <InfoRow label="Producción esperada">{efficiency.expectedPieces.toLocaleString("es-CO")} piezas</InfoRow>
@@ -1608,6 +1832,7 @@ function DetailModal({ run, onClose }: { run: RunListItem; onClose: () => void }
           <SectionCard icon={<MdVerifiedUser size={16} />} title="Control de calidad">
             <InfoRow label="Cantidad dañada">{run.damaged.toLocaleString("es-CO")}</InfoRow>
             <InfoRow label="No conformes">{run.nonConforming.toLocaleString("es-CO")}</InfoRow>
+            <InfoRow label="Máquina detenida">{run.downtimeMinutes > 0 ? `${run.downtimeMinutes.toLocaleString("es-CO")} min` : "Sin paradas"}</InfoRow>
             <InfoRow label="Prueba de acople">
               <span className={`inline-flex items-center gap-2 ${acopleOk ? "text-[#15803D]" : "text-[#1A1A1A]"}`}>
                 {acopleOk && <MdCheckCircle size={16} />}

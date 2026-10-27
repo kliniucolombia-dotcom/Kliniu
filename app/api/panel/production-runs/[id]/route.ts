@@ -31,7 +31,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   try {
     const updated = await updateProductionRun(id, data);
 
-    if (data.endTime) {
+    // Una corrección completa desde el formulario (trae machineId) no es un evento de inicio/fin.
+    const isFormEdit = Boolean(data.machineId);
+    if (!isFormEdit && data.endTime) {
       createNotification({
         eventKey: "production.run_completed",
         title: "Corrida de producción completada",
@@ -40,7 +42,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         createdById: access.user.id,
         metadata: { runId: id },
       }).catch(() => {});
-    } else if (data.startTime && !data.endTime) {
+    } else if (!isFormEdit && data.startTime && !data.endTime) {
       createNotification({
         eventKey: "production.order_started",
         title: "Corrida de producción iniciada",
