@@ -21,14 +21,22 @@ export async function GET(request: Request) {
     return Response.json({ error: "Rango de fechas inválido" }, { status: 400 });
   }
 
+  const maintenancePermission = await getEffectivePermission(access.user, "MODULE_MANTENIMIENTO");
+  // Quien solo consulta ve únicamente las órdenes que tiene asignadas, salvo el
+  // líder de inyección: supervisa su planta y necesita el detalle completo.
+  const seesAllOrders =
+    access.user.role === "SUPERADMIN" ||
+    access.user.role === "LIDER_INYECCION" ||
+    maintenancePermission.canEdit;
+
   const [equipment, machines, orders, inventory, quotes, kpis, permission, technicians, molds] = await Promise.all([
     listEquipment(),
     listMachinesForEquipment(),
-    listOrders(from, to, access.user.role !== "SUPERADMIN" && !(await getEffectivePermission(access.user, "MODULE_MANTENIMIENTO")).canEdit ? access.user.id : undefined),
+    listOrders(from, to, seesAllOrders ? undefined : access.user.id),
     listInventory(),
     listQuotes(),
     getMaintenanceKpis(from, to),
-    getEffectivePermission(access.user, "MODULE_MANTENIMIENTO"),
+    maintenancePermission,
     prisma!.user.findMany({
       where: {
         status: "ACTIVE",

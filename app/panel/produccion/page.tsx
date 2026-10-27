@@ -565,10 +565,12 @@ export default function ProduccionPage() {
   // historial de recorridas y exportarlo, no registrar corridas.
   const isOpsJefe = role === "JEFE_OPERACIONES";
 
-  // Solo el jefe de operaciones (correo específico) y los superadmin pueden ver
-  // la columna de acciones con el detalle de cada recorrida.
+  // El jefe de operaciones (correo específico), el líder de inyección y los
+  // superadmin pueden ver la columna de acciones con el detalle de cada corrida.
   const canViewActions =
-    role === "SUPERADMIN" || email?.toLowerCase() === "jefeoperaciones@kliniu.com";
+    role === "SUPERADMIN" ||
+    role === "LIDER_INYECCION" ||
+    email?.toLowerCase() === "jefeoperaciones@kliniu.com";
   // Corregir necesita el formulario, que el jefe de operaciones no ve.
   const showEditRun = canEditRuns && !isOpsJefe;
   const showActionsColumn = canViewActions || showEditRun || canDeleteRuns;
