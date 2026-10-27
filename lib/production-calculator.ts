@@ -42,6 +42,13 @@ export function buildProductionSummary(input: ProductionRunInput): ProductionSum
   };
 }
 
+/**
+ * Una corrida que pasa de este % de su capacidad teórica casi siempre tiene el ciclo
+ * mal capturado (segundos escritos como minutos). Se usa para avisar al guardar y
+ * para dejarla fuera del promedio de productividad.
+ */
+export const SUSPICIOUS_PRODUCTIVITY_PCT = 150;
+
 export type ProductionEfficiency = {
   /** Minutos transcurridos entre hora de inicio y hora final. */
   durationMinutes: number;
@@ -63,9 +70,12 @@ export function calcProductionEfficiency(input: {
   cycle: number;
   cycleUnit: string;
   cavities?: number | null;
+  /** Si se pasa, esos minutos de máquina detenida se descuentan del tiempo disponible. */
+  downtimeMinutes?: number | null;
 }): ProductionEfficiency {
   const durationMs = new Date(input.endTime).getTime() - new Date(input.startTime).getTime();
-  const durationSeconds = Number.isFinite(durationMs) ? Math.max(durationMs / 1000, 0) : 0;
+  const downtimeSeconds = (input.downtimeMinutes && input.downtimeMinutes > 0 ? input.downtimeMinutes : 0) * 60;
+  const durationSeconds = Number.isFinite(durationMs) ? Math.max(durationMs / 1000 - downtimeSeconds, 0) : 0;
   const cycleSeconds = input.cycleUnit === "minutes" ? input.cycle * 60 : input.cycle;
   const cavities = input.cavities && input.cavities > 0 ? Math.floor(input.cavities) : 1;
   const expectedPieces = cycleSeconds > 0 ? Math.floor(durationSeconds / cycleSeconds) * cavities : 0;

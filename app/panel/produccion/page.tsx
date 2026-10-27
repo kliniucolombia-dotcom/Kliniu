@@ -30,7 +30,7 @@ import {
   MdEdit,
   MdDeleteOutline,
 } from "react-icons/md";
-import { buildProductionSummary, calcProductionEfficiency, type ProductionRunInput } from "@/lib/production-calculator";
+import { buildProductionSummary, calcProductionEfficiency, SUSPICIOUS_PRODUCTIVITY_PCT, type ProductionRunInput } from "@/lib/production-calculator";
 import {
   createEmptyProductionRunFilters,
   filterProductionRuns,
@@ -392,6 +392,25 @@ export default function ProduccionPage() {
       setAlert({ type: "err", msg: "Revisa los campos marcados antes de continuar." });
       return;
     }
+    // Ciclo incoherente: más piezas de las que la máquina podía hacer (suele ser segundos escritos como minutos).
+    const eff = calcProductionEfficiency({
+      produced: sanitize(form.produced, true),
+      startTime: `${form.productionDate}T${form.startTime}:00.000Z`,
+      endTime: `${form.productionDate}T${form.endTime}:00.000Z`,
+      cycle: sanitize(form.cycleValue),
+      cycleUnit: form.cycleUnit,
+      cavities: Math.max(1, sanitize(form.cavities, true)),
+      downtimeMinutes: sanitize(form.downtimeMinutes, true),
+    });
+    if (eff.efficiencyPercentage !== null && eff.efficiencyPercentage > SUSPICIOUS_PRODUCTIVITY_PCT) {
+      const ok = await confirm({
+        title: "Revisa el ciclo",
+        message: `Con ciclo de ${form.cycleValue} ${cycleUnitLabel(form.cycleUnit)} y ${form.cavities || 1} cavidad(es), en ${Math.round(eff.durationMinutes)} min la máquina debía sacar unas ${eff.expectedPieces.toLocaleString("es-CO")} piezas, pero registraste ${sanitize(form.produced, true).toLocaleString("es-CO")}. ¿El ciclo está en la unidad correcta (segundos o minutos)?`,
+        confirmLabel: "Guardar así",
+        cancelLabel: "Corregir",
+      });
+      if (!ok) return;
+    }
     setSaving(true);
     setAlert(null);
     try {
@@ -629,7 +648,31 @@ export default function ProduccionPage() {
     const produced = filteredRuns.reduce((s, r) => s + r.produced, 0);
     const good = filteredRuns.reduce((s, r) => s + r.summary.goodPieces, 0);
     const damaged = filteredRuns.reduce((s, r) => s + r.damaged, 0);
-    return { count: filteredRuns.length, produced, good, damaged, quality: produced > 0 ? (good / produced) * 100 : 0 };
+    // Productividad: producidas vs lo que la máquina podía hacer (ciclo y cavidades) sin contar paradas.
+    // Se pondera por capacidad: suma producidas / suma capacidades. Quedan fuera las corridas sin
+    // capacidad calculable y las que pasan del tope (ciclo casi seguro mal capturado), contadas aparte.
+    let capProduced = 0;
+    let capacity = 0;
+    let excluded = 0;
+    for (const r of filteredRuns) {
+      const { expectedPieces, efficiencyPercentage } = calcProductionEfficiency(r);
+      if (expectedPieces <= 0) continue;
+      if (efficiencyPercentage !== null && efficiencyPercentage > SUSPICIOUS_PRODUCTIVITY_PCT) {
+        excluded += 1;
+        continue;
+      }
+      capProduced += r.produced;
+      capacity += expectedPieces;
+    }
+    return {
+      count: filteredRuns.length,
+      produced,
+      good,
+      damaged,
+      quality: produced > 0 ? (good / produced) * 100 : 0,
+      productivity: capacity > 0 ? (capProduced / capacity) * 100 : null,
+      excluded,
+    };
   }, [filteredRuns]);
 
   const pageNumbers = useMemo(() => {
@@ -1469,11 +1512,17 @@ export default function ProduccionPage() {
           </div>
         )}
 
-        <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
           <HistoryStat label="Recorridas" value={String(historyStats.count)} />
           <HistoryStat label="Piezas producidas" value={historyStats.produced.toLocaleString("es-CO")} />
           <HistoryStat label="Piezas buenas" value={historyStats.good.toLocaleString("es-CO")} />
           <HistoryStat label="% Calidad promedio" value={fmtPct(historyStats.quality)} accent />
+          <HistoryStat
+            label="% Productividad promedio"
+            value={historyStats.productivity === null ? "Sin datos" : fmtPct(historyStats.productivity)}
+            hint={historyStats.excluded > 0 ? `${historyStats.excluded} ${historyStats.excluded === 1 ? "recorrida excluida" : "recorridas excluidas"} por ciclo dudoso (>${SUSPICIOUS_PRODUCTIVITY_PCT}%)` : undefined}
+            accent
+          />
         </div>
         </>
         )}
@@ -1668,11 +1717,12 @@ function SummaryRow({ label, value }: { label: string; value: number }) {
   );
 }
 
-function HistoryStat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function HistoryStat({ label, value, accent, hint }: { label: string; value: string; accent?: boolean; hint?: string }) {
   return (
     <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5">
       <p className="text-[10px] font-bold uppercase tracking-wide text-[#94A3B8]">{label}</p>
       <p className={`mt-0.5 text-lg font-black ${accent ? "text-[#27B1B8]" : "text-[#1A1A1A]"}`}>{value}</p>
+      {hint && <p className="mt-0.5 text-[10px] leading-tight text-[#94A3B8]">{hint}</p>}
     </div>
   );
 }
