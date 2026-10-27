@@ -83,6 +83,7 @@ export const NOTIFICATION_EVENTS: Record<string, Omit<NotificationEvent, "title"
 
   // ─── Logística ──
   "logistics.route_assigned": { type: "logistics", category: "route_assigned", targetRoles: LOGISTICA_TEAM, severity: "info" },
+  "logistics.route_alert":    { type: "logistics", category: "route_alert",    targetRoles: LOGISTICA_TEAM, severity: "warning" },
   "logistics.incident":       { type: "logistics", category: "incident",       targetRoles: LOGISTICA_TEAM, severity: "warning" },
 
   // ─── Informes de operaciones ──

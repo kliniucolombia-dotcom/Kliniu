@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type {
+  Prisma,
   DeliveryRouteStatus,
   TransportCostCategory,
   TransportIncidentStatus,
@@ -36,6 +37,8 @@ const orderSelect = {
   city: true,
   department: true,
   addressLine1: true,
+  addressLine2: true,
+  notes: true,
   shippingStatus: true,
   totalItems: true,
   subtotal: true,
@@ -275,15 +278,35 @@ export async function listAssignableOrders() {
   });
 }
 
+// Parada creada desde cero en el modal de ruta: se guarda como pedido manual (canal OTHER) dentro de la ruta.
+export type NewStop = {
+  name: string;
+  phone?: string;
+  department: string;
+  city: string;
+  address: string;
+  address2?: string;
+  notes?: string;
+  lat?: number | null;
+  lng?: number | null;
+};
+
+// `sequence` fija el orden de las paradas con claves "o:<orderId>" (pedido) y "n:<índice>" (parada nueva);
+// lo que falte en ella se agrega al final.
 export async function createRoute(input: {
   date: string;
   vehicleId: string;
   driverId: string;
   notes?: string;
   orderIds: string[];
+  newStops?: NewStop[];
+  sequence?: string[];
   userId: string;
 }) {
   const db = requirePrisma();
+  const newStops = input.newStops ?? [];
+  const all = [...input.orderIds.map((id) => `o:${id}`), ...newStops.map((_, i) => `n:${i}`)];
+  const seq = [...new Set([...(input.sequence ?? []).filter((k) => all.includes(k)), ...all])];
   return db.$transaction(async (tx) => {
     const route = await tx.deliveryRoute.create({
       data: {
@@ -298,8 +321,38 @@ export async function createRoute(input: {
         vehicle: { select: { plate: true } },
       },
     });
-    if (input.orderIds.length > 0) {
-      await assignWithStopOrder(tx, route.id, input.orderIds, 0);
+    const free = new Set(
+      (await tx.order.findMany({ where: { id: { in: input.orderIds }, deliveryRouteId: null }, select: { id: true } })).map((o) => o.id),
+    );
+    let n = 0;
+    for (const key of seq) {
+      if (key.startsWith("o:")) {
+        const id = key.slice(2);
+        if (free.has(id)) await tx.order.update({ where: { id }, data: { deliveryRouteId: route.id, stopOrder: ++n } });
+      } else {
+        const st = newStops[Number(key.slice(2))];
+        await tx.order.create({
+          data: {
+            userId: input.userId,
+            channel: "OTHER",
+            customerName: st.name,
+            customerEmail: "sin-correo@kliniu.local",
+            customerPhone: st.phone || "",
+            department: st.department,
+            city: st.city,
+            addressLine1: st.address,
+            addressLine2: st.address2 || null,
+            notes: st.notes || null,
+            adminNotes: "Parada creada desde Logística",
+            subtotal: 0,
+            totalItems: 0,
+            lat: st.lat ?? null,
+            lng: st.lng ?? null,
+            deliveryRouteId: route.id,
+            stopOrder: ++n,
+          },
+        });
+      }
     }
     return route;
   });
@@ -586,10 +639,12 @@ export async function getLogisticsKpis(from: string, to: string) {
 // Tope por llamada para acotar el costo de Google; el resto se geocodifica en la siguiente.
 // ponytail: si se edita la dirección del pedido, las coordenadas no se recalculan.
 // ponytail: los fallos no se cachean, se reintentan en cada llamada (agregar geocodeFailed si molesta el costo).
-export async function geocodePendingOrders(routeId: string, budget: number) {
+export const geocodePendingOrders = (routeId: string, budget: number) => geocodeWhere({ deliveryRouteId: routeId }, budget);
+
+export async function geocodeWhere(where: Prisma.OrderWhereInput, budget: number) {
   const db = requirePrisma();
   const orders = await db.order.findMany({
-    where: { deliveryRouteId: routeId },
+    where,
     select: {
       id: true, customerName: true, department: true, city: true, addressLine1: true, lat: true, lng: true, shippingStatus: true,
       deliveryAttempts: { orderBy: { recordedAt: "desc" }, take: 1, select: { outcome: true } },

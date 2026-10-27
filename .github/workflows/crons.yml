@@ -48,3 +48,10 @@ jobs:
           curl -fsS --max-time 60 \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "https://kliniucolombia.com/api/cron/tareas-recordatorio"
+
+      - name: Logística route alerts
+        if: always()
+        run: |
+          curl -fsS --max-time 60 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://kliniucolombia.com/api/cron/logistica-alertas"

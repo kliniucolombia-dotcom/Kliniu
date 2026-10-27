@@ -6,9 +6,10 @@ import {
   MdAssignment, MdClose, MdDelete, MdCheckCircle, MdPerson, MdRoute,
   MdCalendarMonth, MdChevronLeft, MdChevronRight, MdPlace,
   MdBuild, MdControlCamera, MdVerticalAlignCenter, MdSecurity, MdInventory2,
-  MdElectricBolt, MdLocalGasStation, MdCable, MdLuggage, MdRemoveRedEye, MdWarningAmber, MdMap, MdLink, MdArrowUpward, MdArrowDownward, MdPhotoCamera, MdCancel, MdBarChart, MdAltRoute, MdPictureAsPdf, MdMyLocation, MdSignalWifiOff, MdPauseCircle, MdFileDownload,
+  MdElectricBolt, MdLocalGasStation, MdCable, MdLuggage, MdRemoveRedEye, MdWarningAmber, MdMap, MdLink, MdArrowUpward, MdArrowDownward, MdPhotoCamera, MdCancel, MdBarChart, MdAltRoute, MdPictureAsPdf, MdMyLocation, MdSignalWifiOff, MdPauseCircle, MdFileDownload, MdPhone, MdSend,
 } from "react-icons/md";
 import { RouteMap } from "./route-map";
+import { NewStopsEditor, RoutePreview, type NewStopDraft } from "./route-composer";
 import { LiveFleet } from "./live-fleet";
 import { RouteProgress } from "@/app/components/route-progress";
 import { SimpleSelect } from "../_components/simple-select";
@@ -137,6 +138,8 @@ type OrderLite = {
   city: string;
   department: string;
   addressLine1: string;
+  addressLine2?: string | null;
+  notes?: string | null;
   shippingStatus: "PENDING" | "PREPARING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
   totalItems: number;
   subtotal: number;
@@ -440,13 +443,29 @@ export default function LogisticaPanel() {
   };
   const fail = (msg: string) => setAlert({ type: "err", msg });
 
-  async function copyDriverLink(routeId: string) {
+  async function driverLink(routeId: string): Promise<string | null> {
     const r = await fetch(`/api/panel/logistica/rutas/${routeId}/enlace`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
-    if (!r.ok) { fail((await r.json()).error ?? "Error"); return; }
+    if (!r.ok) { fail((await r.json()).error ?? "Error"); return null; }
     const { token } = await r.json();
-    const link = `${window.location.origin}/conductor/${token}`;
+    return `${window.location.origin}/conductor/${token}`;
+  }
+
+  async function copyDriverLink(routeId: string) {
+    const link = await driverLink(routeId);
+    if (!link) return;
     try { await navigator.clipboard.writeText(link); setAlert({ type: "ok", msg: "Enlace del conductor copiado" }); }
     catch { setAlert({ type: "ok", msg: link }); }
+  }
+
+  // Abre WhatsApp con el enlace listo para enviar al conductor (sin API ni plantilla: lo envía quien está en el panel).
+  async function whatsappDriverLink(r: Route) {
+    const digits = (r.driver.phone ?? "").replace(/\D/g, "");
+    if (digits.length < 10) { fail("El conductor no tiene un teléfono válido. Agrégalo en la pestaña Flota."); return; }
+    const link = await driverLink(r.id);
+    if (!link) return;
+    const to = digits.length === 10 ? `57${digits}` : digits;
+    const text = `Hola ${r.driver.fullName}, tu ruta del ${fmtDate(r.date)} (${r.orders.length} parada${r.orders.length === 1 ? "" : "s"}) está lista. Ábrela aquí: ${link}`;
+    window.open(`https://wa.me/${to}?text=${encodeURIComponent(text)}`, "_blank", "noopener");
   }
 
   async function patch(url: string, body: unknown, okMsg: string) {
@@ -577,6 +596,11 @@ export default function LogisticaPanel() {
                     {perm.canEdit && r.status !== "DONE" && (
                       <button className={`${btnGhost} mt-3 mr-2`} onClick={() => copyDriverLink(r.id)}>
                         <MdLink size={16} />Enlace conductor
+                      </button>
+                    )}
+                    {perm.canEdit && r.status !== "DONE" && (
+                      <button className={`${btnGhost} mt-3 mr-2`} onClick={() => whatsappDriverLink(r)}>
+                        <MdSend size={16} />Enviar por WhatsApp
                       </button>
                     )}
                     {r.orders.length > 0 && (
@@ -1127,7 +1151,7 @@ function RouteCalendar({
 
 function OrderPicker({ orders, selected, onToggle }: { orders: OrderLite[]; selected: Set<string>; onToggle: (id: string) => void }) {
   const [q, setQ] = useState("");
-  const list = orders.filter((o) => `${o.customerName} ${o.city} ${o.addressLine1}`.toLowerCase().includes(q.toLowerCase()));
+  const list = orders.filter((o) => `${o.customerName} ${o.city} ${o.addressLine1} ${o.customerPhone}`.toLowerCase().includes(q.toLowerCase()));
   return (
     <div>
       <label className={labelCls}>Pedidos a incluir ({selected.size})</label>
@@ -1137,9 +1161,15 @@ function OrderPicker({ orders, selected, onToggle }: { orders: OrderLite[]; sele
         {list.map((o) => (
           <label key={o.id} className="flex cursor-pointer items-start gap-2 rounded-lg px-2 py-1.5 hover:bg-[#F8FAFC]">
             <input type="checkbox" checked={selected.has(o.id)} onChange={() => onToggle(o.id)} className="mt-0.5" />
-            <span className="min-w-0 text-xs">
-              <b className="text-[#1A1A1A]">{o.customerName}</b> · {o.city} · {o.totalItems} ítem{o.totalItems === 1 ? "" : "s"}
-              <span className="block text-[#94A3B8]">{o.addressLine1} · {SHIPPING_LABEL[o.shippingStatus]}</span>
+            <span className="min-w-0 flex-1 text-xs">
+              <b className="text-[#1A1A1A]">{o.customerName}</b> · {o.totalItems} ítem{o.totalItems === 1 ? "" : "s"} · ${o.subtotal.toLocaleString("es-CO")}
+              <span className="flex items-start gap-1 text-[#64748B]">
+                <MdPlace size={12} className="mt-0.5 shrink-0 text-[#94A3B8]" />
+                <span>{[o.addressLine1, o.addressLine2, o.city, o.department].filter(Boolean).join(", ")}</span>
+              </span>
+              <span className="flex items-center gap-1 text-[#64748B]"><MdPhone size={12} className="shrink-0 text-[#94A3B8]" />{o.customerPhone}</span>
+              {o.notes && <span className="block italic text-[#94A3B8]">“{o.notes}”</span>}
+              <span className="block text-[#94A3B8]">{SHIPPING_LABEL[o.shippingStatus]} · pedido {new Date(o.createdAt).toLocaleDateString("es-CO", { timeZone: "America/Bogota", day: "2-digit", month: "2-digit" })}</span>
             </span>
           </label>
         ))}
@@ -1154,14 +1184,26 @@ function RouteModal({ initialDate, vehicles, drivers, orders, onClose, onDone, o
   const [driverId, setDriverId] = useState(drivers[0]?.id ?? "");
   const [notes, setNotes] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [newStops, setNewStops] = useState<NewStopDraft[]>([]);
+  const [seqPref, setSeqPref] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   const toggle = (id: string) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
+  // Orden de las paradas: lo que logística reordenó primero, lo nuevo al final.
+  const allKeys = [...[...selected].map((id) => `o:${id}`), ...newStops.map((n) => `n:${n.uid}`)];
+  const keys = [...seqPref.filter((k) => allKeys.includes(k)), ...allKeys.filter((k) => !seqPref.includes(k))];
+  const move = (i: number, dir: -1 | 1) => {
+    const next = [...keys];
+    [next[i], next[i + dir]] = [next[i + dir], next[i]];
+    setSeqPref(next);
+  };
+
   const submit = async () => {
     setSubmitting(true);
     markLocalWrite();
-    const res = await post("/api/panel/logistica/rutas", { date, vehicleId, driverId, notes, orderIds: [...selected] });
+    const sequence = keys.map((k) => (k.startsWith("n:") ? `n:${newStops.findIndex((n) => n.uid === k.slice(2))}` : k));
+    const res = await post("/api/panel/logistica/rutas", { date, vehicleId, driverId, notes, orderIds: [...selected], newStops, sequence });
     setSubmitting(false);
     if (res.ok) onDone("Ruta creada"); else onError(res.error!);
   };
@@ -1175,6 +1217,8 @@ function RouteModal({ initialDate, vehicles, drivers, orders, onClose, onDone, o
       <div><label className={labelCls}>Vehículo</label><SimpleSelect value={vehicleId} options={vehicles.map((v) => ({ value: v.id, label: vehicleLabel(v) }))} onChange={setVehicleId} /></div>
       <div><label className={labelCls}>Conductor</label><SimpleSelect value={driverId} options={drivers.map((d) => ({ value: d.id, label: d.fullName }))} onChange={setDriverId} /></div>
       <OrderPicker orders={orders} selected={selected} onToggle={toggle} />
+      <NewStopsEditor stops={newStops} onChange={setNewStops} onError={onError} />
+      <RoutePreview keys={keys} orders={orders} newStops={newStops} onMove={move} />
       <div><label className={labelCls}>Notas (opcional)</label><input value={notes} onChange={(e) => setNotes(e.target.value)} className={inputCls} placeholder="Zona, horario, observaciones…" /></div>
     </Modal>
   );
