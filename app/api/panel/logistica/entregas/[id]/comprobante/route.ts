@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { launchPdfBrowser } from "@/lib/pdf-browser";
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { emailLinkOrigin } from "@/lib/site";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -20,7 +21,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   // Se valida antes de abrir el navegador: la página de impresión responde 200 aunque muestre un 404.
   const attempt = prisma ? await prisma.deliveryAttempt.findFirst({ where: { id, outcome: "DELIVERED" }, select: { id: true } }) : null;
   if (!attempt) return Response.json({ error: "Entrega no encontrada" }, { status: 404 });
-  const origin = new URL(request.url).origin;
+  // En producción el destino sale de la configuración, no del Host: la cookie de sesión no debe viajar a un host falseado.
+  const origin = emailLinkOrigin(request);
 
   let browser;
   try {
