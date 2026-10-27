@@ -40,6 +40,8 @@ const ACTION_LABELS: Record<string, string> = {
   "auth.password_changed": "Clave cambiada (Mi cuenta)",
   "auth.email_changed": "Correo cambiado (Mi cuenta)",
   "user.password_reset": "Clave cambiada desde el panel",
+  "user.email_change": "Correo cambiado desde el panel",
+  "user.password_confirm_failed": "Confirmación de clave fallida",
   "user.update": "Usuario editado",
   "user.delete": "Usuario eliminado",
   "user.permissions_update": "Permisos modificados",
@@ -51,7 +53,7 @@ const ACTION_LABELS: Record<string, string> = {
   "appconfig.wati_remarketing": "Remarketing WhatsApp",
 };
 
-const DANGER = new Set(["auth.login_failed_burst", "auth.login_new_ip", "user.password_reset", "product.delete", "user.delete", "admin.login_pin_failed"]);
+const DANGER = new Set(["auth.login_failed_burst", "auth.login_new_ip", "user.password_reset", "user.email_change", "user.password_confirm_failed", "product.delete", "user.delete", "admin.login_pin_failed"]);
 
 const short = (v: unknown) => {
   const t = typeof v === "string" ? v : JSON.stringify(v);
@@ -123,7 +125,8 @@ export default function BitacoraClient() {
   }, [load]);
 
   const exportCsv = () => {
-    const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    // Una celda que empieza con = + - @ (o tab/CR) la ejecuta Excel como fórmula: se neutraliza con un apóstrofo.
+    const esc = (v: string) => `"${(/^[=+\-@\t\r]/.test(v) ? `'${v}` : v).replace(/"/g, '""')}"`;
     const lines = [["Fecha", "Quién", "Rol", "Acción", "Detalle", "IP"].join(",")].concat(
       rows.map((r) =>
         [r.createdAt, r.actorEmail, String(r.meta?.actorRole ?? ""), ACTION_LABELS[r.action] ?? r.action, detail(r), r.ip ?? ""].map((c) => esc(c)).join(","),

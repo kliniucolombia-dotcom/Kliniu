@@ -50,6 +50,8 @@ async function alertIfSensitive(input: AuditInput, actorRole?: string) {
 
   if (input.action === "user.password_reset") {
     await sendSecurityAlert("clave cambiada desde el panel", ["Se cambió la clave de una cuenta desde el panel de usuarios.", ...base]);
+  } else if (input.action === "user.email_change") {
+    await sendSecurityAlert("correo cambiado desde el panel", ["Se cambió el correo de una cuenta desde el panel de usuarios.", ...base]);
   } else if (privileged && input.action === "auth.login_new_ip") {
     await sendSecurityAlert("inicio de sesión desde una IP nueva", ["Una cuenta con privilegios entró desde una IP que no había usado.", ...base]);
   } else if (privileged && ["auth.password_reset_email", "auth.password_changed", "auth.email_changed"].includes(input.action)) {

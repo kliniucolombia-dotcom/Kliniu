@@ -28,23 +28,24 @@ export function bogotaTime(date = new Date()): string {
   return date.toLocaleString("es-CO", { timeZone: "America/Bogota", dateStyle: "short", timeStyle: "medium" });
 }
 
-// Avisa a la propia persona de que un administrador le cambió la clave. Nunca incluye la clave.
-export async function notifyPasswordChangedByAdmin(toEmail: string): Promise<void> {
+// Avisa a la propia persona de que un administrador le cambió la contraseña o el correo.
+// Nunca incluye la clave.
+export async function notifyAccountChangedByAdmin(toEmail: string, what: "contraseña" | "correo"): Promise<void> {
   try {
     if (!process.env.RESEND_API_KEY) return;
     const { error } = await new Resend(process.env.RESEND_API_KEY).emails.send({
       from: "Kliniu <contacto@kliniu.com>",
       to: toEmail,
-      subject: "Tu contraseña de Kliniu fue cambiada",
+      subject: `Tu ${what} de Kliniu fue cambiado`,
       text: [
         "Hola,",
         "",
-        `Un administrador cambió la contraseña de tu cuenta Kliniu el ${bogotaTime()} (hora de Bogotá).`,
+        `Un administrador cambió el ${what === "correo" ? "correo" : "la contraseña"} de tu cuenta Kliniu el ${bogotaTime()} (hora de Bogotá).`,
         "Si no lo esperabas, avísale a tu jefe o a un administrador de inmediato.",
       ].join("\n"),
     });
-    if (error) console.error("PASSWORD_NOTICE_FAILED", error);
+    if (error) console.error("ACCOUNT_NOTICE_FAILED", error);
   } catch (error) {
-    console.error("PASSWORD_NOTICE_FAILED", error);
+    console.error("ACCOUNT_NOTICE_FAILED", error);
   }
 }

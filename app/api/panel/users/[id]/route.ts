@@ -4,7 +4,7 @@ import { broadcastPanelUpdate } from "@/lib/realtime";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
-import { notifyPasswordChangedByAdmin } from "@/lib/security-alert";
+import { notifyAccountChangedByAdmin } from "@/lib/security-alert";
 import { compare } from "bcryptjs";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -23,12 +23,21 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   };
 
   const changingPassword = Boolean(body.newPassword?.trim());
-  if (changingPassword) {
-    // La propia clave se cambia desde Mi cuenta, que pide la clave actual.
+  // Estado anterior, para saber si cambia el correo y para que la bitácora diga de dónde se pasó a dónde.
+  const before = await prisma!.user.findUnique({ where: { id }, select: { role: true, status: true, email: true } });
+  const nextEmail = body.email?.trim().toLowerCase();
+  const changingEmail = Boolean(nextEmail && before && nextEmail !== before.email.toLowerCase());
+
+  // Cambiar la clave o el correo de una cuenta equivale a quedarse con ella (con otro correo,
+  // "olvidé mi contraseña" entrega la cuenta), así que ambos exigen volver a escribir la clave de quien actúa.
+  if (changingPassword || changingEmail) {
+    // Lo propio se cambia desde Mi cuenta, que pide la clave actual.
     if (id === access.user.id) {
-      return Response.json({ error: "Tu propia contraseña se cambia desde Mi cuenta." }, { status: 400 });
+      return Response.json(
+        { error: changingPassword ? "Tu propia contraseña se cambia desde Mi cuenta." : "Tu propio correo se cambia desde Mi cuenta." },
+        { status: 400 },
+      );
     }
-    // Una sesión abierta o robada no basta: hay que volver a escribir la clave de quien actúa.
     if (!(await checkRateLimit(`confirm-password:${access.user.id}`, 8, 10 * 60 * 1000))) {
       return Response.json({ error: "Demasiados intentos. Espera unos minutos." }, { status: 429, headers: { "Retry-After": "600" } });
     }
@@ -47,14 +56,12 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   }
 
   try {
-    // Estado anterior, para que la bitácora diga de qué rol/estado se pasó a cuál.
-    const before = await prisma!.user.findUnique({ where: { id }, select: { role: true, status: true, email: true } });
     const user = await updateUserByAdmin(id, body);
     await broadcastPanelUpdate("users");
     await logAudit({
       actorId: access.user.id,
       actorEmail: access.user.email,
-      action: body.newPassword?.trim() ? "user.password_reset" : "user.update",
+      action: changingPassword ? "user.password_reset" : changingEmail ? "user.email_change" : "user.update",
       entity: "user",
       entityId: id,
       meta: {
@@ -67,7 +74,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       },
       ip: getClientIp(request),
     });
-    if (changingPassword) await notifyPasswordChangedByAdmin(user.email);
+    // Aviso a la persona afectada. Si cambió el correo, también al anterior: es quien podría no saberlo.
+    if (changingPassword) await notifyAccountChangedByAdmin(user.email, "contraseña");
+    if (changingEmail && before) await notifyAccountChangedByAdmin(before.email, "correo");
     return Response.json(user);
   } catch (e) {
     if (e instanceof Error && e.message === "EMAIL_ALREADY_EXISTS") {
