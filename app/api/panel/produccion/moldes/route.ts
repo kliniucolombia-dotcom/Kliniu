@@ -23,7 +23,14 @@ export async function GET(request: Request) {
     getEffectivePermission(access.user, "MODULE_PRODUCCION"),
   ]);
 
-  return Response.json({ molds, machines, changes, kpis, permission });
+  return Response.json({
+    molds,
+    machines,
+    changes,
+    kpis,
+    permission,
+    canManageChanges: access.user.role === "JEFE_OPERACIONES" || access.user.role === "SUPERADMIN",
+  });
 }
 
 export async function POST(request: Request) {

@@ -1,8 +1,9 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MdAdd, MdSwapHoriz, MdTimer, MdPrecisionManufacturing, MdStopCircle, MdInventory2 } from "react-icons/md";
+import { MdAdd, MdSwapHoriz, MdTimer, MdPrecisionManufacturing, MdStopCircle, MdInventory2, MdDeleteOutline, MdEdit } from "react-icons/md";
 import { SimpleSelect } from "../../_components/simple-select";
+import { useConfirm } from "@/app/components/confirm-dialog";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import {
   fmtDate, fmtDateTime, todayBogota, inputCls, labelCls, btnPrimary, btnGhost,
@@ -21,7 +22,7 @@ type Change = {
   changedBy: { fullName: string };
 };
 type Kpis = { changesCompleted: number; avgChangeMinutes: number; totalChangeMinutes: number; openChanges: number; moldsInUse: number; moldsTotal: number };
-type Data = { molds: Mold[]; machines: Machine[]; changes: Change[]; kpis: Kpis; permission: Permission };
+type Data = { molds: Mold[]; machines: Machine[]; changes: Change[]; kpis: Kpis; permission: Permission; canManageChanges: boolean };
 
 const MOLD_STATUS: Record<MoldStatus, { label: string; cls: string }> = {
   AVAILABLE: { label: "Disponible", cls: "bg-[#DCFCE7] text-[#15803D]" },
@@ -45,6 +46,14 @@ function closedDuration(c: Change & { finishedAt: string }) {
   return Math.max(0, Math.round((new Date(c.finishedAt).getTime() - new Date(c.startedAt).getTime()) / 60000));
 }
 
+// Bogotá es UTC-5 todo el año: convierte entre ISO y el valor de <input type="datetime-local">.
+function toBogotaInput(iso: string) {
+  return new Date(new Date(iso).getTime() - 5 * 60 * 60 * 1000).toISOString().slice(0, 16);
+}
+function fromBogotaInput(value: string) {
+  return new Date(`${value.length === 16 ? `${value}:00` : value}-05:00`).toISOString();
+}
+
 export default function MoldesPanel() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("cambios");
@@ -53,7 +62,16 @@ export default function MoldesPanel() {
   const [data, setData] = useState<Data | null>(null);
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
-  const [modal, setModal] = useState<{ kind: "mold" } | { kind: "mount" } | { kind: "finish"; change: Change } | null>(null);
+  const [modal, setModal] = useState<
+    | { kind: "mold"; mold?: Mold }
+    | { kind: "mount" }
+    | { kind: "finish"; change: Change }
+    | { kind: "editChange"; change: Change }
+    | null
+  >(null);
+  const [deletingChangeId, setDeletingChangeId] = useState<string | null>(null);
+  const [deletingMoldId, setDeletingMoldId] = useState<string | null>(null);
+  const confirm = useConfirm();
 
   const load = useCallback(async () => {
     const r = await fetch(`/api/panel/produccion/moldes?from=${from}&to=${to}`);
@@ -82,6 +100,48 @@ export default function MoldesPanel() {
     markLocalWrite();
     const res = await patchReq(url, body);
     if (res.ok) { setAlert({ type: "ok", msg: okMsg }); load(); } else fail(res.error!);
+  }
+
+  async function deleteChange(c: Change) {
+    const ok = await confirm({
+      title: "Eliminar cambio de molde",
+      message: `Se eliminará del historial el cambio de ${c.mold.code} — ${c.mold.name} en #${c.machine.code} · ${c.machine.name} (${fmtDateTime(c.startedAt)}). Esta acción no se puede deshacer.`,
+      confirmLabel: "Eliminar",
+      danger: true,
+    });
+    if (!ok) return;
+    setDeletingChangeId(c.id);
+    markLocalWrite();
+    const r = await fetch(`/api/panel/produccion/moldes/cambios/${c.id}`, { method: "DELETE" });
+    setDeletingChangeId(null);
+    if (!r.ok) {
+      const d = await r.json().catch(() => null);
+      setAlert({ type: "err", msg: d?.error ?? "No se pudo eliminar el cambio." });
+      return;
+    }
+    setAlert({ type: "ok", msg: "Cambio de molde eliminado" });
+    load();
+  }
+
+  async function deleteMoldRecord(m: Mold) {
+    const ok = await confirm({
+      title: "Eliminar molde",
+      message: `Se eliminará el molde ${m.code} — ${m.name}${m._count.changes > 0 ? ` y sus ${m._count.changes} cambio${m._count.changes === 1 ? "" : "s"} de historial` : ""}. Esta acción no se puede deshacer.`,
+      confirmLabel: "Eliminar",
+      danger: true,
+    });
+    if (!ok) return;
+    setDeletingMoldId(m.id);
+    markLocalWrite();
+    const r = await fetch(`/api/panel/produccion/moldes/${m.id}`, { method: "DELETE" });
+    setDeletingMoldId(null);
+    if (!r.ok) {
+      const d = await r.json().catch(() => null);
+      setAlert({ type: "err", msg: d?.error ?? "No se pudo eliminar el molde." });
+      return;
+    }
+    setAlert({ type: "ok", msg: "Molde eliminado" });
+    load();
   }
 
   const openChanges = useMemo(() => (data?.changes ?? []).filter((c) => !c.finishedAt), [data]);
@@ -149,11 +209,32 @@ export default function MoldesPanel() {
 
           <Section title={`Historial de cambios (${closedChanges.length})`}>
             <Table
-              head={["Máquina", "Molde", "Montaje", "Desmontaje", "Duración", "Responsable", "Notas"]}
+              head={["Máquina", "Molde", "Montaje", "Desmontaje", "Duración", "Responsable", "Notas", data.canManageChanges ? "" : null]}
               rows={closedChanges.map((c) => [
                 `#${c.machine.code} · ${c.machine.name}`, `${c.mold.code} — ${c.mold.name}`,
                 fmtDateTime(c.startedAt), fmtDateTime(c.finishedAt),
                 <b key="d">{fmtMinutes(closedDuration(c))}</b>, c.changedBy.fullName, c.notes ?? "—",
+                data.canManageChanges ? (
+                  <div key="actions" className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setModal({ kind: "editChange", change: c })}
+                      title="Editar cambio de molde"
+                      aria-label="Editar cambio de molde"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[#E2E8F0] bg-white text-[#475569] transition-colors hover:bg-[#F1F5F9]"
+                    >
+                      <MdEdit size={15} />
+                    </button>
+                    <button
+                      onClick={() => deleteChange(c)}
+                      disabled={deletingChangeId === c.id}
+                      title="Eliminar cambio de molde"
+                      aria-label="Eliminar cambio de molde"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[#FECACA] bg-[#FEF2F2] text-[#DC2626] transition-colors hover:bg-[#FEE2E2] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <MdDeleteOutline size={15} />
+                    </button>
+                  </div>
+                ) : null,
               ])}
               empty="Sin cambios de molde cerrados en este período."
             />
@@ -165,40 +246,67 @@ export default function MoldesPanel() {
           action={perm.canCreate && <button className={btnPrimary} onClick={() => setModal({ kind: "mold" })}><MdAdd size={16} />Nuevo molde</button>}
         >
           <Table
-            head={["Código", "Nombre", "Estado", "Cambios", perm.canEdit ? "" : null]}
+            head={["Código", "Nombre", "Estado", "Cambios", perm.canEdit || data.canManageChanges ? "" : null]}
             rows={data.molds.map((m) => [
               <b key="c">{m.code}</b>, m.name, <Badge key="s" {...MOLD_STATUS[m.status]} />, String(m._count.changes),
-              perm.canEdit && m.status !== "IN_USE" ? (
-                <button key="a" className={btnGhost} onClick={() => patch(`/api/panel/produccion/moldes/${m.id}`, { status: m.status === "MAINTENANCE" ? "AVAILABLE" : "MAINTENANCE" }, m.status === "MAINTENANCE" ? "Molde disponible" : "Molde enviado a mantenimiento")}>
-                  {m.status === "MAINTENANCE" ? "Marcar disponible" : "Enviar a mantenimiento"}
-                </button>
-              ) : null,
+              <div key="a" className="flex flex-wrap items-center gap-1.5">
+                {perm.canEdit && m.status !== "IN_USE" && (
+                  <button className={btnGhost} onClick={() => patch(`/api/panel/produccion/moldes/${m.id}`, { status: m.status === "MAINTENANCE" ? "AVAILABLE" : "MAINTENANCE" }, m.status === "MAINTENANCE" ? "Molde disponible" : "Molde enviado a mantenimiento")}>
+                    {m.status === "MAINTENANCE" ? "Marcar disponible" : "Enviar a mantenimiento"}
+                  </button>
+                )}
+                {data.canManageChanges && (
+                  <button
+                    onClick={() => setModal({ kind: "mold", mold: m })}
+                    title="Editar molde"
+                    aria-label="Editar molde"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[#E2E8F0] bg-white text-[#475569] transition-colors hover:bg-[#F1F5F9]"
+                  >
+                    <MdEdit size={15} />
+                  </button>
+                )}
+                {data.canManageChanges && (
+                  <button
+                    onClick={() => deleteMoldRecord(m)}
+                    disabled={deletingMoldId === m.id || m.status === "IN_USE"}
+                    title={m.status === "IN_USE" ? "Desmonta el molde antes de eliminarlo" : "Eliminar molde"}
+                    aria-label="Eliminar molde"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[#FECACA] bg-[#FEF2F2] text-[#DC2626] transition-colors hover:bg-[#FEE2E2] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <MdDeleteOutline size={15} />
+                  </button>
+                )}
+              </div>,
             ])}
             empty="Sin moldes registrados."
           />
         </Section>
       )}
 
-      {modal?.kind === "mold" && <MoldModal markLocalWrite={markLocalWrite} onClose={() => setModal(null)} onDone={done} onError={fail} />}
+      {modal?.kind === "mold" && <MoldModal mold={modal.mold} markLocalWrite={markLocalWrite} onClose={() => setModal(null)} onDone={done} onError={fail} />}
       {modal?.kind === "mount" && data && <MountModal markLocalWrite={markLocalWrite} molds={availableMolds} machines={freeMachines} onClose={() => setModal(null)} onDone={done} onError={fail} />}
       {modal?.kind === "finish" && <FinishModal markLocalWrite={markLocalWrite} change={modal.change} onClose={() => setModal(null)} onDone={done} onError={fail} />}
+      {modal?.kind === "editChange" && <EditChangeModal markLocalWrite={markLocalWrite} change={modal.change} onClose={() => setModal(null)} onDone={done} onError={fail} />}
     </div>
   );
 }
 
-function MoldModal({ onClose, onDone, onError, markLocalWrite }: ModalProps & { markLocalWrite: () => void }) {
-  const [code, setCode] = useState("");
-  const [name, setName] = useState("");
+function MoldModal({ mold, onClose, onDone, onError, markLocalWrite }: ModalProps & { mold?: Mold; markLocalWrite: () => void }) {
+  const editing = Boolean(mold);
+  const [code, setCode] = useState(mold?.code ?? "");
+  const [name, setName] = useState(mold?.name ?? "");
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     setSubmitting(true);
     markLocalWrite();
-    const res = await post("/api/panel/produccion/moldes", { code, name });
+    const res = editing
+      ? await patchReq(`/api/panel/produccion/moldes/${mold!.id}`, { code, name })
+      : await post("/api/panel/produccion/moldes", { code, name });
     setSubmitting(false);
-    if (res.ok) onDone("Molde registrado"); else onError(res.error!);
+    if (res.ok) onDone(editing ? "Molde actualizado" : "Molde registrado"); else onError(res.error!);
   };
   return (
-    <Modal title="Nuevo molde" onClose={onClose} footer={<Footer onClose={onClose} onSubmit={submit} submitting={submitting} disabled={!code.trim() || !name.trim()} />}>
+    <Modal title={editing ? `Editar molde ${mold!.code}` : "Nuevo molde"} onClose={onClose} footer={<Footer onClose={onClose} onSubmit={submit} submitting={submitting} disabled={!code.trim() || !name.trim()} />}>
       <div><label className={labelCls}>Código</label><input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} className={inputCls} placeholder="MOL-01" /></div>
       <div><label className={labelCls}>Nombre / referencia</label><input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} /></div>
     </Modal>
@@ -240,6 +348,60 @@ function FinishModal({ change, onClose, onDone, onError, markLocalWrite }: Modal
   return (
     <Modal title={`Desmontar ${change.mold.code} de #${change.machine.code}`} onClose={onClose} footer={<Footer onClose={onClose} onSubmit={submit} submitting={submitting} />}>
       <p className="text-sm text-[#64748B]">Montado el {fmtDateTime(change.startedAt)} ({fmtDate(change.startedAt)}).</p>
+      <div><label className={labelCls}>Notas del cambio (opcional)</label><textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className={inputCls} placeholder="Novedades del montaje/desmontaje…" /></div>
+    </Modal>
+  );
+}
+
+function EditChangeModal({ change, onClose, onDone, onError, markLocalWrite }: ModalProps & { change: Change; markLocalWrite: () => void }) {
+  const [startedAt, setStartedAt] = useState(toBogotaInput(change.startedAt));
+  const [finishedAt, setFinishedAt] = useState(change.finishedAt ? toBogotaInput(change.finishedAt) : "");
+  const [notes, setNotes] = useState(change.notes ?? "");
+  const [submitting, setSubmitting] = useState(false);
+  const rangeValid = Boolean(startedAt && finishedAt && finishedAt > startedAt);
+
+  const submit = async () => {
+    if (!rangeValid) {
+      onError("El desmontaje debe ser posterior al montaje.");
+      return;
+    }
+    setSubmitting(true);
+    markLocalWrite();
+    const r = await fetch(`/api/panel/produccion/moldes/cambios/${change.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        startedAt: fromBogotaInput(startedAt),
+        finishedAt: fromBogotaInput(finishedAt),
+        notes,
+      }),
+    });
+    const d = await r.json().catch(() => null);
+    setSubmitting(false);
+    if (r.ok) onDone("Cambio de molde actualizado");
+    else onError(d?.error ?? "No se pudo actualizar el cambio.");
+  };
+
+  return (
+    <Modal
+      title={`Editar cambio · ${change.mold.code} en #${change.machine.code}`}
+      onClose={onClose}
+      footer={<Footer onClose={onClose} onSubmit={submit} submitting={submitting} disabled={!rangeValid} />}
+    >
+      <p className="text-xs text-[#64748B]">
+        {change.mold.code} — {change.mold.name} · {change.machine.name}. Responsable registrado: {change.changedBy.fullName}.
+      </p>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <label className={labelCls}>Montaje</label>
+          <input type="datetime-local" value={startedAt} onChange={(e) => setStartedAt(e.target.value)} className={inputCls} />
+        </div>
+        <div>
+          <label className={labelCls}>Desmontaje</label>
+          <input type="datetime-local" value={finishedAt} onChange={(e) => setFinishedAt(e.target.value)} className={inputCls} />
+        </div>
+      </div>
+      {!rangeValid && <p className="text-xs font-semibold text-[#DC2626]">El desmontaje debe ser posterior al montaje.</p>}
       <div><label className={labelCls}>Notas del cambio (opcional)</label><textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className={inputCls} placeholder="Novedades del montaje/desmontaje…" /></div>
     </Modal>
   );
