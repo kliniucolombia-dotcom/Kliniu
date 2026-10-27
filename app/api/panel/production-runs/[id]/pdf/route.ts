@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { launchPdfBrowser } from "@/lib/pdf-browser";
 import { requirePermission } from "@/lib/permissions";
+import { emailLinkOrigin } from "@/lib/site";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -15,7 +16,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (!token) return Response.json({ error: "No autorizado" }, { status: 401 });
 
   const { id } = await params;
-  const origin = new URL(request.url).origin;
+  // En producción el destino sale de la configuración, no del Host: la cookie de sesión no debe viajar a un host falseado.
+  const origin = emailLinkOrigin(request);
   const printUrl = `${origin}/imprimir-produccion/corrida/${id}`;
 
   let browser;

@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { launchPdfBrowser } from "@/lib/pdf-browser";
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { emailLinkOrigin } from "@/lib/site";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -27,7 +28,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
   if (!token) return Response.json({ error: "No autorizado" }, { status: 401 });
 
-  const origin = new URL(request.url).origin;
+  // En producción el destino sale de la configuración, no del Host: la cookie de sesión no debe viajar a un host falseado.
+  const origin = emailLinkOrigin(request);
   const printUrl = `${origin}/imprimir-cotizacion/${id}`;
 
   let browser;

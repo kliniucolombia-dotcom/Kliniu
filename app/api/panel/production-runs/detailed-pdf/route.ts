@@ -3,6 +3,7 @@ import { launchPdfBrowser } from "@/lib/pdf-browser";
 import { requirePermission } from "@/lib/permissions";
 import { getProductionRuns } from "@/lib/panel";
 import { createEmptyProductionRunFilters, filterProductionRuns, type ProductionRunFilters } from "@/lib/production-filters";
+import { emailLinkOrigin } from "@/lib/site";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -45,7 +46,8 @@ export async function POST(request: Request) {
     query = `f=${Buffer.from(JSON.stringify(filters)).toString("base64url")}`;
   }
 
-  const origin = new URL(request.url).origin;
+  // En producción el destino sale de la configuración, no del Host: la cookie de sesión no debe viajar a un host falseado.
+  const origin = emailLinkOrigin(request);
   const printUrl = `${origin}/imprimir-produccion/detallado?${query}`;
 
   let browser;
