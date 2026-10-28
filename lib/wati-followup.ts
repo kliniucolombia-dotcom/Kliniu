@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import type { WatiCommercialStage } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import { sendWatiMessage } from "@/lib/wati";
+import { sendWatiFileFromUrl, sendWatiMessage } from "@/lib/wati";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { createNotification } from "@/lib/notifications";
 import { getProducts, type StoreProduct } from "@/lib/products";
@@ -27,6 +27,24 @@ export type RemarketingPromotion = {
   shippingIncluded: boolean;
 };
 
+/**
+ * Mensaje fijo que redacta un asesor (con imagen opcional). Si aplica a la etapa
+ * y al producto, reemplaza el texto de la IA. Variables: {nombre} {producto} {ciudad}.
+ */
+export type RemarketingTemplate = {
+  id: string;
+  name: string;
+  text: string;
+  imageUrl: string | null;
+  /** Etapas 1..5 donde aplica. */
+  stages: number[];
+  /** Ambos vacíos = plantilla general. */
+  productSlugs: string[];
+  categories: string[];
+  active: boolean;
+  updatedAt: string;
+};
+
 export type RemarketingConfig = {
   enabled: boolean;
   /** Minutos desde el último mensaje del cliente para cada etapa 1..5. */
@@ -43,6 +61,7 @@ export type RemarketingConfig = {
   /** Texto autorizado de cuándo el envío va incluido; vacío = solo la tarifa estándar. */
   shippingIncludedRule: string;
   cashOnDelivery: boolean;
+  templates: RemarketingTemplate[];
 };
 
 const CONFIG_KEY = "wati_remarketing";
@@ -56,6 +75,7 @@ const DEFAULT_CONFIG: RemarketingConfig = {
   volumeRules: {},
   shippingIncludedRule: "",
   cashOnDelivery: true,
+  templates: [],
 };
 export const WHATSAPP_WINDOW_MS = 24 * 60 * 60 * 1000;
 export const WINDOW_SAFETY_MS = 10 * 60 * 1000;
@@ -95,6 +115,31 @@ function activePromotions(config: RemarketingConfig, product: StoreProduct | nul
       ((p.productSlugs.length === 0 && p.categories.length === 0) ||
         (product && (p.productSlugs.includes(product.slug) || p.categories.includes(product.categoria)))),
   );
+}
+
+/** La más específica gana: producto > categoría > general; empate = la editada más reciente. */
+export function pickRemarketingTemplate(config: RemarketingConfig, stage: number, product: StoreProduct | null) {
+  const score = (t: RemarketingTemplate) => {
+    if (product && t.productSlugs.includes(product.slug)) return 3;
+    if (product && t.categories.includes(product.categoria)) return 2;
+    return t.productSlugs.length === 0 && t.categories.length === 0 ? 1 : 0;
+  };
+  return (
+    config.templates
+      .filter((t) => t.active && t.stages.includes(stage) && score(t) > 0)
+      .sort((a, b) => score(b) - score(a) || b.updatedAt.localeCompare(a.updatedAt))[0] ?? null
+  );
+}
+
+export function fillRemarketingTemplate(
+  text: string,
+  vars: { name: string | null; product: string | null; city: string | null },
+) {
+  return text
+    .replace(/ ?\{nombre\}/g, vars.name ? ` ${vars.name}` : "")
+    .replace(/\{producto\}/g, vars.product ?? "producto")
+    .replace(/\{ciudad\}/g, vars.city ?? "tu ciudad")
+    .trim();
 }
 
 /**
@@ -539,6 +584,41 @@ export async function sendPendingWatiFollowUps(now = new Date(), onlyConversatio
         });
         continue;
       }
+      const template = pickRemarketingTemplate(config, dueStage, product);
+      if (template) {
+        const text = fillRemarketingTemplate(template.text, {
+          name: conversation.contactName?.split(/\s+/)[0] ?? null,
+          product: product?.nombre ?? null,
+          city: conversation.customerCity,
+        });
+        if (template.imageUrl) {
+          await sendWatiFileFromUrl(conversation.phone, { url: template.imageUrl, fileName: `${template.name}.jpg`, caption: text });
+        } else {
+          await sendWatiMessage(conversation.phone, text);
+        }
+        await prisma.$transaction([
+          prisma.watiMessage.create({
+            data: {
+              conversationId: conversation.id,
+              role: "ASSISTANT",
+              content: text,
+              ...(template.imageUrl ? { mediaType: "image", mediaUrls: [template.imageUrl] } : {}),
+            },
+          }),
+          prisma.watiRemarketingEvent.create({
+            data: {
+              conversationId: conversation.id,
+              stage: dueStage,
+              productSlug: product?.slug ?? null,
+              message: text,
+              goal: `template:${template.name}`.slice(0, 100),
+            },
+          }),
+        ]);
+        sent += 1;
+        continue;
+      }
+
       const manual = product ? config.alternatives[product.slug] ?? [] : [];
       const alternatives = product
         ? (manual.length > 0

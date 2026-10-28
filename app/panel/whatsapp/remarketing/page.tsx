@@ -7,13 +7,15 @@ import {
   MdArrowBack,
   MdAutorenew,
   MdCheckCircle,
+  MdContentCopy,
   MdDeleteOutline,
   MdErrorOutline,
+  MdImage,
   MdSave,
 } from "react-icons/md";
 import { SimpleSelect } from "@/app/panel/_components/simple-select";
 import { useConfirm } from "@/app/components/confirm-dialog";
-import type { RemarketingConfig, RemarketingPromotion } from "@/lib/wati-followup";
+import type { RemarketingConfig, RemarketingPromotion, RemarketingTemplate } from "@/lib/wati-followup";
 
 type StageMetric = {
   stage: number;
@@ -67,6 +69,10 @@ function Card({ title, children, action }: { title: string; children: React.Reac
   );
 }
 
+// Vista previa con datos de ejemplo; el reemplazo real lo hace fillRemarketingTemplate al enviar.
+const previewText = (text: string, product: string | null) =>
+  text.replace(/ ?\{nombre\}/g, " Carlos").replace(/\{producto\}/g, product ?? "producto").replace(/\{ciudad\}/g, "Bogotá");
+
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
     <button
@@ -94,6 +100,7 @@ export default function RemarketingPage() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
   const [altProduct, setAltProduct] = useState("");
+  const [uploading, setUploading] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -128,6 +135,33 @@ export default function RemarketingPage() {
     patch({ promotions: config.promotions.map((p) => (p.id === id ? { ...p, ...update } : p)) });
   }
 
+  function patchTemplate(id: string, update: Partial<RemarketingTemplate>) {
+    if (!config) return;
+    patch({
+      templates: config.templates.map((t) => (t.id === id ? { ...t, ...update, updatedAt: new Date().toISOString() } : t)),
+    });
+  }
+
+  async function uploadTemplateImage(id: string, file: File) {
+    // Vercel corta los cuerpos de más de 4.5 MB antes de llegar a la ruta.
+    if (file.size > 4 * 1024 * 1024) {
+      setNotice({ ok: false, text: "La imagen pesa más de 4 MB. Comprímela e intenta de nuevo." });
+      return;
+    }
+    setUploading(id);
+    setNotice(null);
+    const form = new FormData();
+    form.append("file", file);
+    const response = await fetch("/api/panel/whatsapp/remarketing/image", { method: "POST", body: form });
+    const data = (await response.json().catch(() => ({}))) as { url?: string; error?: string };
+    setUploading(null);
+    if (!response.ok || !data.url) {
+      setNotice({ ok: false, text: data.error ?? "No fue posible subir la imagen." });
+      return;
+    }
+    patchTemplate(id, { imageUrl: data.url });
+  }
+
   async function save() {
     if (!config) return;
     setSaving(true);
@@ -141,7 +175,10 @@ export default function RemarketingPage() {
     setNotice(
       response.ok
         ? { ok: true, text: "Configuración guardada." }
-        : { ok: false, text: "No se guardó: revisa que los tiempos sean crecientes y las fechas válidas." },
+        : {
+            ok: false,
+            text: "No se guardó: revisa tiempos crecientes, fechas válidas y que cada plantilla tenga nombre, texto y al menos una etapa.",
+          },
     );
   }
 
@@ -327,6 +364,185 @@ export default function RemarketingPage() {
           </div>
         </Card>
       </div>
+
+      <Card
+        title="Plantillas de mensaje"
+        action={
+          <button
+            type="button"
+            onClick={() =>
+              patch({
+                templates: [
+                  ...config.templates,
+                  {
+                    id: crypto.randomUUID(),
+                    name: "",
+                    text: "Hola {nombre}, ",
+                    imageUrl: null,
+                    stages: [1],
+                    productSlugs: [],
+                    categories: [],
+                    active: true,
+                    updatedAt: new Date().toISOString(),
+                  },
+                ],
+              })
+            }
+            className="flex items-center gap-1 rounded-xl bg-[#27B1B8] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1F9AA0]"
+          >
+            <MdAdd size={16} /> Agregar
+          </button>
+        }
+      >
+        <p className="mb-3 text-[11px] text-[#64748B]">
+          Si una plantilla activa aplica a la etapa, se envía tal cual en vez del texto de la IA. Gana la del producto, luego la de
+          categoría y luego la general. Variables: {"{nombre}"} {"{producto}"} {"{ciudad}"}.
+        </p>
+        {config.templates.length === 0 ? (
+          <p className="text-sm text-[#64748B]">Sin plantillas: la IA redacta todos los mensajes.</p>
+        ) : (
+          <div className="space-y-4">
+            {config.templates.map((t) => {
+              const limit = t.imageUrl ? 1024 : 4096;
+              const sampleProduct = t.productSlugs[0] ? productName(t.productSlugs[0]) : null;
+              return (
+                <div key={t.id} className="grid gap-4 rounded-xl border border-[#EEF2F5] p-3 lg:grid-cols-[1fr_300px]">
+                  <div className="min-w-0 space-y-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <input
+                        value={t.name}
+                        onChange={(e) => patchTemplate(t.id, { name: e.target.value })}
+                        placeholder="Nombre de la plantilla"
+                        className={`${inputClass} min-w-0 flex-1`}
+                      />
+                      <Toggle checked={t.active} onChange={(active) => patchTemplate(t.id, { active })} label={t.active ? "Activa" : "Inactiva"} />
+                    </div>
+                    <div>
+                      <p className="mb-1 text-[11px] text-[#64748B]">Etapas donde aplica</p>
+                      <div className="flex flex-wrap gap-2">
+                        {STAGE_LABELS.map((label, i) => {
+                          const stage = i + 1;
+                          const on = t.stages.includes(stage);
+                          return (
+                            <button
+                              key={label}
+                              type="button"
+                              aria-pressed={on}
+                              onClick={() =>
+                                patchTemplate(t.id, {
+                                  stages: on ? t.stages.filter((x) => x !== stage) : [...t.stages, stage].sort(),
+                                })
+                              }
+                              className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${on ? "bg-[#27B1B8] text-white" : "bg-[#F1F7F8] text-[#64748B]"}`}
+                            >
+                              {stage}. {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <SimpleSelect
+                        multiple
+                        portal
+                        value={t.categories.join(",")}
+                        options={categories.map((c) => ({ value: c, label: c }))}
+                        onChange={(v) => patchTemplate(t.id, { categories: v ? v.split(",") : [] })}
+                        placeholder="Categorías (vacío = todas)"
+                      />
+                      <SimpleSelect
+                        multiple
+                        portal
+                        searchable
+                        value={t.productSlugs.join(",")}
+                        options={productOptions}
+                        onChange={(v) => patchTemplate(t.id, { productSlugs: v ? v.split(",") : [] })}
+                        placeholder="Productos (vacío = todos)"
+                      />
+                    </div>
+                    <label className="block">
+                      <textarea
+                        rows={6}
+                        value={t.text}
+                        onChange={(e) => patchTemplate(t.id, { text: e.target.value })}
+                        placeholder="Texto del mensaje"
+                        className={inputClass}
+                      />
+                      <span className={`mt-1 block text-right text-[11px] ${t.text.length > limit ? "text-red-600" : "text-[#64748B]"}`}>
+                        {t.text.length}/{limit}
+                        {t.imageUrl ? " (pie de foto)" : ""}
+                      </span>
+                    </label>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <label className="flex cursor-pointer items-center gap-1 rounded-xl border border-[#DCE5EA] px-3 py-2 text-xs font-semibold text-[#0C535B] hover:bg-[#F1F7F8]">
+                        <MdImage size={16} />
+                        {uploading === t.id ? "Subiendo…" : t.imageUrl ? "Cambiar imagen" : "Agregar imagen"}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="sr-only"
+                          disabled={uploading !== null}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            e.target.value = "";
+                            if (file) void uploadTemplateImage(t.id, file);
+                          }}
+                        />
+                      </label>
+                      {t.imageUrl && (
+                        <button
+                          type="button"
+                          onClick={() => patchTemplate(t.id, { imageUrl: null })}
+                          className="text-xs font-semibold text-[#64748B] hover:underline"
+                        >
+                          Quitar imagen
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          patch({
+                            templates: [
+                              ...config.templates,
+                              { ...t, id: crypto.randomUUID(), name: `${t.name} (copia)`, active: false, updatedAt: new Date().toISOString() },
+                            ],
+                          })
+                        }
+                        className="ml-auto flex items-center gap-1 text-xs font-semibold text-[#0C535B] hover:underline"
+                      >
+                        <MdContentCopy size={15} /> Duplicar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (await confirm({ title: "Eliminar plantilla", message: `¿Eliminar "${t.name || "sin nombre"}"?`, confirmLabel: "Eliminar" })) {
+                            patch({ templates: config.templates.filter((x) => x.id !== t.id) });
+                          }
+                        }}
+                        className="flex items-center gap-1 text-xs font-semibold text-red-600 hover:underline"
+                      >
+                        <MdDeleteOutline size={16} /> Eliminar
+                      </button>
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-[#EFEAE2] p-3">
+                    <p className="mb-2 text-[11px] text-[#64748B]">Vista previa</p>
+                    <div className="ml-auto max-w-[260px] overflow-hidden rounded-lg bg-[#D9FDD3] p-1 shadow-sm">
+                      {t.imageUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={t.imageUrl} alt="" className="w-full rounded-md" />
+                      )}
+                      <p className="whitespace-pre-wrap break-words px-1.5 py-1 text-[13px] text-[#111B21]">
+                        {previewText(t.text, sampleProduct) || " "}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
 
       <Card
         title="Promociones vigentes"

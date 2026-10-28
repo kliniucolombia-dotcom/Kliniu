@@ -58,7 +58,23 @@ function validate(body: unknown): RemarketingConfig | null {
     typeof c.volumeRules === "object" && c.volumeRules !== null &&
     Object.values(c.volumeRules).every((v) => typeof v === "string") &&
     typeof c.shippingIncludedRule === "string" &&
-    typeof c.cashOnDelivery === "boolean";
+    typeof c.cashOnDelivery === "boolean" &&
+    Array.isArray(c.templates) &&
+    c.templates.every(
+      (t) =>
+        typeof t.id === "string" &&
+        typeof t.name === "string" && t.name.trim() !== "" &&
+        typeof t.text === "string" && t.text.trim() !== "" &&
+        // WhatsApp corta el pie de foto en 1024 caracteres.
+        t.text.length <= (t.imageUrl ? 1024 : 4096) &&
+        (t.imageUrl === null || (typeof t.imageUrl === "string" && t.imageUrl.startsWith("https://"))) &&
+        Array.isArray(t.stages) && t.stages.length > 0 &&
+        t.stages.every((st) => Number.isInteger(st) && st >= 1 && st <= 5) &&
+        isStringArray(t.productSlugs) &&
+        isStringArray(t.categories) &&
+        typeof t.active === "boolean" &&
+        typeof t.updatedAt === "string",
+    );
   return ok ? c : null;
 }
 
