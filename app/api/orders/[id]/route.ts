@@ -1,13 +1,14 @@
 import { revalidatePath } from "next/cache";
 import { requireAdminUser } from "@/lib/admin";
 import { updateOrderShipping } from "@/lib/orders";
+import { getClientIp } from "@/lib/rate-limit";
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    await requireAdminUser();
+    const admin = await requireAdminUser();
 
     const { id } = await params;
     const body = (await request.json()) as {
@@ -31,7 +32,7 @@ export async function PATCH(
       carrier: body.carrier,
       trackingNumber: body.trackingNumber,
       adminNotes: body.adminNotes,
-    });
+    }, { actorId: admin.id, actorEmail: admin.email, ip: getClientIp(request) });
 
     revalidatePath("/mi-cuenta");
     revalidatePath("/admin");

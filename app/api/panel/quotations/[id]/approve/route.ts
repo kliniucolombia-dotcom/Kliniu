@@ -1,10 +1,12 @@
 import { requirePermission } from "@/lib/permissions";
+import { logAudit } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import { approveQuotation } from "@/lib/panel";
 import { createNotification } from "@/lib/notifications";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
-export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_COTIZACIONES", "edit");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { session } = access;
@@ -19,6 +21,10 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
 
   try {
     const updated = await approveQuotation(id);
+    await logAudit({
+      actorId: session.userId, actorEmail: access.user.email, action: "quotation.approve", entity: "quotation", entityId: id,
+      meta: { name: quotation.number }, ip: getClientIp(request),
+    });
 
     createNotification({
       eventKey: "quotation.approved",

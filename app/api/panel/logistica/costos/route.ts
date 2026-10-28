@@ -1,4 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
+import { logAudit } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
+import { prisma } from "@/lib/prisma";
 import { createCost } from "@/lib/logistics";
 import type { TransportCostCategory } from "@/generated/prisma/client";
 import { broadcastPanelUpdate } from "@/lib/realtime";
@@ -32,5 +35,9 @@ export async function POST(request: Request) {
     userId: access.user.id,
   });
   broadcastPanelUpdate("logistics").catch(() => {});
+  await logAudit({
+    actorId: access.user.id, actorEmail: access.user.email, action: "logistics.cost_create", entity: "cost", entityId: cost.id,
+    meta: { name: body.category, amount: body.amount, vehicleId: body.vehicleId }, ip: getClientIp(request),
+  });
   return Response.json({ cost });
 }

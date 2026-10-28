@@ -2,6 +2,8 @@ import { hash } from "bcryptjs";
 import { requireRRHH } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
+import { logAudit } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
 
 export async function GET() {
   const access = await requireRRHH();
@@ -122,5 +124,9 @@ export async function POST(request: Request) {
   });
 
   broadcastPanelUpdate("rrhh").catch(() => {});
+  await logAudit({
+    actorId: access.user.id, actorEmail: access.user.email, action: "employee.create", entity: "employee", entityId: employee.id,
+    meta: { name: employee.user.fullName, target: employee.user.email, jobTitle: employee.jobTitle }, ip: getClientIp(request),
+  });
   return Response.json(employee, { status: 201 });
 }

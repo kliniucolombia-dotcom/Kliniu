@@ -1,5 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
-import { getCombosForPanel, createCombo, updateCombo, deleteCombo } from "@/lib/combos";
+import { logAudit, diffChanges } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
+import { getCombosForPanel, getComboById, createCombo, updateCombo, deleteCombo } from "@/lib/combos";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET(request: Request) {
@@ -48,6 +50,10 @@ export async function POST(request: Request) {
       createdByName,
     });
     await broadcastPanelUpdate("combos");
+    await logAudit({
+      actorId: access.user.id, actorEmail: access.user.email, action: "combo.create", entity: "combo", entityId: combo.id,
+      meta: { name: combo.name, price: combo.price }, ip: getClientIp(request),
+    });
     return Response.json(combo);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error al crear combo";
@@ -76,6 +82,7 @@ export async function PATCH(request: Request) {
   // Solo SUPERADMIN puede reasignar el vendedor de un combo existente.
   const createdByName = access.user.role === "SUPERADMIN" ? body.createdByName : undefined;
 
+  const before = await getComboById(body.id);
   try {
     const combo = await updateCombo(body.id, {
       name: body.name,
@@ -88,6 +95,22 @@ export async function PATCH(request: Request) {
       createdByName,
     });
     await broadcastPanelUpdate("combos");
+    if (before) {
+      const keys = ["name", "price", "active", "createdByName"] as const;
+      const changes = diffChanges(before, { name: body.name, price: body.price, active: body.active, createdByName }, keys);
+      const alsoChanged = [
+        ...(body.description !== undefined && body.description !== (before.description ?? "") ? ["description"] : []),
+        ...(body.image !== undefined && body.image !== before.image ? ["image"] : []),
+        ...(body.items && JSON.stringify(body.items.map((i) => [i.productId, i.quantity]).sort()) !==
+          JSON.stringify(before.items.map((i: { productId: string; quantity: number }) => [i.productId, i.quantity]).sort()) ? ["items"] : []),
+      ];
+      if (Object.keys(changes).length || alsoChanged.length) {
+        await logAudit({
+          actorId: access.user.id, actorEmail: access.user.email, action: "combo.update", entity: "combo", entityId: body.id,
+          meta: { name: combo.name, changes, alsoChanged }, ip: getClientIp(request),
+        });
+      }
+    }
     return Response.json(combo);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error al actualizar combo";
@@ -103,7 +126,12 @@ export async function DELETE(request: Request) {
   const id = searchParams.get("id");
   if (!id) return Response.json({ error: "Falta id" }, { status: 400 });
 
+  const before = await getComboById(id);
   await deleteCombo(id);
   await broadcastPanelUpdate("combos");
+  await logAudit({
+    actorId: access.user.id, actorEmail: access.user.email, action: "combo.delete", entity: "combo", entityId: id,
+    meta: { name: before?.name, price: before?.price }, ip: getClientIp(request),
+  });
   return Response.json({ ok: true });
 }

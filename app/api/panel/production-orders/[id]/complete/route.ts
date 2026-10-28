@@ -1,15 +1,21 @@
 import { requirePermission } from "@/lib/permissions";
+import { logAudit } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
 import { completeProductionOrder } from "@/lib/panel";
 import { createNotification } from "@/lib/notifications";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
-export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_PRODUCCION", "edit");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { id } = await params;
 
   try {
     const updated = await completeProductionOrder(id);
+    await logAudit({
+      actorId: access.user.id, actorEmail: access.user.email, action: "production.order_complete", entity: "production", entityId: id,
+      meta: { name: updated.number, area: updated.area }, ip: getClientIp(request),
+    });
     broadcastPanelUpdate("production").catch(() => {});
 
     createNotification({

@@ -1,3 +1,4 @@
+import { getClientIp } from "@/lib/rate-limit";
 import { sellerHasFullAccess } from "@/lib/campaign-access";
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
@@ -82,7 +83,7 @@ export async function PATCH(request: Request) {
       carrier,
       trackingNumber,
       adminNotes,
-    });
+    }, { actorId: session.userId, actorEmail: access.user.email, ip: getClientIp(request) });
     await broadcastPanelUpdate("orders");
     return Response.json(updated);
   } catch (error) {

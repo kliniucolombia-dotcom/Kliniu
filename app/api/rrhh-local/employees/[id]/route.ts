@@ -1,6 +1,8 @@
 import { requireRRHH } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
+import { logAudit, diffChanges } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
 
 /** Edición de datos laborales del empleado. Solo RRHH. */
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -55,5 +57,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   });
 
   broadcastPanelUpdate("rrhh").catch(() => {});
+  const changes = diffChanges(employee, updated, ["managerId", "site", "jobTitle", "departmentId", "status"]);
+  if (Object.keys(changes).length) {
+    await logAudit({
+      actorId: access.user.id, actorEmail: access.user.email, action: "employee.update", entity: "employee", entityId: id,
+      meta: { name: employee.employeeCode, changes }, ip: getClientIp(request),
+    });
+  }
   return Response.json(updated);
 }

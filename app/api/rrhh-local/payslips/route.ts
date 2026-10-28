@@ -3,6 +3,8 @@ import { requireActiveUser, requireRRHH } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { apiHandler } from "@/lib/api-handler";
+import { logAudit } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
 
 export const GET = apiHandler(async (request: Request) => {
   const access = await requireActiveUser();
@@ -72,5 +74,11 @@ export const POST = apiHandler(async (request: Request) => {
     },
   });
   await broadcastPanelUpdate("payslips");
+  const emp = await prisma.employee.findUnique({ where: { id: employeeId }, select: { user: { select: { fullName: true } } } });
+  // Sin montos: la bitácora dice qué desprendible se creó, no cuánto paga.
+  await logAudit({
+    actorId: access.user.id, actorEmail: access.user.email, action: "payslip.create", entity: "payslip", entityId: payslip.id,
+    meta: { name: `${emp?.user.fullName ?? "Empleado"} · ${payslip.period}` }, ip: getClientIp(request),
+  });
   return Response.json(payslip, { status: 201 });
 });

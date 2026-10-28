@@ -1,4 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
+import { logAudit } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
+import { prisma } from "@/lib/prisma";
 import { createRoute, type NewStop } from "@/lib/logistics";
 import { createNotification } from "@/lib/notifications";
 import { broadcastPanelUpdate } from "@/lib/realtime";
@@ -48,6 +51,10 @@ export async function POST(request: Request) {
     userId: access.user.id,
   });
   broadcastPanelUpdate("logistics").catch(() => {});
+  await logAudit({
+    actorId: access.user.id, actorEmail: access.user.email, action: "logistics.route_create", entity: "route", entityId: route.id,
+    meta: { name: `${route.driver?.fullName ?? "Conductor"} · ${route.vehicle?.plate ?? "Vehículo"} · ${body.date}`, paradas: (body.orderIds?.length ?? 0) + newStops.length }, ip: getClientIp(request),
+  });
 
   createNotification({
     eventKey: "logistics.route_assigned",

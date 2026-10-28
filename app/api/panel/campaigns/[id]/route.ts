@@ -1,5 +1,7 @@
 import { sellerBlockedFromCampaign, sellerHasFullAccess } from "@/lib/campaign-access";
 import { requirePermission } from "@/lib/permissions";
+import { logAudit, diffChanges } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { revalidateTag } from "next/cache";
@@ -44,6 +46,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     },
   });
 
+  const changes = diffChanges(existing, updated, ["name", "sellerId", "investment", "sales", "leads", "targetMultiple", "platform", "status", "productId", "comboId"]);
+  if (Object.keys(changes).length) {
+    await logAudit({
+      actorId: session.userId, actorEmail: access.user.email, action: "campaign.update", entity: "campaign", entityId: id,
+      meta: { name: updated.name, changes }, ip: getClientIp(request),
+    });
+  }
   broadcastPanelUpdate("campaigns").catch(() => {});
 
   revalidateTag(DASHBOARD_STATS_TAG, "max");
@@ -51,7 +60,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   return Response.json(updated);
 }
 
-export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_CAMPANAS", "delete");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
   const { session } = access;
@@ -65,6 +74,10 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   }
 
   await prisma.campaign.delete({ where: { id } });
+  await logAudit({
+    actorId: session.userId, actorEmail: access.user.email, action: "campaign.delete", entity: "campaign", entityId: id,
+    meta: { name: existing.name, status: existing.status }, ip: getClientIp(request),
+  });
   broadcastPanelUpdate("campaigns").catch(() => {});
   revalidateTag(DASHBOARD_STATS_TAG, "max");
   return Response.json({ ok: true });

@@ -6,6 +6,7 @@ import { earnPointsForOrder } from "@/lib/points";
 import { createNotification } from "@/lib/notifications";
 import { DASHBOARD_STATS_TAG } from "@/lib/cache-tags";
 import type { Prisma } from "@/generated/prisma/client";
+import { logAudit, diffChanges, type AuditInput } from "@/lib/audit";
 
 // Ventana de pago del Web Checkout de Wompi: pasado este tiempo sin pago
 // aprobado, el cron de expiración libera la reserva de stock. 60 min iguala
@@ -523,6 +524,7 @@ export async function updateOrderShipping(
     trackingNumber?: string;
     adminNotes?: string;
   },
+  actor?: Pick<AuditInput, "actorId" | "actorEmail" | "ip">,
 ) {
   if (!prisma) {
     throw new Error("DATABASE_NOT_CONFIGURED");
@@ -552,6 +554,9 @@ export async function updateOrderShipping(
       status: true,
       paymentStatus: true,
       shippingStatus: true,
+      carrier: true,
+      trackingNumber: true,
+      adminNotes: true,
     },
   });
 
@@ -598,6 +603,20 @@ export async function updateOrderShipping(
       },
     },
   });
+
+  if (actor) {
+    const next = { shippingStatus, paymentStatus: nextPaymentStatus, carrier, trackingNumber, adminNotes };
+    const { adminNotes: notesChange, ...changes } = diffChanges(currentOrder, next, Object.keys(next));
+    if (Object.keys(changes).length || notesChange) {
+      await logAudit({
+        ...actor,
+        action: "order.update",
+        entity: "order",
+        entityId: orderId,
+        meta: { changes, ...(notesChange ? { alsoChanged: ["adminNotes"] } : {}) },
+      });
+    }
+  }
 
   if (nextPaymentStatus === "PAID" && currentOrder.paymentStatus !== "PAID") {
     await syncOrderToOdoo(orderId);

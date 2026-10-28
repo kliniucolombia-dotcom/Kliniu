@@ -24,7 +24,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
   const changingPassword = Boolean(body.newPassword?.trim());
   // Estado anterior, para saber si cambia el correo y para que la bitácora diga de dónde se pasó a dónde.
-  const before = await prisma!.user.findUnique({ where: { id }, select: { role: true, status: true, email: true } });
+  const before = await prisma!.user.findUnique({ where: { id }, select: { role: true, status: true, email: true, fullName: true, whatsappPhone: true, backupUserId: true } });
   const nextEmail = body.email?.trim().toLowerCase();
   const changingEmail = Boolean(nextEmail && before && nextEmail !== before.email.toLowerCase());
 
@@ -58,6 +58,14 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   try {
     const user = await updateUserByAdmin(id, body);
     await broadcastPanelUpdate("users");
+    // Antes/después de los campos de perfil (rol y estado van aparte en roleFrom/statusFrom).
+    const changes: Record<string, { from: unknown; to: unknown }> = {};
+    if (before) {
+      const next = { fullName: body.fullName?.trim(), whatsappPhone: body.whatsappPhone, backupUserId: body.backupUserId };
+      for (const k of ["fullName", "whatsappPhone", "backupUserId"] as const) {
+        if (next[k] !== undefined && (next[k] || null) !== (before[k] || null)) changes[k] = { from: before[k] ?? null, to: next[k] || null };
+      }
+    }
     await logAudit({
       actorId: access.user.id,
       actorEmail: access.user.email,
@@ -71,6 +79,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         roleFrom: before && body.role && body.role !== before.role ? before.role : undefined,
         statusFrom: before && body.status && body.status !== before.status ? before.status : undefined,
         emailChanged: Boolean(body.email?.trim()),
+        ...(Object.keys(changes).length ? { changes } : {}),
       },
       ip: getClientIp(request),
     });
@@ -114,6 +123,9 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     }
   }
 
+  // Foto de la cuenta antes de borrarla: después la bitácora solo tendría el ID.
+  const target = await prisma!.user.findUnique({ where: { id }, select: { email: true, fullName: true, role: true } });
+
   try {
     await deleteUserByAdmin(id, { force });
     await broadcastPanelUpdate("users");
@@ -123,7 +135,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       action: "user.delete",
       entity: "user",
       entityId: id,
-      meta: { force },
+      meta: { force, target: target?.email, name: target?.fullName, targetRole: target?.role },
       ip: getClientIp(request),
     });
     return Response.json({ ok: true });

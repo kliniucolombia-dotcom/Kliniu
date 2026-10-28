@@ -2,6 +2,8 @@ import { requireActiveUser, requireManagerOf } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { createNotification } from "@/lib/notifications";
+import { logAudit } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
@@ -65,6 +67,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   });
 
   await broadcastPanelUpdate("timeoff");
+  await logAudit({
+    actorId: access.user.id, actorEmail: access.user.email, action: `timeoff.${status === "APPROVED" ? "approve" : "reject"}`, entity: "timeoff", entityId: id,
+    meta: { name: updated.employee.user.fullName, ...(reviewNote?.trim() && status === "REJECTED" ? { reason: reviewNote.trim() } : {}), ...(typeof updated.isPaid === "boolean" && updated.type === "PERMIT" ? { remunerado: updated.isPaid } : {}) }, ip: getClientIp(request),
+  });
 
   const TIME_OFF_LABELS: Record<string, string> = {
     VACATION: "vacaciones", PERMIT: "permiso", LEAVE: "licencia",

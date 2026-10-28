@@ -1,5 +1,7 @@
 import { after } from "next/server";
 import { requirePermission } from "@/lib/permissions";
+import { logAudit, diffChanges } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
 import { addOrdersToRoute, deleteRoute, removeOrderFromRoute, setStopOrder, updateRoute } from "@/lib/logistics";
 import { createNotification } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
@@ -42,6 +44,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     ? await prisma?.deliveryRoute.findUnique({ where: { id }, select: { driverId: true } })
     : null;
 
+  const before = await prisma?.deliveryRoute.findUnique({ where: { id }, select: { status: true, vehicleId: true, driverId: true, notes: true } });
   const route = await updateRoute(id, {
     status: body.status,
     notes: body.notes,
@@ -50,6 +53,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     date: body.date,
   });
   broadcastPanelUpdate("logistics").catch(() => {});
+  const changes = before ? diffChanges(before, { status: body.status, vehicleId: body.vehicleId, driverId: body.driverId, notes: body.notes }, ["status", "vehicleId", "driverId", "notes"]) : {};
+  const alsoChanged = [...(body.date ? ["date"] : []), ...(body.addOrderIds?.length ? ["paradas agregadas"] : []), ...(body.removeOrderId ? ["parada quitada"] : [])];
+  if (Object.keys(changes).length || alsoChanged.length) {
+    await logAudit({
+      actorId: access.user.id, actorEmail: access.user.email, action: "logistics.route_update", entity: "route", entityId: id,
+      meta: { changes, alsoChanged }, ip: getClientIp(request),
+    });
+  }
   if (body.status === "IN_PROGRESS") after(() => notifyRouteStarted(id));
 
   if (body.driverId && body.driverId !== previous?.driverId) {
@@ -67,12 +78,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   return Response.json({ route });
 }
 
-export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const access = await requirePermission("MODULE_LOGISTICA", "delete");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   const { id } = await params;
+  const before = await prisma?.deliveryRoute.findUnique({ where: { id }, select: { date: true, driver: { select: { fullName: true } }, vehicle: { select: { plate: true } } } });
   await deleteRoute(id);
+  await logAudit({
+    actorId: access.user.id, actorEmail: access.user.email, action: "logistics.route_delete", entity: "route", entityId: id,
+    meta: { name: before ? `${before.driver?.fullName ?? "Conductor"} · ${before.vehicle?.plate ?? "Vehículo"} · ${before.date.toISOString().slice(0, 10)}` : undefined }, ip: getClientIp(request),
+  });
   broadcastPanelUpdate("logistics").catch(() => {});
   return Response.json({ ok: true });
 }

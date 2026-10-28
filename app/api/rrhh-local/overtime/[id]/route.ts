@@ -2,6 +2,8 @@ import { requireActiveUser, requireManagerOf } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { createNotification } from "@/lib/notifications";
+import { logAudit } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!prisma) return Response.json({ error: "Base de datos no disponible" }, { status: 503 });
@@ -43,6 +45,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     include: { employee: { include: { user: { select: { fullName: true } } } } },
   });
   await broadcastPanelUpdate("timeoff");
+  await logAudit({
+    actorId: access.user.id, actorEmail: access.user.email, action: `overtime.${status === "APPROVED" ? "approve" : "reject"}`, entity: "overtime", entityId: id,
+    meta: { name: updated.employee.user.fullName, ...(reviewNote?.trim() && status === "REJECTED" ? { reason: reviewNote.trim() } : {}) }, ip: getClientIp(request),
+  });
 
   const employeeName = updated.employee?.user?.fullName ?? "Empleado";
 

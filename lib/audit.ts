@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
+import { broadcastPanelUpdate } from "@/lib/realtime";
 import { bogotaTime, sendSecurityAlert } from "@/lib/security-alert";
 
 export type AuditInput = {
@@ -11,6 +12,17 @@ export type AuditInput = {
   meta?: Record<string, unknown>;
   ip?: string | null;
 };
+
+/** Antes/después de los campos que cambiaron entre dos estados (null y vacío cuentan igual). */
+export function diffChanges(before: Record<string, unknown>, after: Record<string, unknown>, keys: readonly string[]) {
+  const changes: Record<string, { from: unknown; to: unknown }> = {};
+  for (const k of keys) {
+    if (after[k] === undefined) continue;
+    const a = before[k] ?? null, b = after[k] ?? null;
+    if (JSON.stringify(a === "" ? null : a) !== JSON.stringify(b === "" ? null : b)) changes[k] = { from: a, to: b };
+  }
+  return changes;
+}
 
 // Registra una acción sensible. Nunca lanza: un fallo de bitácora no puede
 // tumbar la acción que se está auditando.
@@ -32,6 +44,7 @@ export async function logAudit(input: AuditInput): Promise<void> {
         ip: input.ip ?? null,
       },
     });
+    broadcastPanelUpdate("audit").catch(() => {});
     await alertIfSensitive(input, actor?.role);
   } catch (error) {
     console.error("AUDIT_LOG_FAILED", error);

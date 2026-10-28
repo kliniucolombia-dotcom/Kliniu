@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { MdHistory, MdDownload } from "react-icons/md";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { MdHistory, MdDownload, MdRefresh } from "react-icons/md";
+import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import { SimpleSelect } from "@/app/panel/_components/simple-select";
 import { Table, Badge, btnGhost, inputCls, labelCls, fmtDateTime } from "@/app/panel/_components/ops-ui";
 
@@ -21,6 +22,17 @@ const GROUPS = [
   { value: "product", label: "Productos" },
   { value: "auth", label: "Seguridad y sesiones" },
   { value: "user", label: "Usuarios y permisos" },
+  { value: "order", label: "Pedidos" },
+  { value: "quotation", label: "Cotizaciones" },
+  { value: "combo", label: "Combos" },
+  { value: "campaign", label: "Campañas" },
+  { value: "inventory", label: "Inventario" },
+  { value: "logistics", label: "Logística" },
+  { value: "timeoff", label: "Permisos y vacaciones" },
+  { value: "overtime", label: "Horas extra" },
+  { value: "payslip", label: "Desprendibles" },
+  { value: "employee", label: "Empleados" },
+  { value: "production", label: "Producción" },
   { value: "appconfig", label: "Configuración" },
   { value: "admin", label: "Accesos de admin" },
 ];
@@ -33,6 +45,41 @@ const ACTION_LABELS: Record<string, string> = {
   "product.outlet_add": "Agregado a Outlet",
   "product.outlet_remove": "Quitado de Outlet",
   "product.outlet_extend": "Outlet extendido",
+  "order.update": "Pedido editado",
+  "quotation.approve": "Cotización aprobada",
+  "quotation.reject": "Cotización rechazada",
+  "quotation.convert": "Cotización convertida en pedido",
+  "combo.create": "Combo creado",
+  "combo.update": "Combo editado",
+  "combo.delete": "Combo eliminado",
+  "campaign.update": "Campaña editada",
+  "campaign.delete": "Campaña eliminada",
+  "inventory.adjust": "Ajuste de inventario",
+  "inventory.transfer": "Transferencia entre bodegas",
+  "production.order_approve": "Orden de producción aprobada",
+  "production.order_cancel": "Orden de producción cancelada",
+  "production.order_complete": "Orden de producción completada",
+  "timeoff.approve": "Solicitud de tiempo libre aprobada",
+  "timeoff.reject": "Solicitud de tiempo libre rechazada",
+  "overtime.approve": "Horas extra aprobadas",
+  "overtime.reject": "Horas extra rechazadas",
+  "payslip.create": "Desprendible creado",
+  "payslip.update": "Desprendible editado",
+  "payslip.delete": "Desprendible eliminado",
+  "employee.create": "Empleado creado",
+  "employee.update": "Empleado editado",
+  "logistics.route_create": "Ruta creada",
+  "logistics.route_update": "Ruta editada",
+  "logistics.route_delete": "Ruta eliminada",
+  "logistics.vehicle_create": "Vehículo creado",
+  "logistics.vehicle_update": "Vehículo editado",
+  "logistics.vehicle_delete": "Vehículo eliminado",
+  "logistics.driver_create": "Conductor creado",
+  "logistics.driver_update": "Conductor editado",
+  "logistics.driver_delete": "Conductor eliminado",
+  "logistics.customer_delete": "Cliente de logística eliminado",
+  "logistics.cost_create": "Costo de transporte registrado",
+  "logistics.cost_delete": "Costo de transporte eliminado",
   "auth.login_failed": "Login fallido",
   "auth.login_failed_burst": "Varios logins fallidos",
   "auth.login_new_ip": "Login desde IP nueva",
@@ -53,7 +100,7 @@ const ACTION_LABELS: Record<string, string> = {
   "appconfig.wati_remarketing": "Remarketing WhatsApp",
 };
 
-const DANGER = new Set(["auth.login_failed_burst", "auth.login_new_ip", "user.password_reset", "user.email_change", "user.password_confirm_failed", "product.delete", "user.delete", "admin.login_pin_failed"]);
+const DANGER = new Set(["auth.login_failed_burst", "auth.login_new_ip", "user.password_reset", "user.email_change", "user.password_confirm_failed", "product.delete", "user.delete", "combo.delete", "campaign.delete", "payslip.delete", "logistics.route_delete", "logistics.vehicle_delete", "logistics.driver_delete", "logistics.customer_delete", "logistics.cost_delete", "admin.login_pin_failed"]);
 
 const short = (v: unknown) => {
   const t = typeof v === "string" ? v : JSON.stringify(v);
@@ -77,6 +124,9 @@ function detail(r: Row): string {
   if (m.roleFrom) parts.push(`rol: ${m.roleFrom} → ${m.role}`);
   if (m.statusFrom) parts.push(`estado: ${m.statusFrom} → ${m.status}`);
   if ("from" in m && "mode" in m) parts.push(`${short(m.from)} → ${short(m.mode)}`);
+  if (typeof m.quantity === "number") parts.push(`${m.type ? `${String(m.type).toLowerCase()} ` : ""}${m.quantity} und`);
+  if (typeof m.amount === "number") parts.push(`$${m.amount.toLocaleString("es-CO")}`);
+  if (typeof m.paradas === "number") parts.push(`${m.paradas} paradas`);
   if (m.newPrice) parts.push(`nuevo precio: ${m.newPrice}`);
   if (typeof m.active === "boolean") parts.push(m.active ? "activado" : "desactivado");
   if (Array.isArray(m.changedKeys)) parts.push(`cambió: ${m.changedKeys.join(", ") || "nada"}`);
@@ -94,15 +144,22 @@ export default function BitacoraClient() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
 
+  const [pending, setPending] = useState(0);
+  const params = useCallback(() => {
+    const sp = new URLSearchParams();
+    if (q.trim()) sp.set("q", q.trim());
+    if (group) sp.set("group", group);
+    if (from) sp.set("from", from);
+    if (to) sp.set("to", to);
+    return sp;
+  }, [q, group, from, to]);
+
   const load = useCallback(
     async (append: boolean, last?: string) => {
       setLoading(true);
-      const sp = new URLSearchParams();
-      if (q.trim()) sp.set("q", q.trim());
-      if (group) sp.set("group", group);
-      if (from) sp.set("from", from);
-      if (to) sp.set("to", to);
+      const sp = params();
       if (append && last) sp.set("before", last);
+      if (!append) setPending(0);
       try {
         const res = await fetch(`/api/panel/bitacora?${sp}`);
         if (!res.ok) throw new Error();
@@ -116,8 +173,21 @@ export default function BitacoraClient() {
         setLoading(false);
       }
     },
-    [q, group, from, to],
+    [params],
   );
+
+  // Un registro nuevo no recarga la lista (pisaría a quien esté leyendo): solo cuenta los que respetan los filtros.
+  const newest = useRef<string | undefined>(undefined);
+  newest.current = rows[0]?.createdAt;
+  useRealtimeRefresh(["audit"], async () => {
+    if (!newest.current) return;
+    try {
+      const res = await fetch(`/api/panel/bitacora?${params()}`);
+      if (!res.ok) return;
+      const data = (await res.json()) as { rows: Row[] };
+      setPending(data.rows.filter((r) => r.createdAt > newest.current!).length);
+    } catch {}
+  });
 
   useEffect(() => {
     const t = window.setTimeout(() => load(false), 250);
@@ -151,6 +221,12 @@ export default function BitacoraClient() {
           <MdDownload size={16} /> Exportar CSV
         </button>
       </div>
+
+      {pending > 0 && (
+        <button onClick={() => load(false)} role="status" className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#27B1B8]/40 bg-[#27B1B8]/10 px-4 py-2 text-sm font-bold text-[#0C535B] transition hover:bg-[#27B1B8]/20">
+          <MdRefresh size={18} /> {pending === 1 ? "1 registro nuevo" : `${pending} registros nuevos`} · clic para ver
+        </button>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div>
