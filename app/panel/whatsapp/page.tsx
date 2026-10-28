@@ -2314,6 +2314,13 @@ export default function WhatsappPanelPage() {
                   className="fixed z-[100] w-60 rounded-2xl border border-[#E2E8F0] bg-white p-1.5 text-sm shadow-xl"
                 >
                   <Link
+                    href="/panel/whatsapp/remarketing"
+                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[#334155] hover:bg-[#F1F5F9]"
+                  >
+                    <MdAutorenew size={20} />
+                    <span className="flex-1">Remarketing y plantillas</span>
+                  </Link>
+                  <Link
                     href="/panel/whatsapp/lecciones"
                     className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[#334155] hover:bg-[#F1F5F9]"
                   >
