@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { SITE_URL } from "@/lib/site";
 import { prisma } from "@/lib/prisma";
 import { runWatiAssistant } from "@/lib/wati-ai";
@@ -380,6 +381,18 @@ export async function POST(request: Request) {
   } catch {
     return Response.json({ error: "JSON inválido." }, { status: 400 });
   }
+
+  // WATI corta la espera en pocos segundos y, si no llega el 200 a tiempo, lo
+  // cuenta como fallo, reintenta y acaba marcando el webhook como "Defectuosa"
+  // (deja de enviar todo). Por eso se responde ya y se procesa después.
+  after(() =>
+    processWebhook(payload).catch((error) => console.error("WATI_WEBHOOK_FAILED", error)),
+  );
+  return Response.json({ received: true });
+}
+
+async function processWebhook(payload: WatiWebhookPayload) {
+  if (!prisma) return;
 
   const statusEvent = typeof payload.eventType === "string" ? payload.eventType : "";
   if (/^sentMessage/i.test(statusEvent)) {
