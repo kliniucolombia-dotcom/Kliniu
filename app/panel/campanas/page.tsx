@@ -40,6 +40,7 @@ async function fetchList(url: string): Promise<unknown[]> {
 const DATE_FILTERS = [
   { value: "all", label: "Todo" },
   { value: "today", label: "Hoy" },
+  { value: "yesterday", label: "Ayer" },
   { value: "week", label: "Últimos 7 días" },
   { value: "days15", label: "Últimos 15 días" },
   { value: "month", label: "Últimos 30 días" },
@@ -59,6 +60,7 @@ function dateFilterRange(filter: string, customFrom: string, customTo: string): 
   const now = new Date();
   switch (filter) {
     case "today": return [startOfDay(now), endOfDay(now)];
+    case "yesterday": return [daysAgo(1), endOfDay(daysAgo(1))];
     case "week": return [daysAgo(7), null];
     case "days15": return [daysAgo(15), null];
     case "month": return [daysAgo(30), null];
