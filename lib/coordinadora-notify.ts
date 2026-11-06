@@ -104,11 +104,7 @@ export async function notifyCustomer(orderId: string, kind: CustomerNoticeKind, 
   }
 
   if (!c.whatsapp) return;
-  const phone = order.customerPhone.replace(/\D/g, "");
-  const conversation = await prisma.watiConversation.findFirst({
-    where: { OR: [{ orderId }, ...(phone ? [{ phone: { endsWith: phone.slice(-10) } }] : [])] },
-    select: { id: true, phone: true, messages: { where: { role: "USER" }, orderBy: { createdAt: "desc" }, take: 1, select: { createdAt: true } } },
-  });
+  const conversation = await findCustomerConversation(orderId, order.customerPhone);
   const lastUser = conversation?.messages[0]?.createdAt;
   if (!conversation || !lastUser || now.getTime() - lastUser.getTime() > WHATSAPP_WINDOW_MS - WINDOW_SAFETY_MS) return;
   try {
@@ -118,6 +114,22 @@ export async function notifyCustomer(orderId: string, kind: CustomerNoticeKind, 
   } catch (e) {
     console.error("COORDINADORA_NOTICE_WATI_FAILED", orderId, kind, e);
   }
+}
+
+/**
+ * Chat de WhatsApp del cliente: manda el ligado al pedido; por teléfono solo con un celular
+ * completo (10 dígitos), para no escribirle a otro cliente cuyo número termine igual.
+ */
+export async function findCustomerConversation(orderId: string, customerPhone: string) {
+  if (!prisma) return null;
+  const phone = customerPhone.replace(/\D/g, "");
+  const select = { id: true, phone: true, messages: { where: { role: "USER" as const }, orderBy: { createdAt: "desc" as const }, take: 1, select: { createdAt: true } } };
+  return (
+    (await prisma.watiConversation.findFirst({ where: { orderId }, select })) ??
+    (phone.length >= 10
+      ? await prisma.watiConversation.findFirst({ where: { phone: { endsWith: phone.slice(-10) } }, orderBy: { updatedAt: "desc" }, select })
+      : null)
+  );
 }
 
 /** Novedad de Coordinadora: la resuelve el equipo, no se le escribe al cliente. */
