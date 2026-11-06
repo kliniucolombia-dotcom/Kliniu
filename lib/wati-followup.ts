@@ -830,6 +830,9 @@ export async function sendShippedMessage(orderId: string, now = new Date()) {
   const message =
     `¡Muchas gracias por tu compra${firstName ? `, ${firstName}` : ""}! 😊🇨🇴 Nos alegra mucho que hayas elegido KLINIU®.\n\n` +
     `Tu pedido ya fue despachado 📦🚚${order.carrier ? ` con ${order.carrier}` : ""}. Número de guía: ${order.trackingNumber}. Con ella puedes hacer seguimiento a tu envío.\n\n` +
+    (order.carrier === "Coordinadora"
+      ? `Rastréalo aquí: https://coordinadora.com/rastreo/rastreo-de-guia/detalle-de-rastreo-de-guia/?guia=${encodeURIComponent(order.trackingNumber)}\n\n`
+      : "") +
     "¡Gracias por confiar en KLINIU®! 🙌";
 
   const lastUser = conversation.messages[0]?.createdAt;

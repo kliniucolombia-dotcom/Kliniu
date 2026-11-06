@@ -1,5 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
+import { after } from "next/server";
 import type { ShippingStatus } from "@/generated/prisma/client";
+import { type CustomerNoticeKind, notifyCustomer, notifyNovelty } from "@/lib/coordinadora-notify";
 import { updateOrderShipping } from "@/lib/orders";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
@@ -67,12 +69,29 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
 
   const cuando = [ev.fecha, ev.hora?.replace(/\s/g, "").slice(0, 5)].filter(Boolean).join(" ");
   let notas = order.adminNotes ?? "";
+  let novedadNueva: string | null = null;
   if (esNovedad || codigoEstado === "8") {
     const linea = `[Coordinadora ${cuando}] Novedad ${ev.codigo ?? ""}: ${ev.comment ?? ""}${ev.desc_estado ? ` (${ev.desc_estado})` : ""}`.trim();
-    if (!notas.includes(linea)) notas = notas ? `${notas}\n${linea}` : linea;
+    if (!notas.includes(linea)) {
+      notas = notas ? `${notas}\n${linea}` : linea;
+      novedadNueva = linea;
+    }
   }
 
+  // Avisos (Fase 4). "En reparto" no cambia el estado del pedido, por eso se decide aparte.
+  // El WhatsApp de "despachado" lo manda updateOrderShipping → sendShippedMessage.
+  const avisos: CustomerNoticeKind[] = [];
+  if (nuevoEstado !== order.shippingStatus && nuevoEstado === "SHIPPED") avisos.push("SHIPPED");
+  if (!esNovedad && codigoEstado === "5" && order.shippingStatus !== "DELIVERED") avisos.push("OUT_FOR_DELIVERY");
+  if (nuevoEstado !== order.shippingStatus && nuevoEstado === "DELIVERED") avisos.push("DELIVERED");
+  const programarAvisos = () =>
+    after(async () => {
+      for (const kind of avisos) await notifyCustomer(order.id, kind).catch((e) => console.error("[coordinadora] aviso", kind, e));
+      if (novedadNueva) await notifyNovelty(order.id, novedadNueva).catch((e) => console.error("[coordinadora] novedad", e));
+    });
+
   if (nuevoEstado === order.shippingStatus && notas === (order.adminNotes ?? "")) {
+    programarAvisos();
     return Response.json({ received: true });
   }
 
@@ -87,5 +106,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
     console.error("[coordinadora] webhook", guia, error);
     return Response.json({ error: "No se pudo actualizar" }, { status: 500 }); // Pub/Sub reintenta
   }
+  programarAvisos();
   return Response.json({ received: true });
 }

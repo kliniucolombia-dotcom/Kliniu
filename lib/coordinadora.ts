@@ -34,8 +34,8 @@ async function getToken() {
   return cachedToken.value;
 }
 
-async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${GUIAS}${path}`, {
+async function call<T>(path: string, init: RequestInit = {}, base = GUIAS): Promise<T> {
+  const res = await fetch(`${base}${path}`, {
     ...init,
     headers: {
       Accept: "application/json",
@@ -113,11 +113,17 @@ export async function createGuide(input: GuideInput) {
   return data.codigo_remision;
 }
 
-/** PDF del rótulo de la guía. */
+/**
+ * PDF de la etiqueta que va pegada a la caja. Formato 58 = media página en papel carta
+ * (2 por hoja), para impresora normal. Ojo: /digitales es el comprobante de entrega, no la etiqueta.
+ */
 export async function getGuidePdf(codigoRemision: string) {
-  const data = await call<{ imagenBase64: string }>(
-    `/digitales/${encodeURIComponent(codigoRemision)}?tipo=pdf`,
-    { method: "GET" },
+  const data = await call<{ pdfBase64?: string }[]>(
+    "/etiquetas/imprimir",
+    { method: "POST", body: JSON.stringify({ tipo_etiqueta: "58", guias: [codigoRemision] }) },
+    HOST,
   );
-  return Buffer.from(data.imagenBase64, "base64");
+  const pdf = data?.[0]?.pdfBase64;
+  if (!pdf) throw new CoordinadoraError("Coordinadora no devolvió la etiqueta de la guía");
+  return Buffer.from(pdf, "base64");
 }

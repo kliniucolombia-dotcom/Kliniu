@@ -115,7 +115,7 @@ export async function GET(_request: Request, { params }: Params) {
     return new Response(new Uint8Array(pdf), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="guia-${order.trackingNumber}.pdf"`,
+        "Content-Disposition": `inline; filename="etiqueta-${order.trackingNumber}.pdf"`,
         "Cache-Control": "no-store",
       },
     });
