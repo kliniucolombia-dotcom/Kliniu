@@ -564,6 +564,16 @@ export async function updateOrderShipping(
     throw new Error("ORDER_NOT_FOUND");
   }
 
+  // Una guía de Coordinadora pertenece a un solo pedido: el PDF y el webhook se resuelven por
+  // carrier + trackingNumber, así que repetirla expondría el rótulo de otro cliente.
+  if (carrier === "Coordinadora" && trackingNumber) {
+    const duplicate = await prisma.order.findFirst({
+      where: { carrier, trackingNumber, id: { not: orderId } },
+      select: { id: true },
+    });
+    if (duplicate) throw new Error("DUPLICATE_TRACKING_NUMBER");
+  }
+
   const nextPaymentStatus = paymentStatus || currentOrder.paymentStatus;
   const nextOrderStatus =
     shippingStatus === "CANCELLED"

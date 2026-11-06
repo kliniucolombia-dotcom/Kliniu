@@ -51,7 +51,8 @@ export async function PATCH(
             ? 404
             : error instanceof Error &&
                 (error.message === "INVALID_SHIPPING_STATUS" ||
-                  error.message === "INVALID_PAYMENT_STATUS")
+                  error.message === "INVALID_PAYMENT_STATUS" ||
+                  error.message === "DUPLICATE_TRACKING_NUMBER")
               ? 400
               : 500;
 
@@ -66,7 +67,9 @@ export async function PATCH(
               ? "El estado de envío no es válido."
               : error instanceof Error && error.message === "INVALID_PAYMENT_STATUS"
                 ? "El estado de pago no es válido."
-                : "No fue posible actualizar el pedido.";
+                : error instanceof Error && error.message === "DUPLICATE_TRACKING_NUMBER"
+                  ? "Ese número de guía ya está en otro pedido."
+                  : "No fue posible actualizar el pedido.";
 
     return Response.json({ error: message }, { status });
   }

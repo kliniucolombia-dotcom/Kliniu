@@ -90,7 +90,9 @@ export async function PATCH(request: Request) {
     const message =
       error instanceof Error && error.message === "INVALID_SHIPPING_STATUS"
         ? "El estado de envío no es válido."
-        : "No fue posible actualizar el pedido.";
+        : error instanceof Error && error.message === "DUPLICATE_TRACKING_NUMBER"
+          ? "Ese número de guía ya está en otro pedido."
+          : "No fue posible actualizar el pedido.";
     return Response.json({ error: message }, { status: 400 });
   }
 }
