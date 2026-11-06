@@ -570,6 +570,7 @@ export default function SiteHeader({ currentUser }: SiteHeaderProps) {
             }}
           >
             <div className="mx-auto max-w-[1510px] px-5 py-5">
+              <h2 className="mb-4 text-[22px] font-bold text-[#064f59]">Categorías</h2>
               <div className="scrollbar-hidden grid grid-cols-[repeat(6,minmax(170px,1fr))] gap-5 overflow-x-auto">
                 {categoriasData.filter((cat) => cat.nombre !== "Outlet" && cat.nombre !== "Insumos/Repuesto").map((cat) => {
                   return (
