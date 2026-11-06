@@ -114,16 +114,36 @@ export async function createGuide(input: GuideInput) {
 }
 
 /**
- * PDF de la etiqueta que va pegada a la caja. Formato 58 = media página en papel carta
- * (2 por hoja), para impresora normal. Ojo: /digitales es el comprobante de entrega, no la etiqueta.
+ * PDF de las etiquetas que van pegadas a la caja (una o varias guías en el mismo archivo).
+ * Formato 58 = media página en papel carta (2 por hoja), para impresora normal.
+ * Ojo: /digitales es el comprobante de entrega, no la etiqueta.
  */
-export async function getGuidePdf(codigoRemision: string) {
+export async function getGuidePdf(codigos: string | string[]) {
+  const guias = Array.isArray(codigos) ? codigos : [codigos];
   const data = await call<{ pdfBase64?: string }[]>(
     "/etiquetas/imprimir",
-    { method: "POST", body: JSON.stringify({ tipo_etiqueta: "58", guias: [codigoRemision] }) },
+    { method: "POST", body: JSON.stringify({ tipo_etiqueta: "58", guias }) },
     HOST,
   );
   const pdf = data?.[0]?.pdfBase64;
   if (!pdf) throw new CoordinadoraError("Coordinadora no devolvió la etiqueta de la guía");
   return Buffer.from(pdf, "base64");
+}
+
+/** Anula una guía que todavía no ha sido recogida. Lanza CoordinadoraError si Coordinadora la rechaza. */
+export async function cancelGuide(codigo: string) {
+  // Ojo: la doc dice /suite/guias/integracion/guias/anulacion-masiva pero responde 404; la real es /suite/guias/anulacion-masiva.
+  const data = await call<{ procesados?: number; errores?: Record<string, unknown>; message?: string }>("/anulacion-masiva", {
+    method: "PUT",
+    headers: { identificacion: env("COORDINADORA_NIT") },
+    body: JSON.stringify({
+      idProceso: Number(env("COORDINADORA_ID_PROCESO")),
+      usuario: env("COORDINADORA_USUARIO"),
+      guias: [codigo],
+    }),
+  });
+  const error = data?.errores && Object.values(data.errores)[0];
+  if (error || !data?.procesados) {
+    throw new CoordinadoraError(`Coordinadora no anuló la guía: ${typeof error === "string" ? error : JSON.stringify(error ?? data?.message ?? "sin detalle")}`);
+  }
 }

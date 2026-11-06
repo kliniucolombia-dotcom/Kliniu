@@ -426,7 +426,7 @@ export const DEFAULT_PERMISSIONS: Record<RoleWithDefaults, Record<PanelModule, P
   },
 };
 
-// Roles que aterrizan en /panel al iniciar sesión (los demás van a /admin, /empaque, /empleado o /mi-cuenta).
+// Roles que aterrizan en /panel al iniciar sesión (los demás van a /admin, /panel/empaque, /empleado o /mi-cuenta).
 export const PANEL_ROLES: UserRole[] = [
   "SELLER",
   "RRHH",

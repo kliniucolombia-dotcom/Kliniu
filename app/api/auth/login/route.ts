@@ -96,7 +96,7 @@ export async function POST(request: Request) {
     const redirectTo =
       user.role === "ADMIN"      ? "/admin"      :
       user.role === "SUPERADMIN" ? "/panel"      :
-      user.role === "PACKING"    ? "/empaque"    :
+      user.role === "PACKING"    ? "/panel/empaque" :
       user.role === "EMPLOYEE"   ? "/empleado"   :
       PANEL_ROLES.includes(user.role) ? await getPanelLandingPath(fullUser!) :
       "/mi-cuenta";

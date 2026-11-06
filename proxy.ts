@@ -67,7 +67,6 @@ const WEBHOOK_PREFIXES = ["/api/webhooks/", "/api/kommo/webhook", "/api/kommo/as
 const PROTECTED_PREFIXES = [
   "/mi-cuenta",
   "/panel",
-  "/empaque",
   "/admin",
   "/empleado",
   "/imprimir-cotizacion",

@@ -18,6 +18,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    // La pantalla vieja de empaque vive ahora dentro del panel (Operaciones → Empaque).
+    return [{ source: "/empaque/:path*", destination: "/panel/empaque", permanent: true }];
+  },
   async headers() {
     // CSP se genera por request (con nonce) en proxy.ts, no aquí.
     return [

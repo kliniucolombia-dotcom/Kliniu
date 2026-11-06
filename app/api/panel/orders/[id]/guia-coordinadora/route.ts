@@ -1,5 +1,6 @@
 import { sellerHasFullAccess } from "@/lib/campaign-access";
-import { CoordinadoraError, createGuide, getGuidePdf } from "@/lib/coordinadora";
+import { CoordinadoraError, cancelGuide, createGuide, getGuidePdf } from "@/lib/coordinadora";
+import { logCarrierEvent } from "@/lib/coordinadora-eventos";
 import { getCoordinadoraCityCode } from "@/lib/dane";
 import { updateOrderShipping } from "@/lib/orders";
 import { requirePermission } from "@/lib/permissions";
@@ -93,6 +94,12 @@ export async function POST(request: Request, { params }: Params) {
       },
       { actorId: access.session.userId, actorEmail: access.user.email, ip: getClientIp(request) },
     );
+    await logCarrierEvent(
+      order.id,
+      { tipo: "generada", guia: codigo, descripcion: `Guía generada (${paquete.unidades} caja${paquete.unidades === 1 ? "" : "s"}, ${paquete.pesoKg} kg)` },
+      access.user.email,
+      access.session.userId,
+    ).catch((e) => console.error("[coordinadora] historial", codigo, e));
     await broadcastPanelUpdate("orders");
     return Response.json(updated);
   } catch (error) {
@@ -122,5 +129,54 @@ export async function GET(_request: Request, { params }: Params) {
   } catch (error) {
     const message = error instanceof CoordinadoraError ? error.message : "No fue posible descargar la guía";
     return Response.json({ error: message }, { status: 502 });
+  }
+}
+
+/**
+ * Anula la guía en Coordinadora y la quita del pedido para poder generar otra.
+ * Solo antes de que Coordinadora la recoja (pedido pendiente o en preparación).
+ */
+export async function DELETE(request: Request, { params }: Params) {
+  const { id } = await params;
+  const loaded = await loadOrder(id, "edit");
+  if ("error" in loaded) return loaded.error;
+  const { access, order } = loaded;
+
+  if (!order.trackingNumber || order.carrier !== CARRIER) {
+    return Response.json({ error: "El pedido no tiene guía de Coordinadora" }, { status: 404 });
+  }
+  if (order.shippingStatus !== "PENDING" && order.shippingStatus !== "PREPARING") {
+    return Response.json({ error: "La guía ya salió con Coordinadora: no se puede anular desde aquí" }, { status: 409 });
+  }
+
+  const guia = order.trackingNumber;
+  try {
+    await cancelGuide(guia);
+  } catch (error) {
+    const message = error instanceof CoordinadoraError ? error.message : "No fue posible conectar con Coordinadora";
+    console.error("[coordinadora] anular guía", order.id, guia, error);
+    return Response.json({ error: message }, { status: 502 });
+  }
+
+  const fecha = new Date().toLocaleString("es-CO", { timeZone: "America/Bogota", dateStyle: "short", timeStyle: "short" });
+  const linea = `[${fecha}] Guía Coordinadora ${guia} anulada por ${access.user.email}`;
+  try {
+    const updated = await updateOrderShipping(
+      order.id,
+      {
+        shippingStatus: order.shippingStatus,
+        carrier: "",
+        trackingNumber: "",
+        adminNotes: order.adminNotes ? `${order.adminNotes}\n${linea}` : linea,
+      },
+      { actorId: access.session.userId, actorEmail: access.user.email, ip: getClientIp(request) },
+    );
+    await logCarrierEvent(order.id, { tipo: "anulada", guia, descripcion: "Guía anulada" }, access.user.email, access.session.userId)
+      .catch((e) => console.error("[coordinadora] historial", guia, e));
+    await broadcastPanelUpdate("orders");
+    return Response.json(updated);
+  } catch (error) {
+    console.error("[coordinadora] quitar guía anulada", order.id, guia, error);
+    return Response.json({ error: `La guía ${guia} se anuló en Coordinadora pero sigue en el pedido. Avísale a soporte.` }, { status: 500 });
   }
 }

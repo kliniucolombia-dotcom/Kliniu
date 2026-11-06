@@ -97,6 +97,7 @@ const NAV: NavItem[] = [
       { href: "/panel/produccion/moldes", label: "Moldes", module: "MODULE_PRODUCCION", icon: <MdSwapHoriz size={17} /> },
       { href: "/panel/produccion/departamentos", label: "Departamentos", module: "MODULE_PRODUCCION", icon: <MdApartment size={17} /> },
       { href: "/panel/bodegas", label: "Bodegas", module: "MODULE_BODEGAS", icon: <MdWarehouse size={17} /> },
+      { href: "/panel/empaque", label: "Empaque", module: "MODULE_PEDIDOS", icon: <MdInventory2 size={17} /> },
       { href: "/panel/logistica", label: "Logística", module: "MODULE_LOGISTICA", icon: <MdLocalShipping size={17} /> },
       { href: "/panel/mantenimiento", label: "Mantenimiento", module: "MODULE_MANTENIMIENTO", icon: <MdBuild size={17} /> },
     ],

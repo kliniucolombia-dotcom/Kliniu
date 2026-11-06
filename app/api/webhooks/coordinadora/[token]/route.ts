@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { after } from "next/server";
 import type { ShippingStatus } from "@/generated/prisma/client";
+import { estadoLabel, logCarrierEvent } from "@/lib/coordinadora-eventos";
 import { type CustomerNoticeKind, notifyCustomer, notifyNovelty } from "@/lib/coordinadora-notify";
 import { updateOrderShipping } from "@/lib/orders";
 import { prisma } from "@/lib/prisma";
@@ -68,6 +69,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
       : order.shippingStatus;
 
   const cuando = [ev.fecha, ev.hora?.replace(/\s/g, "").slice(0, 5)].filter(Boolean).join(" ");
+  // Historial de la guía en el pedido (todos los avisos, cambien o no el estado).
+  await logCarrierEvent(order.id, {
+    tipo: esNovedad ? "novedad" : "estado",
+    guia,
+    codigo: (esNovedad ? ev.codigo : codigoEstado)?.trim() || undefined,
+    descripcion: esNovedad
+      ? `${ev.comment?.trim() || `Novedad ${ev.codigo ?? ""}`.trim()} · ${estadoLabel(codigoEstado, ev.desc_estado)}`
+      : estadoLabel(codigoEstado, ev.desc_estado),
+    fechaCoordinadora: cuando || undefined,
+  }).catch((e) => console.error("[coordinadora] historial", guia, e));
   let notas = order.adminNotes ?? "";
   let novedadNueva: string | null = null;
   if (esNovedad || codigoEstado === "8") {

@@ -33,7 +33,7 @@ export default async function MiCuentaPage() {
 
   if (user.role === "ADMIN") redirect("/admin");
   if (user.role === "SUPERADMIN") redirect("/panel");
-  if (user.role === "PACKING") redirect("/empaque");
+  if (user.role === "PACKING") redirect("/panel/empaque");
   if (user.role === "EMPLOYEE") redirect("/empleado");
   if (PANEL_ROLES.includes(user.role)) redirect(await getPanelLandingPath(user));
 
