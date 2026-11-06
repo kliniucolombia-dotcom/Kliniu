@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
+import { MdLocalShipping, MdPictureAsPdf } from "react-icons/md";
 
 type OrderItem = {
   id: string; name: string; image?: string | null; quantity: number; unitPrice: number; lineTotal: number;
@@ -116,6 +117,9 @@ export default function EmpaqueOrders() {
   const [search, setSearch] = useState("");
   const [shippingFilter, setShippingFilter] = useState<string>("all");
   const [form, setForm] = useState<OrderForm>({ shippingStatus: "", carrier: "", trackingNumber: "", adminNotes: "" });
+  const [pkg, setPkg] = useState({ pesoKg: "", largoCm: "", anchoCm: "", altoCm: "", unidades: "1" });
+  const [guideLoading, setGuideLoading] = useState(false);
+  const [guideError, setGuideError] = useState("");
 
   useEffect(() => {
     fetch("/api/panel/orders")
@@ -138,6 +142,8 @@ export default function EmpaqueOrders() {
   const openOrder = (order: Order) => {
     setSelectedId(order.id);
     setSaved(false);
+    setGuideError("");
+    setPkg({ pesoKg: "", largoCm: "", anchoCm: "", altoCm: "", unidades: "1" });
     setForm({
       shippingStatus: order.shippingStatus ?? "PENDING",
       carrier: order.carrier ?? "",
@@ -160,6 +166,26 @@ export default function EmpaqueOrders() {
       setSaved(true);
     }
     setSaving(false);
+  };
+
+  const generateGuide = async () => {
+    if (!selectedId) return;
+    setGuideLoading(true);
+    setGuideError("");
+    const res = await fetch(`/api/panel/orders/${selectedId}/guia-coordinadora`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(Object.fromEntries(Object.entries(pkg).map(([k, v]) => [k, Number(v.replace(",", "."))]))),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      const updated = data as Order;
+      setOrders((prev) => prev.map((o) => (o.id === updated.id ? { ...o, ...updated } : o)));
+      setForm((f) => ({ ...f, shippingStatus: updated.shippingStatus, carrier: updated.carrier ?? "", trackingNumber: updated.trackingNumber ?? "" }));
+    } else {
+      setGuideError(data.error ?? "No fue posible generar la guía");
+    }
+    setGuideLoading(false);
   };
 
   if (loading) {
@@ -231,6 +257,51 @@ export default function EmpaqueOrders() {
           {/* Progress */}
           <div className="mt-5">
             <OrderProgress order={selectedOrder} />
+          </div>
+
+          {/* Guía Coordinadora */}
+          <div className="mt-5 rounded-2xl border border-black/8 bg-[#fafaf9] p-5">
+            <div className="flex items-center gap-2">
+              <MdLocalShipping className="h-5 w-5 text-[#27B1B8]" aria-hidden />
+              <p className="text-sm font-bold text-[#0C535B]">Guía Coordinadora</p>
+            </div>
+            {selectedOrder.carrier === "Coordinadora" && selectedOrder.trackingNumber ? (
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <p className="text-sm text-[#333]">
+                  Guía <span className="font-mono font-bold">{selectedOrder.trackingNumber}</span>
+                </p>
+                <a href={`/api/panel/orders/${selectedOrder.id}/guia-coordinadora`} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#0C535B] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90">
+                  <MdPictureAsPdf className="h-4 w-4" aria-hidden />
+                  Imprimir rótulo
+                </a>
+              </div>
+            ) : (
+              <>
+                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5">
+                  {([
+                    ["pesoKg", "Peso (kg)"],
+                    ["largoCm", "Largo (cm)"],
+                    ["anchoCm", "Ancho (cm)"],
+                    ["altoCm", "Alto (cm)"],
+                    ["unidades", "Cajas"],
+                  ] as const).map(([key, label]) => (
+                    <label key={key} className="space-y-1">
+                      <span className="text-xs font-semibold text-[#5d6167]">{label}</span>
+                      <input inputMode="decimal" value={pkg[key]}
+                        onChange={(e) => setPkg((p) => ({ ...p, [key]: e.target.value }))}
+                        className="w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#F07826]" />
+                    </label>
+                  ))}
+                </div>
+                {guideError && <p role="alert" className="mt-3 rounded-xl bg-[#FEE2E2] px-3 py-2 text-sm text-[#991B1B]">{guideError}</p>}
+                <button type="button" onClick={generateGuide}
+                  disabled={guideLoading || !pkg.pesoKg || !pkg.largoCm || !pkg.anchoCm || !pkg.altoCm || !pkg.unidades}
+                  className="mt-4 rounded-full bg-[#27B1B8] px-6 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50">
+                  {guideLoading ? "Generando guía…" : "Generar guía"}
+                </button>
+              </>
+            )}
           </div>
 
           {/* Edit form */}
