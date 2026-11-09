@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     temperature?: number; temperatureType?: string; temperatureZones?: unknown;
     manualProductName?: string | null;
     produced?: number; damaged?: number; nonConforming?: number;
-    couplingTest?: string | null; couplingStatus?: string | null; couplingTime?: string | null;
+    couplingTest?: string | null; couplingStatus?: string | null; couplingTime?: string | null; couplingPhotoUrl?: string | null;
     observations?: string | null;
     downtimeMinutes?: number;
     materialQuantityKg?: number | null;
@@ -111,6 +111,7 @@ export async function POST(request: Request) {
       couplingTest: body.couplingTest,
       couplingStatus,
       couplingTime: body.couplingTime ?? null,
+      couplingPhotoUrl: body.couplingPhotoUrl ?? null,
       observations: body.observations,
       downtimeMinutes: body.downtimeMinutes,
       materialQuantityKg: body.materialQuantityKg,

@@ -29,7 +29,9 @@ import {
   MdDownload,
   MdEdit,
   MdDeleteOutline,
+  MdPhotoCamera,
 } from "react-icons/md";
+import { compressPhoto } from "@/app/conductor/[token]/photo";
 import { buildProductionSummary, calcProductionEfficiency, SUSPICIOUS_PRODUCTIVITY_PCT, type ProductionRunInput } from "@/lib/production-calculator";
 import {
   createEmptyProductionRunFilters,
@@ -85,6 +87,7 @@ type RunListItem = {
   couplingTest: string | null;
   couplingStatus: string | null;
   couplingTime: string | null;
+  couplingPhotoUrl: string | null;
   observations: string | null;
   downtimeMinutes: number;
   materialQuantityKg: number | null;
@@ -116,6 +119,7 @@ type FormState = {
   nonConforming: string;
   couplingStatus: "" | CouplingStatus;
   couplingTime: string;
+  couplingPhotoUrl: string;
   observations: string;
   downtimeMinutes: string;
   materialQuantityKg: string;
@@ -153,6 +157,7 @@ const emptyForm = (): FormState => ({
   nonConforming: "",
   couplingStatus: "",
   couplingTime: "",
+  couplingPhotoUrl: "",
   observations: "",
   downtimeMinutes: "",
   materialQuantityKg: "",
@@ -447,6 +452,7 @@ export default function ProduccionPage() {
           nonConforming: sanitize(form.nonConforming, true),
           couplingStatus: form.couplingStatus || null,
           couplingTime: form.couplingStatus === "completed" ? form.couplingTime : null,
+          couplingPhotoUrl: form.couplingStatus === "completed" ? form.couplingPhotoUrl || null : null,
           couplingTest:
             form.couplingStatus === "completed"
               ? form.couplingTime || "Realizada"
@@ -514,6 +520,7 @@ export default function ProduccionPage() {
       nonConforming: String(run.nonConforming),
       couplingStatus: run.couplingStatus === "completed" || run.couplingStatus === "na" ? run.couplingStatus : "",
       couplingTime: run.couplingTime ?? "",
+      couplingPhotoUrl: run.couplingPhotoUrl ?? "",
       observations: run.observations ?? "",
       downtimeMinutes: run.downtimeMinutes ? String(run.downtimeMinutes) : "",
       materialQuantityKg: run.materialQuantityKg == null ? "" : String(run.materialQuantityKg),
@@ -1221,6 +1228,16 @@ export default function ProduccionPage() {
                   {show(!form.couplingTime) && <p className={errorClass}>Indica la hora de la prueba.</p>}
                 </div>
               )}
+              {form.couplingStatus === "completed" && (
+                <div className="col-span-full sm:col-span-1">
+                  <label className={labelClass}>Foto de la prueba</label>
+                  <CouplingPhotoField
+                    value={form.couplingPhotoUrl}
+                    onChange={(url) => set("couplingPhotoUrl", url)}
+                    onError={(msg) => setAlert({ type: "err", msg })}
+                  />
+                </div>
+              )}
             </div>
           </Card>
 
@@ -1763,6 +1780,46 @@ function Rule({ ok, label }: { ok: boolean; label: string }) {
   );
 }
 
+function CouplingPhotoField({ value, onChange, onError }: { value: string; onChange: (url: string) => void; onError: (msg: string) => void }) {
+  const [uploading, setUploading] = useState(false);
+  const upload = async (file: File | undefined) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", await compressPhoto(file));
+      const res = await fetch("/api/panel/production-runs/upload", { method: "POST", body: fd });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) return onError(json.error ?? "No fue posible subir la foto.");
+      onChange(json.url);
+    } catch (e) {
+      onError(e instanceof Error ? e.message : "No fue posible subir la foto.");
+    } finally {
+      setUploading(false);
+    }
+  };
+  if (value) {
+    return (
+      <div className="flex items-center gap-3">
+        <a href={value} target="_blank" rel="noopener noreferrer">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={value} alt="Foto de la prueba de acople" className="h-16 w-16 rounded-lg border border-[#E2E8F0] object-cover" />
+        </a>
+        <button type="button" onClick={() => onChange("")} className="inline-flex items-center gap-1 text-sm font-semibold text-[#DC2626] hover:underline">
+          <MdDeleteOutline size={16} /> Quitar
+        </button>
+      </div>
+    );
+  }
+  return (
+    <label className={`flex h-[42px] cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[#CBD5E1] px-3 text-sm font-semibold text-[#0C535B] hover:bg-[#F8FAFC] ${uploading ? "pointer-events-none opacity-60" : ""}`}>
+      <MdPhotoCamera size={18} />
+      {uploading ? "Subiendo…" : "Subir foto"}
+      <input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={(e) => { void upload(e.target.files?.[0]); e.target.value = ""; }} />
+    </label>
+  );
+}
+
 function DetailModal({ run, onClose }: { run: RunListItem; onClose: () => void }) {
   const efficiency = calcProductionEfficiency(run);
   const tone = efficiencyTone(efficiency.efficiencyPercentage);
@@ -1891,6 +1948,14 @@ function DetailModal({ run, onClose }: { run: RunListItem; onClose: () => void }
                 {couplingLabel(run)}
               </span>
             </InfoRow>
+            {run.couplingPhotoUrl && (
+              <InfoRow label="Foto de acople">
+                <a href={run.couplingPhotoUrl} target="_blank" rel="noopener noreferrer" className="inline-block">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={run.couplingPhotoUrl} alt="Foto de la prueba de acople" className="h-16 w-16 rounded-lg border border-[#E2E8F0] object-cover" />
+                </a>
+              </InfoRow>
+            )}
             <InfoRow label="% Calidad">{fmtPct(run.summary.qualityPercentage)}</InfoRow>
           </SectionCard>
 

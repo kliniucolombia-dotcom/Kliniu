@@ -113,6 +113,12 @@ export function ProductionRunDetail({ run }: { run: ProductionRunDetailData }) {
           <PrintRow label="Prueba de acople">
             <span className={run.couplingStatus === "completed" ? "text-[#15803D]" : undefined}>{coupling}</span>
           </PrintRow>
+          {run.couplingPhotoUrl && (
+            <PrintRow label="Foto de acople">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={run.couplingPhotoUrl} alt="Foto de la prueba de acople" className="h-20 w-20 rounded-lg border border-[#E2E8F0] object-cover" />
+            </PrintRow>
+          )}
           <PrintRow label="% Calidad">{fmtPct(run.summary.qualityPercentage)}</PrintRow>
         </PrintSection>
 

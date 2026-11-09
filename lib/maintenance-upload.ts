@@ -30,7 +30,7 @@ function matchesMagic(type: string, head: Buffer) {
   if (ext === "doc" || ext === "xls" || ext === "ppt") return starts(MAGIC.ole);
   return !head.includes(0); // csv/txt: texto plano, sin bytes nulos
 }
-const FOLDERS = ["equipos", "ordenes", "inventario", "cotizaciones", "informes", "tareas"] as const;
+const FOLDERS = ["equipos", "ordenes", "inventario", "cotizaciones", "informes", "tareas", "acople"] as const;
 export type MaintenanceFolder = (typeof FOLDERS)[number];
 
 // Sube una foto (comprimida a webp) o un documento y devuelve su URL pública.

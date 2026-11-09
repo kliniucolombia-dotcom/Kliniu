@@ -14,6 +14,7 @@ import {
   type TemperatureZone,
 } from "@/lib/production-calculator";
 import { assertProductionCanComplete } from "@/lib/production-order-policy";
+import { safeUrl } from "@/lib/maintenance-upload";
 
 // ─── ROAS helpers ───────────────────────────────────────────────
 
@@ -1158,6 +1159,7 @@ export type ProductionRunWriteData = {
   couplingTest?: string | null;
   couplingStatus?: CouplingStatus | null;
   couplingTime?: string | null;
+  couplingPhotoUrl?: string | null;
   observations?: string | null;
   downtimeMinutes?: number;
   materialQuantityKg?: number | null;
@@ -1221,6 +1223,7 @@ export async function createProductionRun(data: ProductionRunWriteData) {
       couplingTest: data.couplingTest?.trim() || null,
       couplingStatus: data.couplingStatus ?? null,
       couplingTime: data.couplingTime?.trim() || null,
+      couplingPhotoUrl: safeUrl(data.couplingPhotoUrl),
       observations: data.observations?.trim() || null,
       downtimeMinutes: sanitizeProductionNumber(data.downtimeMinutes ?? 0, { min: 0, integer: true }),
       materialQuantityKg: data.materialQuantityKg != null ? sanitizeProductionNumber(data.materialQuantityKg, { min: 0 }) : null,
@@ -1269,6 +1272,7 @@ export async function updateProductionRun(id: string, data: Partial<ProductionRu
       ...(data.couplingTest !== undefined ? { couplingTest: data.couplingTest?.trim() || null } : {}),
       ...(data.couplingStatus !== undefined ? { couplingStatus: data.couplingStatus } : {}),
       ...(data.couplingTime !== undefined ? { couplingTime: data.couplingTime?.trim() || null } : {}),
+      ...(data.couplingPhotoUrl !== undefined ? { couplingPhotoUrl: safeUrl(data.couplingPhotoUrl) } : {}),
       ...(data.observations !== undefined ? { observations: data.observations?.trim() || null } : {}),
       ...(data.downtimeMinutes !== undefined ? { downtimeMinutes: sanitizeProductionNumber(data.downtimeMinutes, { min: 0, integer: true }) } : {}),
       ...(data.materialQuantityKg !== undefined ? { materialQuantityKg: data.materialQuantityKg != null ? sanitizeProductionNumber(data.materialQuantityKg, { min: 0 }) : null } : {}),
