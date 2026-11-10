@@ -189,6 +189,28 @@ export async function fetchWatiMedia(
   return { buffer, contentType: response.headers.get("content-type") ?? "audio/ogg" };
 }
 
+export type WatiHistoryMessage = {
+  id?: string;
+  created?: string;
+  owner?: boolean;
+  type?: string;
+  text?: string | null;
+  operator_name?: string | null;
+  event_type?: string;
+};
+
+/** Últimos mensajes del chat según WATI (incluye lo que un asesor escribe directo en WATI). */
+export async function getWatiMessages(phone: string): Promise<WatiHistoryMessage[]> {
+  const { host, authorization } = getWatiConfig();
+  const response = await fetch(
+    `${host}/api/ext/v3/conversations/${encodeURIComponent(normalizePhone(phone))}/messages?page_size=50&page_number=1`,
+    { headers: { Authorization: authorization }, cache: "no-store" },
+  );
+  if (!response.ok) throw new Error(`WATI_MESSAGES_FAILED: ${response.status}`);
+  const data = (await response.json()) as { message_list?: WatiHistoryMessage[] };
+  return data.message_list ?? [];
+}
+
 export async function getWatiTemplates(): Promise<WatiTemplate[]> {
   const { host, authorization, channel } = getWatiConfig();
   const url = new URL(`${host}/api/ext/v3/messageTemplates`);

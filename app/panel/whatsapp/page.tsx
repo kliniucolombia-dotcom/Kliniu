@@ -65,6 +65,7 @@ type ConversationSummary = {
   followUpSentAt: string | null;
   updatedAt: string;
   lastMessage: { content: string; role: "USER" | "ASSISTANT" | "AGENT"; createdAt: string } | null;
+  unreadCount: number;
 };
 
 type ConversationFilter = "ALL" | "HELP" | "NEW" | "ACTIVE" | "SOLD" | "CLOSED";
@@ -1819,6 +1820,8 @@ export default function WhatsappPanelPage() {
                 conversation.status === "CLOSED" && conversation.salesStage !== "SOLD"
                   ? CLOSED_META
                   : getSalesStageMeta(conversation.salesStage);
+              // El chat abierto ya se está leyendo: sin contador aunque el servidor aún no lo refleje.
+              const unread = selectedId === conversation.id ? 0 : conversation.unreadCount;
               return <button
                 key={conversation.id}
                 type="button"
@@ -1875,9 +1878,19 @@ export default function WhatsappPanelPage() {
                   {conversation.contactName ? (
                     <p className="truncate text-[10px] text-[#94A3B8]">+{conversation.phone}</p>
                   ) : null}
-                  <p className="mt-0.5 line-clamp-1 text-xs text-[#64748B]">
-                    {conversation.lastMessage?.content ?? "Sin mensajes"}
-                  </p>
+                  <div className="mt-0.5 flex items-center gap-2">
+                    <p className={`line-clamp-1 min-w-0 flex-1 text-xs ${unread > 0 ? "font-semibold text-[#0F172A]" : "text-[#64748B]"}`}>
+                      {conversation.lastMessage?.content ?? "Sin mensajes"}
+                    </p>
+                    {unread > 0 ? (
+                      <span
+                        aria-label={`${unread} mensajes sin leer`}
+                        className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[#EF4444] px-1 text-[10px] font-bold leading-none text-white"
+                      >
+                        {unread > 99 ? "99+" : unread}
+                      </span>
+                    ) : null}
+                  </div>
                   <span className={`mt-1.5 inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${stageMeta.className}`}>
                     {stageMeta.label}
                   </span>

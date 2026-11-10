@@ -1,5 +1,10 @@
 import { requirePermission } from "@/lib/permissions";
-import { getWatiConversationMessages, sendAgentReply } from "@/lib/wati-conversations";
+import {
+  getWatiConversationMessages,
+  markWatiConversationRead,
+  sendAgentReply,
+  syncAdvisorMessagesFromWati,
+} from "@/lib/wati-conversations";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -9,7 +14,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const { id } = await params;
 
   try {
+    // WATI caído no debe impedir ver el chat.
+    const imported = await syncAdvisorMessagesFromWati(id).catch((error) => {
+      console.error("WATI_ADVISOR_SYNC_FAILED", id, error);
+      return 0;
+    });
     const conversation = await getWatiConversationMessages(id);
+    // Abrir el chat lo marca como leído para todos (como WATI); solo avisa si algo cambió.
+    const wasUnread = await markWatiConversationRead(id);
+    if (imported > 0 || wasUnread) await broadcastPanelUpdate("wati");
     return Response.json(conversation);
   } catch {
     return Response.json({ error: "Conversación no encontrada" }, { status: 404 });

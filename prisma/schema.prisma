@@ -745,6 +745,8 @@ model WatiConversation {
   remarketingUsed    Json                   @default("{}")
   /// Archivada por inactividad (cron wati-archive); se desarchiva sola cuando alguien escribe.
   archivedAt         DateTime?
+  /// Última vez que alguien abrió el chat en el panel; los USER posteriores cuentan como no leídos.
+  lastReadAt         DateTime?
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
   messages           WatiMessage[]

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import {
   getWatiContactNames,
+  getWatiMessages,
   getWatiTemplates,
   sendWatiMessage,
   sendWatiTemplateMessage,
@@ -34,9 +35,9 @@ export async function pickSellerForNewConversation() {
   return sellers.sort((a, b) => a._count.assignedWatiConversations - b._count.assignedWatiConversations)[0].id;
 }
 
-// Cierres (CLOSED/SOLD) se archivan a los 7 días sin actividad; el resto a los 30.
+// Cierres (CLOSED/SOLD) y el resto se archivan a los 7 días sin actividad (se desarchivan solos si el cliente escribe).
 const ARCHIVE_CLOSED_DAYS = 7;
-const ARCHIVE_ACTIVE_DAYS = 30;
+const ARCHIVE_ACTIVE_DAYS = 7;
 
 // SQL directo: updateMany reescribiría updatedAt (@updatedAt) y se perdería la última actividad real.
 export async function archiveStaleWatiConversations(now = new Date()) {
@@ -133,6 +134,19 @@ export async function getAllWatiConversations(archived = false) {
     : [];
   const ordersById = new Map(orders.map((order) => [order.id, order]));
 
+  // No leídos como en WATI: mensajes del cliente posteriores a la última apertura del chat.
+  const unreadRows = await db.$queryRaw<Array<{ id: string; n: number }>>`
+    SELECT m."conversationId" AS id, COUNT(*)::int AS n
+    FROM "WatiMessage" m JOIN "WatiConversation" c ON c.id = m."conversationId"
+    WHERE m.role = 'USER' AND (c."lastReadAt" IS NULL OR m."createdAt" > c."lastReadAt")
+    GROUP BY 1`;
+  const unreadById = new Map(unreadRows.map((row) => [row.id, row.n]));
+
+  // Orden por último mensaje, no por updatedAt: los crons (lecciones, memoria, etapa)
+  // reescriben updatedAt sin que haya actividad y desordenaban la bandeja.
+  const activityAt = (c: (typeof conversations)[number]) => (c.messages[0]?.createdAt ?? c.updatedAt).getTime();
+  conversations.sort((a, b) => activityAt(b) - activityAt(a));
+
   return conversations.map((c) => {
     const order = c.orderId ? ordersById.get(c.orderId) : null;
     return {
@@ -157,6 +171,7 @@ export async function getAllWatiConversations(archived = false) {
     followUpSentAt: c.followUpSentAt,
     updatedAt: c.updatedAt,
     lastMessage: c.messages[0] ?? null,
+    unreadCount: unreadById.get(c.id) ?? 0,
     };
   });
 }
@@ -237,6 +252,60 @@ export async function deleteAllWatiConversations() {
       conversations: deletedConversations.count,
     };
   });
+}
+
+/** Marca el chat como leído; devuelve true si había mensajes del cliente sin leer. */
+export async function markWatiConversationRead(conversationId: string) {
+  if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
+  // SQL directo para no reescribir updatedAt. Solo actualiza si hay algo sin leer.
+  const updated = await prisma.$executeRaw`
+    UPDATE "WatiConversation" c SET "lastReadAt" = ${new Date()}
+    WHERE c.id = ${conversationId} AND EXISTS (
+      SELECT 1 FROM "WatiMessage" m
+      WHERE m."conversationId" = c.id AND m.role = 'USER'
+        AND (c."lastReadAt" IS NULL OR m."createdAt" > c."lastReadAt")
+    )`;
+  return updated > 0;
+}
+
+// ponytail: throttle en memoria por instancia; pasar a webhook sessionMessageSent si hace falta tiempo real.
+const advisorSyncAt = new Map<string, number>();
+const ADVISOR_SYNC_EVERY_MS = 30_000;
+
+/**
+ * Trae de WATI lo que un asesor escribió directo allá (no pasa por nuestro webhook).
+ * Lo enviado por API (bot y panel) sale con operador "API Token …" y ya está guardado.
+ */
+export async function syncAdvisorMessagesFromWati(conversationId: string) {
+  if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
+  if (Date.now() - (advisorSyncAt.get(conversationId) ?? 0) < ADVISOR_SYNC_EVERY_MS) return 0;
+  advisorSyncAt.set(conversationId, Date.now());
+
+  const conversation = await prisma.watiConversation.findUnique({
+    where: { id: conversationId },
+    select: { phone: true },
+  });
+  if (!conversation) return 0;
+
+  const data = (await getWatiMessages(conversation.phone)).flatMap((message) => {
+    const operator = message.operator_name?.trim();
+    const createdAt = message.created ? new Date(message.created) : null;
+    if (message.owner !== true || !message.id || !operator || /^api token/i.test(operator)) return [];
+    if (!createdAt || Number.isNaN(createdAt.getTime())) return [];
+    const isText = !message.type || message.type === "text";
+    const text = message.text?.trim();
+    if (isText && !text) return [];
+    return [{
+      externalId: message.id,
+      conversationId,
+      role: "AGENT" as const,
+      content: isText ? text! : text ? `📎 (${message.type}) ${text}` : `📎 (${message.type} enviado)`,
+      createdAt,
+    }];
+  });
+  if (data.length === 0) return 0;
+  const result = await prisma.watiMessage.createMany({ data, skipDuplicates: true });
+  return result.count;
 }
 
 export async function getWatiConversationMessages(conversationId: string) {  if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
