@@ -179,11 +179,17 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
           src={imagenActual || "/product-placeholder.png"}
           alt={producto.nombre}
           loading="lazy"
-          className="image-lift max-h-36 w-auto max-w-full object-contain transition-opacity duration-150"
+          className={`image-lift max-h-36 w-auto max-w-full object-contain transition-opacity duration-150 ${producto.puedeComprar === false ? "opacity-55" : ""}`}
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png";
           }}
         />
+        {producto.puedeComprar === false && (
+          <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-[#0C535B] px-3 py-2">
+            <span className="text-xs font-bold uppercase tracking-[0.08em] text-white">Agotado</span>
+            <span className="text-[11px] text-[#BFEDEF]">· Vuelve pronto</span>
+          </div>
+        )}
       </div>
 
       {/* Info */}
@@ -253,9 +259,11 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
                 handleAddToCart();
               }}
               disabled={producto.puedeComprar === false}
-              aria-label={`Agregar ${producto.nombre} al carrito`}
-              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
-                agregado ? "bg-[#d4621a] text-white" : "bg-[#F07826] text-white hover:bg-[#d4621a]"
+              aria-label={producto.puedeComprar === false ? `${producto.nombre} agotado` : `Agregar ${producto.nombre} al carrito`}
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm transition-all duration-200 disabled:cursor-not-allowed ${
+                producto.puedeComprar === false
+                  ? "bg-[#e6e7ea] text-[#7a8087]"
+                  : agregado ? "bg-[#d4621a] text-white" : "bg-[#F07826] text-white hover:bg-[#d4621a]"
               }`}
             >
               {agregado ? (
