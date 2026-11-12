@@ -11,7 +11,7 @@ type PackPrice = { id?: string; label: string; qty: number; totalPrice: number }
 
 type Product = {
   id: string; slug: string; sku: string | null; name: string; brand: string; category: string;
-  price: number; previousPrice: number; stock: number; minimumStock: number; image: string; active: boolean; updatedAt: string;
+  price: number; previousPrice: number; stock: number; minimumStock: number; image: string; active: boolean; soldOut: boolean; updatedAt: string;
   priceHistory: { oldPrice: number; newPrice: number; createdAt: string; user: { fullName: string } }[];
   packPrices: PackPrice[];
 };
@@ -204,6 +204,48 @@ export default function ProductosPanel() {
     }
   };
 
+  const patchProducts = async (body: Record<string, unknown>) => {
+    setSaving(true);
+    const r = await fetch("/api/panel/products", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    setSaving(false);
+    if (r.ok) {
+      load();
+    } else {
+      const d = await r.json().catch(() => ({}));
+      setAlert({ type: "err", msg: d.error ?? "Error al actualizar" });
+    }
+  };
+
+  const toggleSoldOut = async (p: Product) => {
+    if (!p.soldOut) {
+      const ok = await confirm({
+        title: "Marcar como agotado",
+        message: `"${p.name}" seguirá visible en la tienda, pero no se podrá comprar.`,
+        confirmLabel: "Marcar agotado",
+        danger: false,
+      });
+      if (!ok) return;
+    }
+    await patchProducts({ productId: p.id, soldOut: !p.soldOut });
+  };
+
+  const setCategorySoldOut = async (category: string, soldOut: boolean) => {
+    const ok = await confirm({
+      title: soldOut ? "Agotar categoría" : "Reactivar categoría",
+      message: soldOut
+        ? `Todos los productos de "${category}" quedarán agotados y no se podrán comprar.`
+        : `Todos los productos de "${category}" volverán a estar disponibles para compra.`,
+      confirmLabel: soldOut ? "Agotar todo" : "Reactivar todo",
+      danger: false,
+    });
+    if (!ok) return;
+    await patchProducts({ category, soldOut });
+  };
+
   const toggleActive = async (p: Product) => {
     if (p.active) {
       const ok = await confirm({
@@ -317,6 +359,27 @@ export default function ProductosPanel() {
                   onChange={setSortBy}
                 />
               </label>
+
+              {canEdit && categoryFilter !== "all" && (
+                <div className="flex items-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCategorySoldOut(categoryFilter, true)}
+                    disabled={saving}
+                    className="w-full rounded-2xl bg-[#DC2626] px-4 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#B91C1C] disabled:opacity-50"
+                  >
+                    Agotar categoría
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCategorySoldOut(categoryFilter, false)}
+                    disabled={saving}
+                    className="w-full rounded-2xl border border-black/10 bg-[#fafaf9] px-4 py-3 text-sm font-semibold text-[#5d6167] transition-colors duration-200 hover:bg-[#ececea] disabled:opacity-50"
+                  >
+                    Reactivar categoría
+                  </button>
+                </div>
+              )}
 
               {hasActiveFilters && (
                 <div className="flex items-end">
@@ -445,6 +508,9 @@ export default function ProductosPanel() {
                             <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${p.active ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#F1F5F9] text-[#64748B]"}`}>
                               {p.active ? "Visible" : "Oculto"}
                             </span>
+                            {p.soldOut && (
+                              <span className="ml-1.5 rounded-full bg-[#FEE2E2] px-2.5 py-0.5 text-xs font-semibold text-[#DC2626]">Agotado</span>
+                            )}
                           </td>
                           <td className="p-4 text-xs text-[#8b8d91]">
                             {p.priceHistory[0]
@@ -461,6 +527,16 @@ export default function ProductosPanel() {
                                   className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200 disabled:opacity-50 ${p.active ? "border border-[#E2E8F0] text-[#64748B] hover:bg-[#F8FAFC]" : "bg-[#16A34A] text-white hover:bg-[#15803D]"}`}
                                 >
                                   {p.active ? "Ocultar" : "Mostrar"}
+                                </button>
+                              )}
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleSoldOut(p)}
+                                  disabled={saving}
+                                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200 disabled:opacity-50 ${p.soldOut ? "bg-[#16A34A] text-white hover:bg-[#15803D]" : "border border-[#FECACA] text-[#DC2626] hover:bg-[#FEF2F2]"}`}
+                                >
+                                  {p.soldOut ? "Disponible" : "Agotado"}
                                 </button>
                               )}
                               {canEdit && (

@@ -1,5 +1,5 @@
 import { requireAnyPermission, requirePermission } from "@/lib/permissions";
-import { getProductsForPanel, setProductActive, updateProductPrice, updateProductPackPrices } from "@/lib/panel";
+import { getProductsForPanel, setProductActive, setProductsSoldOut, updateProductPrice, updateProductPackPrices } from "@/lib/panel";
 import { prisma } from "@/lib/prisma";
 import { broadcastPanelUpdate } from "@/lib/realtime";
 import { apiHandler } from "@/lib/api-handler";
@@ -43,12 +43,32 @@ export const PATCH = apiHandler(async (request: Request) => {
     note?: string;
     packPrices?: { label: string; qty: number; totalPrice: number }[];
     active?: boolean;
+    soldOut?: boolean;
+    category?: string;
   };
+  // Agotado por categoría completa: no lleva productId.
+  if (body.category && typeof body.soldOut === "boolean") {
+    const count = await setProductsSoldOut({ category: body.category }, body.soldOut);
+    await logAudit({
+      actorId: access.user.id,
+      actorEmail: access.user.email,
+      action: "product.category_sold_out",
+      entity: "product",
+      entityId: body.category,
+      meta: { soldOut: body.soldOut, count },
+      ip: getClientIp(request),
+    });
+    await broadcastPanelUpdate("products");
+    return Response.json({ ok: true, count });
+  }
   if (!body.productId) {
     return Response.json({ error: "Faltan datos" }, { status: 400 });
   }
   if (typeof body.active === "boolean") {
     await setProductActive(body.productId, body.active);
+  }
+  if (typeof body.soldOut === "boolean") {
+    await setProductsSoldOut({ id: body.productId }, body.soldOut);
   }
   if (body.newPrice) {
     await updateProductPrice(body.productId, body.newPrice, session.userId, body.note);
@@ -68,6 +88,7 @@ export const PATCH = apiHandler(async (request: Request) => {
     meta: {
       newPrice: body.newPrice,
       active: body.active,
+      soldOut: body.soldOut,
       packPrices: body.packPrices ? body.packPrices.length : undefined,
       note: body.note,
     },

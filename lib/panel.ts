@@ -327,6 +327,12 @@ export async function setProductActive(productId: string, active: boolean) {
   });
 }
 
+export async function setProductsSoldOut(where: { id: string } | { category: string }, soldOut: boolean) {
+  if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
+  const { count } = await prisma.product.updateMany({ where, data: { soldOut, updatedAt: new Date() } });
+  return count;
+}
+
 export async function updateProductPackPrices(
   productId: string,
   packs: { id?: string; label: string; qty: number; totalPrice: number }[],

@@ -241,6 +241,7 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
         stock: true,
         reservedStock: true,
         minimumStock: true,
+        soldOut: true,
       },
     });
 
@@ -249,7 +250,7 @@ export async function createOrderFromCart(userId: string, input: CheckoutInput) 
     for (const item of productCartItems) {
       const product = products.find((entry) => entry.slug === baseProductSlug(item.productId as string));
 
-      if (!product) {
+      if (!product || product.soldOut) {
         throw new Error(`PRODUCT_NOT_FOUND:${item.name}`);
       }
     }

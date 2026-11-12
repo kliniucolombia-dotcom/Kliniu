@@ -48,6 +48,7 @@ type ProductRecord = {
   videoUrl?: string | null;
   featured: boolean;
   active: boolean;
+  soldOut?: boolean | null;
   isOutlet: boolean;
   outletExpiresAt?: string | null;
   createdAt: string;
@@ -262,12 +263,12 @@ function toStoreProduct(
   packPricesByProductId?: Map<string, { label: string; qty: number; totalPrice: number }[]>,
 ): StoreProduct {
   const categoria = normalizeCategoria(product.category);
-  const disponibilidad = normalizeStockAvailability(
-    product.availability,
-    product.stock,
-    product.minimumStock,
-  );
-  const estadoInventario = getInventoryState(product.stock, product.minimumStock);
+  // Agotado manual desde el panel: única vía que bloquea la compra.
+  const soldOut = product.soldOut === true;
+  const disponibilidad: Disponibilidad = soldOut
+    ? "Agotado"
+    : normalizeStockAvailability(product.availability, product.stock, product.minimumStock);
+  const estadoInventario = soldOut ? "out-of-stock" : getInventoryState(product.stock, product.minimumStock);
 
   return {
     slug: product.slug,
@@ -285,7 +286,8 @@ function toStoreProduct(
     estadoInventario,
     // Aunque no haya stock disponible, la empresa fabrica/consigue el
     // producto sobre pedido, así que la compra nunca se bloquea por stock.
-    puedeComprar: true,
+    // Solo el agotado manual (soldOut) la bloquea.
+    puedeComprar: !soldOut,
     descuento: formatearDescuento(product.price, product.previousPrice),
     imagen: normalizeProductImage(product.image) || "/product-placeholder.png",
     imagenesExtra: normalizeGalleryImages(product.galleryImages || []),
