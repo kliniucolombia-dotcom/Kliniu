@@ -167,6 +167,12 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
         </span>
       )}
 
+      {producto.puedeComprar === false && (
+        <span className="pointer-events-none absolute -right-[38px] top-[22px] z-10 w-[150px] rotate-45 bg-[#DC2626] py-[5px] text-center text-[11px] font-bold tracking-[0.1em] text-white shadow-[0_2px_6px_rgba(0,0,0,0.15)]">
+          AGOTADO
+        </span>
+      )}
+
       {/* Image */}
       <div className="relative flex h-44 items-center justify-center bg-white px-6 py-4">
         {/* Preload variant images */}
@@ -179,17 +185,11 @@ function TarjetaProducto({ producto }: { producto: ProductoCatalogo }) {
           src={imagenActual || "/product-placeholder.png"}
           alt={producto.nombre}
           loading="lazy"
-          className={`image-lift max-h-36 w-auto max-w-full object-contain transition-opacity duration-150 ${producto.puedeComprar === false ? "opacity-55" : ""}`}
+          className={`image-lift max-h-36 w-auto max-w-full object-contain transition-opacity duration-150 ${producto.puedeComprar === false ? "opacity-60" : ""}`}
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png";
           }}
         />
-        {producto.puedeComprar === false && (
-          <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-[#0C535B] px-3 py-2">
-            <span className="text-xs font-bold uppercase tracking-[0.08em] text-white">Agotado</span>
-            <span className="text-[11px] text-[#BFEDEF]">· Vuelve pronto</span>
-          </div>
-        )}
       </div>
 
       {/* Info */}

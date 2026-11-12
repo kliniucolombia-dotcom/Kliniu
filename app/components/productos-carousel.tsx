@@ -101,17 +101,23 @@ export default function ProductosCarousel({
       >
         {products.map((p) => {
           const added = addedSlugs.has(p.slug);
+          const soldOut = p.puedeComprar === false;
           return (
             <div
               key={p.slug}
-              className="interactive-lift flex h-[370px] w-[200px] min-w-[200px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-black/8 bg-white 2xl:w-[190px] 2xl:min-w-[190px]"
+              className="interactive-lift relative flex h-[370px] w-[200px] min-w-[200px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-black/8 bg-white 2xl:w-[190px] 2xl:min-w-[190px]"
             >
+              {soldOut && (
+                <span className="pointer-events-none absolute -right-[38px] top-[22px] z-10 w-[150px] rotate-45 bg-[#DC2626] py-[5px] text-center text-[11px] font-bold tracking-[0.1em] text-white shadow-[0_2px_6px_rgba(0,0,0,0.15)]">
+                  AGOTADO
+                </span>
+              )}
               <Link href={`/producto/${p.slug}`} className="flex h-40 items-center justify-center bg-white p-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={p.imagen}
                   alt={p.nombre}
-                  className="image-lift max-h-32 w-auto object-contain"
+                  className={`image-lift max-h-32 w-auto object-contain ${soldOut ? "opacity-60" : ""}`}
                   onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/product-placeholder.png"; }}
                 />
               </Link>
@@ -126,7 +132,7 @@ export default function ProductosCarousel({
                 {saleMode === "whatsapp" ? (
                   <WhatsAppBuyCTA
                     nombre={p.nombre}
-                    className="shine-sweep mt-auto flex w-full items-center justify-center gap-1.5 rounded-full bg-[#25D366] py-2 text-xs font-bold text-white hover:bg-[#128C7E]"
+                    className={`shine-sweep mt-auto flex w-full items-center justify-center gap-1.5 rounded-full py-2 text-xs font-bold ${soldOut ? "pointer-events-none bg-[#e6e7ea] text-[#7a8087]" : "bg-[#25D366] text-white hover:bg-[#128C7E]"}`}
                   >
                     {WHATSAPP_ICON}
                     WhatsApp
@@ -135,13 +141,16 @@ export default function ProductosCarousel({
                   <button
                     type="button"
                     onClick={() => handleAdd(p)}
+                    disabled={soldOut}
                     className={`shine-sweep mt-auto w-full rounded-full py-2 text-xs font-bold transition-colors ${
-                      added
+                      soldOut
+                        ? "cursor-not-allowed bg-[#e6e7ea] text-[#7a8087]"
+                        : added
                         ? "bg-[#d4621a] text-white"
                         : "bg-[#F07826] text-white hover:bg-[#d4621a]"
                     }`}
                   >
-                    {added ? "✓ Agregado" : "Agregar al carrito"}
+                    {soldOut ? "Agotado" : added ? "✓ Agregado" : "Agregar al carrito"}
                   </button>
                 )}
                 <Link
