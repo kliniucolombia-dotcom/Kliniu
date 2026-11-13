@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createHash } from "node:crypto";
 import { getShippingForLocation, getShippingOverride, formatShippingPrice, SHIPPING_RATES } from "../lib/shipping-rates";
-import { verifyWompiEventSignature } from "../lib/wompi";
+import { verifyWompiEventSignature, buildWompiCheckoutUrl } from "../lib/wompi";
 import { parsePriceValue, formatPrice } from "../lib/volume-discounts";
 import { computeComboSavings } from "../lib/combos";
 
@@ -73,4 +73,22 @@ test("firma de Wompi: acepta la válida y rechaza la manipulada", () => {
   assert.equal(verifyWompiEventSignature(payload), true);
   payload.data.transaction.amount_in_cents = 1;
   assert.equal(verifyWompiEventSignature(payload), false);
+});
+
+test("firma de integridad Wompi incluye expiration-time (ejemplo oficial de docs)", () => {
+  process.env.WOMPI_INTEGRITY_SECRET = "prod_integrity_Z5mMke9x0k8gpErbDqwrJXMqsI6SFli6";
+  process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY ??= "pub_test";
+  const url = new URL(
+    buildWompiCheckoutUrl({
+      reference: "sk8-438k4-xmxm392-sn2m2",
+      amountInCents: 490000,
+      redirectUrl: "https://kliniucolombia.com/checkout/exito",
+      expirationTime: new Date("2023-06-09T20:28:50.000Z"),
+    }),
+  );
+  const expected = createHash("sha256")
+    .update("sk8-438k4-xmxm392-sn2m2490000COP2023-06-09T20:28:50.000Zprod_integrity_Z5mMke9x0k8gpErbDqwrJXMqsI6SFli6")
+    .digest("hex");
+  assert.equal(url.searchParams.get("signature:integrity"), expected);
+  assert.equal(url.searchParams.get("expiration-time"), "2023-06-09T20:28:50.000Z");
 });

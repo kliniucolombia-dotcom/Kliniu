@@ -9,18 +9,21 @@ export function getWompiPublicKey() {
 }
 
 // Firma de integridad requerida por Wompi Web Checkout:
-// SHA256(reference + amountInCents + currency + integritySecret)
+// SHA256(reference + amountInCents + currency + [expirationTime] + integritySecret)
+// Si se envía expiration-time, Wompi exige incluirlo en la firma con el mismo
+// string exacto; si no, rechaza el pago con "La firma es inválida".
 export function buildIntegritySignature(
   reference: string,
   amountInCents: number,
   currency: string,
+  expirationTime = "",
 ) {
   const secret = process.env.WOMPI_INTEGRITY_SECRET;
   if (!secret) throw new Error("WOMPI_NOT_CONFIGURED");
 
   return crypto
     .createHash("sha256")
-    .update(`${reference}${amountInCents}${currency}${secret}`)
+    .update(`${reference}${amountInCents}${currency}${expirationTime}${secret}`)
     .digest("hex");
 }
 
@@ -33,7 +36,8 @@ export function buildWompiCheckoutUrl(params: {
   expirationTime?: Date;
 }) {
   const currency = params.currency || "COP";
-  const signature = buildIntegritySignature(params.reference, params.amountInCents, currency);
+  const expirationTime = params.expirationTime?.toISOString();
+  const signature = buildIntegritySignature(params.reference, params.amountInCents, currency, expirationTime);
 
   const query = new URLSearchParams({
     "public-key": getWompiPublicKey(),
@@ -51,8 +55,8 @@ export function buildWompiCheckoutUrl(params: {
   // Sincroniza el countdown visible en el Web Checkout con la ventana de
   // reserva de stock (lib/orders.ts, paymentExpiresAt): así Wompi cierra el
   // pago exactamente cuando expira nuestra reserva, nunca antes ni después.
-  if (params.expirationTime) {
-    query.set("expiration-time", params.expirationTime.toISOString());
+  if (expirationTime) {
+    query.set("expiration-time", expirationTime);
   }
 
   return `${WOMPI_CHECKOUT_URL}?${query.toString()}`;
