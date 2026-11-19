@@ -20,7 +20,7 @@ import { SITE_URL } from "@/lib/site";
 import { formatPrice } from "@/lib/volume-discounts";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const DESTINATARIO = "david.avila@kliniu.com";
+const DESTINATARIOS = ["david.avila@kliniu.com", "ventas@kliniu.com"];
 const BASE_URL = SITE_URL.startsWith("http") ? SITE_URL : `https://${SITE_URL}`;
 
 type OrderWithItems = Order & { items: OrderItem[] };
@@ -123,7 +123,7 @@ export function OrderPaidEmail({ order }: { order: OrderWithItems }) {
   );
 }
 
-/** Envía a David el resumen del pedido cuando Wompi confirma el pago. */
+/** Envía a David y a ventas@ el resumen del pedido cuando Wompi confirma el pago. */
 export async function sendOrderPaidEmail(order: OrderWithItems) {
   if (!resend) return;
 
@@ -131,7 +131,7 @@ export async function sendOrderPaidEmail(order: OrderWithItems) {
 
   await resend.emails.send({
     from,
-    to: DESTINATARIO,
+    to: DESTINATARIOS,
     subject: `[Kliniu] Nuevo pedido pagado #${order.id.slice(-8).toUpperCase()}`,
     html: await render(<OrderPaidEmail order={order} />),
   });
