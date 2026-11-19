@@ -20,6 +20,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.7.0",
+    "@react-email/components": "^1.0.12",
     "@sparticuz/chromium": "^148.0.0",
     "@supabase/supabase-js": "^2.102.1",
     "@upstash/ratelimit": "^2.0.8",
