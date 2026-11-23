@@ -1,29 +1,25 @@
-import { Skeleton, SkeletonCard, SkeletonHeader, SkeletonKpis } from "../../components/skeleton";
+import { Skeleton as Base } from "../../components/skeleton";
 
+// El fondo del launcher (#F4F6F8) es casi igual al gris por defecto del skeleton: se oscurece un poco para que se vea.
+const Skeleton = ({ className = "" }: { className?: string }) => <Base className={`!bg-[#E2E9EC] ${className}`} />;
+
+// Mismo esqueleto que el launcher de /panel: fecha, saludo, 3 chips y la grilla de tiles.
 export default function Loading() {
   return (
-    <div className="min-w-0 p-4 sm:p-6 lg:p-8" role="status" aria-label="Cargando">
-      <SkeletonHeader />
-      <SkeletonKpis />
-      <div className="mb-8 grid gap-5 sm:grid-cols-2">
-        {[0, 1].map((i) => (
-          <SkeletonCard key={i} className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-10 w-10 rounded-full" />
-              <div className="flex-1 space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-44" /></div>
-            </div>
-            <div className="grid grid-cols-3 gap-3">{[0, 1, 2].map((k) => <Skeleton key={k} className="h-14" />)}</div>
-            <Skeleton className="h-20" />
-          </SkeletonCard>
+    <div className="mx-auto max-w-[1000px] px-5 pb-32 pt-8 sm:px-6 sm:pt-10" role="status" aria-label="Cargando">
+      <Skeleton className="h-3 w-48" />
+      <Skeleton className="mt-3 h-10 w-72 sm:h-12 sm:w-96" />
+      <div className="mt-6 flex flex-wrap gap-2.5">
+        {[0, 1, 2].map((i) => (
+          <Skeleton key={i} className="h-[68px] w-[130px] rounded-2xl" />
         ))}
       </div>
-      <div className="mb-8 grid gap-6 lg:grid-cols-3">
-        <SkeletonCard className="space-y-3 p-6 lg:col-span-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-8 w-40" /><Skeleton className="h-48" /></SkeletonCard>
-        <SkeletonCard className="space-y-3 p-6"><Skeleton className="h-4 w-32" /><Skeleton className="mx-auto h-40 w-40 rounded-full" /></SkeletonCard>
-      </div>
-      <div className="grid gap-6 lg:grid-cols-3">
-        {[0, 1, 2].map((i) => (
-          <SkeletonCard key={i} className="space-y-3 p-6"><Skeleton className="h-4 w-36" />{[0, 1, 2, 3].map((k) => <Skeleton key={k} className="h-10" />)}</SkeletonCard>
+      <div className="mt-10 grid grid-cols-3 gap-x-2 gap-y-7 sm:grid-cols-4 lg:grid-cols-6">
+        {Array.from({ length: 18 }, (_, i) => (
+          <div key={i} className="flex flex-col items-center gap-2.5">
+            <Skeleton className="h-[88px] w-[88px] rounded-[24px]" />
+            <Skeleton className="h-3 w-16" />
+          </div>
         ))}
       </div>
     </div>
