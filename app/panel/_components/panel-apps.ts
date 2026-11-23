@@ -3,7 +3,7 @@ import {
   MdBarChart, MdInventory2, MdChat, MdDescription, MdCampaign, MdCategory, MdCardGiftcard,
   MdLocalShipping, MdPrecisionManufacturing, MdGroup, MdVerifiedUser, MdSettings, MdLocalOffer,
   MdWarehouse, MdBuild, MdChecklist, MdConfirmationNumber, MdExtension, MdImage, MdFolder,
-  MdAttachMoney, MdCalculate, MdInsights, MdCalendarMonth, MdVideocam, MdHandshake, MdHistory,
+  MdAttachMoney, MdCalculate, MdInsights, MdCalendarMonth, MdVideocam, MdHandshake, MdHistory, MdFactCheck,
 } from "react-icons/md";
 
 /** Tono de la paleta: define el color del icono (ver .panel-tone-* en globals.css). */
@@ -52,6 +52,7 @@ export const PANEL_APPS: PanelApp[] = [
   { key: "logistica", label: "Logística", href: "/panel/logistica", module: "MODULE_LOGISTICA", icon: MdLocalShipping, tone: 3, dock: true },
   { key: "bodegas", label: "Bodegas", href: "/panel/bodegas", module: "MODULE_BODEGAS", icon: MdWarehouse, tone: 5 },
   { key: "mantenimiento", label: "Mantenimiento", href: "/panel/mantenimiento", module: "MODULE_MANTENIMIENTO", icon: MdBuild, tone: 2 },
+  { key: "calidad", label: "Calidad", href: "/panel/calidad", module: "MODULE_CALIDAD", icon: MdFactCheck, tone: 3 },
   { key: "tareas", label: "Tareas", href: "/panel/tareas", module: "MODULE_TAREAS", icon: MdChecklist, tone: 1 },
   { key: "solicitudes", label: "Solicitudes", href: "/panel/tickets", module: "MODULE_TICKETS", icon: MdConfirmationNumber, tone: 3 },
   { key: "odoo", label: "Odoo", href: "/panel/odoo", module: "MODULE_ODOO", icon: MdExtension, tone: 5 },

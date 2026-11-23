@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   MdLocalShipping, MdBuild, MdPrecisionManufacturing, MdWarehouse,
   MdArrowForward, MdTimerOff, MdSwapHoriz, MdAttachMoney, MdReportProblem, MdCheckCircle,
-  MdHandshake,
+  MdHandshake, MdFactCheck,
 } from "react-icons/md";
 import { COP, fmtDate, todayBogota, Kpi, Section, Empty, Stat, Table, DateRange } from "../_components/ops-ui";
 import { SkeletonTable } from "../../components/skeleton";
@@ -42,9 +42,11 @@ const MODULE_META: Record<string, { label: string; href: string; icon: React.Rea
   MODULE_PRODUCCION: { label: "Inyección", href: "/panel/produccion", icon: <MdPrecisionManufacturing size={16} />, color: "#1D4ED8" },
   MODULE_ENSAMBLE: { label: "Ensamble", href: "/panel/ensamble", icon: <MdHandshake size={16} />, color: "#6D28D9" },
   MODULE_BODEGAS: { label: "Bodegas", href: "/panel/bodegas", icon: <MdWarehouse size={16} />, color: "#15803D" },
+  MODULE_CALIDAD: { label: "Calidad", href: "/panel/calidad", icon: <MdFactCheck size={16} />, color: "#BE185D" },
 };
 
 const KPI_LABELS: Record<string, string> = {
+  casos: "Casos", unidadesDespachadas: "Despachadas", defectuosoPct: "% defectuoso", casosFueraDeMeta: "Casos > 2%",
   corridas: "Corridas", unidadesEnsambladas: "Ensambladas", unidadesBuenas: "Buenas",
   unidadesDefectuosas: "Defectuosas", calidadPct: "% calidad", unidadesPorHoraHombre: "Und/hora-hombre",
   rutasTotal: "Rutas", rutasFinalizadas: "Rutas finalizadas", pedidosEnRuta: "Pedidos en ruta",

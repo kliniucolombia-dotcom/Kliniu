@@ -119,6 +119,7 @@ model User {
   quotationsAsClient       Quotation[]        @relation("QuotationClient")
   productionRuns           ProductionRun[]    @relation("ProductionOperator")
   assemblyRuns             AssemblyRun[]      @relation("AssemblyLeader")
+  qualityCases             QualityCase[]      @relation("QualityCaseCreator")
   productionOrdersCreated  ProductionOrder[]  @relation("ProductionOrderCreatedBy")
   productionOrdersApproved ProductionOrder[]  @relation("ProductionOrderApprovedBy")
   employee                 Employee?
@@ -629,6 +630,7 @@ enum PanelModule {
   MODULE_TICKETS
   MODULE_CONTROL_PRODUCCION
   MODULE_TAREAS
+  MODULE_CALIDAD
 }
 
 enum BannerType {
@@ -2400,4 +2402,33 @@ model WatiLesson {
   createdAt      DateTime           @default(now())
 
   @@index([status, createdAt])
+}
+
+enum QualityStatus {
+  CASE
+  CONFIRMED
+  PROPOSED_ACTION
+}
+
+/// Caso de calidad (producto defectuoso en un despacho). KPI: defectuosa / despachada <= 2%.
+model QualityCase {
+  id            String        @id @default(cuid())
+  status        QualityStatus @default(CASE)
+  deliveryNote  String
+  lotNumber     String
+  city          String
+  photos        Json          @default("[]")
+  dispatchedQty Int
+  defectiveQty  Int
+  analysis      String?
+  diagnosis     String?
+  followUp      String?
+  solution      String?
+  createdById   String
+  createdBy     User          @relation("QualityCaseCreator", fields: [createdById], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
 }
