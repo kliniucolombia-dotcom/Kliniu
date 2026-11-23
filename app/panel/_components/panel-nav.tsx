@@ -91,8 +91,14 @@ export const NAV: NavItem[] = [
       { href: "/panel/empaque", label: "Empaque", module: "MODULE_PEDIDOS", icon: <MdInventory2 size={17} /> },
       { href: "/panel/logistica", label: "Logística", module: "MODULE_LOGISTICA", icon: <MdLocalShipping size={17} /> },
       { href: "/panel/mantenimiento", label: "Mantenimiento", module: "MODULE_MANTENIMIENTO", icon: <MdBuild size={17} /> },
-      { href: "/panel/calidad", label: "Calidad", module: "MODULE_CALIDAD", icon: <MdFactCheck size={17} /> },
     ],
+  },
+  {
+    key: "calidad",
+    href: "/panel/calidad",
+    label: "Calidad",
+    icon: <MdFactCheck size={18} />,
+    module: "MODULE_CALIDAD",
   },
   {
     key: "integraciones",
