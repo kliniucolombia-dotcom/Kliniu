@@ -1422,3 +1422,20 @@ body {
     opacity: 1;
   }
 }
+
+/* Panel: tiles glossy con el icono en la paleta de marca */
+.panel-tile {
+  background: linear-gradient(#fff, #dfe4e8);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15), inset 0 1px 0 #fff;
+}
+.panel-tone-1 { color: #2a9db0; }
+.panel-tone-2 { color: #ce8d58; }
+.panel-tone-3 { color: #4fae9f; }
+.panel-tone-4 { color: #d4a64f; }
+.panel-tone-5 { color: #6285a0; }
+@keyframes panel-dock-in {
+  from { transform: translateY(140%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.panel-dock { animation: panel-dock-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@media (prefers-reduced-motion: reduce) { .panel-dock { animation: none; } }
