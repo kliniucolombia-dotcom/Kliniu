@@ -14,7 +14,7 @@ type Check = "C" | "N" | "NA";
 type Inspection = {
   id: string; inspectedOn: string; productRef: string; lotNumber: string; lotQty: number; sampleSize: number;
   sampleRange: string; checks: Record<string, Check>; nonConforming: number; lotConforming: boolean; action: string | null;
-  createdBy: { fullName: string }; signatureData: string | null; signedAt: string | null; signedBy: { fullName: string } | null;
+  createdBy: { fullName: string }; updatedAt: string; signatureData: string | null; signedAt: string | null; signedBy: { fullName: string } | null;
 };
 
 // Mismo orden y textos del formato en papel.
@@ -316,7 +316,7 @@ function SignModal({ item, onClose, onDone, onError }: { item: Inspection; onClo
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     setSubmitting(true);
-    const res = await patchReq(`/api/panel/control-calidad/${item.id}`, { action: "sign", signatureData: signature });
+    const res = await patchReq(`/api/panel/control-calidad/${item.id}`, { action: "sign", signatureData: signature, updatedAt: item.updatedAt });
     setSubmitting(false);
     if (res.ok) onDone(`Lote ${item.lotNumber} liberado`); else onError(res.error!);
   };

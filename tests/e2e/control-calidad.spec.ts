@@ -148,9 +148,15 @@ test("quien no es el ingeniero ve 'Pendiente de firma' y no puede editar un firm
 
   await page.context().clearCookies();
   await authenticateAs(page, "email = $1", SIGNER);
-  expect((await page.request.patch(`/api/panel/control-calidad/${id}`, { data: { action: "sign", signatureData: "data:image/jpeg;base64,xx" } })).status()).toBe(400);
-  expect((await page.request.patch(`/api/panel/control-calidad/${id}`, { data: { action: "sign", signatureData: SIG } })).status()).toBe(200);
-  expect((await page.request.patch(`/api/panel/control-calidad/${id}`, { data: { action: "sign", signatureData: SIG } })).status()).toBe(409);
+  const seen = (await (await page.request.get("/api/panel/control-calidad")).json()).inspections.find((x: { id: string }) => x.id === id).updatedAt;
+  const sign = (data: object) => page.request.patch(`/api/panel/control-calidad/${id}`, { data: { action: "sign", ...data } });
+  expect((await sign({ signatureData: "data:image/jpeg;base64,xx", updatedAt: seen })).status()).toBe(400);
+  // Alguien edita el lote después de que el ingeniero lo abrió: la firma con la versión vieja se rechaza.
+  expect((await page.request.patch(`/api/panel/control-calidad/${id}`, { data: { ...valid("vista"), nonConforming: 1 } })).status()).toBe(200);
+  expect((await sign({ signatureData: SIG, updatedAt: seen })).status()).toBe(409);
+  const fresh = (await (await page.request.get("/api/panel/control-calidad")).json()).inspections.find((x: { id: string }) => x.id === id).updatedAt;
+  expect((await sign({ signatureData: SIG, updatedAt: fresh })).status()).toBe(200);
+  expect((await sign({ signatureData: SIG, updatedAt: fresh })).status()).toBe(409);
   await page.goto("/panel/control-calidad");
   await expect(row.getByLabel("Editar inspección")).toHaveCount(0);
   await expect(row.getByLabel("Eliminar inspección")).toHaveCount(0);

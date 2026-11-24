@@ -20,10 +20,12 @@ export async function PATCH(request: Request, { params }: Ctx) {
   try {
     if (signing) {
       if (access.user.email !== QUALITY_SIGNER_EMAIL) return fail("NOT_SIGNER", 403);
-      return Response.json({ inspection: await signInspection(id, access.user.id, body.signatureData) });
+      return Response.json({ inspection: await signInspection(id, access.user.id, body.signatureData, body.updatedAt) });
     }
     return Response.json({ inspection: await updateInspection(id, parseInspectionInput(body)) });
   } catch (e) {
+    // P2025: otro usuario editó o firmó entre la lectura y la escritura.
+    if ((e as { code?: string })?.code === "P2025") return fail("STALE", 409);
     const msg = e instanceof Error ? INSPECTION_ERRORS[e.message] : undefined;
     if (msg) return Response.json({ error: msg }, { status: 400 });
     throw e;

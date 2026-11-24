@@ -58,6 +58,7 @@ export const INSPECTION_ERRORS: Record<string, string> = {
   MISSING_ACTION: "Si el lote no es conforme, describe la acción sobre el producto no conforme",
   INVALID_SIGNATURE: "Dibuja la firma antes de liberar",
   ALREADY_SIGNED: "El lote ya está firmado y no se puede modificar",
+  STALE: "El registro cambió mientras lo revisabas. Vuelve a abrirlo y firma de nuevo",
   NOT_SIGNER: "Solo el ingeniero puede firmar la liberación",
 };
 
@@ -74,13 +75,16 @@ export const updateInspection = (id: string, data: ReturnType<typeof parseInspec
   db().qualityInspection.update({ where: { id, signedAt: null }, data, include });
 export const deleteInspection = (id: string) => db().qualityInspection.delete({ where: { id, signedAt: null } });
 
-export function signInspection(id: string, signerId: string, signatureData: unknown) {
+/** Firma solo la versión que el ingeniero vio: si alguien editó el lote después, no matchea (P2025 → STALE). */
+export function signInspection(id: string, signerId: string, signatureData: unknown, seenUpdatedAt: unknown) {
+  const seen = typeof seenUpdatedAt === "string" ? new Date(seenUpdatedAt) : null;
+  if (!seen || Number.isNaN(seen.getTime())) throw new Error("STALE");
   // PNG del SignaturePad; ~300 KB es de sobra para un trazo.
   if (typeof signatureData !== "string" || !signatureData.startsWith("data:image/png;base64,") || signatureData.length > 300_000) {
     throw new Error("INVALID_SIGNATURE");
   }
   return db().qualityInspection.update({
-    where: { id, signedAt: null },
+    where: { id, signedAt: null, updatedAt: seen },
     data: { signatureData, signedById: signerId, signedAt: new Date() },
     include,
   });
