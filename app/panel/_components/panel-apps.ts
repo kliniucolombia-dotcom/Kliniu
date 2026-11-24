@@ -43,7 +43,7 @@ export const PANEL_APPS: PanelApp[] = [
   { key: "precio", label: "Precio de Venta", href: "/panel/calculadora-precio", module: "MODULE_CALCULADORA_PRECIO", icon: MdCalculate, tone: 1 },
   {
     key: "operaciones", label: "Operaciones", href: "/panel/operaciones", module: "MODULE_PRODUCCION",
-    anyModule: ["MODULE_PRODUCCION", "MODULE_ENSAMBLE", "MODULE_BODEGAS", "MODULE_LOGISTICA", "MODULE_MANTENIMIENTO"],
+    anyModule: ["MODULE_PRODUCCION", "MODULE_ENSAMBLE", "MODULE_BODEGAS", "MODULE_LOGISTICA", "MODULE_MANTENIMIENTO", "MODULE_CONTROL_CALIDAD"],
     icon: MdPrecisionManufacturing, tone: 4, dock: true,
   },
   { key: "inyeccion", label: "Inyección", href: "/panel/produccion", module: "MODULE_PRODUCCION", icon: MdPrecisionManufacturing, tone: 2 },

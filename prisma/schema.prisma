@@ -120,6 +120,8 @@ model User {
   productionRuns           ProductionRun[]    @relation("ProductionOperator")
   assemblyRuns             AssemblyRun[]      @relation("AssemblyLeader")
   qualityCases             QualityCase[]      @relation("QualityCaseCreator")
+  qualityInspections       QualityInspection[] @relation("QualityInspectionCreator")
+  qualityInspectionsSigned QualityInspection[] @relation("QualityInspectionSigner")
   productionOrdersCreated  ProductionOrder[]  @relation("ProductionOrderCreatedBy")
   productionOrdersApproved ProductionOrder[]  @relation("ProductionOrderApprovedBy")
   employee                 Employee?
@@ -631,6 +633,7 @@ enum PanelModule {
   MODULE_CONTROL_PRODUCCION
   MODULE_TAREAS
   MODULE_CALIDAD
+  MODULE_CONTROL_CALIDAD
 }
 
 enum BannerType {
@@ -2431,4 +2434,31 @@ model QualityCase {
 
   @@index([status])
   @@index([createdAt])
+}
+
+/// Formato de inspección y control de calidad de producto terminado (una fila del formato
+/// en papel = un lote). La firma de liberación la pone solo el ingeniero (ver lib/quality-inspection.ts).
+model QualityInspection {
+  id             String    @id @default(cuid())
+  inspectedOn    DateTime
+  productRef     String
+  lotNumber      String
+  lotQty         Int
+  sampleSize     Int
+  sampleRange    String
+  /// { [criterio]: "C" | "N" | "NA" }
+  checks         Json
+  nonConforming  Int
+  lotConforming  Boolean
+  action         String?
+  createdById    String
+  createdBy      User      @relation("QualityInspectionCreator", fields: [createdById], references: [id])
+  signatureData  String?
+  signedById     String?
+  signedBy       User?     @relation("QualityInspectionSigner", fields: [signedById], references: [id])
+  signedAt       DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([inspectedOn])
 }

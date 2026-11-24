@@ -7,7 +7,7 @@ import {
   MdDashboard, MdInventory2, MdCategory, MdBarChart, MdCampaign, MdAttachMoney,
   MdCalculate, MdDescription, MdPrecisionManufacturing, MdSync, MdPeople,
   MdViewCarousel, MdGridView, MdLocalOffer, MdBadge, MdSell, MdWarehouse,
-  MdChat, MdFolder, MdLocalShipping, MdBuild, MdConfirmationNumber, MdChecklist, MdFactCheck,
+  MdChat, MdFolder, MdLocalShipping, MdBuild, MdConfirmationNumber, MdChecklist, MdFactCheck, MdVerified,
 } from "react-icons/md";
 import type { IconType } from "react-icons";
 import { SkeletonPanelPage } from "../../components/skeleton";
@@ -74,6 +74,7 @@ const MODULE_LABELS: Record<string, string> = {
   MODULE_TICKETS: "Solicitudes (PQRS)",
   MODULE_TAREAS: "Tareas",
   MODULE_CALIDAD: "Calidad",
+  MODULE_CONTROL_CALIDAD: "Control de calidad",
 };
 
 const ROLES: Role[] = ["CUSTOMER", "ADMIN", "SELLER", "PACKING", "SUPERADMIN", "RRHH", "BODEGA", "DISENO", "MARKETING", "JEFE_VENTAS", "TESORERIA", "INGENIERIA", "LOGISTICA", "LIDER_ENSAMBLE", "LIDER_INYECCION", "MANTENIMIENTO", "JEFE_OPERACIONES", "DIRECTOR_OPERACIONES", "OPERARIO"];
@@ -189,6 +190,7 @@ const MODULE_ICON: Record<string, { Icon: IconType; className: string }> = {
   MODULE_TICKETS: { Icon: MdConfirmationNumber, className: "bg-[#D9F2F3] text-[#0E7C82]" },
   MODULE_TAREAS: { Icon: MdChecklist, className: "bg-[#E6FAFB] text-[#0C535B]" },
   MODULE_CALIDAD: { Icon: MdFactCheck, className: "bg-[#FCE7F3] text-[#BE185D]" },
+  MODULE_CONTROL_CALIDAD: { Icon: MdVerified, className: "bg-[#DCFCE7] text-[#15803D]" },
 };
 
 function ModuleIcon({ module }: { module: string }) {

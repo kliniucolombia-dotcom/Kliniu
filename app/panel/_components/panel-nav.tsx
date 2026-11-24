@@ -79,7 +79,7 @@ export const NAV: NavItem[] = [
         href: "/panel/operaciones",
         label: "Tablero",
         module: "MODULE_PRODUCCION",
-        anyModule: ["MODULE_PRODUCCION", "MODULE_ENSAMBLE", "MODULE_BODEGAS", "MODULE_LOGISTICA", "MODULE_MANTENIMIENTO"],
+        anyModule: ["MODULE_PRODUCCION", "MODULE_ENSAMBLE", "MODULE_BODEGAS", "MODULE_LOGISTICA", "MODULE_MANTENIMIENTO", "MODULE_CONTROL_CALIDAD"],
         icon: <MdDashboard size={17} />,
       },
       { href: "/panel/produccion", label: "Inyección", module: "MODULE_PRODUCCION", icon: <MdPrecisionManufacturing size={17} /> },
@@ -91,6 +91,7 @@ export const NAV: NavItem[] = [
       { href: "/panel/empaque", label: "Empaque", module: "MODULE_PEDIDOS", icon: <MdInventory2 size={17} /> },
       { href: "/panel/logistica", label: "Logística", module: "MODULE_LOGISTICA", icon: <MdLocalShipping size={17} /> },
       { href: "/panel/mantenimiento", label: "Mantenimiento", module: "MODULE_MANTENIMIENTO", icon: <MdBuild size={17} /> },
+      { href: "/panel/control-calidad", label: "Control de calidad", module: "MODULE_CONTROL_CALIDAD", icon: <MdVerified size={17} /> },
     ],
   },
   {
