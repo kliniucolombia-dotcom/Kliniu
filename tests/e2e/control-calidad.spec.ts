@@ -182,3 +182,28 @@ test("filtro de fechas e impresión del formato", async ({ page }) => {
   const width = await sheet.locator("table").evaluate((t) => t.scrollWidth <= (t.parentElement?.clientWidth ?? 0) + 1);
   expect(width).toBe(true); // la tabla no se corta a la derecha
 });
+
+test("UI: adjuntar varias fotos y un documento a la inspección", async ({ page }) => {
+  await authenticateAs(page, "email = $1", SIGNER);
+  await page.goto("/panel/control-calidad");
+  await page.getByRole("button", { name: "Nueva inspección" }).click();
+  const modal = page.locator("div.fixed");
+  const text = modal.locator("input:not([type=date]):not([type=number]):not([type=file])");
+  const nums = modal.locator("input[type=number]");
+  await text.nth(0).fill(`${PREFIX}adj`);
+  await text.nth(1).fill("2160");
+  await text.nth(2).fill("1-3");
+  await nums.nth(0).fill("20");
+  await nums.nth(1).fill("3");
+  const groups = modal.getByRole("radiogroup");
+  for (let i = 0; i < 9; i++) await groups.nth(i).getByRole("radio", { name: "C", exact: true }).click();
+  await modal.getByRole("radiogroup", { name: "Conformidad del lote" }).getByRole("radio", { name: "Sí" }).click();
+
+  await modal.locator("input[type=file]").setInputFiles(["public/logo.png", "public/account-access-banner.png", "package.json"].map((p) => p));
+  await expect(modal.getByRole("button", { name: "Quitar adjunto" })).toHaveCount(2); // package.json (json) no es un tipo permitido
+  await modal.getByRole("button", { name: "Confirmar" }).click();
+  await expect(page.getByText("Inspección registrada")).toBeVisible();
+
+  const row = page.locator("div.print\\:hidden tr").filter({ hasText: `${PREFIX}adj` });
+  await expect(row.locator("a[target=_blank] img")).toHaveCount(2);
+});

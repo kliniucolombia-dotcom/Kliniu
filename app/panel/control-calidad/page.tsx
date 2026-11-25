@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { MdAdd, MdDelete, MdDraw, MdEdit, MdPrint, MdVerified } from "react-icons/md";
+import { MdAdd, MdAttachFile, MdDelete, MdDraw, MdEdit, MdPrint, MdVerified } from "react-icons/md";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import {
   Badge, Empty, Footer, Kpi, Modal, btnGhost, btnPrimary, fmtDate, fmtDateTime, inputCls, labelCls,
@@ -10,10 +10,11 @@ import {
 } from "../_components/ops-ui";
 import { SignaturePad } from "../mantenimiento/signature-pad";
 
+type Attachment = { url: string; name: string; isImage: boolean };
 type Check = "C" | "N" | "NA";
 type Inspection = {
   id: string; inspectedOn: string; productRef: string; lotNumber: string; lotQty: number; sampleSize: number;
-  sampleRange: string; checks: Record<string, Check>; nonConforming: number; lotConforming: boolean; action: string | null;
+  sampleRange: string; checks: Record<string, Check>; nonConforming: number; lotConforming: boolean; action: string | null; attachments: Attachment[];
   createdBy: { fullName: string }; updatedAt: string; signatureData: string | null; signedAt: string | null; signedBy: { fullName: string } | null;
 };
 
@@ -106,14 +107,14 @@ export default function ControlCalidadPage() {
 
       {loading ? <p className="text-sm text-[#94A3B8]">Cargando…</p> : inRange.length === 0 ? <Empty text="Sin inspecciones en el período." /> : (
         <div className="min-w-0 overflow-x-auto rounded-2xl border border-[#E2E8F0] bg-white">
-          <table className="w-full min-w-[1400px]">
+          <table className="w-full min-w-[1500px]">
             <thead className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-left">
               <tr>
                 <th className={th}>Fecha</th><th className={th}>Referencia / producto</th><th className={th}>No. lote</th>
                 <th className={th}>Piezas lote</th><th className={th}>Muestra</th><th className={th}>Consecutivo</th>
                 {CHECKS.map(([k, short, full]) => <th key={k} className={`${th} text-center`} title={full}>{short}</th>)}
                 <th className={th}>No conformes</th><th className={th}>Lote conforme</th><th className={th}>Acción no conforme</th>
-                <th className={th}>Firma de liberación</th><th className={th} aria-label="Acciones" />
+                <th className={th}>Adjuntos</th><th className={th}>Firma de liberación</th><th className={th} aria-label="Acciones" />
               </tr>
             </thead>
             <tbody>
@@ -133,6 +134,20 @@ export default function ControlCalidadPage() {
                   <td className={td}>{r.nonConforming}</td>
                   <td className={td}><Badge label={r.lotConforming ? "Sí" : "No"} cls={r.lotConforming ? "bg-[#DCFCE7] text-[#15803D]" : "bg-[#FEE2E2] text-[#B91C1C]"} /></td>
                   <td className={`${td} max-w-[200px]`}>{r.action ?? "—"}</td>
+                  <td className={td}>
+                    {r.attachments.length === 0 ? "—" : (
+                      <div className="flex max-w-[140px] flex-wrap gap-1">
+                        {r.attachments.map((a, i) => (
+                          <a key={`${a.url}-${i}`} href={a.url} target="_blank" rel="noopener noreferrer" title={a.name}>
+                            {a.isImage
+                              // eslint-disable-next-line @next/next/no-img-element
+                              ? <img src={a.url} alt={a.name} className="h-9 w-9 rounded border border-[#E2E8F0] object-cover" />
+                              : <span className="flex h-9 w-9 items-center justify-center rounded border border-[#E2E8F0] text-[#64748B]"><MdAttachFile size={16} /></span>}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </td>
                   <td className={td}>
                     {r.signedAt && r.signatureData ? (
                       <div>
@@ -239,6 +254,7 @@ function InspectionModal({ item, onClose, onDone, onError }: { item?: Inspection
   });
   const [checks, setChecks] = useState<Record<string, Check>>(item?.checks ?? {});
   const [lotConforming, setLotConforming] = useState<boolean | null>(item?.lotConforming ?? null);
+  const [attachments, setAttachments] = useState<Attachment[]>(item?.attachments ?? []);
   const [submitting, setSubmitting] = useState(false);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
   const lot = Number(f.lotQty), sample = Number(f.sampleSize), nc = Number(f.nonConforming);
@@ -249,7 +265,7 @@ function InspectionModal({ item, onClose, onDone, onError }: { item?: Inspection
 
   const submit = async () => {
     setSubmitting(true);
-    const body = { ...f, lotQty: lot, sampleSize: sample, nonConforming: nc, checks, lotConforming };
+    const body = { ...f, lotQty: lot, sampleSize: sample, nonConforming: nc, checks, lotConforming, attachments };
     const res = item ? await patchReq(`/api/panel/control-calidad/${item.id}`, body) : await post("/api/panel/control-calidad", body);
     setSubmitting(false);
     if (res.ok) onDone(item ? "Inspección actualizada" : "Inspección registrada — pendiente de firma"); else onError(res.error!);
@@ -307,7 +323,51 @@ function InspectionModal({ item, onClose, onDone, onError }: { item?: Inspection
         <label className={labelCls}>Acción sobre el producto no conforme{lotConforming === false && <Req />}</label>
         <textarea rows={2} value={f.action} onChange={set("action")} className={inputCls} />
       </div>
+      <div><label className={labelCls}>Fotos o archivos</label><AttachmentsField value={attachments} onChange={setAttachments} onError={onError} /></div>
     </Modal>
+  );
+}
+
+function AttachmentsField({ value, onChange, onError }: { value: Attachment[]; onChange: (v: Attachment[]) => void; onError: (m: string) => void }) {
+  const [uploading, setUploading] = useState(false);
+  const add = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setUploading(true);
+    try {
+      const next = [...value];
+      for (const file of Array.from(files)) {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/api/panel/control-calidad/upload", { method: "POST", body: fd });
+        const json = await res.json();
+        if (!res.ok) { onError(json.error ?? `No fue posible subir ${file.name}`); continue; }
+        next.push({ url: json.url, name: json.name, isImage: json.isImage });
+      }
+      onChange(next);
+    } finally { setUploading(false); }
+  };
+  return (
+    <div className="space-y-2">
+      <label className={`${btnGhost} cursor-pointer`}>
+        <MdAttachFile size={16} />{uploading ? "Subiendo…" : "Agregar fotos o archivos"}
+        <input type="file" multiple accept="image/jpeg,image/png,image/webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt" className="hidden" disabled={uploading} onChange={(e) => { void add(e.target.files); e.target.value = ""; }} />
+      </label>
+      {value.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {value.map((a, i) => (
+            <span key={`${a.url}-${i}`} className="flex items-center gap-1 rounded-lg border border-[#E2E8F0] bg-white p-1">
+              <a href={a.url} target="_blank" rel="noopener noreferrer" title={a.name} className="flex items-center gap-1">
+                {a.isImage
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={a.url} alt={a.name} className="h-12 w-12 rounded object-cover" />
+                  : <><MdAttachFile size={16} className="text-[#64748B]" /><span className="max-w-[140px] truncate text-xs text-[#1A1A1A]">{a.name}</span></>}
+              </a>
+              <button type="button" className="rounded px-1 text-xs font-bold text-[#DC2626] hover:bg-[#FEE2E2]" onClick={() => onChange(value.filter((_, k) => k !== i))} aria-label="Quitar adjunto">×</button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

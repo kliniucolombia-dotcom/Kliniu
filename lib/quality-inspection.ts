@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { parseBogotaDate } from "@/lib/logistics";
 import { isRecord } from "@/lib/operations-validation";
+import { normalizeAttachments } from "@/lib/maintenance-upload";
 
 /** Único firmante de la liberación: Cristian Beltrán (ingeniero / jefe de operaciones). */
 export const QUALITY_SIGNER_EMAIL = "jefeoperaciones@kliniu.com";
@@ -44,7 +45,7 @@ export function parseInspectionInput(raw: unknown) {
   if (!raw.lotConforming && !action) throw new Error("MISSING_ACTION");
   return {
     inspectedOn: parseBogotaDate(date), productRef, lotNumber, lotQty, sampleSize, sampleRange,
-    checks, nonConforming, lotConforming: raw.lotConforming, action,
+    checks, nonConforming, lotConforming: raw.lotConforming, action, attachments: normalizeAttachments(raw.attachments),
   };
 }
 

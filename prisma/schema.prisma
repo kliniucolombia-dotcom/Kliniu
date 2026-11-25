@@ -2451,6 +2451,8 @@ model QualityInspection {
   nonConforming  Int
   lotConforming  Boolean
   action         String?
+  /// [{ url, name, isImage }]
+  attachments    Json      @default("[]")
   createdById    String
   createdBy      User      @relation("QualityInspectionCreator", fields: [createdById], references: [id])
   signatureData  String?
