@@ -207,3 +207,45 @@ test("UI: adjuntar varias fotos y un documento a la inspección", async ({ page 
   const row = page.locator("div.print\\:hidden tr").filter({ hasText: `${PREFIX}adj` });
   await expect(row.locator("a[target=_blank] img")).toHaveCount(2);
 });
+
+test("UI: adjuntar video sube directo a Storage; rechaza falso y >50 MB", async ({ page }) => {
+  const { execFileSync } = await import("node:child_process");
+  const { readFileSync, mkdtempSync, writeFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const { tmpdir } = await import("node:os");
+  const { createClient } = await import("@supabase/supabase-js");
+  const dir = mkdtempSync(join(tmpdir(), "cc-video-"));
+  const mp4 = join(dir, "inspeccion.mp4");
+  const big = join(dir, "grande.mp4");
+  writeFileSync(big, Buffer.alloc(51 * 1024 * 1024));
+  execFileSync("node_modules/ffmpeg-static/ffmpeg", ["-loglevel", "error", "-f", "lavfi", "-i", "testsrc=size=320x240:rate=15", "-t", "2", "-pix_fmt", "yuv420p", mp4]);
+
+  await authenticateAs(page, "email = $1", SIGNER);
+  await page.goto("/panel/control-calidad");
+  await page.getByRole("button", { name: "Nueva inspección" }).click();
+  const input = page.locator("div.fixed input[type=file]");
+  // Playwright no mezcla archivos en memoria y rutas: el grande va primero solo.
+  await input.setInputFiles(big);
+  await expect(page.getByText(/grande\.mp4 supera 50 MB/)).toBeVisible();
+  await input.setInputFiles([
+    { name: "inspeccion.mp4", mimeType: "video/mp4", buffer: readFileSync(mp4) },
+    { name: "falso.mp4", mimeType: "video/mp4", buffer: Buffer.from("esto no es un video, es texto plano") },
+  ]);
+  const video = page.locator("div.fixed video");
+  await expect(video).toHaveCount(1, { timeout: 30_000 });
+  await expect(page.getByText("El video debe ser MP4, MOV o WEBM.")).toBeVisible();
+
+  const url = (await video.getAttribute("src"))!;
+  const res = await page.request.get(url);
+  expect(res.status()).toBe(200);
+  expect((await res.body()).subarray(4, 8).toString()).toBe("ftyp");
+
+  // Limpieza: el video real; el falso ya lo borró el servidor.
+  const m = (process.env.DIRECT_URL || process.env.DATABASE_URL || "").match(/postgres\.([a-z0-9]+):/i);
+  const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL || `https://${m?.[1]}.supabase.co`, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
+  const bucket = sb.storage.from(process.env.SUPABASE_STORAGE_BUCKET || "product-images");
+  const left = (await bucket.list("mantenimiento/calidad/videos", { limit: 100 })).data ?? [];
+  const mine = url.split("/mantenimiento/calidad/videos/")[1];
+  expect(left.map((o) => o.name)).toContain(mine);
+  await bucket.remove([`mantenimiento/calidad/videos/${mine}`]);
+});

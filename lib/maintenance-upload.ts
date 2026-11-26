@@ -6,7 +6,7 @@ export type MaintenanceAttachment = { url: string; name: string; isImage: boolea
 const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 // Documentos permitidos (además de imágenes). La extensión y el content-type salen de aquí, no del cliente.
-const DOC_TYPES: Record<string, string> = {
+export const DOC_TYPES: Record<string, string> = {
   "application/pdf": "pdf",
   "application/msword": "doc",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
@@ -22,7 +22,7 @@ const MAGIC = {
   zip: [0x50, 0x4b], // docx/xlsx/pptx
   ole: [0xd0, 0xcf, 0x11, 0xe0], // doc/xls/ppt
 };
-function matchesMagic(type: string, head: Buffer) {
+export function matchesMagic(type: string, head: Buffer) {
   const starts = (sig: number[]) => sig.every((b, i) => head[i] === b);
   const ext = DOC_TYPES[type];
   if (ext === "pdf") return starts(MAGIC.pdf);
@@ -92,4 +92,45 @@ export function normalizeAttachments(value: unknown): MaintenanceAttachment[] {
         isImage: item.isImage === true,
       }];
     });
+}
+
+// Videos (solo control de calidad): el navegador sube directo a Storage con URL firmada,
+// porque Vercel corta los cuerpos de más de 4,5 MB. 50 MB = máximo por archivo del plan de Supabase.
+export const VIDEO_MAX_BYTES = 50 * 1024 * 1024;
+const VIDEO_TYPES: Record<string, string> = { "video/mp4": "mp4", "video/quicktime": "mov", "video/webm": "webm" };
+const VIDEO_DIR = "mantenimiento/calidad/videos";
+
+export async function startVideoUpload(mimeType: unknown, size: unknown) {
+  if (typeof mimeType !== "string" || !Object.hasOwn(VIDEO_TYPES, mimeType)) throw new Error("INVALID_FILE_TYPE");
+  if (typeof size !== "number" || size <= 0 || size > VIDEO_MAX_BYTES) throw new Error("FILE_TOO_LARGE");
+  const supabase = createSupabaseStorageClient();
+  if (!supabase) throw new Error("STORAGE_NOT_CONFIGURED");
+  const path = `${VIDEO_DIR}/${Date.now()}-${crypto.randomUUID()}.${VIDEO_TYPES[mimeType]}`;
+  const { data, error } = await supabase.storage.from(getStorageBucket()).createSignedUploadUrl(path);
+  if (error || !data) throw new Error(error?.message ?? "UPLOAD_URL_FAILED");
+  return { path, signedUrl: data.signedUrl };
+}
+
+/** Revisa el video ya subido (tamaño, tipo y primeros bytes reales); si no pasa, lo borra. */
+export async function finishVideoUpload(path: unknown, name: unknown) {
+  if (typeof path !== "string" || !path.startsWith(`${VIDEO_DIR}/`) || path.includes("..")) throw new Error("INVALID_PATH");
+  const supabase = createSupabaseStorageClient();
+  if (!supabase) throw new Error("STORAGE_NOT_CONFIGURED");
+  const bucket = supabase.storage.from(getStorageBucket());
+  const file = path.slice(VIDEO_DIR.length + 1);
+  const { data: list } = await bucket.list(VIDEO_DIR, { search: file, limit: 1 });
+  const meta = list?.find((o) => o.name === file)?.metadata as { size?: number; mimetype?: string } | undefined;
+  if (!meta) throw new Error("NOT_UPLOADED");
+  const { data } = bucket.getPublicUrl(path);
+  const head = Buffer.from(await (await fetch(data.publicUrl, { headers: { Range: "bytes=0-15" } })).arrayBuffer());
+  const mimeType = String(meta.mimetype ?? "");
+  const magic = mimeType === "video/webm"
+    ? head[0] === 0x1a && head[1] === 0x45 && head[2] === 0xdf && head[3] === 0xa3
+    : head.subarray(4, 8).toString() === "ftyp"; // mp4 / mov
+  const size = Number(meta.size ?? 0);
+  if (!(size > 0 && size <= VIDEO_MAX_BYTES && VIDEO_TYPES[mimeType] && path.endsWith(`.${VIDEO_TYPES[mimeType]}`) && magic)) {
+    await bucket.remove([path]);
+    throw new Error("INVALID_FILE_TYPE");
+  }
+  return { url: data.publicUrl, name: typeof name === "string" && name.trim() ? name.trim().slice(0, 160) : "Video", isImage: false };
 }

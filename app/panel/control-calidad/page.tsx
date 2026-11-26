@@ -2,7 +2,9 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { MdAdd, MdAttachFile, MdDelete, MdDraw, MdEdit, MdPrint, MdVerified } from "react-icons/md";
+import { MdAdd, MdAttachFile, MdDelete, MdDraw, MdEdit, MdPictureAsPdf, MdPrint, MdVerified, MdVideocam } from "react-icons/md";
+const isVideo = (url: string) => /\.(mp4|mov|webm)(\?|$)/i.test(url);
+const VIDEO_MAX = 50 * 1024 * 1024;
 import { useConfirm } from "@/app/components/confirm-dialog";
 import {
   Badge, Empty, Footer, Kpi, Modal, btnGhost, btnPrimary, fmtDate, fmtDateTime, inputCls, labelCls,
@@ -50,6 +52,8 @@ export default function ControlCalidadPage() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<{ kind: "form"; item?: Inspection } | { kind: "sign"; item: Inspection } | null>(null);
   const [alert, setAlert] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
+  const [printRow, setPrintRow] = useState<Inspection | null>(null);
+  const endPrint = useCallback(() => setPrintRow(null), []);
 
   const load = useCallback(async () => {
     const r = await fetch("/api/panel/control-calidad");
@@ -92,7 +96,7 @@ export default function ControlCalidadPage() {
         <div className="flex flex-wrap items-end gap-2">
           <div><label className={labelCls}>Desde</label><input type="date" aria-label="Desde" value={from} max={to} onChange={(e) => setFrom(e.target.value)} className={inputCls} /></div>
           <div><label className={labelCls}>Hasta</label><input type="date" aria-label="Hasta" value={to} min={from} onChange={(e) => setTo(e.target.value)} className={inputCls} /></div>
-          <button className={btnGhost} onClick={() => window.print()} disabled={inRange.length === 0}><MdPrint size={16} />Imprimir / PDF</button>
+          <button className={btnGhost} onClick={() => void printWhenReady()} disabled={inRange.length === 0}><MdPrint size={16} />Imprimir / PDF</button>
           {perm.canCreate && <button className={btnPrimary} onClick={() => setModal({ kind: "form" })}><MdAdd size={16} />Nueva inspección</button>}
         </div>
       </div>
@@ -142,7 +146,7 @@ export default function ControlCalidadPage() {
                             {a.isImage
                               // eslint-disable-next-line @next/next/no-img-element
                               ? <img src={a.url} alt={a.name} className="h-9 w-9 rounded border border-[#E2E8F0] object-cover" />
-                              : <span className="flex h-9 w-9 items-center justify-center rounded border border-[#E2E8F0] text-[#64748B]"><MdAttachFile size={16} /></span>}
+                              : <span className="flex h-9 w-9 items-center justify-center rounded border border-[#E2E8F0] text-[#64748B]">{isVideo(a.url) ? <MdVideocam size={16} /> : <MdAttachFile size={16} />}</span>}
                           </a>
                         ))}
                       </div>
@@ -162,12 +166,13 @@ export default function ControlCalidadPage() {
                     )}
                   </td>
                   <td className={td}>
-                    {!r.signedAt && (
-                      <div className="flex gap-0.5">
+                    <div className="flex gap-0.5">
+                      <button aria-label={`Descargar PDF del lote ${r.lotNumber}`} title="Descargar PDF" className="rounded p-1 text-[#0C535B] hover:bg-[#F1F5F9]" onClick={() => setPrintRow(r)}><MdPictureAsPdf size={15} /></button>
+                      {!r.signedAt && (<>
                         {perm.canEdit && <button aria-label="Editar inspección" className="rounded p-1 text-[#64748B] hover:bg-[#F1F5F9]" onClick={() => setModal({ kind: "form", item: r })}><MdEdit size={15} /></button>}
                         {perm.canDelete && <button aria-label="Eliminar inspección" className="rounded p-1 text-[#DC2626] hover:bg-[#FEE2E2]" onClick={() => remove(r)}><MdDelete size={15} /></button>}
-                      </div>
-                    )}
+                      </>)}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -178,7 +183,7 @@ export default function ControlCalidadPage() {
 
       </div>
 
-      <PrintSheet rows={inRange} from={from} to={to} />
+      {printRow ? <RecordSheet r={printRow} onDone={endPrint} /> : <PrintSheet rows={inRange} from={from} to={to} />}
 
       {modal?.kind === "form" && <InspectionModal item={modal.item} onClose={() => setModal(null)} onDone={done} onError={fail} />}
       {modal?.kind === "sign" && <SignModal item={modal.item} onClose={() => setModal(null)} onDone={done} onError={fail} />}
@@ -239,6 +244,123 @@ function PrintSheet({ rows, from, to }: { rows: Inspection[]; from: string; to: 
         </tbody>
       </table>
       <p className="mt-1 text-[7px]">C = conforme · N = no conforme · N/A = no aplica</p>
+      {rows.some((r) => r.attachments.some((a) => a.isImage)) && (
+        <div className="break-before-page">
+          <p className="mb-2 text-[11px] font-black">REGISTRO FOTOGRÁFICO</p>
+          {rows.filter((r) => r.attachments.some((a) => a.isImage)).map((r) => (
+            <div key={r.id} className="mb-3 break-inside-avoid">
+              <p className="mb-1 text-[9px] font-bold">Lote {r.lotNumber} · {r.productRef} · {fmtDate(r.inspectedOn)}</p>
+              <div className="grid grid-cols-4 gap-2">
+                {r.attachments.filter((a) => a.isImage).map((a, i) => (
+                  <figure key={`${a.url}-${i}`} className="break-inside-avoid border border-[#94A3B8] p-1">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={a.url} alt={a.name} className="h-[60mm] w-full object-contain" />
+                  </figure>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>,
+    document.body,
+  );
+}
+
+// Abre el diálogo de impresión cuando las fotos ya cargaron; si no, salen en blanco.
+async function printWhenReady() {
+  const imgs = Array.from(document.querySelectorAll<HTMLImageElement>("#cc-print img"));
+  await Promise.all(imgs.map((i) => (i.complete ? null : new Promise((res) => { i.onload = i.onerror = res; }))));
+  window.print();
+}
+
+// PDF de un solo registro (vertical): datos, criterios, firma y fotos grandes.
+function RecordSheet({ r, onDone }: { r: Inspection; onDone: () => void }) {
+  const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
+  useEffect(() => {
+    if (!mounted) return;
+    let cancelled = false;
+    const prev = document.title;
+    void (async () => {
+      await new Promise((res) => setTimeout(res, 0));
+      if (cancelled) return;
+      document.title = `control-calidad-lote-${r.lotNumber}`; // nombre sugerido del PDF
+      window.addEventListener("afterprint", () => { document.title = prev; onDone(); }, { once: true });
+      await printWhenReady();
+    })();
+    return () => { cancelled = true; };
+  }, [mounted, r.lotNumber, onDone]);
+  if (!mounted) return null;
+  const cell = "border border-[#94A3B8] px-2 py-1";
+  const photos = r.attachments.filter((a) => a.isImage);
+  const files = r.attachments.filter((a) => !a.isImage);
+  return createPortal(
+    <div id="cc-print" className="hidden bg-white text-[11px] leading-snug text-black print:block">
+      <style>{`@media print {
+        body > *:not(#cc-print) { display: none !important; }
+        body { background: #fff !important; }
+        @page { size: A4 portrait; margin: 12mm; }
+        #cc-print { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      }`}</style>
+      <div className="mb-3 flex items-center justify-between gap-3 border border-[#94A3B8] px-3 py-2">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="Kliniu" className="h-8 w-auto" />
+        <p className="text-center text-[12px] font-black">FORMATO INSPECCIÓN Y CONTROL DE CALIDAD DE PRODUCTO TERMINADO</p>
+        <p className="whitespace-nowrap">Lote {r.lotNumber}</p>
+      </div>
+      <table className="mb-3 w-full border-collapse">
+        <tbody>
+          <tr><th className={`${cell} w-1/4 bg-[#F1F5F9] text-left`}>Fecha</th><td className={cell}>{fmtDate(r.inspectedOn)}</td><th className={`${cell} w-1/4 bg-[#F1F5F9] text-left`}>No. de lote</th><td className={cell}>{r.lotNumber}</td></tr>
+          <tr><th className={`${cell} bg-[#F1F5F9] text-left`}>Referencia o nombre del producto</th><td className={cell} colSpan={3}>{r.productRef}</td></tr>
+          <tr><th className={`${cell} bg-[#F1F5F9] text-left`}>No. de piezas del lote</th><td className={cell}>{r.lotQty}</td><th className={`${cell} bg-[#F1F5F9] text-left`}>Tamaño de la muestra</th><td className={cell}>{r.sampleSize}</td></tr>
+          <tr><th className={`${cell} bg-[#F1F5F9] text-left`}>Consecutivo de la muestra</th><td className={cell}>{r.sampleRange}</td><th className={`${cell} bg-[#F1F5F9] text-left`}>Registrado por</th><td className={cell}>{r.createdBy.fullName}</td></tr>
+        </tbody>
+      </table>
+      <table className="mb-3 w-full border-collapse">
+        <thead><tr className="bg-[#F1F5F9]"><th className={`${cell} text-left`}>Criterio</th><th className={`${cell} w-24`}>Resultado</th></tr></thead>
+        <tbody>
+          {CHECKS.map(([k, , full]) => (
+            <tr key={k}><td className={cell}>{full}</td><td className={`${cell} text-center font-black`}>{r.checks[k] === "NA" ? "N/A" : r.checks[k]}</td></tr>
+          ))}
+        </tbody>
+      </table>
+      <table className="mb-3 w-full border-collapse">
+        <tbody>
+          <tr><th className={`${cell} w-1/4 bg-[#F1F5F9] text-left`}>Total de no conformes</th><td className={cell}>{r.nonConforming}</td><th className={`${cell} w-1/4 bg-[#F1F5F9] text-left`}>Conformidad del lote</th><td className={`${cell} font-black`}>{r.lotConforming ? "SÍ" : "NO"}</td></tr>
+          <tr><th className={`${cell} bg-[#F1F5F9] text-left`}>Acción sobre el producto no conforme</th><td className={cell} colSpan={3}>{r.action ?? "—"}</td></tr>
+          <tr>
+            <th className={`${cell} bg-[#F1F5F9] text-left`}>Firma de liberación</th>
+            <td className={cell} colSpan={3}>
+              {r.signatureData ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={r.signatureData} alt={`Firma de ${r.signedBy?.fullName ?? "el ingeniero"}`} className="h-14 w-auto" />
+              ) : <span className="text-[#64748B]">Pendiente de firma</span>}
+              {r.signedBy && <p>{r.signedBy.fullName}{r.signedAt && ` · ${fmtDateTime(r.signedAt)}`}</p>}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p className="text-[9px]">C = conforme · N = no conforme · N/A = no aplica</p>
+      {photos.length > 0 && (
+        <>
+          <p className="mb-2 mt-4 text-[12px] font-black">Registro fotográfico ({photos.length})</p>
+          <div className="grid grid-cols-2 gap-3">
+            {photos.map((a, i) => (
+              <figure key={`${a.url}-${i}`} className="break-inside-avoid border border-[#94A3B8] p-1">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={a.url} alt={a.name} className="mx-auto h-[85mm] w-full object-contain" />
+                <figcaption className="mt-1 truncate text-center text-[9px] text-[#64748B]">Foto {i + 1} · {a.name}</figcaption>
+              </figure>
+            ))}
+          </div>
+        </>
+      )}
+      {files.length > 0 && (
+        <div className="mt-3 text-[10px]">
+          <p>Otros adjuntos: {files.filter((a) => !isVideo(a.url)).map((a) => a.name).join(", ") || "—"}</p>
+          {files.filter((a) => isVideo(a.url)).map((a, i) => <p key={`${a.url}-${i}`} className="break-all">Video: {a.name} · <a href={a.url}>{a.url}</a></p>)}
+        </div>
+      )}
     </div>,
     document.body,
   );
@@ -328,6 +450,21 @@ function InspectionModal({ item, onClose, onDone, onError }: { item?: Inspection
   );
 }
 
+/** Video: va directo a Storage (Vercel corta cuerpos de más de 4,5 MB) y el servidor lo revisa al final. */
+async function uploadVideo(file: File): Promise<Attachment | { error: string }> {
+  if (file.size > VIDEO_MAX) return { error: `${file.name} supera 50 MB. Grábalo más corto o en 720p.` };
+  const call = async (data: object) => {
+    const res = await fetch("/api/panel/control-calidad/video", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    const json = await res.json().catch(() => ({}));
+    return res.ok ? json : { error: json.error ?? `No fue posible subir ${file.name}` };
+  };
+  const start = await call({ action: "start", mimeType: file.type, size: file.size });
+  if (start.error) return start;
+  const put = await fetch(start.signedUrl, { method: "PUT", headers: { "Content-Type": file.type, "x-upsert": "false" }, body: file }).catch(() => null);
+  if (!put?.ok) return { error: `No fue posible subir ${file.name}. Revisa la conexión.` };
+  return call({ action: "finish", path: start.path, name: file.name });
+}
+
 function AttachmentsField({ value, onChange, onError }: { value: Attachment[]; onChange: (v: Attachment[]) => void; onError: (m: string) => void }) {
   const [uploading, setUploading] = useState(false);
   const add = async (files: FileList | null) => {
@@ -336,6 +473,11 @@ function AttachmentsField({ value, onChange, onError }: { value: Attachment[]; o
     try {
       const next = [...value];
       for (const file of Array.from(files)) {
+        if (file.type.startsWith("video/")) {
+          const v = await uploadVideo(file);
+          if ("error" in v) onError(v.error); else next.push(v);
+          continue;
+        }
         const fd = new FormData();
         fd.append("file", file);
         const res = await fetch("/api/panel/control-calidad/upload", { method: "POST", body: fd });
@@ -349,8 +491,8 @@ function AttachmentsField({ value, onChange, onError }: { value: Attachment[]; o
   return (
     <div className="space-y-2">
       <label className={`${btnGhost} cursor-pointer`}>
-        <MdAttachFile size={16} />{uploading ? "Subiendo…" : "Agregar fotos o archivos"}
-        <input type="file" multiple accept="image/jpeg,image/png,image/webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt" className="hidden" disabled={uploading} onChange={(e) => { void add(e.target.files); e.target.value = ""; }} />
+        <MdAttachFile size={16} />{uploading ? "Subiendo…" : "Agregar fotos, videos o archivos"}
+        <input type="file" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt" className="hidden" disabled={uploading} onChange={(e) => { void add(e.target.files); e.target.value = ""; }} />
       </label>
       {value.length > 0 && (
         <div className="flex flex-wrap gap-2">
@@ -360,7 +502,9 @@ function AttachmentsField({ value, onChange, onError }: { value: Attachment[]; o
                 {a.isImage
                   // eslint-disable-next-line @next/next/no-img-element
                   ? <img src={a.url} alt={a.name} className="h-12 w-12 rounded object-cover" />
-                  : <><MdAttachFile size={16} className="text-[#64748B]" /><span className="max-w-[140px] truncate text-xs text-[#1A1A1A]">{a.name}</span></>}
+                  : isVideo(a.url)
+                    ? <video src={a.url} muted playsInline preload="metadata" className="h-12 w-20 rounded bg-black object-cover" aria-label={a.name} />
+                    : <><MdAttachFile size={16} className="text-[#64748B]" /><span className="max-w-[140px] truncate text-xs text-[#1A1A1A]">{a.name}</span></>}
               </a>
               <button type="button" className="rounded px-1 text-xs font-bold text-[#DC2626] hover:bg-[#FEE2E2]" onClick={() => onChange(value.filter((_, k) => k !== i))} aria-label="Quitar adjunto">×</button>
             </span>
