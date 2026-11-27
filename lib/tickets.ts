@@ -158,3 +158,10 @@ export function sanitizeTicketExtraFields(
   return result;
 }
 
+
+/**
+ * Al crear una solicitud, a quien no tiene ficha (admins, superadmins) se le crea un Employee técnico
+ * con este prefijo porque Ticket.employeeId es obligatorio. No es un empleado real: se excluye de RRHH.
+ */
+export const SYSTEM_EMPLOYEE_PREFIX = "SYS-";
+export const NOT_SYSTEM_EMPLOYEE = { NOT: { employeeCode: { startsWith: SYSTEM_EMPLOYEE_PREFIX } } };

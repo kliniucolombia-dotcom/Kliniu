@@ -1424,15 +1424,33 @@ body {
 }
 
 /* Panel: tiles glossy con el icono en la paleta de marca */
+/* Tiles de la home del panel: degradado vivo + brillo superior (estilo app iOS). */
 .panel-tile {
-  background: linear-gradient(#fff, #dfe4e8);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15), inset 0 1px 0 #fff;
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  background: linear-gradient(160deg, var(--a), var(--b));
+  box-shadow: 0 10px 22px -8px var(--b), inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -2px 0 rgba(0, 0, 0, 0.12);
 }
-.panel-tone-1 { color: #2a9db0; }
-.panel-tone-2 { color: #ce8d58; }
-.panel-tone-3 { color: #4fae9f; }
-.panel-tone-4 { color: #d4a64f; }
-.panel-tone-5 { color: #6285a0; }
+.panel-tile::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 52% 0;
+  border-radius: inherit;
+  background: linear-gradient(rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.04));
+  pointer-events: none;
+}
+.panel-tile > svg { position: relative; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.18)); }
+.panel-c1 { --a: #3cc6cc; --b: #0e7c86; }
+.panel-c2 { --a: #a66bf5; --b: #6a2bd6; }
+.panel-c3 { --a: #ff9a5a; --b: #e2551b; }
+.panel-c4 { --a: #5f97f7; --b: #2350d8; }
+.panel-c5 { --a: #f46aa6; --b: #c0175f; }
+.panel-c6 { --a: #6d6fe8; --b: #3532a8; }
+.panel-c7 { --a: #f3b85a; --b: #c06a17; }
+.panel-c8 { --a: #3fd09a; --b: #0f8a5f; }
+.panel-c9 { --a: #9bd35a; --b: #4a8a1c; }
+.panel-c10 { --a: #8f9aa8; --b: #4b5563; }
 @keyframes panel-dock-in {
   from { transform: translateY(140%); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }

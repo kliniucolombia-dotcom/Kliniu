@@ -1,5 +1,5 @@
 import { requirePermission, getEffectivePermission } from "@/lib/permissions";
-import { createMold, getMoldKpis, listMoldChanges, listMolds } from "@/lib/molds";
+import { createMold, getMoldKpis, listMoldChanges, listMolds, parseMoldSpecs } from "@/lib/molds";
 import { getMachines } from "@/lib/panel";
 import { parseDateRange } from "@/lib/operations-validation";
 import { broadcastPanelUpdate } from "@/lib/realtime";
@@ -37,13 +37,15 @@ export async function POST(request: Request) {
   const access = await requirePermission("MODULE_PRODUCCION", "create");
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
-  const body = (await request.json()) as { code?: string; name?: string };
+  const body = (await request.json()) as { code?: string; name?: string } & Record<string, unknown>;
   if (!body.code?.trim() || !body.name?.trim()) {
     return Response.json({ error: "Faltan datos (code, name)" }, { status: 400 });
   }
+  const specs = parseMoldSpecs(body);
+  if (typeof specs === "string") return Response.json({ error: specs }, { status: 400 });
 
   try {
-    const mold = await createMold({ code: body.code, name: body.name });
+    const mold = await createMold({ code: body.code, name: body.name, ...specs });
     broadcastPanelUpdate("production").catch(() => {});
     return Response.json({ mold });
   } catch (error) {

@@ -1961,11 +1961,25 @@ enum MoldStatus {
   MAINTENANCE
 }
 
+enum MoldProcess {
+  INJECTION
+  BLOW
+}
+
 model Mold {
   id          String       @id @default(cuid())
   code        String       @unique
   name        String
   status      MoldStatus   @default(AVAILABLE)
+  process          MoldProcess?
+  material         String?   // material del molde (acero P20, aluminio…)
+  manufacturedAt   DateTime? @db.Date
+  cavities         Int?
+  pieceNames       String?   // texto libre, una o varias piezas separadas por coma
+  expectedCycleSec Float?
+  dimensions       String?   // texto libre, ej. "40 x 30 x 25 cm"
+  weightKg         Float?    // peso del molde
+  photoUrl         String?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   changes     MoldChange[]

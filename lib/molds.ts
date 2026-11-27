@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import type { MoldStatus } from "@/generated/prisma/client";
+import type { MoldProcess, MoldStatus } from "@/generated/prisma/client";
 import { parseBogotaDate } from "@/lib/logistics";
 import { assertDirectMoldStatusChange } from "@/lib/mold-policy";
+import { safeUrl } from "@/lib/maintenance-upload";
 
 function requirePrisma() {
   if (!prisma) throw new Error("DATABASE_NOT_CONFIGURED");
@@ -12,6 +13,47 @@ function endOfBogotaDay(value: string): Date {
   return new Date(`${value}T23:59:59.999-05:00`);
 }
 
+const SPEC_KEYS = ["process", "material", "manufacturedAt", "cavities", "pieceNames", "expectedCycleSec", "dimensions", "weightKg", "photoUrl"] as const;
+
+// Valida la ficha que llega por JSON. Solo incluye las claves presentes; "" o null = borrar el dato.
+export function parseMoldSpecs(body: Record<string, unknown>): MoldSpecs | string {
+  const out: MoldSpecs = {};
+  const text = (k: "material" | "pieceNames" | "dimensions") => {
+    if (!(k in body)) return;
+    const v = body[k];
+    if (v !== null && typeof v !== "string") throw `${k} inválido`;
+    out[k] = v?.trim().slice(0, 300) || null;
+  };
+  const num = (k: "cavities" | "expectedCycleSec" | "weightKg", int: boolean, label: string) => {
+    if (!(k in body)) return;
+    const v = body[k];
+    if (v === null || v === "") { out[k] = null; return; }
+    const n = Number(v);
+    if (!Number.isFinite(n) || n <= 0 || (int && !Number.isInteger(n))) throw `${label} debe ser un número mayor que 0`;
+    out[k] = n;
+  };
+  try {
+    if ("process" in body) {
+      if (body.process !== null && body.process !== "INJECTION" && body.process !== "BLOW") throw "Tipo inválido";
+      out.process = (body.process as MoldProcess | null) ?? null;
+    }
+    text("material"); text("pieceNames"); text("dimensions");
+    if ("photoUrl" in body) out.photoUrl = safeUrl(body.photoUrl);
+    num("cavities", true, "No. de cavidades");
+    num("expectedCycleSec", false, "Ciclo esperado");
+    num("weightKg", false, "Peso");
+    if ("manufacturedAt" in body) {
+      const v = body.manufacturedAt;
+      if (v === null || v === "") out.manufacturedAt = null;
+      else if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) out.manufacturedAt = new Date(`${v}T00:00:00Z`);
+      else throw "Fecha de fabricación inválida";
+    }
+  } catch (e) {
+    return String(e);
+  }
+  return out;
+}
+
 export async function listMolds() {
   return requirePrisma().mold.findMany({
     orderBy: [{ status: "asc" }, { code: "asc" }],
@@ -19,13 +61,27 @@ export async function listMolds() {
   });
 }
 
-export async function createMold(data: { code: string; name: string }) {
+// Ficha técnica del molde: todo opcional (los moldes viejos no la tienen). null = sin dato.
+export type MoldSpecs = {
+  process?: MoldProcess | null;
+  material?: string | null;
+  manufacturedAt?: Date | null;
+  cavities?: number | null;
+  pieceNames?: string | null;
+  expectedCycleSec?: number | null;
+  dimensions?: string | null;
+  weightKg?: number | null;
+  photoUrl?: string | null;
+};
+
+export async function createMold(data: { code: string; name: string } & MoldSpecs) {
+  const { code, name, ...specs } = data;
   return requirePrisma().mold.create({
-    data: { code: data.code.trim().toUpperCase(), name: data.name.trim() },
+    data: { code: code.trim().toUpperCase(), name: name.trim(), ...specs },
   });
 }
 
-export async function updateMold(id: string, data: { code?: string; name?: string; status?: MoldStatus }) {
+export async function updateMold(id: string, data: { code?: string; name?: string; status?: MoldStatus } & MoldSpecs) {
   const db = requirePrisma();
   return db.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`mold:${id}`}))`;
@@ -42,6 +98,7 @@ export async function updateMold(id: string, data: { code?: string; name?: strin
         ...(data.code !== undefined ? { code: data.code.trim().toUpperCase() } : {}),
         ...(data.name !== undefined ? { name: data.name.trim() } : {}),
         ...(data.status !== undefined ? { status: data.status } : {}),
+        ...Object.fromEntries(SPEC_KEYS.filter((k) => data[k] !== undefined).map((k) => [k, data[k]])),
       },
     });
   });

@@ -1,7 +1,7 @@
 "use client";
 import { cloneElement, isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { MdApps, MdClose, MdExpandLess, MdLogout, MdMoreHoriz, MdSearch, MdStorefront } from "react-icons/md";
 import { NotificationBell } from "./notification-bell";
 import { NAV, type NavChild, type NavItem } from "./panel-nav";
@@ -12,7 +12,7 @@ const BTN = "grid h-11 w-11 shrink-0 place-items-center rounded-[14px] transitio
 const DARK = "bg-gradient-to-b from-[#3a4a4c] to-[#101a1b] text-white";
 const RING = "ring-2 ring-[#5fbecc]";
 // Inicio y Notificaciones tienen su propio botón en la barra.
-const SHORT: Record<string, string> = { rrhh: "RRHH", integraciones: "Integrac.", configuracion: "Config.", operaciones: "Operación" };
+const SHORT: Record<string, string> = { administracion: "Admin.", operaciones: "Operación" };
 /** Más páginas que esto => botón + panel en cuadrícula en vez de una fila deslizable. */
 const MANY = 7;
 /** Distancia al borde inferior (px) en la que el mouse hace reaparecer la barra. */
@@ -37,6 +37,9 @@ export function PanelDock({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  // Vista de un departamento en el inicio (/panel?s=operaciones): la barra sale con ese departamento marcado.
+  const params = useSearchParams();
+  const deptKey = pathname === "/panel" ? params.get("s") : null;
   const [searchOpen, setSearchOpen] = useState(false);
   // Las hojas se cierran solas al cambiar de ruta (se guarda en qué ruta se abrieron).
   const [sheetState, setSheetState] = useState<{ kind: "cats" | "more"; path: string } | null>(null);
@@ -55,20 +58,25 @@ export function PanelDock({
         continue;
       }
       const children = item.children.filter(canSee);
-      if (children.length) out.push({ ...item, children, tone: 0, target: children[0].href });
+      // Departamento => su vista de módulos en el inicio; herramienta => directo a su primera página.
+      if (children.length) out.push({ ...item, children, tone: 0, target: item.tool ? children[0].href : `/panel?s=${item.key}` });
     }
-    return out.map((c, i) => ({ ...c, tone: (i % 5) + 1 }));
+    return out.map((c, i) => ({ ...c, tone: (i % 10) + 1 }));
   }, [visibleModules, isSuperAdmin]);
 
   // Categoría activa = la que tiene la ruta más específica que coincide con la URL actual.
   const active = useMemo(() => {
     let best: { cat: Cat; len: number } | null = null;
     for (const cat of cats) {
-      const hrefs = cat.children ? cat.children.map((c) => c.href) : [cat.href];
+      // Las copias compartidas no cuentan: la página pertenece a su departamento dueño.
+      const hrefs = cat.children ? cat.children.filter((c) => !c.shared).map((c) => c.href) : [cat.href];
       for (const h of hrefs) if (matches(pathname, h) && (!best || h.length > best.len)) best = { cat, len: h.length };
     }
-    return best?.cat ?? null;
-  }, [cats, pathname]);
+    return best?.cat ?? (deptKey ? (cats.find((c) => c.key === deptKey) ?? null) : null);
+  }, [cats, pathname, deptKey]);
+  // Sub-áreas (Talento Humano) no salen en la fila: se ilumina su departamento padre.
+  const tops = cats.filter((c) => !c.parent);
+  const activeTop = active?.parent ? (cats.find((c) => c.key === active.parent) ?? active) : active;
 
   // Auto-ocultar estilo macOS: se esconde al bajar el scroll y reaparece al subir,
   // al acercar el mouse al borde inferior, al tocar la rayita o al enfocar con teclado.
@@ -115,7 +123,8 @@ export function PanelDock({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  if (!visibleModules || pathname === "/panel") return null;
+  if (!visibleModules || (pathname === "/panel" && !active)) return null;
+  const subBar = pathname !== "/panel"; // en la vista del departamento sus módulos ya están en pantalla
 
   const divider = <li aria-hidden className="mx-0.5 h-8 w-px shrink-0 self-start bg-white/20 mt-1.5" />;
 
@@ -142,8 +151,8 @@ export function PanelDock({
         aria-hidden={hidden || undefined}
         inert={hidden || undefined}
        >
-        {active?.children && active.children.length > MANY && <SubBarMany cat={active} pathname={pathname} />}
-        {active?.children && active.children.length > 1 && active.children.length <= MANY && <SubBar cat={active} pathname={pathname} />}
+        {subBar && active?.children && active.children.length > MANY && <SubBarMany cat={active} pathname={pathname} />}
+        {subBar && active?.children && active.children.length > 1 && active.children.length <= MANY && <SubBar cat={active} pathname={pathname} />}
 
         <nav
           aria-label="Categorías del panel"
@@ -163,8 +172,8 @@ export function PanelDock({
               <span className="text-[10px] font-semibold text-white/80">Tienda</span>
             </li>
             {divider}
-            {cats.map((c) => {
-              const isActive = active?.key === c.key;
+            {tops.map((c) => {
+              const isActive = activeTop?.key === c.key;
               return (
                 <li key={c.key} className="flex w-16 shrink-0 flex-col items-center gap-1">
                   <Link
@@ -172,7 +181,7 @@ export function PanelDock({
                     aria-label={c.label}
                     title={c.label}
                     aria-current={isActive ? "page" : undefined}
-                    className={`${BTN} panel-tile panel-tone-${c.tone} ${isActive ? RING : ""}`}
+                    className={`${BTN} panel-tile panel-c${c.tone} ${isActive ? RING : ""}`}
                   >
                     {sized(c.icon, 22)}
                   </Link>
@@ -221,7 +230,7 @@ export function PanelDock({
               <span className="text-[10px] font-semibold text-white/80">Inicio</span>
             </li>
             <li className="flex w-[68px] flex-col items-center gap-1">
-              <button type="button" onClick={() => setSheet("cats")} aria-label="Todas las categorías" className={`${BTN} panel-tile panel-tone-${active?.tone ?? 1} ${RING}`}>
+              <button type="button" onClick={() => setSheet("cats")} aria-label="Todas las categorías" className={`${BTN} panel-tile panel-c${active?.tone ?? 1} ${RING}`}>
                 {sized(active?.icon ?? <MdApps />, 22)}
               </button>
               <span className="max-w-full truncate text-[10px] font-semibold text-white">{active ? (SHORT[active.key] ?? active.label) : "Módulos"}</span>
@@ -246,10 +255,10 @@ export function PanelDock({
       {sheet === "cats" && (
         <BottomSheet title="Categorías" onClose={() => setSheet(null)}>
           <ul className="grid grid-cols-3 gap-3">
-            {cats.map((c) => (
+            {tops.map((c) => (
               <li key={c.key}>
                 <Link href={c.target} className="flex flex-col items-center gap-1.5 text-center">
-                  <span className={`panel-tile panel-tone-${c.tone} grid h-14 w-14 place-items-center rounded-2xl ${active?.key === c.key ? RING : ""}`}>{sized(c.icon, 26)}</span>
+                  <span className={`panel-tile panel-c${c.tone} grid h-14 w-14 place-items-center rounded-2xl ${activeTop?.key === c.key ? RING : ""}`}>{sized(c.icon, 26)}</span>
                   <span className="text-xs font-bold text-[#002A2E]">{c.label}</span>
                 </Link>
               </li>
@@ -346,7 +355,7 @@ function SearchPalette({ cats, onClose, onGo }: { cats: Cat[]; onClose: () => vo
     () =>
       cats.flatMap((c) =>
         c.children
-          ? c.children.map((k) => ({ label: k.label, href: k.href, cat: c.label, icon: k.icon ?? c.icon }))
+          ? c.children.filter((k) => !k.shared).map((k) => ({ label: k.label, href: k.href, cat: c.label, icon: k.icon ?? c.icon }))
           : [{ label: c.label, href: c.href, cat: "", icon: c.icon }],
       ),
     [cats],

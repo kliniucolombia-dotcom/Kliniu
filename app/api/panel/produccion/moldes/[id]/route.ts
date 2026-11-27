@@ -1,5 +1,5 @@
 import { requirePermission } from "@/lib/permissions";
-import { deleteMold, updateMold } from "@/lib/molds";
+import { deleteMold, parseMoldSpecs, updateMold } from "@/lib/molds";
 import { openMoldRepairOrder } from "@/lib/maintenance";
 import type { MoldStatus } from "@/generated/prisma/client";
 import { broadcastPanelUpdate } from "@/lib/realtime";
@@ -11,10 +11,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!access.ok) return Response.json({ error: "No autorizado" }, { status: access.status });
 
   const { id } = await params;
-  const body = (await request.json()) as { code?: string; name?: string; status?: MoldStatus };
+  const body = (await request.json()) as { code?: string; name?: string; status?: MoldStatus } & Record<string, unknown>;
   if (body.status && !STATUSES.includes(body.status)) return Response.json({ error: "Estado inválido" }, { status: 400 });
+  const specs = parseMoldSpecs(body);
+  if (typeof specs === "string") return Response.json({ error: specs }, { status: 400 });
 
-  const editsIdentity = body.code !== undefined || body.name !== undefined;
+  const editsIdentity = body.code !== undefined || body.name !== undefined || Object.keys(specs).length > 0;
   if (editsIdentity) {
     // Corregir código/nombre del catálogo: solo jefe de operaciones y superadmin.
     if (access.user.role !== "JEFE_OPERACIONES" && access.user.role !== "SUPERADMIN") {
@@ -25,7 +27,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   try {
-    const mold = await updateMold(id, body);
+    const mold = await updateMold(id, { code: body.code, name: body.name, status: body.status, ...specs });
     if (body.status === "MAINTENANCE") {
       await openMoldRepairOrder(id, access.user.id);
       broadcastPanelUpdate("maintenance").catch(() => {});

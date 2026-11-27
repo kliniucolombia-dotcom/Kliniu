@@ -29,9 +29,8 @@ import {
   MdDownload,
   MdEdit,
   MdDeleteOutline,
-  MdPhotoCamera,
 } from "react-icons/md";
-import { compressPhoto } from "@/app/conductor/[token]/photo";
+import { PhotoField } from "../_components/photo-field";
 import { buildProductionSummary, calcProductionEfficiency, SUSPICIOUS_PRODUCTIVITY_PCT, type ProductionRunInput } from "@/lib/production-calculator";
 import {
   createEmptyProductionRunFilters,
@@ -1231,7 +1230,7 @@ export default function ProduccionPage() {
               {form.couplingStatus === "completed" && (
                 <div className="col-span-full sm:col-span-1">
                   <label className={labelClass}>Foto de la prueba</label>
-                  <CouplingPhotoField
+                  <PhotoField uploadUrl="/api/panel/production-runs/upload" alt="Foto de la prueba de acople"
                     value={form.couplingPhotoUrl}
                     onChange={(url) => set("couplingPhotoUrl", url)}
                     onError={(msg) => setAlert({ type: "err", msg })}
@@ -1777,46 +1776,6 @@ function Rule({ ok, label }: { ok: boolean; label: string }) {
       {ok ? <MdCheckCircle size={15} className="shrink-0 text-[#27B1B8]" /> : <MdCancel size={15} className="shrink-0" />}
       {label}
     </li>
-  );
-}
-
-function CouplingPhotoField({ value, onChange, onError }: { value: string; onChange: (url: string) => void; onError: (msg: string) => void }) {
-  const [uploading, setUploading] = useState(false);
-  const upload = async (file: File | undefined) => {
-    if (!file) return;
-    setUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append("file", await compressPhoto(file));
-      const res = await fetch("/api/panel/production-runs/upload", { method: "POST", body: fd });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) return onError(json.error ?? "No fue posible subir la foto.");
-      onChange(json.url);
-    } catch (e) {
-      onError(e instanceof Error ? e.message : "No fue posible subir la foto.");
-    } finally {
-      setUploading(false);
-    }
-  };
-  if (value) {
-    return (
-      <div className="flex items-center gap-3">
-        <a href={value} target="_blank" rel="noopener noreferrer">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={value} alt="Foto de la prueba de acople" className="h-16 w-16 rounded-lg border border-[#E2E8F0] object-cover" />
-        </a>
-        <button type="button" onClick={() => onChange("")} className="inline-flex items-center gap-1 text-sm font-semibold text-[#DC2626] hover:underline">
-          <MdDeleteOutline size={16} /> Quitar
-        </button>
-      </div>
-    );
-  }
-  return (
-    <label className={`flex h-[42px] cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[#CBD5E1] px-3 text-sm font-semibold text-[#0C535B] hover:bg-[#F8FAFC] ${uploading ? "pointer-events-none opacity-60" : ""}`}>
-      <MdPhotoCamera size={18} />
-      {uploading ? "Subiendo…" : "Subir foto"}
-      <input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={(e) => { void upload(e.target.files?.[0]); e.target.value = ""; }} />
-    </label>
   );
 }
 

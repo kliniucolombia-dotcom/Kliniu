@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MdAdd, MdSwapHoriz, MdTimer, MdPrecisionManufacturing, MdStopCircle, MdInventory2, MdDeleteOutline, MdEdit } from "react-icons/md";
 import { SimpleSelect } from "../../_components/simple-select";
+import { PhotoField } from "../../_components/photo-field";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import { useRealtimeRefresh } from "@/lib/hooks/use-realtime-refresh";
 import {
@@ -13,7 +14,13 @@ import {
 import { SkeletonTable } from "../../../components/skeleton";
 
 type MoldStatus = "AVAILABLE" | "IN_USE" | "MAINTENANCE";
-type Mold = { id: string; code: string; name: string; status: MoldStatus; _count: { changes: number } };
+type MoldProcess = "INJECTION" | "BLOW";
+type Mold = {
+  id: string; code: string; name: string; status: MoldStatus; _count: { changes: number };
+  process: MoldProcess | null; material: string | null; manufacturedAt: string | null; cavities: number | null;
+  pieceNames: string | null; expectedCycleSec: number | null; dimensions: string | null; weightKg: number | null; photoUrl: string | null;
+};
+const MOLD_PROCESS: Record<MoldProcess, string> = { INJECTION: "Inyección", BLOW: "Soplado" };
 type Machine = { id: string; code: number; name: string; brand: string };
 type Change = {
   id: string; startedAt: string; finishedAt: string | null; notes: string | null;
@@ -246,9 +253,17 @@ export default function MoldesPanel() {
           action={perm.canCreate && <button className={btnPrimary} onClick={() => setModal({ kind: "mold" })}><MdAdd size={16} />Nuevo molde</button>}
         >
           <Table
-            head={["Código", "Nombre", "Estado", "Cambios", perm.canEdit || data.canManageChanges ? "" : null]}
+            head={["Código", "Nombre", "Tipo", "Pieza(s)", "Cavidades", "Ciclo", "Estado", "Cambios", perm.canEdit || data.canManageChanges ? "" : null]}
             rows={data.molds.map((m) => [
-              <b key="c">{m.code}</b>, m.name, <Badge key="s" {...MOLD_STATUS[m.status]} />, String(m._count.changes),
+              <div key="c" className="flex items-center gap-2">
+                {m.photoUrl
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <a href={m.photoUrl} target="_blank" rel="noopener noreferrer"><img src={m.photoUrl} alt={`Foto del molde ${m.code}`} className="h-9 w-9 shrink-0 rounded-lg border border-[#E2E8F0] object-cover" /></a>
+                  : null}
+                <b>{m.code}</b>
+              </div>, m.name, m.process ? MOLD_PROCESS[m.process] : "—", m.pieceNames ?? "—",
+              m.cavities != null ? String(m.cavities) : "—", m.expectedCycleSec != null ? `${m.expectedCycleSec} s` : "—",
+              <Badge key="s" {...MOLD_STATUS[m.status]} />, String(m._count.changes),
               <div key="a" className="flex flex-wrap items-center gap-1.5">
                 {perm.canEdit && m.status !== "IN_USE" && (
                   <button className={btnGhost} onClick={() => patch(`/api/panel/produccion/moldes/${m.id}`, { status: m.status === "MAINTENANCE" ? "AVAILABLE" : "MAINTENANCE" }, m.status === "MAINTENANCE" ? "Molde disponible" : "Molde enviado a mantenimiento")}>
@@ -295,20 +310,45 @@ function MoldModal({ mold, onClose, onDone, onError, markLocalWrite }: ModalProp
   const editing = Boolean(mold);
   const [code, setCode] = useState(mold?.code ?? "");
   const [name, setName] = useState(mold?.name ?? "");
+  const [process, setProcess] = useState<string>(mold?.process ?? "");
+  const [material, setMaterial] = useState(mold?.material ?? "");
+  const [manufacturedAt, setManufacturedAt] = useState(mold?.manufacturedAt?.slice(0, 10) ?? "");
+  const [cavities, setCavities] = useState(mold?.cavities?.toString() ?? "");
+  const [pieceNames, setPieceNames] = useState(mold?.pieceNames ?? "");
+  const [cycle, setCycle] = useState(mold?.expectedCycleSec?.toString() ?? "");
+  const [dimensions, setDimensions] = useState(mold?.dimensions ?? "");
+  const [weight, setWeight] = useState(mold?.weightKg?.toString() ?? "");
+  const [photoUrl, setPhotoUrl] = useState(mold?.photoUrl ?? "");
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     setSubmitting(true);
     markLocalWrite();
+    const body = {
+      code, name, process: process || null, material, manufacturedAt: manufacturedAt || null,
+      cavities: cavities || null, pieceNames, expectedCycleSec: cycle.replace(",", ".") || null,
+      dimensions, weightKg: weight.replace(",", ".") || null, photoUrl: photoUrl || null,
+    };
     const res = editing
-      ? await patchReq(`/api/panel/produccion/moldes/${mold!.id}`, { code, name })
-      : await post("/api/panel/produccion/moldes", { code, name });
+      ? await patchReq(`/api/panel/produccion/moldes/${mold!.id}`, body)
+      : await post("/api/panel/produccion/moldes", body);
     setSubmitting(false);
     if (res.ok) onDone(editing ? "Molde actualizado" : "Molde registrado"); else onError(res.error!);
   };
   return (
-    <Modal title={editing ? `Editar molde ${mold!.code}` : "Nuevo molde"} onClose={onClose} footer={<Footer onClose={onClose} onSubmit={submit} submitting={submitting} disabled={!code.trim() || !name.trim()} />}>
+    <Modal wide title={editing ? `Editar molde ${mold!.code}` : "Nuevo molde"} onClose={onClose} footer={<Footer onClose={onClose} onSubmit={submit} submitting={submitting} disabled={!code.trim() || !name.trim()} />}>
       <div><label className={labelCls}>Código</label><input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} className={inputCls} placeholder="MOL-01" /></div>
       <div><label className={labelCls}>Nombre / referencia</label><input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} /></div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div><label className={labelCls}>Tipo</label><SimpleSelect value={process} options={[{ value: "", label: "Sin definir" }, { value: "INJECTION", label: "Inyección" }, { value: "BLOW", label: "Soplado" }]} onChange={setProcess} /></div>
+        <div><label className={labelCls}>Material del molde</label><input value={material} onChange={(e) => setMaterial(e.target.value)} className={inputCls} placeholder="Acero P20, aluminio…" /></div>
+        <div><label className={labelCls}>Fecha de fabricación</label><input type="date" value={manufacturedAt} onChange={(e) => setManufacturedAt(e.target.value)} className={inputCls} /></div>
+        <div><label className={labelCls}>No. de cavidades</label><input type="number" min={1} step={1} inputMode="numeric" value={cavities} onChange={(e) => setCavities(e.target.value)} className={inputCls} /></div>
+        <div><label className={labelCls}>Ciclo esperado (segundos)</label><input type="number" min={0} step="any" inputMode="decimal" value={cycle} onChange={(e) => setCycle(e.target.value)} className={inputCls} /></div>
+        <div><label className={labelCls}>Peso del molde (kg)</label><input type="number" min={0} step="any" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} className={inputCls} /></div>
+      </div>
+      <div><label className={labelCls}>Nombre(s) de la pieza</label><input value={pieceNames} onChange={(e) => setPieceNames(e.target.value)} className={inputCls} placeholder="Separa varias con coma" /></div>
+      <div><label className={labelCls}>Medidas</label><input value={dimensions} onChange={(e) => setDimensions(e.target.value)} className={inputCls} placeholder="40 x 30 x 25 cm" /></div>
+      <div><label className={labelCls}>Foto del molde (opcional)</label><PhotoField uploadUrl="/api/panel/produccion/moldes/upload" alt="Foto del molde" value={photoUrl} onChange={setPhotoUrl} onError={onError} /></div>
     </Modal>
   );
 }

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ConfirmProvider, useConfirm } from "@/app/components/confirm-dialog";
@@ -162,14 +162,16 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         )}
         <ConfirmProvider>{children}</ConfirmProvider>
       </div>
-      <PanelDock
-        visibleModules={visibleModules}
-        isSuperAdmin={isSuperAdmin}
-        user={userInfo}
-        onProfile={openProfileModal}
-        onLogout={logout}
-        loggingOut={loggingOut}
-      />
+      <Suspense fallback={null}>
+        <PanelDock
+          visibleModules={visibleModules}
+          isSuperAdmin={isSuperAdmin}
+          user={userInfo}
+          onProfile={openProfileModal}
+          onLogout={logout}
+          loggingOut={loggingOut}
+        />
+      </Suspense>
 
       {/* ── Profile Modal ── */}
       {showProfileModal && (
