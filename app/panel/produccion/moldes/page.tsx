@@ -29,7 +29,7 @@ type Change = {
   changedBy: { fullName: string };
 };
 type Kpis = { changesCompleted: number; avgChangeMinutes: number; totalChangeMinutes: number; openChanges: number; moldsInUse: number; moldsTotal: number };
-type Data = { molds: Mold[]; machines: Machine[]; changes: Change[]; kpis: Kpis; permission: Permission; canManageChanges: boolean };
+type Data = { molds: Mold[]; machines: Machine[]; changes: Change[]; kpis: Kpis; permission: Permission; canManageChanges: boolean; canEditMolds: boolean };
 
 const MOLD_STATUS: Record<MoldStatus, { label: string; cls: string }> = {
   AVAILABLE: { label: "Disponible", cls: "bg-[#DCFCE7] text-[#15803D]" },
@@ -253,7 +253,7 @@ export default function MoldesPanel() {
           action={perm.canCreate && <button className={btnPrimary} onClick={() => setModal({ kind: "mold" })}><MdAdd size={16} />Nuevo molde</button>}
         >
           <Table
-            head={["Código", "Nombre", "Tipo", "Pieza(s)", "Cavidades", "Ciclo", "Estado", "Cambios", perm.canEdit || data.canManageChanges ? "" : null]}
+            head={["Código", "Nombre", "Tipo", "Pieza(s)", "Cavidades", "Ciclo", "Estado", "Cambios", perm.canEdit || data.canEditMolds ? "" : null]}
             rows={data.molds.map((m) => [
               <div key="c" className="flex items-center gap-2">
                 {m.photoUrl
@@ -270,7 +270,7 @@ export default function MoldesPanel() {
                     {m.status === "MAINTENANCE" ? "Marcar disponible" : "Enviar a mantenimiento"}
                   </button>
                 )}
-                {data.canManageChanges && (
+                {data.canEditMolds && (
                   <button
                     onClick={() => setModal({ kind: "mold", mold: m })}
                     title="Editar molde"

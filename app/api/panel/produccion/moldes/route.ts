@@ -30,6 +30,8 @@ export async function GET(request: Request) {
     kpis,
     permission,
     canManageChanges: access.user.role === "JEFE_OPERACIONES" || access.user.role === "SUPERADMIN",
+    // El líder de inyección también corrige la ficha de los moldes (no borra moldes ni historial).
+    canEditMolds: ["JEFE_OPERACIONES", "SUPERADMIN", "LIDER_INYECCION"].includes(access.user.role),
   });
 }
 

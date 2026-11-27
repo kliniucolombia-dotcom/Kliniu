@@ -18,8 +18,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const editsIdentity = body.code !== undefined || body.name !== undefined || Object.keys(specs).length > 0;
   if (editsIdentity) {
-    // Corregir código/nombre del catálogo: solo jefe de operaciones y superadmin.
-    if (access.user.role !== "JEFE_OPERACIONES" && access.user.role !== "SUPERADMIN") {
+    // Corregir código/nombre/ficha del catálogo: jefe de operaciones, superadmin y líder de inyección.
+    if (!["JEFE_OPERACIONES", "SUPERADMIN", "LIDER_INYECCION"].includes(access.user.role)) {
       return Response.json({ error: "No autorizado" }, { status: 403 });
     }
     if (body.code !== undefined && !body.code.trim()) return Response.json({ error: "El código es obligatorio" }, { status: 400 });
